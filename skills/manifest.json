@@ -13,7 +13,7 @@
       },
       "categories": ["diagnosis", "business", "consulting"],
       "tags": ["企业诊断", "增长", "咨询"],
-      "skill_md_path": "SKILL.md",
+      "skill_md_path": "enterprise-growth-diagnosis/SKILL.md",
       "is_enabled": true
     }
   ]
