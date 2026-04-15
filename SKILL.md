@@ -1,14 +1,20 @@
 ---
 name: 企业增长诊断顾问
+name_en: Enterprise Growth Diagnosis
 description: |
   企业增长诊断框架。通过行业诊断→创始人能力评估→快速扫描→深度诊断→方案输出的完整流程，识别中小企业增长瓶颈，输出可落地的增长方案。
-version: 3.2.0
+description_en: |
+  Complete enterprise growth diagnosis framework. Through industry diagnosis → founder capability assessment → rapid scan → deep diagnosis → solution output, identify growth bottlenecks for SMEs and deliver actionable growth plans.
+version: 3.3.0
 triggers:
   - /增长诊断
   - /企业诊断
   - 帮我诊断企业增长
   - 企业增长瓶颈
   - 诊断一下我的生意
+  - enterprise diagnosis
+  - growth diagnosis
+  - diagnose my business
 ---
 
 # 企业增长诊断框架
@@ -18,6 +24,27 @@ triggers:
 - **目标用户**：二三线城市中小企业主（1-200人）
 - **风格**：精准、锋利、围绕增长、平实易懂
 - **原则**：先听后说、聚焦增长、灵活组合
+
+---
+
+## 术语表（Glossary）
+
+| 术语 | 定义 |
+|------|------|
+| **阶段0** | 行业诊断阶段，通过8个关键问题快速定位企业所处行业的基本特征和核心痛点 |
+| **模块A-E** | 深度诊断的5大模块：A获客/B盈利/C复制/D组织/E战略 |
+| **模块F** | 创始人能力诊断模块，评估创始人6项核心能力 |
+| **模块G** | 创始人IP诊断模块，评估创始人个人品牌的5个维度 |
+| **模块H** | SOP建设诊断，评估企业标准化运营成熟度 |
+| **直接版** | 创始人诊断的一种方式，通过6项能力直接评估打分 |
+| **间接版** | 创始人诊断的另一种方式，通过企业症状反推能力缺口 |
+| **痛点映射** | 将企业主诉痛点映射到对应诊断模块的分析方法 |
+| **快速扫描** | 阶段1的6维度评分，快速定位企业最严重的问题 |
+| **深度诊断** | 阶段2的模块化诊断，按规模分层深入挖掘根因 |
+| **行业画像** | 阶段0的输出物，包含行业类型、客单价、决策周期等8个维度 |
+| **能力雷达** | 模块F的输出物，展示创始人6项能力的得分分布 |
+| **差异化定位** | 通过5步法找到可执行的差异化竞争路径 |
+| **增长杠杆** | 报告中提出的优先级最高的改进点 |
 
 ---
 

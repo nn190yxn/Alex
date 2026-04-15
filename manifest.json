@@ -1,0 +1,20 @@
+{
+  "$schema": "../.schema/skills_manifest.json",
+  "skills": [
+    {
+      "skill_id": "enterprise-growth-diagnosis",
+      "name": {
+        "en": "Enterprise Growth Diagnosis",
+        "zh": "企业增长诊断顾问"
+      },
+      "description": {
+        "en": "Complete enterprise growth diagnosis framework. Through industry diagnosis → founder capability assessment → rapid scan → deep diagnosis → solution output, identify growth bottlenecks for SMEs and deliver actionable growth plans.",
+        "zh": "企业增长诊断框架。通过行业诊断→创始人能力评估→快速扫描→深度诊断→方案输出的完整流程，识别中小企业增长瓶颈，输出可落地的增长方案。"
+      },
+      "categories": ["diagnosis", "business", "consulting"],
+      "tags": ["企业诊断", "增长", "咨询"],
+      "skill_md_path": "SKILL.md",
+      "is_enabled": true
+    }
+  ]
+}
