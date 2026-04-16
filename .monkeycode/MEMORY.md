@@ -38,3 +38,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 - Instructions:
   - 仓库根目录当前只有 `README.md`、`LICENSE`、`skills/` 和 `.monkeycode/`，没有现成的前端或后端应用目录。
   - 当前项目适合按新项目方式初始化个人网站或仪表盘。
+
+[个人仪表盘项目启动方式]
+- Date: 2026-04-16
+- Context: Agent 在执行“个人仪表盘第一版开发与预览”时发现
+- Category: 构建方法
+- Instructions:
+  - 个人仪表盘项目位于 `dashboard/` 目录，使用 Next.js 16 + App Router。
+  - 开发启动命令为 `npm run dev -- --hostname 0.0.0.0`，默认端口为 `3000`。
+  - 生产构建命令为 `npm run build`，代码检查命令为 `npm run lint`。
+  - Next 16 预览域名白名单配置使用 `next.config.ts` 顶层 `allowedDevOrigins`，不是旧写法 `experimental.allowedHosts`。
