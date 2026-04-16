@@ -48,3 +48,12 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 开发启动命令为 `npm run dev -- --hostname 0.0.0.0`，默认端口为 `3000`。
   - 生产构建命令为 `npm run build`，代码检查命令为 `npm run lint`。
   - Next 16 预览域名白名单配置使用 `next.config.ts` 顶层 `allowedDevOrigins`，不是旧写法 `experimental.allowedHosts`。
+
+[个人仪表盘设计方向]
+- Date: 2026-04-16
+- Context: Agent 在执行“继续打磨产品结构并参考 brand-design-md 风格”时发现
+- Category: 代码模式
+- Instructions:
+  - 个人仪表盘采用“Linear 的信息结构 + Claude 的温暖气质 + Notion 的轻边框卡片语言”的混合方向。
+  - 页面避免通用 SaaS 冷感和过强渐变，优先使用暖底色、克制强调色和更明确的信息层级。
+  - 首页结构优先级为：今日重点、执行面板、快速录入、日历安排、复盘、季度目标、学习成长。
