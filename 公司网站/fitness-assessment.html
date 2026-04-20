@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>追光小牛智能运动规划</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="internal-body">
+    <header class="site-header internal-header">
+      <div class="shell topbar">
+        <a class="brand" href="/internal.html">
+          <img src="玻璃贴-14.png" alt="追光小牛 logo" />
+          <span>智能运动规划</span>
+        </a>
+        <nav class="nav">
+          <a href="/internal.html">员工首页</a>
+          <a href="/表格中心/">表格中心</a>
+          <a href="/制度标准/">制度中心</a>
+          <a href="/知识库/">知识库</a>
+          <a href="/新员工学习/">员工学习中心</a>
+          <a class="current" href="/fitness-assessment.html">智能运动规划</a>
+          <a href="/smart-lessons.html">智能教案</a>
+          <a class="staff-link" href="/">返回官网</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section-tight">
+      <section class="shell hero-grid">
+        <div class="hero-panel">
+          <span class="eyebrow">AI 工具页 / 智能运动规划</span>
+          <h1>把体测采集、结果评估和运动规划生成，统一收进同一套员工内网 AI 工具结构。</h1>
+          <p class="lead">我把这一页收口成与智能教案一致的 AI 工具骨架。员工先看页面定位，再进入输入区和结果区，最后进入完整工作页处理详细体测流程。</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="/fitness-assessment-app.html">进入智能运动规划</a>
+            <a class="btn btn-secondary" href="/表格中心/">查看体测相关表格</a>
+          </div>
+        </div>
+        <div class="hero-panel hero-visual">
+          <span class="eyebrow">当前版本</span>
+          <h2>统一骨架 + 独立工作页</h2>
+          <p>外层页负责统一导航、定位说明、输入输出预览和使用方式，完整体测步骤继续留在独立工作页里，避免一次性改动过大影响现有流程。</p>
+        </div>
+      </section>
+
+      <section class="shell section-tight">
+        <div class="overview-strip">
+          <article class="overview-card">
+            <span class="eyebrow">页面定位</span>
+            <h3>体测类 AI 工具入口</h3>
+            <p>智能运动规划负责承接孩子体测信息、结果分析和训练规划输出，不和制度、知识或表格下载混在一起。</p>
+          </article>
+          <article class="overview-card">
+            <span class="eyebrow">使用顺序</span>
+            <h3>先录入，再分析，再导出</h3>
+            <p>员工先确认对象和目标，再进入完整工作页录入数据，最后回收结果用于家长沟通和课程安排。</p>
+          </article>
+          <article class="overview-card">
+            <span class="eyebrow">当前收口</span>
+            <h3>统一外层，不重写核心逻辑</h3>
+            <p>这一轮先统一 AI 工具的页面骨架和导航路径，体测主流程继续复用现有工作页，降低回归风险。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="shell section-tight tool-grid" id="workflow">
+        <div>
+          <div class="page-card">
+            <span class="eyebrow">输入区</span>
+            <h2>运动评估信息预录入</h2>
+            <form class="form-grid">
+              <label class="field-block">
+                <span>会员姓名</span>
+                <input type="text" placeholder="例如：王小牛" />
+              </label>
+              <label class="field-block">
+                <span>年龄段</span>
+                <input type="text" placeholder="例如：4 岁 / 学龄组" />
+              </label>
+              <label class="field-block">
+                <span>训练目标</span>
+                <input type="text" placeholder="例如：平衡能力、协调性、下肢力量" />
+              </label>
+              <label class="field-block">
+                <span>教练评估</span>
+                <input type="text" placeholder="例如：专注度一般，动作模仿能力较好" />
+              </label>
+            </form>
+            <div class="actions">
+              <a class="btn btn-primary" href="/fitness-assessment-app.html">进入完整工作页</a>
+              <a class="btn btn-secondary" href="/新员工学习/">查看评估相关学习内容</a>
+            </div>
+          </div>
+
+          <div class="usage-grid" style="margin-top: 20px;">
+            <article class="usage-card">
+              <span class="pill">步骤 1</span>
+              <h3>录入基础信息</h3>
+              <p>填写会员姓名、年龄段、门店、教练、测评日期和训练背景。</p>
+            </article>
+            <article class="usage-card">
+              <span class="pill">步骤 2</span>
+              <h3>上传体测数据</h3>
+              <p>支持后续接入 OCR 图片识别，也保留手动录入作为兜底路径。</p>
+            </article>
+            <article class="usage-card">
+              <span class="pill">步骤 3</span>
+              <h3>生成运动规划</h3>
+              <p>基于评级、教练评估和阶段目标，生成个性化运动规划报告。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="output-card">
+          <div class="page-card">
+            <span class="eyebrow">输出区</span>
+            <h2>结果页会返回什么</h2>
+            <p>完整工作页会输出体测摘要、弱项判断、训练建议、课程安排和可交付给家长的沟通内容。</p>
+            <div class="tag-row">
+              <span class="micro-tag">体测摘要</span>
+              <span class="micro-tag">ACE 规划</span>
+              <span class="micro-tag">课程建议</span>
+              <span class="micro-tag">家长沟通</span>
+            </div>
+            <div class="footnote-box">
+              智能运动规划和智能教案现在都采用同样的外层结构：顶部定位区、输入区、输出区、使用说明区。区别只在内部业务流程不同。
+            </div>
+          </div>
+
+          <div class="page-card">
+            <span class="eyebrow">使用说明</span>
+            <h2>这次保留哪些迁移边界</h2>
+            <div class="tag-row">
+              <span class="micro-tag">统一走员工内网入口</span>
+              <span class="micro-tag">不直接改写主流程</span>
+              <span class="micro-tag">继续清理敏感配置</span>
+            </div>
+            <div class="footnote-box">
+              旧体测单页已有完整流程。这一轮我先统一页面骨架和入口路径，避免在同一轮里同时大改 UI 与分析逻辑，影响现有可用性。
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>追光小牛内部管理平台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="internal-body internal-home">
+    <header class="site-header internal-header">
+      <div class="shell topbar">
+        <a class="brand" href="internal.html">
+          <img src="玻璃贴-14.png" alt="追光小牛 logo" />
+          <span>内部管理平台</span>
+        </a>
+        <nav class="nav">
+          <a class="current" href="/internal.html">员工首页</a>
+          <a href="/表格中心/">表格中心</a>
+          <a href="/制度标准/">制度中心</a>
+          <a href="/知识库/">知识库</a>
+          <a href="/新员工学习/">员工学习中心</a>
+          <a href="/fitness-assessment.html">智能运动规划</a>
+          <a href="/smart-lessons.html">智能教案</a>
+          <a class="staff-link" href="/">返回官网</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section-tight">
+      <div class="shell internal-hero">
+        <div class="login-panel page-card">
+          <span class="eyebrow">平台登录</span>
+          <h1>进入追光小牛内部管理平台</h1>
+          <p>首页先把制度、知识、学习和 AI 工具收口到一个更轻松、更好用的工作入口里，员工仍然通过 WordPress 账号统一登录。</p>
+          <form class="form-grid" action="/wp-login.php" method="post">
+            <label class="field-block">
+              <span>员工账号</span>
+              <input type="text" name="log" placeholder="请输入后台创建的用户名" />
+            </label>
+            <label class="field-block">
+              <span>登录密码</span>
+              <input type="password" name="pwd" placeholder="请输入对应密码" />
+            </label>
+            <input type="hidden" name="redirect_to" value="/internal.html#workspace" />
+            <label class="field-block" style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" name="rememberme" value="forever" style="width:auto;" />
+              <span style="margin:0;font-size:13px;color:#7e7771;letter-spacing:0;text-transform:none;">记住登录状态</span>
+            </label>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">账号密码登录</button>
+              <a class="btn btn-secondary" href="/wp-login.php?action=lostpassword">找回密码</a>
+            </div>
+          </form>
+          <div class="footnote-box">
+            员工账号和密码建议直接在 WordPress 后台“用户”中创建与管理。前台登录页已经接入 WordPress 用户体系，后续只需要持续补充员工账号即可。
+          </div>
+        </div>
+
+        <div class="page-card workspace-overview" id="workspace">
+          <span class="eyebrow">追光小牛内部管理平台</span>
+          <h2>先看今天的重点，再进入每个模块开始工作</h2>
+          <p>我把首页从“严肃后台”收口成更轻、更有温度的内部平台入口。这里先提醒制度、知识、学习和 AI 工具的优先事项，再分发到各模块。</p>
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span>今日必看制度</span>
+              <strong>2</strong>
+              <p>先看本周新增制度和最近上线的执行标准。</p>
+            </article>
+            <article class="stat-card">
+              <span>本周知识专题</span>
+              <strong>3</strong>
+              <p>优先补家长沟通、课堂反馈和异常处理专题。</p>
+            </article>
+            <article class="stat-card">
+              <span>待完成学习</span>
+              <strong>4</strong>
+              <p>还没完成的培训阅读、签到或抽测任务。</p>
+            </article>
+            <article class="stat-card">
+              <span>最近更新</span>
+              <strong>5</strong>
+              <p>本周新上传的制度、知识文章和培训资料。</p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <section class="shell section-tight">
+        <div class="section-heading compact">
+          <span class="eyebrow">整体结构</span>
+          <h2>内部管理平台先收口为 7 个一级入口</h2>
+          <p>首页负责统一分发，六个业务模块负责承载具体工作。后续所有优化都围绕这 7 个入口展开，不再继续发散新的同级页面。</p>
+        </div>
+        <div class="module-strip">
+          <a class="module-tile" href="/internal.html">
+            <span class="pill">工作台</span>
+            <strong>员工首页</strong>
+            <p>统一分发入口</p>
+          </a>
+          <a class="module-tile" href="/表格中心/">
+            <span class="pill">资料类</span>
+            <strong>表格中心</strong>
+            <p>按场景分类找表</p>
+          </a>
+          <a class="module-tile" href="/制度标准/">
+            <span class="pill">规则类</span>
+            <strong>制度中心</strong>
+            <p>按角色和流程找规则</p>
+          </a>
+          <a class="module-tile" href="/知识库/">
+            <span class="pill">内容类</span>
+            <strong>知识库</strong>
+            <p>沉淀案例与经验</p>
+          </a>
+          <a class="module-tile" href="/新员工学习/">
+            <span class="pill">成长类</span>
+            <strong>员工学习中心</strong>
+            <p>组织学习闭环</p>
+          </a>
+          <a class="module-tile" href="/fitness-assessment.html">
+            <span class="pill">AI 工具</span>
+            <strong>智能运动规划</strong>
+            <p>承接体测与规划</p>
+          </a>
+          <a class="module-tile" href="/smart-lessons.html">
+            <span class="pill">AI 工具</span>
+            <strong>智能教案</strong>
+            <p>承接教学生成</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="shell section-tight">
+        <div class="section-heading compact">
+          <span class="eyebrow">六个业务模块</span>
+          <h2>平台首页之外，六个模块分别承接不同工作流</h2>
+        </div>
+        <div class="card-grid cols-3">
+          <a class="feature-card link-card" href="/表格中心/">
+            <span class="pill">核心入口</span>
+            <h3>表格中心</h3>
+            <p>按场景分类找表，不需要先记住具体表名。</p>
+          </a>
+          <a class="feature-card link-card" href="/制度标准/">
+            <span class="pill">规则边界</span>
+            <h3>制度中心</h3>
+            <p>按角色和按工作流双入口查规则。</p>
+          </a>
+          <a class="feature-card link-card" href="/知识库/">
+            <span class="pill">经验沉淀</span>
+            <h3>知识库</h3>
+            <p>话术、案例、经验、常见问题集中检索。</p>
+          </a>
+          <a class="feature-card link-card" href="/新员工学习/">
+            <span class="pill">成长学习</span>
+            <h3>员工学习中心</h3>
+            <p>全员分阶段学习，并串起阅读、抽测和上岗闭环。</p>
+          </a>
+          <a class="feature-card link-card" href="/fitness-assessment.html">
+            <span class="pill">AI 体测</span>
+            <h3>智能运动规划</h3>
+            <p>上传会员体测数据，统一进入 AI 运动规划流程。</p>
+          </a>
+          <a class="feature-card link-card" href="/smart-lessons.html">
+            <span class="pill">AI 教学</span>
+            <h3>智能教案</h3>
+            <p>按班级情况生成月主题、周计划和单节课教案。</p>
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
