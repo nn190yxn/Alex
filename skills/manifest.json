@@ -8,8 +8,8 @@
         "zh": "企业增长诊断顾问"
       },
       "description": {
-        "en": "Complete enterprise growth diagnosis framework. Through industry diagnosis → founder capability assessment → rapid scan → deep diagnosis → solution output, identify growth bottlenecks for SMEs and deliver actionable growth plans.",
-        "zh": "企业增长诊断框架。通过行业诊断→创始人能力评估→快速扫描→深度诊断→方案输出的完整流程，识别中小企业增长瓶颈，输出可落地的增长方案。"
+        "en": "Complete enterprise growth diagnosis framework with city-tier intelligence and system loop analysis. Starts with 2 quick questions (city + industry), then auto-predicts market environment based on city tier. Features system loop diagrams (reinforcing/balancing), founder role evolution path, rent-vs-labor assessment, and lag-effect warnings. Through industry diagnosis → founder capability assessment → rapid scan → deep diagnosis → solution output, identify growth bottlenecks for SMEs and deliver actionable growth plans.",
+        "zh": "企业增长诊断框架（含城市线级智能预判+系统回路分析）。2问开场（城市+行业）自动预判市场环境，新增系统回路图（增强/调节）、创始人角色进化路径、企业租评估、滞后效应预警。通过完整流程识别中小企业增长瓶颈，输出可落地的增长方案。"
       },
       "categories": ["diagnosis", "business", "consulting"],
       "tags": ["企业诊断", "增长", "咨询"],
