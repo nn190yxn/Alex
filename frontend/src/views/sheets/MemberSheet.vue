@@ -1,0 +1,17 @@
+<template>
+  <SheetTemplate :template-code="'member-sheet'" :fields="fields" />
+</template>
+
+<script setup>
+import SheetTemplate from '@/components/SheetTemplate.vue'
+
+const fields = [
+    { key: 'cardNo', label: '卡号', type: 'text' },
+    { key: 'name', label: '姓名', type: 'text' },
+    { key: 'phone', label: '手机', type: 'text' },
+    { key: 'level', label: '等级', type: 'text' },
+    { key: 'balance', label: '余额', type: 'number' },
+    { key: 'points', label: '积分', type: 'number' },
+    { key: 'totalSpend', label: '累计消费', type: 'number' }
+]
+</script>

@@ -1,0 +1,77 @@
+:root {
+  /* ==================== 颜色系统 ==================== */
+  --brand-primary: #1E3A8A;
+  --brand-primary-weak: #3B82F6;
+  --brand-accent: #F97316;
+  --brand-accent-weak: #FB923C;
+  --bg-base: #FFFFFF;
+  --bg-soft: #FAF8F5;
+  --bg-subtle: #F8FAFC;
+  --text-main: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --line-default: #E2E8F0;
+  --state-success: #16A34A;
+  --state-warning: #D97706;
+  --state-danger: #DC2626;
+
+  /* ==================== 字体系统 ==================== */
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "Inter", "Segoe UI", monospace;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ==================== 字号与行高 ==================== */
+  --text-h1: 36px;
+  --text-h2: 28px;
+  --text-h3: 22px;
+  --text-h4: 18px;
+  --text-body-lg: 16px;
+  --text-body-md: 15px;
+  --text-body-sm: 14px;
+  --text-caption: 12px;
+
+  --leading-h1: 44px;
+  --leading-h2: 36px;
+  --leading-h3: 30px;
+  --leading-h4: 26px;
+  --leading-body-lg: 26px;
+  --leading-body-md: 24px;
+  --leading-body-sm: 22px;
+  --leading-caption: 18px;
+
+  /* ==================== 间距系统（8pt） ==================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+  --space-9: 64px;
+
+  /* ==================== 圆角 ==================== */
+  --radius-btn: 10px;
+  --radius-input: 10px;
+  --radius-card: 14px;
+  --radius-modal: 16px;
+
+  /* ==================== 阴影 ==================== */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.14);
+
+  /* ==================== 动效 ==================== */
+  --duration-fast: 150ms;
+  --duration-normal: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ==================== 布局 ==================== */
+  --nav-height: 64px;
+  --page-padding-mobile: 16px;
+  --page-padding-tablet: 24px;
+  --page-padding-desktop: 32px;
+}
