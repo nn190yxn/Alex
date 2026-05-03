@@ -232,7 +232,8 @@ onMounted(async () => {
 const canSubmit = computed(() => {
   if (quotaStore.isUnlimited) return true
   if (quotaStore.globalRemain === null) return true
-  return quotaStore.globalRemain > 0
+  // 允许额度为0时仍可点击（后台会拦截或提示）
+  return true
 })
 
 const displayQuota = computed(() => {
