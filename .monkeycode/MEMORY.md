@@ -578,3 +578,36 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 模块F间接版：6个症状（获客全靠创始人、团队流失率高、利润算不清、错过行业机会、创始人越来越累、没有差异化）。
   - 阶段1：获客能力、盈利效率、复购与推荐、复制能力、组织能力、战略清晰，各1-5分自评。
   - 报告结构：行业画像 → 创始人能力画像 → 快速扫描结果 → 问题清单 → 行动建议（短中长期） → 推荐工具。
+
+[计算器引擎架构与知识库隔离规范]
+- Date: 2026-05-03
+- Context: Agent 在执行"美业计算器全面审核与修复"时发现
+- Category: 代码结构
+- Instructions:
+  - `backend/src/services/calculatorEngine.js` 中所有计算器统一归入 CALCULATORS 对象，每个计算器包含 name/inputs/calc 三个字段。
+  - 行业知识库必须定义为 CALCULATORS 内部的独立键（如 `BEAUTY_KNOWLEDGE_BASE`、`BEAUTY_LABOR_KB`、`BEAUTY_CARD_KB` 等），计算器通过 `CALCULATORS.KB_KEY` 引用。
+  - 知识库定义必须在引用它的计算器之前声明（JS 对象字面量按定义顺序求值）。
+  - 新增计算器流程：1) 在 CALCULATORS 末尾添加计算器条目；2) 在 toolCatalog.js 注册；3) 在 ToolPage.vue 添加 import + 路由映射。
+  - safeDiv 函数用于全局防除零，所有除法必须使用 safeDiv 而非原生 /。
+  - 浮点数比较不能用严格相等（===），必须使用容差比较（Math.abs(a-b) > 0.01）。
+
+[美业计算器全链路清单]
+- Date: 2026-05-03
+- Context: Agent 在执行"美业20个计算器全面审核"时建立
+- Category: 代码结构
+- Instructions:
+  - 美业共20个计算器：card-consumption-rate-beauty, gross-margin-beauty, break-even-beauty, salary-cost-ratio-beauty, labor-efficiency-beauty, conversion-rate-beauty, payback-beauty, cashflow-beauty, profit-rate-beauty, return-rate-beauty, repurchase-rate-beauty, ltv-beauty, project-profit-beauty, project-structure-beauty, labor-structure-beauty, card-debt-beauty, funnel-ltv-beauty, breakeven-profit-beauty, device-roi-beauty, member-card-design-beauty。
+  - 7个独立知识库：BEAUTY_KNOWLEDGE_BASE（品项结构）、BEAUTY_LABOR_KB（人工成本）、BEAUTY_CARD_KB（卡项负债）、BEAUTY_FUNNEL_KB（拓客LTV）、BEAUTY_BREAK_EVEN_KB（盈亏平衡）、BEAUTY_DEVICE_KB（设备ROI）、BEAUTY_MEMBER_CARD_KB（会员卡设计）。
+  - 每个计算器前后端链路必须三处同步：calculatorEngine.js（CALCULATORS）、toolCatalog.js（createTool）、ToolPage.vue（import + 路由映射）。
+  - 审核发现的问题类型：KB定义被误删、重复定义、日/月单位混淆、浮点数严格相等、死代码残留。
+
+[前端计算器组件统一模式]
+- Date: 2026-05-03
+- Context: Agent 在开发美业专项计算器时总结
+- Category: 代码模式
+- Instructions:
+  - 计算器 Vue 组件统一使用 `<ToolDetail>` 包装，通过 `#inputs` 插槽传递表单，通过 `#result` 插槽传递结果。
+  - 表单数据通过 `v-model.number` 绑定 ref，提交时调用 `generateTool(toolCode, formData)` 发送后端。
+  - 后端返回结果结构：{ summary, sections, extra }，前端通过 `result.extra` 访问扩展数据。
+  - 错误处理：try/catch 捕获异常，将 `{ error: message }` 赋值给 result，前端用 `v-if="result.error"` 展示。
+  - toolInfo 通过 `getToolByCode(toolCode)` 从 toolCatalog.js 获取。
