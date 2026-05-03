@@ -61,10 +61,26 @@
     <template #result>
       <div class="result-container" v-if="result">
         <div class="overall-margin-card">
-          <div class="overall-label">综合毛利率</div>
+          <div class="overall-label">门店综合毛利率</div>
           <div class="overall-value">{{ result.extra?.overallMargin || '0.0' }}%</div>
           <div class="overall-status" :class="getOverallStatusClass(result.extra?.overallMargin)">
             {{ getOverallStatusText(result.extra?.overallMargin) }}
+          </div>
+          <div class="overall-summary">
+            <div class="summary-item">
+              <span class="summary-label">总销售额</span>
+              <span class="summary-value">¥{{ result.extra?.totalRevenue || '0' }}</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span class="summary-label">总成本</span>
+              <span class="summary-value">¥{{ result.extra?.totalCost || '0' }}</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span class="summary-label">总毛利额</span>
+              <span class="summary-value highlight">¥{{ result.extra?.totalProfit || '0' }}</span>
+            </div>
           </div>
         </div>
 
@@ -309,6 +325,44 @@ async function handleSubmit() {
   border-radius: 9999px;
   font-size: var(--text-body-sm);
   font-weight: var(--font-weight-semibold);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.overall-summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.summary-label {
+  font-size: var(--text-caption);
+  opacity: 0.8;
+}
+
+.summary-value {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.summary-value.highlight {
+  font-size: var(--text-body-lg);
+  color: #fbbf24;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 40px;
   background: rgba(255, 255, 255, 0.2);
 }
 

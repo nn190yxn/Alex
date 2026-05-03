@@ -130,13 +130,16 @@ export const CALCULATORS = {
 
       return {
         sections: [
-          { title: '整体表现', items: [`综合毛利率：${overallMargin.toFixed(1)}%`, `总销售额：¥${totalRevenue.toFixed(0)}`, `总毛利额：¥${totalProfit.toFixed(0)}`, `主力贡献品类：${maxProfitCat.name} (占比${maxProfitCat.profitRatio.toFixed(1)}%)`] },
+          { title: '整体表现', items: [`综合毛利率：${overallMargin.toFixed(1)}%`, `总销售额：¥${totalRevenue.toFixed(0)}`, `总成本：¥${totalCost.toFixed(0)}`, `总毛利额：¥${totalProfit.toFixed(0)}`, `主力贡献品类：${maxProfitCat.name} (占比${maxProfitCat.profitRatio.toFixed(1)}%)`] },
           { title: '经营建议', items: suggestions.map(s => `${s.type === 'good' ? '👍' : s.type === 'warn' ? '⚠️' : '🔴'} ${s.text}`) }
         ],
         summary: `综合毛利率 ${overallMargin.toFixed(1)}% — 共 ${processed.length} 个品类`,
         extra: {
           storeName,
           overallMargin: overallMargin.toFixed(1),
+          totalRevenue: totalRevenue.toFixed(0),
+          totalCost: totalCost.toFixed(0),
+          totalProfit: totalProfit.toFixed(0),
           categories: processed,
           suggestions
         }
