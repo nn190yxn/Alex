@@ -1564,25 +1564,6 @@ export const CALCULATORS = {
     }
   },
 
-  // ====== 美业盈亏平衡知识库 ======
-  BEAUTY_BREAK_EVEN_KB: {
-    costBenchmarks: {
-      rent: { min: 15, max: 25, label: '房租占比' },
-      labor: { min: 30, max: 40, label: '人工占比' },
-      product: { min: 5, max: 15, label: '产品耗材占比' },
-      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
-    },
-    adviceTemplates: {
-      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
-      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
-      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
-      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
-      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
-      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
-      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
-    }
-  },
-
   'breakeven-profit-beauty': {
     name: '美业盈亏平衡与净利预测器',
     inputs: ['rent', 'fixedSalary', 'utilities', 'otherFixed', 'productRate', 'laborCommissionRate', 'platformRate', 'revenue', 'targetProfit'],
@@ -1655,6 +1636,182 @@ export const CALCULATORS = {
           actualProfitRate: actualProfitRate.toFixed(1),
           actualRentRatio: actualRentRatio.toFixed(1),
           actualLaborRatio: actualLaborRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业仪器投资知识库 ======
+  BEAUTY_DEVICE_KB: {
+    adviceTemplates: {
+      paybackFast: { icon: '✅', text: '回本周期 {{months}} 个月，属于快速回本项目！建议重点推广。' },
+      paybackNormal: { icon: '⚠️', text: '回本周期 {{months}} 个月，属于正常区间。需保证每月稳定客源。' },
+      paybackSlow: { icon: '🔴', text: '回本周期 {{months}} 个月过长！设备可能闲置率高或定价偏低。建议：1）增加营销推广；2）推出体验价引流；3）考虑二手设备降低投入。' },
+      breakEven: { icon: '💡', text: '每月至少需要 {{count}} 个客人使用该设备才能保本。请评估当前客源是否足够。' },
+      profitPerSession: { icon: '💰', text: '单次服务净利 ¥{{profit}}，毛利率 {{margin}}%。' }
+    }
+  },
+
+  'device-roi-beauty': {
+    name: '美容仪器投资回报计算器',
+    inputs: ['deviceCost', 'deviceLifespan', 'costPerSession', 'operatorCommissionRate', 'pricePerSession', 'sessionsPerMonth'],
+    calc: ({ deviceCost, deviceLifespan, costPerSession, operatorCommissionRate, pricePerSession, sessionsPerMonth }) => {
+      const KB = CALCULATORS.BEAUTY_DEVICE_KB
+      const monthlyDepreciation = safeDiv(deviceCost, deviceLifespan * 12)
+      const commissionPerSession = pricePerSession * operatorCommissionRate / 100
+      const profitPerSession = pricePerSession - costPerSession - commissionPerSession
+      const monthlyProfit = profitPerSession * sessionsPerMonth - monthlyDepreciation
+
+      const totalInvestment = deviceCost
+      const paybackMonths = monthlyProfit > 0 ? safeDiv(totalInvestment, monthlyProfit) : Infinity
+      const breakEvenSessions = profitPerSession > 0 ? Math.ceil(safeDiv(monthlyDepreciation, profitPerSession)) : 0
+      const annualROI = monthlyProfit > 0 ? safeDiv(monthlyProfit * 12, totalInvestment) * 100 : 0
+      const margin = safeDiv(profitPerSession, pricePerSession) * 100
+
+      const suggestions = []
+      if (paybackMonths <= 6) {
+        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths <= 12) {
+        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths !== Infinity) {
+        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
+      }
+      suggestions.push({ ...KB.adviceTemplates.breakEven, count: breakEvenSessions })
+      suggestions.push({ ...KB.adviceTemplates.profitPerSession, profit: profitPerSession.toFixed(0), margin: margin.toFixed(0) })
+
+      return {
+        sections: [
+          { title: '投资分析', items: [`设备投入：¥${deviceCost.toLocaleString()}`, `使用年限：${deviceLifespan}年`, `月折旧：¥${monthlyDepreciation.toFixed(0)}`] },
+          { title: '单次利润拆解', items: [`服务收费：¥${pricePerSession}`, `耗材成本：¥${costPerSession}`, `操作提成：¥${commissionPerSession.toFixed(0)} (${operatorCommissionRate}%)`, `单次净利：¥${profitPerSession.toFixed(0)}`] },
+          { title: '回报预测', items: [`月净利：¥${monthlyProfit.toFixed(0)}（按${sessionsPerMonth}单/月）`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + ' 个月'}`, `年化收益率：${annualROI.toFixed(0)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `回本周期 ${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，月净利 ¥${monthlyProfit.toFixed(0)}`,
+        extra: {
+          monthlyDepreciation: monthlyDepreciation.toFixed(0),
+          profitPerSession: profitPerSession.toFixed(0),
+          monthlyProfit: monthlyProfit.toFixed(0),
+          paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1),
+          breakEvenSessions,
+          annualROI: annualROI.toFixed(0),
+          margin: margin.toFixed(0),
+          suggestions
+        }
+      }
+    }
+  }
+}
+      if (experienceToRetain < KB.conversionBenchmarks.experienceToRetain.min) {
+        suggestions.push({ ...KB.adviceTemplates.experienceLow, rate: experienceToRetain.toFixed(0) })
+      }
+      if (retainToRepurchase < KB.conversionBenchmarks.retainToRepurchase.min) {
+        suggestions.push({ ...KB.adviceTemplates.repurchaseLow, rate: retainToRepurchase.toFixed(0), target: KB.conversionBenchmarks.retainToRepurchase.min })
+      }
+      if (cac > 500) {
+        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0), target: 500 })
+      }
+      if (ltvCacRatio >= 5) {
+        suggestions.push({ ...KB.adviceTemplates.ltvHigh, ltv: ltv.toFixed(0), ratio: ltvCacRatio.toFixed(1) })
+      } else if (ltvCacRatio >= 3) {
+        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toFixed(0) })
+      } else if (cac > 0) {
+        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '转化漏斗', items: [`进店→体验：${visitToExperience.toFixed(1)}%（${newVisitors}人→${experienceCount}人）`, `体验→留客：${experienceToRetain.toFixed(1)}%（${experienceCount}人→${retainedCount}人）`, `留客→复购：${retainToRepurchase.toFixed(1)}%（${retainedCount}人→${repurchasedCount}人）`] },
+          { title: '获客与 LTV', items: [`单人获客成本（CAC）：¥${cac.toFixed(0)}`, `客户终身价值（LTV）：¥${ltv.toFixed(0)}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `LTV ¥${ltv.toFixed(0)}，CAC ¥${cac.toFixed(0)}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: {
+          visitToExperience: visitToExperience.toFixed(1),
+          experienceToRetain: experienceToRetain.toFixed(1),
+          retainToRepurchase: retainToRepurchase.toFixed(1),
+          cac: cac.toFixed(0),
+          ltv: ltv.toFixed(0),
+          ltvCacRatio: ltvCacRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业盈亏平衡知识库 ======
+  BEAUTY_BREAK_EVEN_KB: {
+    costBenchmarks: {
+      rent: { min: 15, max: 25, label: '房租占比' },
+      labor: { min: 30, max: 40, label: '人工占比' },
+      product: { min: 5, max: 15, label: '产品耗材占比' },
+      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
+    },
+    adviceTemplates: {
+      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
+      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
+      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
+      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
+      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
+      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
+      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
+    }
+  },
+
+  // ====== 美业仪器投资知识库 ======
+  BEAUTY_DEVICE_KB: {
+    adviceTemplates: {
+      paybackFast: { icon: '✅', text: '回本周期 {{months}} 个月，属于快速回本项目！建议重点推广。' },
+      paybackNormal: { icon: '⚠️', text: '回本周期 {{months}} 个月，属于正常区间。需保证每月稳定客源。' },
+      paybackSlow: { icon: '🔴', text: '回本周期 {{months}} 个月过长！设备可能闲置率高或定价偏低。建议：1）增加营销推广；2）推出体验价引流；3）考虑二手设备降低投入。' },
+      breakEven: { icon: '💡', text: '每月至少需要 {{count}} 个客人使用该设备才能保本。请评估当前客源是否足够。' },
+      profitPerSession: { icon: '💰', text: '单次服务净利 ¥{{profit}}，毛利率 {{margin}}%。' }
+    }
+  },
+
+  'device-roi-beauty': {
+    name: '美容仪器投资回报计算器',
+    inputs: ['deviceCost', 'deviceLifespan', 'costPerSession', 'operatorCommissionRate', 'pricePerSession', 'sessionsPerMonth'],
+    calc: ({ deviceCost, deviceLifespan, costPerSession, operatorCommissionRate, pricePerSession, sessionsPerMonth }) => {
+      const KB = CALCULATORS.BEAUTY_DEVICE_KB
+      const monthlyDepreciation = safeDiv(deviceCost, deviceLifespan * 12)
+      const commissionPerSession = pricePerSession * operatorCommissionRate / 100
+      const profitPerSession = pricePerSession - costPerSession - commissionPerSession
+      const monthlyProfit = profitPerSession * sessionsPerMonth - monthlyDepreciation
+
+      const totalInvestment = deviceCost
+      const paybackMonths = monthlyProfit > 0 ? safeDiv(totalInvestment, monthlyProfit) : Infinity
+      const breakEvenSessions = profitPerSession > 0 ? Math.ceil(safeDiv(monthlyDepreciation, profitPerSession)) : 0
+      const annualROI = monthlyProfit > 0 ? safeDiv(monthlyProfit * 12, totalInvestment) * 100 : 0
+      const margin = safeDiv(profitPerSession, pricePerSession) * 100
+
+      const suggestions = []
+      if (paybackMonths <= 6) {
+        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths <= 12) {
+        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths !== Infinity) {
+        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
+      }
+      suggestions.push({ ...KB.adviceTemplates.breakEven, count: breakEvenSessions })
+      suggestions.push({ ...KB.adviceTemplates.profitPerSession, profit: profitPerSession.toFixed(0), margin: margin.toFixed(0) })
+
+      return {
+        sections: [
+          { title: '投资分析', items: [`设备投入：¥${deviceCost.toLocaleString()}`, `使用年限：${deviceLifespan}年`, `月折旧：¥${monthlyDepreciation.toFixed(0)}`] },
+          { title: '单次利润拆解', items: [`服务收费：¥${pricePerSession}`, `耗材成本：¥${costPerSession}`, `操作提成：¥${commissionPerSession.toFixed(0)} (${operatorCommissionRate}%)`, `单次净利：¥${profitPerSession.toFixed(0)}`] },
+          { title: '回报预测', items: [`月净利：¥${monthlyProfit.toFixed(0)}（按${sessionsPerMonth}单/月）`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + ' 个月'}`, `年化收益率：${annualROI.toFixed(0)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `回本周期 ${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，月净利 ¥${monthlyProfit.toFixed(0)}`,
+        extra: {
+          monthlyDepreciation: monthlyDepreciation.toFixed(0),
+          profitPerSession: profitPerSession.toFixed(0),
+          monthlyProfit: monthlyProfit.toFixed(0),
+          paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1),
+          breakEvenSessions,
+          annualROI: annualROI.toFixed(0),
+          margin: margin.toFixed(0),
           suggestions
         }
       }

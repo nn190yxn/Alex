@@ -150,6 +150,8 @@ export const allTools = [
   createTool({ code: 'card-debt-beauty', name: '美业卡项负债与实收计算器', description: '区分现金流与实收，预警沉淀资金风险。', tag: '核心', iconColor: 'rose', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['耗卡率', '负债预警'] }),
   createTool({ code: 'funnel-ltv-beauty', name: '美业拓客转化与 LTV 计算器', description: '全漏斗分析，CAC vs LTV 比值判断。', tag: '核心', iconColor: 'indigo', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['转化漏斗', 'LTV'] }),
   createTool({ code: 'breakeven-profit-beauty', name: '美业盈亏平衡与净利预测器', description: '固定/变动成本拆分，保本业绩线计算。', tag: '核心', iconColor: 'amber', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['盈亏平衡', '净利预测'] }),
+  createTool({ code: 'device-roi-beauty', name: '美容仪器投资回报计算器', description: '热玛吉/光子等设备回本周期、保本客单量。', tag: '专项', iconColor: 'cyan', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['设备投资', '回本周期'] }),
+  createTool({ code: 'member-card-design-beauty', name: '会员储值卡设计计算器', description: '充送活动实际折扣率与毛利折损计算。', tag: '专项', iconColor: 'violet', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['储值卡', '促销设计'] }),
 ]
 
 export const standaloneCapabilities = [
