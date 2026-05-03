@@ -18,6 +18,8 @@
                 <option value="normal">中档正餐</option>
                 <option value="hotpot">火锅</option>
                 <option value="coffee">咖啡/茶饮</option>
+                <option value="bubbleTea">奶茶/果茶</option>
+                <option value="snack">小吃/档口</option>
                 <option value="premium">高端餐厅</option>
               </select>
             </div>
@@ -437,11 +439,13 @@ const RENOVATION_PRICES = {
   normal:   { tier1: { simple: 1200, standard: 1500, premium: 1800 }, tier2: { simple: 800,  standard: 1200, premium: 1500 }, tier3: { simple: 600,  standard: 900,  premium: 1200 } },
   hotpot:   { tier1: { simple: 1500, standard: 1800, premium: 2200 }, tier2: { simple: 1000, standard: 1500, premium: 1800 }, tier3: { simple: 800,  standard: 1200, premium: 1500 } },
   coffee:   { tier1: { simple: 1500, standard: 2000, premium: 2500 }, tier2: { simple: 1000, standard: 1500, premium: 2000 }, tier3: { simple: 800,  standard: 1200, premium: 1500 } },
+  bubbleTea:{ tier1: { simple: 800,  standard: 1200, premium: 1500 }, tier2: { simple: 600,  standard: 900,  premium: 1200 }, tier3: { simple: 400,  standard: 600,  premium: 900 } },
+  snack:    { tier1: { simple: 500,  standard: 800,  premium: 1000 }, tier2: { simple: 400,  standard: 600,  premium: 800 },  tier3: { simple: 300,  standard: 500,  premium: 600 } },
   premium:  { tier1: { simple: 2000, standard: 2800, premium: 3500 }, tier2: { simple: 1500, standard: 2000, premium: 2500 }, tier3: { simple: 1000, standard: 1500, premium: 2000 } }
 }
 
 // 设备基准（元）
-const EQUIPMENT_BASE = { fast: 80000, normal: 120000, hotpot: 150000, coffee: 80000, premium: 250000 }
+const EQUIPMENT_BASE = { fast: 80000, normal: 120000, hotpot: 150000, coffee: 80000, bubbleTea: 50000, snack: 30000, premium: 250000 }
 
 // 月度运营基准（二线城市）
 const MONTHLY_BASE = {
@@ -449,12 +453,14 @@ const MONTHLY_BASE = {
   normal: { labor: 50000, utilities: 8000 },
   hotpot: { labor: 60000, utilities: 12000 },
   coffee: { labor: 25000, utilities: 4000 },
+  bubbleTea: { labor: 15000, utilities: 3000 },
+  snack: { labor: 12000, utilities: 2500 },
   premium:{ labor: 80000, utilities: 15000 }
 }
 
 const CITY_MULTIPLIER = { tier1: 1.3, tier2: 1.0, tier3: 0.7 }
 
-const STORE_LABELS = { fast: '快餐/简餐', normal: '中档正餐', hotpot: '火锅', coffee: '咖啡/茶饮', premium: '高端餐厅' }
+const STORE_LABELS = { fast: '快餐/简餐', normal: '中档正餐', hotpot: '火锅', coffee: '咖啡/茶饮', bubbleTea: '奶茶/果茶', snack: '小吃/档口', premium: '高端餐厅' }
 const CITY_LABELS = { tier1: '一线/新一线', tier2: '二线/省会', tier3: '三四线/县城' }
 
 function handleSubmit() {
@@ -598,7 +604,7 @@ function handleSubmit() {
   if (reserveMonths < 3) {
     suggestions.push('建议将流动资金储备提高到 3-6 个月，以应对开业初期的营收波动和意外支出。')
   }
-  suggestions.push(`根据行业数据，${STORE_LABELS[storeType]}在${CITY_LABELS[cityLevel]}平均回本周期为 ${storeType === 'fast' ? '8-12' : storeType === 'normal' ? '12-18' : storeType === 'hotpot' ? '10-16' : storeType === 'coffee' ? '12-24' : '18-30'} 个月。`)
+  suggestions.push(`根据行业数据，${STORE_LABELS[storeType]}在${CITY_LABELS[cityLevel]}平均回本周期为 ${storeType === 'fast' ? '8-12' : storeType === 'normal' ? '12-18' : storeType === 'hotpot' ? '10-16' : storeType === 'coffee' ? '12-24' : storeType === 'bubbleTea' ? '6-12' : storeType === 'snack' ? '4-8' : '18-30'} 个月。`)
   suggestions.push('选址是餐饮成败的关键，建议在目标商圈蹲点数人流，测算潜在客流和转化率。')
   if (monthlyMarketing === 0) {
     suggestions.push('建议预留月营业额 3%-5% 作为持续营销预算（美团推广/抖音团购/会员运营）。')
