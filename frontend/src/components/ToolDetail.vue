@@ -230,9 +230,11 @@ onMounted(async () => {
 })
 
 const canSubmit = computed(() => {
-  if (quotaStore.isUnlimited) return true
-  if (quotaStore.globalRemain === null) return true
-  // 允许额度为0时仍可点击（后台会拦截或提示）
+  const isUnlimited = quotaStore.isUnlimited
+  const gRemain = quotaStore.globalRemain
+  console.log('[ToolDetail] canSubmit check:', { isUnlimited, gRemain, loading: loading.value })
+  if (isUnlimited) return true
+  if (gRemain === null) return true
   return true
 })
 

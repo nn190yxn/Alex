@@ -207,7 +207,29 @@
           </div>
         </div>
 
-        <!-- 成本结构诊断 -->
+        <!-- 坪效分析 -->
+        <div v-if="result.pinfXiao" class="result-card">
+          <h3 class="card-title">坪效分析</h3>
+          <div class="pingxiao-grid">
+            <div class="px-item">
+              <div class="px-label">保本坪效</div>
+              <div class="px-value">¥{{ formatNum(result.breakEvenPerSqm) }}/m²/月</div>
+              <div class="px-sub">每平米每月至少产出这么多才不亏</div>
+            </div>
+            <div v-if="result.pinfXiao.actual" class="px-item highlight">
+              <div class="px-label">实际坪效</div>
+              <div class="px-value target">¥{{ formatNum(result.pinfXiao.actual) }}/m²/月</div>
+              <div class="px-sub">日坪效 ¥{{ formatNum(result.pinfXiao.dailyActual) }}/m²/天</div>
+            </div>
+            <div v-if="result.pinfXiao.status" class="px-item">
+              <div class="px-label">坪效诊断</div>
+              <div class="px-value" :class="result.pinfXiao.statusClass">{{ result.pinfXiao.statusText }}</div>
+              <div class="px-sub">{{ result.pinfXiao.benchmarkText }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 经营诊断 -->
         <div class="result-card">
           <h3 class="card-title">经营诊断</h3>
           <div class="cost-diagnostics">
@@ -371,6 +393,41 @@ function handleSubmit() {
     targetProfitRevenue = (totalFixed + form.targetProfit) / weightedContribution
   }
 
+  // 坪效
+  const breakEvenPerSqm = area > 0 ? breakEvenMonthly / area : null
+  let pinfXiao = null
+  if (area > 0 && form.actualRevenue && form.actualRevenue > 0) {
+    const actualPerSqm = form.actualRevenue / area
+    const dailyActualPerSqm = actualPerSqm / 30
+    // 行业基准：快餐>3000，中餐1500-3000，火锅2000-3500，咖啡2000-4000
+    const benchmarkLow = 1500
+    const benchmarkHigh = 3000
+    let status = 'danger'
+    let statusText = ''
+    let statusClass = ''
+    if (actualPerSqm >= benchmarkHigh) {
+      status = 'success'
+      statusText = '优秀 — 高效产出'
+      statusClass = 'good'
+    } else if (actualPerSqm >= benchmarkLow) {
+      status = 'warn'
+      statusText = '偏低 — 面积未充分利用'
+      statusClass = 'warn'
+    } else {
+      status = 'danger'
+      statusText = '过低 — 面积浪费'
+      statusClass = 'danger'
+    }
+    pinfXiao = {
+      actual: actualPerSqm.toFixed(0),
+      dailyActual: dailyActualPerSqm.toFixed(0),
+      status,
+      statusText,
+      statusClass,
+      benchmarkText: `行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000 元/m²/月`
+    }
+  }
+
   // 诊断
   const diagnostics = []
   diagnostics.push({
@@ -455,6 +512,8 @@ function handleSubmit() {
     dailyCustomers,
     turnoverRate,
     revenuePerSqm,
+    breakEvenPerSqm,
+    pinfXiao,
     safetyMargin,
     safetyMarginText,
     targetProfitRevenue,
@@ -582,6 +641,26 @@ const safetyClass = computed(() => {
   margin-bottom: var(--space-3);
 }
 .card-title { font-size: var(--text-body); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
+
+.pingxiao-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+.px-item {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  text-align: center;
+}
+.px-item.highlight { background: #f0f9ff; border: 1px solid #bae6fd; }
+.px-label { font-size: var(--text-caption); color: var(--text-muted); margin-bottom: var(--space-1); }
+.px-value { font-size: var(--text-h4); font-weight: var(--font-weight-bold); color: var(--text-main); }
+.px-value.good { color: #16a34a; }
+.px-value.warn { color: #d97706; }
+.px-value.danger { color: #dc2626; }
+.px-value.target { color: var(--brand-primary); }
+.px-sub { font-size: var(--text-caption); color: var(--text-secondary); margin-top: var(--space-1); }
 
 .cost-diagnostics { display: flex; flex-direction: column; gap: var(--space-2); }
 .diag-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--bg-base); font-size: var(--text-body-sm); }

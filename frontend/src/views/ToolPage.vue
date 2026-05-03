@@ -40,7 +40,7 @@ import CardConsumptionRateBeauty from './tools/CardConsumptionRateBeauty.vue'
 import SalaryCostRatioRestaurant from './tools/SalaryCostRatioRestaurant.vue'
 import DishPricing from './tools/DishPricing.vue'
 import FoodWasteRate from './tools/FoodWasteRate.vue'
-import AreaEfficiencyRestaurant from './tools/AreaEfficiencyRestaurant.vue'
+import LaborEfficiencyRestaurant from './tools/LaborEfficiencyRestaurant.vue'
 import DeliveryProfit from './tools/DeliveryProfit.vue'
 import PaybackRestaurant from './tools/PaybackRestaurant.vue'
 import CashflowRestaurant from './tools/CashflowRestaurant.vue'
@@ -193,7 +193,7 @@ const toolComponents = {
   'salary-cost-ratio-restaurant': SalaryCostRatioRestaurant,
   'dish-pricing': DishPricing,
   'food-waste-rate': FoodWasteRate,
-  'area-efficiency-restaurant': AreaEfficiencyRestaurant,
+  'labor-efficiency-restaurant': LaborEfficiencyRestaurant,
   'delivery-profit': DeliveryProfit,
   'payback-restaurant': PaybackRestaurant,
   'cashflow-restaurant': CashflowRestaurant,

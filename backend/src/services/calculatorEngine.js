@@ -383,40 +383,19 @@ export const CALCULATORS = {
     }
   },
 
-  'area-efficiency-restaurant': {
-    name: '坪效计算器（餐饮版）',
-    inputs: ['monthlyRevenue', 'area'],
-    calc: ({ monthlyRevenue, area }) => {
-      const efficiency = safeDiv(monthlyRevenue, area)
-      let status = efficiency >= 1500 ? 'success' : efficiency >= 800 ? 'warning' : 'danger'
-      let statusText = efficiency >= 1500 ? '优秀' : efficiency >= 800 ? '一般' : '偏低'
+  'labor-efficiency-restaurant': {
+    name: '人效计算器（餐饮版）',
+    inputs: ['monthlyRevenue', 'employeeCount', 'totalSalary'],
+    calc: ({ monthlyRevenue, employeeCount, totalSalary }) => {
+      const revenuePerEmployee = safeDiv(monthlyRevenue, employeeCount)
+      const salaryRatio = safeDiv(totalSalary, monthlyRevenue) * 100
+      let laborStatus = salaryRatio <= 20 ? 'success' : salaryRatio <= 25 ? 'warning' : 'danger'
+      let laborText = salaryRatio <= 20 ? '合理' : salaryRatio <= 25 ? '偏高' : '严重超标'
       return { sections: [
-        { title: '坪效计算', items: [`月坪效：¥${efficiency.toFixed(0)}/平米`, `面积：${area} 平米`, `月营收：¥${monthlyRevenue}`] },
-        { title: '行业参考', items: ['优秀：>=1500元/平米/月', '一般：800-1500元/平米/月', '偏低：<800元/平米/月'] },
-        { title: '提升建议', items: ['优化座位布局，增加有效面积', '增加外卖业务（不占堂食面积）', '提高翻台率', '推出高毛利产品'] }
-      ], summary: `坪效 ¥${efficiency.toFixed(0)}/平米 — ${statusText}`, extra: { efficiency: efficiency.toFixed(0), status, statusText } }
-    }
-  },
-
-  // ====== 结构化知识库 (未来可替换为数据库/API) ======
-  KNOWLEDGE_BASE: {
-    restaurantTypes: {
-      fast: { label: '快餐', laborRatioTarget: { min: 20, max: 25 }, efficiencyTarget: { front: 30000, back: 20000 } },
-      normal: { label: '中档正餐', laborRatioTarget: { min: 25, max: 30 }, efficiencyTarget: { front: 35000, back: 25000 } },
-      premium: { label: '高端餐厅', laborRatioTarget: { min: 30, max: 40 }, efficiencyTarget: { front: 50000, back: 35000 } }
-    },
-    structureBenchmarks: {
-      front: { costRatio: { min: 45, max: 55 }, headRatio: { min: 45, max: 55 } },
-      back: { costRatio: { min: 30, max: 40 }, headRatio: { min: 30, max: 40 } },
-      mgmt: { costRatio: { min: 5, max: 10 }, headRatio: { min: 5, max: 10 } }
-    },
-    adviceTemplates: {
-      ratioHigh: { icon: '🔴', text: '人工占比过高（{{ratio}}% > {{max}}%），建议优化排班、引入灵活用工或提升自动化设备。' },
-      ratioLow: { icon: '✅', text: '人工占比优秀，请继续保持当前人效。' },
-      frontEffLow: { icon: '⚠️', text: '前厅人效偏低（¥{{value}} < ¥{{target}}），存在闲时人力冗余，建议采用弹性排班。' },
-      backEffLow: { icon: '⚠️', text: '后厨人效偏低（¥{{value}} < ¥{{target}}），建议推进菜品标准化或优化出餐流程。' },
-      mgmtHigh: { icon: '🔴', text: '管理层人工占比偏高，建议精简管理层级或增加一线人员占比。' },
-      structureUnbalanced: { icon: '⚠️', text: '前后场人员比例失衡，建议参考行业标准（前厅:后厨 ≈ 1:1.5~1:2）进行调整。' }
+        { title: '人效指标', items: [`人均产出：¥${revenuePerEmployee.toFixed(0)}/月`, `员工数：${employeeCount}`, `总薪资：¥${totalSalary}/月`, `人工成本占比：${salaryRatio.toFixed(1)}%`] },
+        { title: '判断', items: [`人工成本：${laborText}（基准 <=20%）`] },
+        { title: '优化建议', items: ['优化排班，避免闲时人力浪费', '一人多岗，提升单人产出', '引入自助点餐/扫码点单', '高峰期使用兼职补充'] }
+      ], summary: `人效 ¥${revenuePerEmployee.toFixed(0)}/人，人工占比 ${salaryRatio.toFixed(1)}%`, extra: { revenuePerEmployee: revenuePerEmployee.toFixed(0), salaryRatio: salaryRatio.toFixed(1) } }
     }
   },
 
