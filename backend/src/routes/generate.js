@@ -1964,43 +1964,149 @@ ${knowledge}
     name: '排班助手',
     engineType: 'template',
     templateBuilder: async (formData, ind) => {
-      const industry = ind.name || '门店'
-      const staffCount = formData.staffCount || 5
-      const shifts = formData.shifts || '早晚两班'
+      const industry = formData.industry || 'restaurant'
+      const industryNames = { restaurant: '餐饮', education: '教培', beauty: '美业', service: '生活服务' }
+      const indName = industryNames[industry] || '门店'
+
+      const openTime = formData.openTime || 9
+      const closeTime = formData.closeTime || 22
+      const shiftMode = formData.shiftMode || 2
+      const maxWorkDays = formData.maxWorkDays || 6
+      const maxDailyHours = formData.maxDailyHours || 10
+      const peakHours = formData.peakHours || ''
+      const constraints = formData.constraints || ''
+
+      const businessHours = closeTime - openTime
+      const shiftLength = Math.floor(businessHours / shiftMode)
+
+      const shifts = []
+      for (let i = 0; i < shiftMode; i++) {
+        const start = openTime + i * shiftLength
+        const end = start + shiftLength
+        const labels = ['早班', '中班', '晚班']
+        shifts.push({ label: labels[i], start, end, hours: shiftLength })
+      }
+
+      const employeesRaw = formData.employees || ''
+      const employees = employeesRaw.split('\n')
+        .map(line => line.trim())
+        .filter(line => line)
+        .map(line => {
+          const parts = line.split(/[,，、]/).map(s => s.trim())
+          return {
+            name: parts[0] || '员工',
+            role: parts[1] || '普通员工',
+            hourlyRate: parseFloat(parts[2]) || 18
+          }
+        })
+
+      if (employees.length < 2) {
+        return {
+          summary: '排班生成失败',
+          error: '至少需要输入2名员工，格式：姓名,角色,时薪（每行一个）'
+        }
+      }
+
+      const DAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      const schedule = employees.map((emp, idx) => {
+        const empShifts = []
+        for (let d = 0; d < 7; d++) {
+          const shiftIndex = (d + idx) % (shiftMode + 1)
+          if (shiftIndex === shiftMode) {
+            empShifts.push({ type: '休息', label: '休息', time: '', hours: 0 })
+          } else {
+            const s = shifts[shiftIndex]
+            empShifts.push({ type: s.label, label: s.label, time: `${s.start}:00-${s.end}:00`, hours: s.hours })
+          }
+        }
+        return { name: emp.name, role: emp.role, hourlyRate: emp.hourlyRate, shifts: empShifts }
+      })
+
+      const hoursStats = employees.map((emp, idx) => {
+        let totalHours = 0
+        let workDays = 0
+        for (let d = 0; d < 7; d++) {
+          const shiftIndex = (d + idx) % (shiftMode + 1)
+          if (shiftIndex < shiftMode) {
+            totalHours += shifts[shiftIndex].hours
+            workDays++
+          }
+        }
+        const usagePercent = Math.round((totalHours / (maxWorkDays * maxDailyHours)) * 100)
+        return {
+          name: emp.name,
+          totalHours,
+          workDays,
+          estimatedPay: totalHours * emp.hourlyRate,
+          usagePercent: Math.min(usagePercent, 100)
+        }
+      })
+
+      const conflicts = []
+      if (employees.length < shiftMode * 2) {
+        conflicts.push(`员工数量(${employees.length})不足以保证每个班次都有人，建议至少${shiftMode * 2}人`)
+      }
+      if (maxDailyHours > 10) {
+        conflicts.push('每日最长工时超过10小时，违反劳动法规定，建议调整为8-10小时')
+      }
+
+      const tips = []
+      if (peakHours) {
+        tips.push(`高峰时段（${peakHours}）建议增加人手或安排兼职`)
+      }
+      tips.push('新老搭配：每班次至少安排一名熟手带新人')
+      tips.push('关键岗位（店长/主厨/资深教练）必须在高峰时段在岗')
+      tips.push('每周复盘排班效率，根据实际客流和订单量微调')
+      tips.push('建立排班表共享机制，提前一周通知员工')
+
+      const industryRef = {
+        restaurant: {
+          '典型班次': '早班 9:00-17:00 / 晚班 14:00-22:00',
+          '高峰期': '11:30-13:30 午高峰，17:30-20:00 晚高峰',
+          '人工占比': '营业额的 15%-25%',
+          '全职兼职比': '建议 60% 全职 + 40% 兼职',
+          '排班频率': '每周排班一次，节假日提前两周'
+        },
+        education: {
+          '典型班次': '平日班 14:00-21:00 / 周末班 9:00-18:00',
+          '高峰期': '工作日 16:00-20:00，周末全天',
+          '人工占比': '营业额的 30%-45%',
+          '师生比': '1:6 到 1:12 根据课程类型',
+          '排班频率': '按月排班，结合学期节奏调整'
+        },
+        beauty: {
+          '典型班次': '早班 10:00-18:00 / 晚班 12:00-20:00',
+          '高峰期': '14:00-18:00，周末全天',
+          '人工占比': '营业额的 25%-35%',
+          '预约制': '建议采用预约排班，减少空闲等待',
+          '排班频率': '每周排班，周末提前锁定人手'
+        },
+        service: {
+          '典型班次': '早班 8:00-16:00 / 晚班 14:00-22:00',
+          '高峰期': '根据业务类型调整',
+          '人工占比': '营业额的 20%-30%',
+          '排班建议': '灵活排班，覆盖客户需求高峰',
+          '排班频率': '每周排班，预留弹性人手'
+        }
+      }
+
+      const weeklyCost = hoursStats.reduce((sum, h) => sum + h.estimatedPay, 0)
+      const totalShifts = hoursStats.reduce((sum, h) => sum + h.workDays, 0)
 
       return {
-        summary: `「${industry}」排班建议已生成（${staffCount}人，${shifts}）`,
-        sections: [
-          { title: '排班原则', items: [
-            '根据客流高峰排班：高峰时段人手充足，低峰时段精简',
-            '每人每周工作不超过5天，保证休息',
-            '关键岗位（如店长/主厨）必须在高峰时段在岗',
-            '新老搭配：每班次至少有一名熟手'
-          ]},
-          { title: '基础排班模板', items: [
-            `早班（9:00-17:00）：安排 ${Math.ceil(staffCount * 0.4)} 人 — 负责开店准备、上午客流`,
-            `中班（12:00-20:00）：安排 ${Math.ceil(staffCount * 0.6)} 人 — 覆盖午高峰+晚高峰前半段`,
-            `晚班（14:00-22:00）：安排 ${Math.ceil(staffCount * 0.4)} 人 — 负责晚高峰、收尾打烊`,
-            `休息日：每人每周至少休息2天，错开安排`
-          ]},
-          { title: '高峰时段建议', items: [
-            '午高峰（11:30-13:30）：全员在岗或增加兼职',
-            '晚高峰（17:30-20:00）：确保关键岗位满员',
-            '周末：比平时多排1-2人',
-            '节假日：提前一周排班，适当增加人手'
-          ]},
-          { title: '人效优化', items: [
-            '使用兼职覆盖高峰时段，降低固定人工成本',
-            '交叉培训：让一个人能胜任多个岗位',
-            '每周复盘排班效率，根据实际客流微调',
-            '建立排班表共享机制，提前一周通知员工'
-          ]}
-        ],
-        actions: [
-          { priority: 'critical', title: '制定排班表', description: '根据上述模板制定下周排班表', owner: '店长', timeline: '3天内' },
-          { priority: 'high', title: '收集反馈', description: '向员工了解排班是否合理，及时调整', owner: '店长', timeline: '1周内' }
-        ],
-        recommendedTools: ['salary', 'sop']
+        summary: `${indName}排班表已生成（${employees.length}人，${shiftMode}班制，营业时间${openTime}:00-${closeTime}:00）`,
+        days: DAYS,
+        schedule,
+        hoursStats,
+        conflicts,
+        tips,
+        industryRef: industryRef[industry] || industryRef.service,
+        summary: {
+          totalEmployees: employees.length,
+          totalShifts,
+          weeklyCost: Math.round(weeklyCost),
+          conflicts: conflicts.length
+        }
       }
     }
   },
