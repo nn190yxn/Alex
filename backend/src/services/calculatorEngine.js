@@ -182,16 +182,187 @@ export const CALCULATORS = {
   },
 
   'dish-pricing': {
-    name: '菜品定价计算器',
-    inputs: ['cost', 'targetMargin'],
-    calc: ({ cost, targetMargin }) => {
-      const margin = targetMargin / 100
-      const price = safeDiv(cost, 1 - margin)
-      const profit = price - cost
-      return { sections: [
-        { title: '定价结果', items: [`建议售价：¥${price.toFixed(0)}`, `成本：¥${cost}`, `毛利：¥${profit.toFixed(2)}`, `毛利率：${targetMargin}%`] },
-        { title: '定价策略', items: ['成本加成法：售价 = 成本 / (1 - 目标毛利率)', '建议根据目标客群消费能力上下浮动10%', '同类菜品价格对比后微调'] }
-      ], summary: `建议售价 ¥${price.toFixed(0)}`, extra: { price: price.toFixed(0), profit: profit.toFixed(2) } }
+    name: '菜品定价计算器（产品结构设计版）',
+    inputs: ['storeType', 'dishes'],
+    calc: ({ storeType, dishes }) => {
+      const storeTypeTarget = { fast: 0.50, normal: 0.35, premium: 0.28 }
+      const targetCostRatio = storeTypeTarget[storeType] || 0.35
+      const targetOverallMargin = (1 - targetCostRatio) * 100
+
+      const roleConfig = {
+        traffic: { label: '引流菜', targetMargin: 25, color: '#f59e0b', idealRatio: 20 },
+        main: { label: '主推菜', targetMargin: 60, color: '#10b981', idealRatio: 60 },
+        image: { label: '形象菜', targetMargin: 75, color: '#3b82f6', idealRatio: 20 },
+        side: { label: '搭配菜', targetMargin: 65, color: '#8b5cf6', idealRatio: 0 }
+      }
+
+      const processed = dishes.map(d => {
+        let suggestedPrice = 0
+        let margin = 0
+        const rc = roleConfig[d.role] || roleConfig.main
+
+        if (d.pricingMethod === 'margin') {
+          const m = (d.targetMargin || rc.targetMargin) / 100
+          suggestedPrice = safeDiv(d.cost, 1 - m)
+          margin = m * 100
+        } else if (d.pricingMethod === 'costplus') {
+          const rate = (d.markupRate || 100) / 100
+          suggestedPrice = d.cost * (1 + rate)
+          margin = safeDiv(suggestedPrice - d.cost, suggestedPrice) * 100
+        } else if (d.pricingMethod === 'market') {
+          const cp = d.competitorPrice || d.cost * 2.5
+          suggestedPrice = cp * 0.95
+          margin = safeDiv(suggestedPrice - d.cost, suggestedPrice) * 100
+          if (d.competitorPrice && suggestedPrice < d.cost) {
+            suggestedPrice = d.cost * 1.3
+            margin = safeDiv(suggestedPrice - d.cost, suggestedPrice) * 100
+          }
+        }
+
+        if (d.psyPrice && suggestedPrice > 0) {
+          const integerPart = Math.floor(suggestedPrice)
+          const frac = suggestedPrice - integerPart
+          if (frac < 0.3) suggestedPrice = integerPart - 0.1
+          else if (frac < 0.6) suggestedPrice = integerPart + 0.8
+          else suggestedPrice = integerPart + 0.9
+          if (suggestedPrice < d.cost) suggestedPrice = d.cost * 1.1
+        }
+
+        suggestedPrice = Math.max(suggestedPrice, d.cost * 1.05)
+
+        let position = ''
+        if (d.role === 'traffic') position = '拉客流'
+        else if (d.role === 'main') position = '赚利润'
+        else if (d.role === 'image') position = '树品牌'
+        else position = '提客单'
+
+        let marginStatus = 'warning'
+        if (margin >= 70) marginStatus = 'excellent'
+        else if (margin >= 55) marginStatus = 'good'
+        else if (margin >= 40) marginStatus = 'warning'
+        else marginStatus = 'danger'
+
+        const profit = suggestedPrice - d.cost
+
+        return {
+          name: d.name,
+          roleKey: d.role,
+          roleLabel: rc.label,
+          cost: d.cost.toFixed(1),
+          suggestedPrice: suggestedPrice.toFixed(0),
+          margin: margin.toFixed(1),
+          marginStatus,
+          position,
+          profit: profit.toFixed(1)
+        }
+      })
+
+      const totalCount = processed.length
+      const totalCost = processed.reduce((s, d) => s + parseFloat(d.cost), 0)
+      const totalPrice = processed.reduce((s, d) => s + parseFloat(d.suggestedPrice), 0)
+      const totalProfit = processed.reduce((s, d) => s + parseFloat(d.profit), 0)
+      const avgCost = safeDiv(totalCost, totalCount)
+      const avgPrice = safeDiv(totalPrice, totalCount)
+
+      const roleCounts = {}
+      processed.forEach(d => {
+        roleCounts[d.roleKey] = (roleCounts[d.roleKey] || 0) + 1
+      })
+
+      const structure = Object.keys(roleConfig).filter(r => r !== 'side').map(r => {
+        const rc = roleConfig[r]
+        const count = roleCounts[r] || 0
+        const ratio = totalCount > 0 ? Math.round(safeDiv(count, totalCount) * 100) : 0
+        const ideal = rc.idealRatio
+        const diff = Math.abs(ratio - ideal)
+        let status, statusText
+        if (diff <= 5) { status = 'healthy'; statusText = '结构合理' }
+        else if (diff <= 15) { status = 'warn'; statusText = '略偏离目标' }
+        else { status = 'unhealthy'; statusText = ratio > ideal ? '占比过高' : '占比不足' }
+        return { key: r, label: rc.label, count, ratio, target: ideal, color: rc.color, status, statusText }
+      })
+
+      const trafficMargin = roleCounts.traffic ? safeDiv(
+        processed.filter(d => d.roleKey === 'traffic').reduce((s, d) => s + parseFloat(d.profit), 0),
+        processed.filter(d => d.roleKey === 'traffic').reduce((s, d) => s + parseFloat(d.suggestedPrice), 0)
+      ) * 100 : 0
+
+      const mainMargin = roleCounts.main ? safeDiv(
+        processed.filter(d => d.roleKey === 'main').reduce((s, d) => s + parseFloat(d.profit), 0),
+        processed.filter(d => d.roleKey === 'main').reduce((s, d) => s + parseFloat(d.suggestedPrice), 0)
+      ) * 100 : 0
+
+      const imageMargin = roleCounts.image ? safeDiv(
+        processed.filter(d => d.roleKey === 'image').reduce((s, d) => s + parseFloat(d.profit), 0),
+        processed.filter(d => d.roleKey === 'image').reduce((s, d) => s + parseFloat(d.suggestedPrice), 0)
+      ) * 100 : 0
+
+      const predictedMargin = (trafficMargin * 0.2 + mainMargin * 0.6 + imageMargin * 0.2) || targetOverallMargin
+
+      const suggestions = []
+      const trafficCount = roleCounts.traffic || 0
+      const mainCount = roleCounts.main || 0
+      const imageCount = roleCounts.image || 0
+      const sideCount = roleCounts.side || 0
+      const totalNonSide = trafficCount + mainCount + imageCount
+
+      if (trafficCount === 0) suggestions.push({ type: 'alert', text: '缺少引流菜，建议添加1-2道低价高频菜吸引客流' })
+      else if (totalNonSide > 0 && safeDiv(trafficCount, totalNonSide) > 0.35) suggestions.push({ type: 'warn', text: '引流菜占比过高，可能侵蚀利润，建议控制份量或减少数量' })
+
+      if (mainCount === 0) suggestions.push({ type: 'alert', text: '缺少主推菜，利润来源不足，建议设置2-4道核心利润菜' })
+
+      if (imageCount === 0) suggestions.push({ type: 'warn', text: '缺少形象菜，品牌感偏弱，建议加1-2道高价锚点菜提升格调' })
+
+      if (processed.some(d => parseFloat(d.margin) < 30 && d.roleKey !== 'traffic')) suggestions.push({ type: 'alert', text: '存在非引流菜但毛利率过低(<30%)的菜品，建议提价或优化成本' })
+
+      if (processed.every(d => parseFloat(d.margin) > 65)) suggestions.push({ type: 'warn', text: '所有菜品毛利率都偏高，可能影响客流，建议加入1-2道引流菜' })
+
+      const trafficDishes = processed.filter(d => d.roleKey === 'traffic')
+      const mainDishes = processed.filter(d => d.roleKey === 'main')
+      const sideDishes = processed.filter(d => d.roleKey === 'side')
+
+      const combos = []
+      if (trafficDishes.length > 0 && mainDishes.length > 0) {
+        trafficDishes.forEach((td, ti) => {
+          if (ti >= 2) return
+          mainDishes.slice(0, 2).forEach(md => {
+            const orig = parseFloat(td.suggestedPrice) + parseFloat(md.suggestedPrice)
+            let dealPrice = Math.round(orig * 0.88)
+            let comboDishes = [td.name, md.name]
+            if (sideDishes.length > 0) {
+              const sd = sideDishes[Math.floor(Math.random() * sideDishes.length)]
+              dealPrice = Math.round((orig + parseFloat(sd.suggestedPrice)) * 0.85)
+              comboDishes.push(sd.name)
+            }
+            combos.push({
+              name: `${td.name}+${md.name}套餐`,
+              dishes: comboDishes,
+              originalPrice: orig.toFixed(0),
+              dealPrice: dealPrice,
+              saving: (orig - dealPrice).toFixed(0)
+            })
+          })
+        })
+      }
+
+      return {
+        sections: [
+          { title: '综合毛利预测', items: [`预测综合毛利率：${predictedMargin.toFixed(1)}%`, `目标毛利率：${targetOverallMargin.toFixed(0)}%`, `平均成本：¥${avgCost.toFixed(1)}`, `平均售价：¥${avgPrice.toFixed(0)}`] },
+          { title: '产品结构', items: structure.map(s => `${s.label}: ${s.count}道 (${s.ratio}%, 目标${s.target}%) — ${s.statusText}`) },
+          { title: '定价建议', items: suggestions.map(s => `${s.type === 'good' ? '✅' : s.type === 'warn' ? '⚠️' : '🔴'} ${s.text}`) }
+        ],
+        summary: `综合毛利预测 ${predictedMargin.toFixed(1)}% — 共 ${totalCount} 道菜品`,
+        extra: {
+          predictedMargin: predictedMargin.toFixed(1),
+          totalDishes: totalCount,
+          avgCost: avgCost.toFixed(1),
+          avgPrice: avgPrice.toFixed(0),
+          dishes: processed,
+          structure,
+          combos: combos.slice(0, 4),
+          suggestions
+        }
+      }
     }
   },
 
