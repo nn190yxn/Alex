@@ -442,7 +442,7 @@ function handleSave() {
 }
 
 .tool-content {
-  max-width: 800px;
+  max-width: 1200px;
 }
 
 .input-section {
