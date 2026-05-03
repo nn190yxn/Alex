@@ -53,17 +53,13 @@ import CashflowRestaurant from './tools/CashflowRestaurant.vue'
 import ProfitRateRestaurant from './tools/ProfitRateRestaurant.vue'
 import ReturnRateRestaurant from './tools/ReturnRateRestaurant.vue'
 import InvestmentBudgetRestaurant from './tools/InvestmentBudgetRestaurant.vue'
-import GrossMarginEducation from './tools/GrossMarginEducation.vue'
-import BreakEvenEducation from './tools/BreakEvenEducation.vue'
-import SalaryCostRatioEducation from './tools/SalaryCostRatioEducation.vue'
-import LaborEfficiencyEducation from './tools/LaborEfficiencyEducation.vue'
-import VenueUtilizationEducation from './tools/VenueUtilizationEducation.vue'
-import CACEducation from './tools/CACEducation.vue'
-import PaybackEducation from './tools/PaybackEducation.vue'
-import CashflowEducation from './tools/CashflowEducation.vue'
-import ProfitRateEducation from './tools/ProfitRateEducation.vue'
-import ReturnRateEducation from './tools/ReturnRateEducation.vue'
-import ClassRateEducation from './tools/ClassRateEducation.vue'
+import CourseStructureEducation from './tools/CourseStructureEducation.vue'
+import TeacherStructureEducation from './tools/TeacherStructureEducation.vue'
+import RenewalClassrateEducation from './tools/RenewalClassrateEducation.vue'
+import FunnelLtvEducation from './tools/FunnelLtvEducation.vue'
+import BreakevenProfitEducation from './tools/BreakevenProfitEducation.vue'
+import CampusRoiEducation from './tools/CampusRoiEducation.vue'
+import VenueEfficiencyEducation from './tools/VenueEfficiencyEducation.vue'
 import GrossMarginBeauty from './tools/GrossMarginBeauty.vue'
 import BreakEvenBeauty from './tools/BreakEvenBeauty.vue'
 import SalaryCostRatioBeauty from './tools/SalaryCostRatioBeauty.vue'
@@ -220,17 +216,24 @@ const toolComponents = {
   'profit-rate-restaurant': ProfitRateRestaurant,
   'return-rate-restaurant': ReturnRateRestaurant,
   'investment-budget': InvestmentBudgetRestaurant,
-  'gross-margin-education': GrossMarginEducation,
-  'break-even-education': BreakEvenEducation,
-  'salary-cost-ratio-education': SalaryCostRatioEducation,
-  'labor-efficiency-education': LaborEfficiencyEducation,
-  'venue-utilization-education': VenueUtilizationEducation,
-  'cac-education': CACEducation,
-  'payback-education': PaybackEducation,
-  'cashflow-education': CashflowEducation,
-  'profit-rate-education': ProfitRateEducation,
-  'return-rate-education': ReturnRateEducation,
-  'class-rate-education': ClassRateEducation,
+  'gross-margin-education': CourseStructureEducation,
+  'break-even-education': BreakevenProfitEducation,
+  'salary-cost-ratio-education': TeacherStructureEducation,
+  'labor-efficiency-education': TeacherStructureEducation,
+  'venue-utilization-education': VenueEfficiencyEducation,
+  'cac-education': FunnelLtvEducation,
+  'payback-education': CampusRoiEducation,
+  'cashflow-education': RenewalClassrateEducation,
+  'profit-rate-education': BreakevenProfitEducation,
+  'return-rate-education': FunnelLtvEducation,
+  'class-rate-education': RenewalClassrateEducation,
+  'course-structure-education': CourseStructureEducation,
+  'teacher-structure-education': TeacherStructureEducation,
+  'renewal-classrate-education': RenewalClassrateEducation,
+  'funnel-ltv-education': FunnelLtvEducation,
+  'breakeven-profit-education': BreakevenProfitEducation,
+  'campus-roi-education': CampusRoiEducation,
+  'venue-efficiency-education': VenueEfficiencyEducation,
   'gross-margin-beauty': GrossMarginBeauty,
   'break-even-beauty': BreakEvenBeauty,
   'salary-cost-ratio-beauty': SalaryCostRatioBeauty,

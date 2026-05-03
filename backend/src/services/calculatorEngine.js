@@ -2183,6 +2183,586 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 教培校区品项结构与课程利润知识库 ======
+  EDUCATION_COURSE_KB: {
+    courseTypeBenchmarks: {
+      arts: { name: '艺术类（美术/音乐/舞蹈）', materialCostRate: 8, avgPricePerSession: { group: 80, small: 150, oneOnOne: 250 }, typicalClassSize: { group: 15, small: 6, oneOnOne: 1 }, teacherPayRate: 35 },
+      sports: { name: '体育类（篮球/游泳/跆拳道）', materialCostRate: 3, avgPricePerSession: { group: 70, small: 130, oneOnOne: 220 }, typicalClassSize: { group: 12, small: 8, oneOnOne: 1 }, teacherPayRate: 38 },
+      tech: { name: '编程/科技类', materialCostRate: 5, avgPricePerSession: { group: 90, small: 160, oneOnOne: 280 }, typicalClassSize: { group: 10, small: 6, oneOnOne: 1 }, teacherPayRate: 40 },
+      k12: { name: 'K12学科类（高中/中高考）', materialCostRate: 2, avgPricePerSession: { group: 60, small: 180, oneOnOne: 400 }, typicalClassSize: { group: 20, small: 8, oneOnOne: 1 }, teacherPayRate: 45 },
+      quality: { name: '素质教育（思维/口才/国学）', materialCostRate: 4, avgPricePerSession: { group: 75, small: 140, oneOnOne: 220 }, typicalClassSize: { group: 12, small: 6, oneOnOne: 1 }, teacherPayRate: 35 }
+    },
+    classSizeBenchmarks: {
+      large: { name: '大班（15人+）', minStudents: 15, maxStudents: 30, teacherPayRate: 25, breakEvenFillRate: 40 },
+      small: { name: '小班（4-8人）', minStudents: 4, maxStudents: 8, teacherPayRate: 35, breakEvenFillRate: 50 },
+      oneOnOne: { name: '一对一', minStudents: 1, maxStudents: 1, teacherPayRate: 55, breakEvenFillRate: 60 }
+    },
+    fillRateBenchmarks: { excellent: 85, good: 75, normal: 60, danger: 40 },
+    teacherPayRatioBenchmarks: { safe: 35, warning: 40, danger: 50 },
+    refundRateBenchmarks: { excellent: 3, normal: 5, danger: 10 },
+    adviceTemplates: {
+      fillRateHigh: { icon: '✅', text: '满班率{{fillRate}}%，达到优秀水平！班级利润健康。' },
+      fillRateNormal: { icon: '⚠️', text: '满班率{{fillRate}}%，处于正常区间。建议通过转介绍和体验课提升满班率至80%以上。' },
+      fillRateLow: { icon: '🔴', text: '满班率仅{{fillRate}}%，低于60%危险线！人力和场地双重浪费。建议：1）合并零散班级；2）加大招生力度；3）调整开课时间。' },
+      teacherPayHigh: { icon: '🔴', text: '课酬占比{{ratio}}%超过{{danger}}%红线！属于结构性亏损，规模越大风险越高。建议：1）优化薪酬结构（底薪+阶梯课酬）；2）提升满班率摊薄课酬；3）适当调整学费定价。' },
+      teacherPayNormal: { icon: '💡', text: '课酬占比{{ratio}}%，处于{{range}}区间。建议控制在35-40%以内。' },
+      refundHigh: { icon: '⚠️', text: '退费率{{rate}}%超过{{danger}}%预警线！需立即排查：1）教学质量问题；2）服务态度；3）排课不合理。' },
+      profitGood: { icon: '💰', text: '课程毛利率{{margin}}%，利润健康。' },
+      profitLow: { icon: '📉', text: '课程毛利率仅{{margin}}%，利润偏低。建议：1）提升满班率；2）控制课酬占比；3）优化课程组合。' }
+    }
+  },
+
+  'course-structure-education': {
+    name: '校区品项结构与课程利润计算器',
+    inputs: ['courseType', 'classType', 'pricePerSession', 'studentsPerClass', 'totalSessions', 'teacherPayPerSession', 'roomCostPerSession', 'materialCostPerSession', 'refundRate'],
+    calc: ({ courseType, classType, pricePerSession, studentsPerClass, totalSessions, teacherPayPerSession, roomCostPerSession, materialCostPerSession, refundRate }) => {
+      const KB = CALCULATORS.EDUCATION_COURSE_KB
+      const courseInfo = KB.courseTypeBenchmarks[courseType] || KB.quality
+      const classInfo = KB.classSizeBenchmarks[classType] || KB.classSizeBenchmarks.small
+
+      const revenue = pricePerSession * studentsPerClass * totalSessions
+      const teacherCost = teacherPayPerSession * totalSessions
+      const roomCost = roomCostPerSession * totalSessions
+      const materialCost = materialCostPerSession * totalSessions
+      const refundAmount = revenue * refundRate / 100
+      const netRevenue = revenue - refundAmount
+      const totalCost = teacherCost + roomCost + materialCost
+      const grossProfit = netRevenue - totalCost
+      const grossMargin = netRevenue > 0 ? (grossProfit / netRevenue * 100) : 0
+      const teacherPayRatio = netRevenue > 0 ? (teacherCost / netRevenue * 100) : 0
+      const fillRate = classInfo.maxStudents > 0 ? (studentsPerClass / classInfo.maxStudents * 100) : 0
+      const profitPerStudent = studentsPerClass > 0 ? (grossProfit / studentsPerClass) : 0
+      const breakEvenStudents = (pricePerSession - teacherPayPerSession / studentsPerClass - roomCostPerSession / studentsPerClass - materialCostPerSession / studentsPerClass) > 0
+        ? Math.ceil((roomCostPerSession + materialCostPerSession) / (pricePerSession - teacherPayPerSession)) : 0
+
+      const suggestions = []
+      if (fillRate >= KB.fillRateBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.fillRateHigh, fillRate: fillRate.toFixed(0) })
+      } else if (fillRate >= KB.fillRateBenchmarks.normal) {
+        suggestions.push({ ...KB.adviceTemplates.fillRateNormal, fillRate: fillRate.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.fillRateLow, fillRate: fillRate.toFixed(0) })
+      }
+
+      if (teacherPayRatio > KB.teacherPayRatioBenchmarks.danger) {
+        suggestions.push({ ...KB.adviceTemplates.teacherPayHigh, ratio: teacherPayRatio.toFixed(1), danger: KB.teacherPayRatioBenchmarks.danger })
+      } else if (teacherPayRatio > KB.teacherPayRatioBenchmarks.warning) {
+        suggestions.push({ ...KB.adviceTemplates.teacherPayNormal, ratio: teacherPayRatio.toFixed(1), range: '预警' })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.teacherPayNormal, ratio: teacherPayRatio.toFixed(1), range: '安全' })
+      }
+
+      if (refundRate > KB.refundRateBenchmarks.danger) {
+        suggestions.push({ ...KB.adviceTemplates.refundHigh, rate: refundRate.toFixed(1), danger: KB.refundRateBenchmarks.danger })
+      }
+
+      if (grossMargin >= 40) {
+        suggestions.push({ ...KB.adviceTemplates.profitGood, margin: grossMargin.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.profitLow, margin: grossMargin.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '课程基本信息', items: [`课程类型：${courseInfo.name}`, `班型：${classInfo.name}`, `收费标准：¥${pricePerSession}/课时`, `班级人数：${studentsPerClass}人`, `总课时数：${totalSessions}节`] },
+          { title: '收入分析', items: [`总营收：¥${revenue.toLocaleString()}`, `退费金额：-¥${refundAmount.toLocaleString()}（退费率${refundRate}%）`, `净收入：¥${netRevenue.toLocaleString()}`, `生均贡献：¥${(netRevenue / studentsPerClass).toFixed(0)}/人`] },
+          { title: '成本拆解', items: [`课酬支出：¥${teacherCost.toLocaleString()}（占比${teacherPayRatio.toFixed(1)}%）`, `场地成本：¥${roomCost.toLocaleString()}`, `材料成本：¥${materialCost.toLocaleString()}`, `总成本：¥${totalCost.toLocaleString()}`] },
+          { title: '利润评估', items: [`毛利润：¥${grossProfit.toLocaleString()}`, `毛利率：${grossMargin.toFixed(1)}%`, `满班率：${fillRate.toFixed(0)}%`, `生均利润：¥${profitPerStudent.toFixed(0)}/人`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `毛利率${grossMargin.toFixed(1)}%，满班率${fillRate.toFixed(0)}%，课酬占比${teacherPayRatio.toFixed(1)}%`,
+        extra: { grossProfit: grossProfit.toFixed(0), grossMargin: grossMargin.toFixed(1), fillRate: fillRate.toFixed(0), teacherPayRatio: teacherPayRatio.toFixed(1), refundRate, netRevenue: netRevenue.toFixed(0), totalCost: totalCost.toFixed(0), suggestions }
+      }
+    }
+  },
+
+  // ====== 教培人工成本与师资效能知识库 ======
+  EDUCATION_TEACHER_KB: {
+    roleBenchmarks: {
+      fulltime: { name: '全职教师', baseSalary: 4000, payPerSession: 60, targetSessions: 80, targetStudents: 40 },
+      parttime: { name: '兼职教师', baseSalary: 0, payPerSession: 100, targetSessions: 40, targetStudents: 20 },
+      headTeacher: { name: '教学主管/名师', baseSalary: 8000, payPerSession: 100, targetSessions: 60, targetStudents: 30 },
+      assistant: { name: '助教/班主任', baseSalary: 3500, payPerSession: 20, targetSessions: 0, targetStudents: 50 }
+    },
+    ftPtRatios: {
+      heavyFT: { name: '重全职型', ratio: '8:2', ftRatio: 0.8, ptRatio: 0.2, scenario: 'K12学科类、核心长期班、名师体系' },
+      balanced: { name: '均衡型', ratio: '6:4', ftRatio: 0.6, ptRatio: 0.4, scenario: '艺术类、素质教育、常规运营' },
+      heavyPT: { name: '重兼职型', ratio: '4:6', ftRatio: 0.4, ptRatio: 0.6, scenario: '体育类（场地时段性）、寒暑假集训营' }
+    },
+    fillRateBenchmarks: { excellent: 80, good: 65, danger: 50 },
+    retentionBenchmarks: { excellent: 90, normal: 75, danger: 60 },
+    turnoverCost: { recruitment: 3000, training: 5000, vacantLoss: 8000 },
+    adviceTemplates: {
+      ftCostBetter: { icon: '✅', text: '全职单节实际成本¥{{ftCost}}低于兼职¥{{ptCost}}，当前全职利用率合理。建议增加全职排课密度。' },
+      ptCostBetter: { icon: '💡', text: '兼职单节成本¥{{ptCost}}低于全职¥{{ftCost}}，当前兼职策略正确。但注意稳定性差，核心课程建议用全职。' },
+      ftUnderutilized: { icon: '🔴', text: '全职老师课没排满（月均{{ftSessions}}节<60节），底薪在空烧！建议：1）增加排课密度；2）缩减全职人数；3）让全职带体验课填充空档。' },
+      ptTooHigh: { icon: '⚠️', text: '兼职占比{{ptPct}}%超过50%，教学质量难统一！建议核心课程全职化，兼职只用于周末/寒暑假高峰。' },
+      ftTooHigh: { icon: '💡', text: '全职占比{{ftPct}}%>85%，排课灵活性不足，淡季人力成本高！建议引入20-30%兼职作为弹性补充。' },
+      balancedGood: { icon: '✅', text: '专兼职比{{ftCount}}:{{ptCount}}属于「{{modelType}}」，适合{{scenario}}。' },
+      fillRateHigh: { icon: '✅', text: '教师满课率{{fillRate}}%，师资利用率高。' },
+      fillRateLow: { icon: '⚠️', text: '教师满课率仅{{fillRate}}%，低于{{danger}}%！说明排课不合理或师资过剩。建议：1）优化排课密度；2）减少闲置师资；3）增加体验课填充空档。' },
+      revenuePerTeacher: { icon: '💰', text: '师均月产值¥{{revenue}}，师均净贡献¥{{net}}。' },
+      turnoverWarning: { icon: '🔄', text: '教师流失成本约¥{{cost}}/人（招聘+培训+空窗期）。稳定率{{retention}}%。建议：1）建立晋升通道；2）优化薪酬结构；3）定期教学反馈。' },
+      costRatioGood: { icon: '✅', text: '师资成本占比{{ratio}}%，在合理区间。' },
+      costRatioHigh: { icon: '🔴', text: '师资成本占比{{ratio}}%过高！建议：1）提升满班率摊薄成本；2）优化专兼职比例；3）引入阶梯课酬。' }
+    }
+  },
+
+  'teacher-structure-education': {
+    name: '校区人工成本与师资效能分析器',
+    inputs: ['ftCount', 'ftBaseSalary', 'ftPayPerSession', 'ftSessionsPerMonth', 'ptCount', 'ptPayPerSession', 'ptSessionsPerMonth', 'ftSocialSecurity', 'monthlyRevenue', 'retentionRate'],
+    calc: ({ ftCount, ftBaseSalary, ftPayPerSession, ftSessionsPerMonth, ptCount, ptPayPerSession, ptSessionsPerMonth, ftSocialSecurity, monthlyRevenue, retentionRate }) => {
+      const KB = CALCULATORS.EDUCATION_TEACHER_KB
+
+      const ftc = ftCount || 0
+      const ptc = ptCount || 0
+      const totalCount = ftc + ptc
+
+      const ftTotalCost = (ftBaseSalary + ftPayPerSession * ftSessionsPerMonth + ftSocialSecurity) * ftc
+      const ptTotalCost = ptPayPerSession * ptSessionsPerMonth * ptc
+      const totalSalary = ftTotalCost + ptTotalCost
+
+      const ftCostPerSession = ftSessionsPerMonth > 0 ? ((ftBaseSalary + ftSocialSecurity) / ftSessionsPerMonth + ftPayPerSession) : 0
+      const ptCostPerSession = ptPayPerSession
+
+      const ftFillRate = ftc > 0 ? (ftSessionsPerMonth / 80 * 100) : 0
+      const ptFillRate = ptc > 0 ? (ptSessionsPerMonth / 40 * 100) : 0
+      const totalSessions = ftc * ftSessionsPerMonth + ptc * ptSessionsPerMonth
+
+      const revenuePerTeacher = totalCount > 0 ? (monthlyRevenue / totalCount) : 0
+      const netPerTeacher = totalCount > 0 ? ((monthlyRevenue - totalSalary) / totalCount) : 0
+      const costRatio = monthlyRevenue > 0 ? (totalSalary / monthlyRevenue * 100) : 0
+
+      const ptRatio = totalCount > 0 ? (ptc / totalCount * 100) : 0
+      const ftRatio = totalCount > 0 ? (ftc / totalCount * 100) : 0
+
+      const turnoverCost = KB.turnoverCost.recruitment + KB.turnoverCost.training + KB.turnoverCost.vacantLoss
+      const annualTurnoverLoss = Math.round(totalCount * (1 - retentionRate / 100) * turnoverCost)
+
+      let modelType = ''
+      let scenario = ''
+      if (ftc > 0 && ptc > 0) {
+        if (ftRatio >= 70) { modelType = KB.ftPtRatios.heavyFT.name; scenario = KB.ftPtRatios.heavyFT.scenario }
+        else if (ftRatio >= 50) { modelType = KB.ftPtRatios.balanced.name; scenario = KB.ftPtRatios.balanced.scenario }
+        else { modelType = KB.ftPtRatios.heavyPT.name; scenario = KB.ftPtRatios.heavyPT.scenario }
+      }
+
+      const suggestions = []
+
+      if (ftc > 0 && ptc > 0) {
+        if (ftCostPerSession < ptCostPerSession) {
+          suggestions.push({ ...KB.adviceTemplates.ftCostBetter, ftCost: ftCostPerSession.toFixed(0), ptCost: ptCostPerSession.toFixed(0) })
+        } else {
+          suggestions.push({ ...KB.adviceTemplates.ptCostBetter, ftCost: ftCostPerSession.toFixed(0), ptCost: ptCostPerSession.toFixed(0) })
+        }
+
+        if (ftSessionsPerMonth < 60) {
+          suggestions.push({ ...KB.adviceTemplates.ftUnderutilized, ftSessions: ftSessionsPerMonth })
+        }
+
+        if (ptRatio > 50) {
+          suggestions.push({ ...KB.adviceTemplates.ptTooHigh, ptPct: ptRatio.toFixed(0) })
+        } else if (ftRatio > 85) {
+          suggestions.push({ ...KB.adviceTemplates.ftTooHigh, ftPct: ftRatio.toFixed(0) })
+        } else if (modelType) {
+          suggestions.push({ ...KB.adviceTemplates.balancedGood, ftCount: ftc, ptCount: ptc, modelType, scenario })
+        }
+      }
+
+      const avgFillRate = totalCount > 0 ? (ftc > 0 && ptc > 0 ? (ftFillRate * ftc + ptFillRate * ptc) / totalCount : (ftc > 0 ? ftFillRate : ptFillRate)) : 0
+      if (avgFillRate >= KB.fillRateBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.fillRateHigh, fillRate: avgFillRate.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.fillRateLow, fillRate: avgFillRate.toFixed(0), danger: KB.fillRateBenchmarks.danger })
+      }
+
+      suggestions.push({ ...KB.adviceTemplates.revenuePerTeacher, revenue: revenuePerTeacher.toLocaleString(), net: netPerTeacher.toLocaleString() })
+
+      if (costRatio <= 40) {
+        suggestions.push({ ...KB.adviceTemplates.costRatioGood, ratio: costRatio.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.costRatioHigh, ratio: costRatio.toFixed(1) })
+      }
+
+      suggestions.push({ ...KB.adviceTemplates.turnoverWarning, cost: turnoverCost.toLocaleString(), retention: retentionRate.toFixed(0) })
+
+      return {
+        sections: [
+          ...(ftc > 0 ? [{ title: '全职教师配置', items: [`人数：${ftc}人`, `底薪：¥${ftBaseSalary}/月`, `课酬：¥${ftPayPerSession}/节`, `月均课时：${ftSessionsPerMonth}节/人`, `社保福利：¥${ftSocialSecurity}/人/月`, `单人月薪：¥${(ftBaseSalary + ftPayPerSession * ftSessionsPerMonth + ftSocialSecurity).toLocaleString()}`, `全职总成本：¥${ftTotalCost.toLocaleString()}/月`, `单节实际成本：¥${ftCostPerSession.toFixed(0)}（含底薪社保分摊）`] }] : []),
+          ...(ptc > 0 ? [{ title: '兼职教师配置', items: [`人数：${ptc}人`, `课酬：¥${ptPayPerSession}/节`, `月均课时：${ptSessionsPerMonth}节/人`, `兼职总成本：¥${ptTotalCost.toLocaleString()}/月`, `单节实际成本：¥${ptCostPerSession.toFixed(0)}（无底薪无社保）`] }] : []),
+          { title: '专兼职结构', items: [`专兼职比：${ftc}:${ptc}`, `全职占比：${ftRatio.toFixed(0)}%`, `兼职占比：${ptRatio.toFixed(0)}%`, ...(modelType ? [`运营模式：${modelType}（${scenario}）`] : [])] },
+          { title: '效能分析', items: [`师资总成本：¥${totalSalary.toLocaleString()}/月`, `师资成本占比：${costRatio.toFixed(1)}%`, `师均月产值：¥${revenuePerTeacher.toLocaleString()}`, `师均净贡献：¥${netPerTeacher.toLocaleString()}`, `综合满课率：${avgFillRate.toFixed(0)}%`] },
+          { title: '流失成本', items: [`教师稳定率：${retentionRate.toFixed(0)}%`, `单人流失成本：¥${turnoverCost.toLocaleString()}`, `年流失损失预估：¥${annualTurnoverLoss.toLocaleString()}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `师资总成本¥${totalSalary.toLocaleString()}/月，占比${costRatio.toFixed(1)}%，专兼职比${ftc}:${ptc}`,
+        extra: { totalSalary: totalSalary.toFixed(0), costRatio: costRatio.toFixed(1), ftCostPerSession: ftCostPerSession.toFixed(0), ptCostPerSession: ptCostPerSession.toFixed(0), ftTotalCost: ftTotalCost.toFixed(0), ptTotalCost: ptTotalCost.toFixed(0), avgFillRate: avgFillRate.toFixed(0), annualTurnoverLoss, suggestions }
+      }
+    }
+  },
+
+  // ====== 教培续费消课与预收健康知识库 ======
+  EDUCATION_RENEWAL_KB: {
+    renewalBenchmarks: { excellent: 85, good: 75, normal: 65, danger: 50 },
+    classRateBenchmarks: { excellent: 80, good: 70, normal: 60, danger: 45 },
+    referralBenchmarks: { excellent: 40, good: 30, normal: 20, danger: 10 },
+    complianceLimits: { maxMonths: 3, maxSessions: 60, maxAmount: 5000 },
+    refundWarningThreshold: 10,
+    adviceTemplates: {
+      renewalHigh: { icon: '✅', text: '续班率{{rate}}%，达到优秀水平！教学质量和客户满意度高。' },
+      renewalNormal: { icon: '⚠️', text: '续班率{{rate}}%，低于{{good}}%。建议：1）加强家校沟通；2）提升教学效果可视化；3）建立续费预警机制。' },
+      renewalLow: { icon: '🔴', text: '续班率仅{{rate}}%，低于{{danger}}%危险线！需立即排查教学质量和服务问题。' },
+      classRateHigh: { icon: '✅', text: '消课率{{rate}}%，资金流转健康。' },
+      classRateLow: { icon: '🔴', text: '消课率仅{{rate}}%！预收款正在变成负债。建议：1）加快排课密度；2）设置课时有效期；3）推出假期集训班加速消课。' },
+      referralHigh: { icon: '✅', text: '转介绍率{{rate}}%，口碑传播良好！40%+生源来自转介绍是健康模型。' },
+      referralLow: { icon: '⚠️', text: '转介绍率仅{{rate}}%，低于{{good}}%。建议：1）建立转介绍激励机制；2）提升教学成果展示；3）定期举办家长开放日。' },
+      complianceWarning: { icon: '🔴', text: '收费方案违反政策红线：{{violation}}！2026年规定：单次收费≤3个月或≤60课时或≤5000元。' },
+      debtWarning: { icon: '⚠️', text: '沉淀课时负债约¥{{debt}}，需加速消课转化。' }
+    }
+  },
+
+  'renewal-classrate-education': {
+    name: '续费消课与预收健康计算器',
+    inputs: ['totalStudents', 'renewalStudents', 'totalSessionsPurchased', 'sessionsConsumed', 'prepaidAmount', 'monthsOfPrepaid', 'sessionsOfPrepaid', 'amountOfPrepaid', 'referralNewStudents', 'totalNewStudents', 'refundAmount', 'outstandingAmount'],
+    calc: ({ totalStudents, renewalStudents, totalSessionsPurchased, sessionsConsumed, prepaidAmount, monthsOfPrepaid, sessionsOfPrepaid, amountOfPrepaid, referralNewStudents, totalNewStudents, refundAmount, outstandingAmount }) => {
+      const KB = CALCULATORS.EDUCATION_RENEWAL_KB
+      const renewalRate = totalStudents > 0 ? (renewalStudents / totalStudents * 100) : 0
+      const classRate = totalSessionsPurchased > 0 ? (sessionsConsumed / totalSessionsPurchased * 100) : 0
+      const referralRate = totalNewStudents > 0 ? (referralNewStudents / totalNewStudents * 100) : 0
+      const refundRate = prepaidAmount > 0 ? (refundAmount / prepaidAmount * 100) : 0
+      const unconsumedSessions = totalSessionsPurchased - sessionsConsumed
+      const avgPricePerSession = totalSessionsPurchased > 0 ? (prepaidAmount / totalSessionsPurchased) : 0
+      const debtAmount = unconsumedSessions * avgPricePerSession
+
+      const violations = []
+      if (monthsOfPrepaid > KB.complianceLimits.maxMonths) violations.push(`收费${monthsOfPrepaid}个月 > ${KB.complianceLimits.maxMonths}个月`)
+      if (sessionsOfPrepaid > KB.complianceLimits.maxSessions) violations.push(`收费${sessionsOfPrepaid}课时 > ${KB.complianceLimits.maxSessions}课时`)
+      if (amountOfPrepaid > KB.complianceLimits.maxAmount) violations.push(`收费¥${amountOfPrepaid} > ¥${KB.complianceLimits.maxAmount}`)
+
+      const suggestions = []
+      if (renewalRate >= KB.renewalBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.renewalHigh, rate: renewalRate.toFixed(1) })
+      } else if (renewalRate >= KB.renewalBenchmarks.normal) {
+        suggestions.push({ ...KB.adviceTemplates.renewalNormal, rate: renewalRate.toFixed(1), good: KB.renewalBenchmarks.good })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.renewalLow, rate: renewalRate.toFixed(1), danger: KB.renewalBenchmarks.danger })
+      }
+
+      if (classRate >= KB.classRateBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.classRateHigh, rate: classRate.toFixed(1) })
+      } else if (classRate < KB.classRateBenchmarks.danger) {
+        suggestions.push({ ...KB.adviceTemplates.classRateLow, rate: classRate.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.classRateHigh, rate: classRate.toFixed(1) })
+      }
+
+      if (referralRate >= KB.referralBenchmarks.good) {
+        suggestions.push({ ...KB.adviceTemplates.referralHigh, rate: referralRate.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.referralLow, rate: referralRate.toFixed(1), good: KB.referralBenchmarks.normal })
+      }
+
+      if (violations.length > 0) {
+        suggestions.push({ ...KB.adviceTemplates.complianceWarning, violation: violations.join('；') })
+      }
+
+      if (debtAmount > prepaidAmount * 0.5) {
+        suggestions.push({ ...KB.adviceTemplates.debtWarning, debt: debtAmount.toLocaleString() })
+      }
+
+      return {
+        sections: [
+          { title: '续班分析', items: [`到期学员：${totalStudents}人`, `续费学员：${renewalStudents}人`, `续班率：${renewalRate.toFixed(1)}%`, `流失学员：${totalStudents - renewalStudents}人`] },
+          { title: '消课分析', items: [`总购课时：${totalSessionsPurchased}节`, `已消课时：${sessionsConsumed}节`, `消课率：${classRate.toFixed(1)}%`, `未消课时：${unconsumedSessions}节`] },
+          { title: '预收健康', items: [`预收总额：¥${prepaidAmount.toLocaleString()}`, `退费金额：¥${refundAmount.toLocaleString()}（退费率${refundRate.toFixed(1)}%）`, `沉淀负债：¥${debtAmount.toLocaleString()}`, `欠费金额：¥${outstandingAmount.toLocaleString()}`] },
+          { title: '转介绍分析', items: [`新学员总数：${totalNewStudents}人`, `转介绍新学员：${referralNewStudents}人`, `转介绍率：${referralRate.toFixed(1)}%`] },
+          { title: '合规检查', items: violations.length > 0 ? [`❌ ${violations.join('；')}`, `政策要求：单次收费≤${KB.complianceLimits.maxMonths}个月或≤${KB.complianceLimits.maxSessions}课时或≤¥${KB.complianceLimits.maxAmount}`] : ['✅ 收费方案符合2026年政策要求'] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `续班率${renewalRate.toFixed(1)}%，消课率${classRate.toFixed(1)}%，转介绍率${referralRate.toFixed(1)}%`,
+        extra: { renewalRate: renewalRate.toFixed(1), classRate: classRate.toFixed(1), referralRate: referralRate.toFixed(1), refundRate: refundRate.toFixed(1), debtAmount: debtAmount.toFixed(0), violations, suggestions }
+      }
+    }
+  },
+
+  // ====== 教培招生转化与LTV知识库 ======
+  EDUCATION_FUNNEL_KB: {
+    channelBenchmarks: {
+      referral: { name: '转介绍', avgCostPerLead: 50, avgConversionRate: 60, avgLTV: 8000 },
+      trial: { name: '体验课', avgCostPerLead: 100, avgConversionRate: 40, avgLTV: 6000 },
+      online: { name: '线上投放', avgCostPerLead: 200, avgConversionRate: 15, avgLTV: 5000 },
+      offline: { name: '地推/活动', avgCostPerLead: 80, avgConversionRate: 25, avgLTV: 5500 },
+      partnership: { name: '异业合作', avgCostPerLead: 120, avgConversionRate: 30, avgLTV: 6500 }
+    },
+    trialConversionBenchmarks: { excellent: 50, good: 35, normal: 25, danger: 15 },
+    lifecycleBenchmarks: { avgMonths: 18, avgSessionsPerMonth: 4 },
+    adviceTemplates: {
+      trialHigh: { icon: '✅', text: '试听转化率{{rate}}%，超过{{excellent}}%优秀线！招生能力强。' },
+      trialNormal: { icon: '⚠️', text: '试听转化率{{rate}}%，低于{{good}}%。建议：1）优化体验课流程；2）提升教师试听课技巧；3）加强课后跟进。' },
+      trialLow: { icon: '🔴', text: '试听转化率仅{{rate}}%，低于{{danger}}%！需全面复盘体验课质量。' },
+      cacLow: { icon: '💰', text: '获客成本¥{{cac}}，低于行业均值，渠道效率高。' },
+      cacHigh: { icon: '⚠️', text: '获客成本¥{{cac}}偏高！建议增加转介绍和体验课占比，降低对付费投放的依赖。' },
+      ltvGood: { icon: '✅', text: '学员LTV ¥{{ltv}}，LTV/CAC比值{{ratio}}，健康模型（>3为优秀）。' },
+      ltvLow: { icon: '📉', text: 'LTV/CAC比值仅{{ratio}}，低于3！要么提升客单价和续费率，要么降低获客成本。' }
+    }
+  },
+
+  'funnel-ltv-education': {
+    name: '招生转化与LTV计算器',
+    inputs: ['channel', 'leadsCount', 'trialCount', 'enrolledCount', 'channelSpend', 'avgPackagePrice', 'renewalRate', 'avgRetentionMonths'],
+    calc: ({ channel, leadsCount, trialCount, enrolledCount, channelSpend, avgPackagePrice, renewalRate, avgRetentionMonths }) => {
+      const KB = CALCULATORS.EDUCATION_FUNNEL_KB
+      const channelInfo = KB.channelBenchmarks[channel] || KB.channelBenchmarks.online
+
+      const trialRate = leadsCount > 0 ? (trialCount / leadsCount * 100) : 0
+      const conversionRate = trialCount > 0 ? (enrolledCount / trialCount * 100) : 0
+      const overallRate = leadsCount > 0 ? (enrolledCount / leadsCount * 100) : 0
+      const cac = enrolledCount > 0 ? (channelSpend / enrolledCount) : 0
+      const ltv = avgPackagePrice * (1 + renewalRate / 100 * (avgRetentionMonths / 12 - 1))
+      const ltvCacRatio = cac > 0 ? (ltv / cac) : 0
+
+      const suggestions = []
+      if (conversionRate >= KB.trialConversionBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.trialHigh, rate: conversionRate.toFixed(1), excellent: KB.trialConversionBenchmarks.excellent })
+      } else if (conversionRate >= KB.trialConversionBenchmarks.normal) {
+        suggestions.push({ ...KB.adviceTemplates.trialNormal, rate: conversionRate.toFixed(1), good: KB.trialConversionBenchmarks.good })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.trialLow, rate: conversionRate.toFixed(1), danger: KB.trialConversionBenchmarks.danger })
+      }
+
+      if (cac <= channelInfo.avgCostPerLead * 1.2) {
+        suggestions.push({ ...KB.adviceTemplates.cacLow, cac: cac.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0) })
+      }
+
+      if (ltvCacRatio >= 3) {
+        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toLocaleString(), ratio: ltvCacRatio.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '招生漏斗', items: [`渠道：${channelInfo.name}`, `线索量：${leadsCount}个`, `试听量：${trialCount}个（到试听${trialRate.toFixed(1)}%）`, `报名量：${enrolledCount}个（转化${conversionRate.toFixed(1)}%）`, `整体转化率：${overallRate.toFixed(1)}%`] },
+          { title: '获客成本', items: [`渠道投入：¥${channelSpend.toLocaleString()}`, `单个获客成本（CAC）：¥${cac.toFixed(0)}`, `行业基准：¥${channelInfo.avgCostPerLead}`] },
+          { title: '生命周期价值', items: [`客单价：¥${avgPackagePrice.toLocaleString()}`, `续费率：${renewalRate}%`, `平均在籍：${avgRetentionMonths}个月`, `学员LTV：¥${ltv.toLocaleString()}`, `LTV/CAC比值：${ltvCacRatio.toFixed(1)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `CAC¥${cac.toFixed(0)}，LTV¥${ltv.toLocaleString()}，LTV/CAC=${ltvCacRatio.toFixed(1)}`,
+        extra: { cac: cac.toFixed(0), ltv: ltv.toFixed(0), ltvCacRatio: ltvCacRatio.toFixed(1), conversionRate: conversionRate.toFixed(1), overallRate: overallRate.toFixed(1), suggestions }
+      }
+    }
+  },
+
+  // ====== 教培盈亏平衡与净利预测知识库 ======
+  EDUCATION_BREAK_EVEN_KB: {
+    costBenchmarks: {
+      rent: { max: 15, warning: 25, name: '租金占比' },
+      marketing: { max: 10, warning: 15, name: '营销占比' },
+      admin: { max: 10, warning: 15, name: '管理占比' }
+    },
+    profitBenchmarks: { excellent: 20, good: 15, normal: 10, danger: 5 },
+    adviceTemplates: {
+      breakevenHigh: { icon: '⚠️', text: '保本业绩¥{{breakeven}}/月偏高，需提升客单价或满班率来降低保本点。' },
+      breakevenLow: { icon: '✅', text: '保本业绩¥{{breakeven}}/月，经营压力较小。' },
+      rentHigh: { icon: '🔴', text: '租金占比{{ratio}}%超过{{max}}%！你在给房东打工。建议：1）谈判降租；2）提升坪效（增加教室利用率）；3）考虑搬迁。' },
+      marginHigh: { icon: '✅', text: '净利率{{margin}}%，达到优秀水平！校区盈利能力强。' },
+      marginNormal: { icon: '💡', text: '净利率{{margin}}%，处于正常区间。教培行业健康净利应在15-20%。' },
+      marginLow: { icon: '📉', text: '净利率仅{{margin}}%，利润薄弱。建议全面审查成本结构。' },
+      targetAdvice: { icon: '🎯', text: '要实现月利润¥{{target}}，需达到营业额¥{{required}}/月（日均¥{{daily}}）。' }
+    }
+  },
+
+  'breakeven-profit-education': {
+    name: '校区盈亏平衡与净利预测器',
+    inputs: ['rent', 'salaries', 'utilities', 'marketing', 'adminCost', 'otherFixed', 'avgPricePerSession', 'teacherPayPerSession', 'roomCostPerSession', 'revenue', 'targetProfit'],
+    calc: ({ rent, salaries, utilities, marketing, adminCost, otherFixed, avgPricePerSession, teacherPayPerSession, roomCostPerSession, revenue, targetProfit }) => {
+      const KB = CALCULATORS.EDUCATION_BREAK_EVEN_KB
+      const totalFixed = rent + salaries + utilities + marketing + adminCost + otherFixed
+      const variablePerSession = teacherPayPerSession + roomCostPerSession
+      const contributionPerSession = avgPricePerSession - variablePerSession
+      const contributionRate = avgPricePerSession > 0 ? (contributionPerSession / avgPricePerSession) : 0
+      const breakevenSessions = contributionPerSession > 0 ? Math.ceil(totalFixed / contributionPerSession) : 0
+      const breakevenRevenue = breakevenSessions * avgPricePerSession
+      const dailyBreakeven = breakevenRevenue / 30
+
+      const actualProfit = revenue - totalFixed - (revenue > 0 && avgPricePerSession > 0 ? (revenue / avgPricePerSession * variablePerSession) : 0)
+      const actualProfitRate = revenue > 0 ? (actualProfit / revenue * 100) : 0
+      const actualRentRatio = revenue > 0 ? (rent / revenue * 100) : 0
+      const actualMarketingRatio = revenue > 0 ? (marketing / revenue * 100) : 0
+
+      const targetRevenue = targetProfit > 0 && contributionRate > 0 ? Math.ceil((totalFixed + targetProfit) / contributionRate * avgPricePerSession) : 0
+
+      const suggestions = []
+      if (breakevenRevenue > 150000) {
+        suggestions.push({ ...KB.adviceTemplates.breakevenHigh, breakeven: breakevenRevenue.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.breakevenLow, breakeven: breakevenRevenue.toFixed(0) })
+      }
+
+      if (actualRentRatio > KB.costBenchmarks.rent.warning) {
+        suggestions.push({ ...KB.adviceTemplates.rentHigh, ratio: actualRentRatio.toFixed(1), max: KB.costBenchmarks.rent.warning })
+      }
+
+      if (actualProfitRate >= KB.profitBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.marginHigh, margin: actualProfitRate.toFixed(1) })
+      } else if (actualProfitRate >= KB.profitBenchmarks.normal) {
+        suggestions.push({ ...KB.adviceTemplates.marginNormal, margin: actualProfitRate.toFixed(1) })
+      } else if (revenue > 0) {
+        suggestions.push({ ...KB.adviceTemplates.marginLow, margin: actualProfitRate.toFixed(1) })
+      }
+
+      if (targetProfit > 0) {
+        suggestions.push({ ...KB.adviceTemplates.targetAdvice, target: targetProfit.toLocaleString(), required: targetRevenue.toLocaleString(), daily: (targetRevenue / 30).toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '固定成本', items: [`房租：¥${rent.toLocaleString()}`, `薪资：¥${salaries.toLocaleString()}`, `水电杂费：¥${utilities.toLocaleString()}`, `营销：¥${marketing.toLocaleString()}`, `管理：¥${adminCost.toLocaleString()}`, `其他：¥${otherFixed.toLocaleString()}`, `月固定总成本：¥${totalFixed.toLocaleString()}`] },
+          { title: '变动成本（每课时）', items: [`课酬：¥${teacherPayPerSession}`, `场地分摊：¥${roomCostPerSession}`, `变动合计：¥${variablePerSession}`, `单课时贡献：¥${contributionPerSession}（贡献率${(contributionRate * 100).toFixed(0)}%）`] },
+          { title: '盈亏平衡', items: [`保本课时：${breakevenSessions}节/月`, `保本业绩：¥${breakevenRevenue.toFixed(0)}/月`, `日均保本：¥${dailyBreakeven.toFixed(0)}`] },
+          { title: '目标利润', items: targetProfit > 0 ? [`目标利润：¥${targetProfit.toLocaleString()}`, `需达营业额：¥${targetRevenue.toLocaleString()}/月`, `日均需做：¥${(targetRevenue / 30).toFixed(0)}`] : ['请输入目标利润进行预测'] },
+          ...(revenue > 0 ? [{ title: '实际经营分析', items: [`实际营业额：¥${revenue.toLocaleString()}`, `实际净利润：¥${actualProfit.toFixed(0)}`, `净利率：${actualProfitRate.toFixed(1)}%`, `租金占比：${actualRentRatio.toFixed(1)}%`, `营销占比：${actualMarketingRatio.toFixed(1)}%`] }] : []),
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `保本业绩¥${breakevenRevenue.toFixed(0)}/月，日均¥${dailyBreakeven.toFixed(0)}`,
+        extra: { breakevenRevenue: breakevenRevenue.toFixed(0), dailyBreakeven: dailyBreakeven.toFixed(0), totalFixed: totalFixed.toFixed(0), contributionRate: (contributionRate * 100).toFixed(0), actualProfit: actualProfit.toFixed(0), actualProfitRate: actualProfitRate.toFixed(1), actualRentRatio: actualRentRatio.toFixed(1), targetRevenue: targetRevenue.toFixed(0), suggestions }
+      }
+    }
+  },
+
+  // ====== 教培校区投资回报知识库 ======
+  EDUCATION_CAMPUS_KB: {
+    campusTypeBenchmarks: {
+      community: { name: '社区小型校区', area: 200, investment: 300000, targetStudents: 200, paybackMonths: 12 },
+      mall: { name: '商场标准校区', area: 400, investment: 600000, targetStudents: 400, paybackMonths: 15 },
+      flagship: { name: '旗舰大校区', area: 800, investment: 1200000, targetStudents: 800, paybackMonths: 18 }
+    },
+    adviceTemplates: {
+      paybackFast: { icon: '✅', text: '回本周期{{months}}个月，属于快速回本！校区选址和运营优秀。' },
+      paybackNormal: { icon: '💡', text: '回本周期{{months}}个月，处于行业正常区间（12-18个月）。需保证招生稳定。' },
+      paybackSlow: { icon: '🔴', text: '回本周期{{months}}个月过长！建议：1）加快招生节奏；2）控制装修成本；3）考虑轻资产模式。' },
+      roiGood: { icon: '💰', text: '年化ROI {{roi}}%，投资回报健康。' },
+      roiLow: { icon: '⚠️', text: '年化ROI仅{{roi}}%，低于银行理财。需提升满班率和续费率。' }
+    }
+  },
+
+  'campus-roi-education': {
+    name: '校区投资回报计算器',
+    inputs: ['campusType', 'renovationCost', 'equipmentCost', 'deposit', 'initialMarketing', 'monthlyRent', 'monthlyRevenue', 'monthlyProfit', 'targetStudents'],
+    calc: ({ campusType, renovationCost, equipmentCost, deposit, initialMarketing, monthlyRent, monthlyRevenue, monthlyProfit, targetStudents }) => {
+      const KB = CALCULATORS.EDUCATION_CAMPUS_KB
+      const campusInfo = KB.campusTypeBenchmarks[campusType] || KB.campusTypeBenchmarks.community
+
+      const totalInvestment = renovationCost + equipmentCost + deposit + initialMarketing
+      const annualProfit = monthlyProfit * 12
+      const paybackMonths = monthlyProfit > 0 ? (totalInvestment / monthlyProfit) : Infinity
+      const annualROI = totalInvestment > 0 ? (annualProfit / totalInvestment * 100) : 0
+      const revenuePerStudent = targetStudents > 0 ? (monthlyRevenue / targetStudents) : 0
+      const profitPerStudent = targetStudents > 0 ? (monthlyProfit / targetStudents) : 0
+
+      const suggestions = []
+      if (paybackMonths <= 12) {
+        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths <= 18) {
+        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths !== Infinity) {
+        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
+      }
+
+      if (annualROI >= 30) {
+        suggestions.push({ ...KB.adviceTemplates.roiGood, roi: annualROI.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.roiLow, roi: annualROI.toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '校区定位', items: [`校区类型：${campusInfo.name}`, `目标学员：${targetStudents}人`, `参考面积：${campusInfo.area}m²`] },
+          { title: '投资明细', items: [`装修投入：¥${renovationCost.toLocaleString()}`, `设备投入：¥${equipmentCost.toLocaleString()}`, `场地押金：¥${deposit.toLocaleString()}`, `首期营销：¥${initialMarketing.toLocaleString()}`, `总投资：¥${totalInvestment.toLocaleString()}`] },
+          { title: '回报预测', items: [`月营收：¥${monthlyRevenue.toLocaleString()}`, `月净利：¥${monthlyProfit.toLocaleString()}`, `年净利润：¥${annualProfit.toLocaleString()}`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + '个月'}`, `年化ROI：${annualROI.toFixed(0)}%`] },
+          { title: '单学员模型', items: [`月生均营收：¥${revenuePerStudent.toFixed(0)}`, `月生均利润：¥${profitPerStudent.toFixed(0)}`, `年生均利润：¥${(profitPerStudent * 12).toFixed(0)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `总投资¥${totalInvestment.toLocaleString()}，回本${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，年化ROI${annualROI.toFixed(0)}%`,
+        extra: { totalInvestment: totalInvestment.toFixed(0), paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1), annualROI: annualROI.toFixed(0), annualProfit: annualProfit.toFixed(0), suggestions }
+      }
+    }
+  },
+
+  // ====== 教培教室坪效与排课优化知识库 ======
+  EDUCATION_VENUE_KB: {
+    venueTypeBenchmarks: {
+      normal: { name: '普通教室', areaPerStudent: 2, maxStudents: 20, hourlyRate: 50 },
+      dance: { name: '舞蹈教室', areaPerStudent: 4, maxStudents: 15, hourlyRate: 80 },
+      music: { name: '音乐/隔音教室', areaPerStudent: 3, maxStudents: 8, hourlyRate: 70 },
+      computer: { name: '电脑/编程教室', areaPerStudent: 3, maxStudents: 12, hourlyRate: 90 },
+      sports: { name: '体育场馆', areaPerStudent: 8, maxStudents: 20, hourlyRate: 150 }
+    },
+    timeSlotBenchmarks: {
+      weekdayMorning: { name: '工作日白天', utilization: 20, premium: 0.6 },
+      weekdayEvening: { name: '工作日晚间', utilization: 85, premium: 1.2 },
+      weekend: { name: '周末全天', utilization: 90, premium: 1.3 },
+      holiday: { name: '寒暑假', utilization: 70, premium: 1.1 }
+    },
+    utilizationBenchmarks: { excellent: 80, good: 65, normal: 50, danger: 30 },
+    adviceTemplates: {
+      utilizationHigh: { icon: '✅', text: '教室利用率{{rate}}%，达到优秀！排课紧凑高效。' },
+      utilizationNormal: { icon: '💡', text: '教室利用率{{rate}}%，有提升空间。建议：1）填充闲置时段（工作日白天）；2）开设多科目复用教室；3）推出平日班优惠。' },
+      utilizationLow: { icon: '🔴', text: '教室利用率仅{{rate}}%，大量资源闲置！建议：1）合并零散班级；2）增加工作日课程；3）考虑共享/分租教室。' },
+      revenuePerSqm: { icon: '💰', text: '坪效¥{{revenue}}/m²/月。教培健康坪效应在150-300元/m²/月。' },
+      addRoom: { icon: '🏠', text: '当前教室已满负荷（利用率>80%），建议增加教室或拓展时段。' },
+      addTime: { icon: '⏰', text: '增加时段比增加教室更划算！当前利用率{{rate}}%，优先优化排课密度。' }
+    }
+  },
+
+  'venue-efficiency-education': {
+    name: '教室坪效与排课优化计算器',
+    inputs: ['venueType', 'venueArea', 'roomCount', 'monthlyRent', 'totalWeeklySessions', 'sessionDuration', 'pricePerSession', 'studentsPerSession'],
+    calc: ({ venueType, venueArea, roomCount, monthlyRent, totalWeeklySessions, sessionDuration, pricePerSession, studentsPerSession }) => {
+      const KB = CALCULATORS.EDUCATION_VENUE_KB
+      const venueInfo = KB.venueTypeBenchmarks[venueType] || KB.venueTypeBenchmarks.normal
+
+      const totalArea = venueArea * roomCount
+      const availableHoursPerWeek = roomCount * 7 * 12
+      const usedHoursPerWeek = totalWeeklySessions * sessionDuration
+      const utilizationRate = availableHoursPerWeek > 0 ? (usedHoursPerWeek / availableHoursPerWeek * 100) : 0
+      const monthlyRevenue = totalWeeklySessions * 4.3 * pricePerSession
+      const revenuePerSqm = totalArea > 0 ? (monthlyRevenue / totalArea) : 0
+      const monthlyStudents = totalWeeklySessions * 4.3 * studentsPerSession
+      const revenuePerStudent = monthlyStudents > 0 ? (monthlyRevenue / monthlyStudents) : 0
+      const rentPerSqm = totalArea > 0 ? (monthlyRent / totalArea) : 0
+
+      const suggestions = []
+      if (utilizationRate >= KB.utilizationBenchmarks.excellent) {
+        suggestions.push({ ...KB.adviceTemplates.utilizationHigh, rate: utilizationRate.toFixed(0) })
+        suggestions.push({ ...KB.adviceTemplates.addRoom })
+      } else if (utilizationRate >= KB.utilizationBenchmarks.normal) {
+        suggestions.push({ ...KB.adviceTemplates.utilizationNormal, rate: utilizationRate.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.utilizationLow, rate: utilizationRate.toFixed(0) })
+      }
+
+      suggestions.push({ ...KB.adviceTemplates.revenuePerSqm, revenue: revenuePerSqm.toFixed(0) })
+
+      if (utilizationRate < 60) {
+        suggestions.push({ ...KB.adviceTemplates.addTime, rate: utilizationRate.toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '教室配置', items: [`教室类型：${venueInfo.name}`, `单间面积：${venueArea}m²`, `教室数量：${roomCount}间`, `总面积：${totalArea}m²`, `月租金：¥${monthlyRent.toLocaleString()}（¥${rentPerSqm.toFixed(0)}/m²）`] },
+          { title: '排课分析', items: [`周排课：${totalWeeklySessions}节`, `每节时长：${sessionDuration}小时`, `周使用时长：${usedHoursPerWeek}小时`, `周可用时长：${availableHoursPerWeek}小时`, `教室利用率：${utilizationRate.toFixed(0)}%`] },
+          { title: '坪效分析', items: [`月营收：¥${monthlyRevenue.toLocaleString()}`, `坪效：¥${revenuePerSqm.toFixed(0)}/m²/月`, `月服务学员：${monthlyStudents.toFixed(0)}人次`, `生均营收：¥${revenuePerStudent.toFixed(0)}/人`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `利用率${utilizationRate.toFixed(0)}%，坪效¥${revenuePerSqm.toFixed(0)}/m²/月`,
+        extra: { utilizationRate: utilizationRate.toFixed(0), revenuePerSqm: revenuePerSqm.toFixed(0), monthlyRevenue: monthlyRevenue.toFixed(0), rentPerSqm: rentPerSqm.toFixed(0), monthlyStudents: monthlyStudents.toFixed(0), suggestions }
+      }
+    }
+  },
+
   // ====== 美业仪器投资知识库 ======
   BEAUTY_DEVICE_KB: {
     adviceTemplates: {
