@@ -1964,143 +1964,102 @@ ${knowledge}
     name: '排班助手',
     engineType: 'template',
     templateBuilder: async (formData, ind) => {
-      const industry = formData.industry || 'restaurant'
-      const industryNames = { restaurant: '餐饮', education: '教培', beauty: '美业', service: '生活服务' }
-      const indName = industryNames[industry] || '门店'
-
-      const openTime = formData.openTime || 9
-      const closeTime = formData.closeTime || 22
-      const shiftMode = formData.shiftMode || 2
-      const maxWorkDays = formData.maxWorkDays || 6
-      const maxDailyHours = formData.maxDailyHours || 10
-      const peakHours = formData.peakHours || ''
+      const employees = formData.employees || []
       const constraints = formData.constraints || ''
 
-      const businessHours = closeTime - openTime
-      const shiftLength = Math.floor(businessHours / shiftMode)
+      const shifts = [
+        { label: '早班', start: formData.morningStart || '09:00', end: formData.morningEnd || '14:00' },
+        { label: '中班', start: formData.afternoonStart || '12:00', end: formData.afternoonEnd || '17:00' },
+        { label: '晚班', start: formData.eveningStart || '16:00', end: formData.eveningEnd || '22:00' }
+      ]
 
-      const shifts = []
-      for (let i = 0; i < shiftMode; i++) {
-        const start = openTime + i * shiftLength
-        const end = start + shiftLength
-        const labels = ['早班', '中班', '晚班']
-        shifts.push({ label: labels[i], start, end, hours: shiftLength })
+      const calcHours = (start, end) => {
+        const [sh, sm] = start.split(':').map(Number)
+        const [eh, em] = end.split(':').map(Number)
+        return (eh * 60 + em - sh * 60 - sm) / 60
       }
 
-      const employeesRaw = formData.employees || ''
-      const employees = employeesRaw.split('\n')
-        .map(line => line.trim())
-        .filter(line => line)
-        .map(line => {
-          const parts = line.split(/[,，、]/).map(s => s.trim())
-          return {
-            name: parts[0] || '员工',
-            role: parts[1] || '普通员工',
-            hourlyRate: parseFloat(parts[2]) || 18
-          }
-        })
+      shifts.forEach(s => { s.hours = calcHours(s.start, s.end) })
 
       if (employees.length < 2) {
-        return {
-          summary: '排班生成失败',
-          error: '至少需要输入2名员工，格式：姓名,角色,时薪（每行一个）'
-        }
+        return { summary: '排班生成失败', error: '至少需要添加2名员工' }
       }
 
       const DAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      const empCount = employees.length
+      const shiftCount = 3
+
       const schedule = employees.map((emp, idx) => {
         const empShifts = []
+        const restDay = parseInt(emp.restDay) || 0
+        const pref = emp.shiftPref || 'auto'
+
         for (let d = 0; d < 7; d++) {
-          const shiftIndex = (d + idx) % (shiftMode + 1)
-          if (shiftIndex === shiftMode) {
+          if (d === restDay) {
             empShifts.push({ type: '休息', label: '休息', time: '', hours: 0 })
           } else {
-            const s = shifts[shiftIndex]
-            empShifts.push({ type: s.label, label: s.label, time: `${s.start}:00-${s.end}:00`, hours: s.hours })
+            let shiftIdx
+            if (pref === 'morning') shiftIdx = 0
+            else if (pref === 'afternoon') shiftIdx = 1
+            else if (pref === 'evening') shiftIdx = 2
+            else shiftIdx = (d + idx) % shiftCount
+
+            const s = shifts[shiftIdx]
+            empShifts.push({ type: s.label, label: s.label, time: `${s.start}-${s.end}`, hours: s.hours })
           }
         }
-        return { name: emp.name, role: emp.role, hourlyRate: emp.hourlyRate, shifts: empShifts }
+        return { name: emp.name, shifts: empShifts }
       })
 
       const hoursStats = employees.map((emp, idx) => {
         let totalHours = 0
         let workDays = 0
         for (let d = 0; d < 7; d++) {
-          const shiftIndex = (d + idx) % (shiftMode + 1)
-          if (shiftIndex < shiftMode) {
-            totalHours += shifts[shiftIndex].hours
+          const shift = schedule[idx].shifts[d]
+          if (shift.type !== '休息') {
+            totalHours += shift.hours
             workDays++
           }
         }
-        const usagePercent = Math.round((totalHours / (maxWorkDays * maxDailyHours)) * 100)
+        const maxHours = 6 * 10
+        const usagePercent = Math.round((totalHours / maxHours) * 100)
         return {
           name: emp.name,
-          totalHours,
+          totalHours: Math.round(totalHours * 10) / 10,
           workDays,
-          estimatedPay: totalHours * emp.hourlyRate,
+          estimatedPay: Math.round(totalHours * 20),
           usagePercent: Math.min(usagePercent, 100)
         }
       })
 
       const conflicts = []
-      if (employees.length < shiftMode * 2) {
-        conflicts.push(`员工数量(${employees.length})不足以保证每个班次都有人，建议至少${shiftMode * 2}人`)
-      }
-      if (maxDailyHours > 10) {
-        conflicts.push('每日最长工时超过10小时，违反劳动法规定，建议调整为8-10小时')
+      const restDays = employees.map(e => parseInt(e.restDay) || 0)
+      const uniqueRestDays = new Set(restDays)
+      if (uniqueRestDays.size < empCount) {
+        const dupDays = [...restDays].filter((v, i, a) => a.indexOf(v) !== i)
+        dupDays.forEach(d => {
+          const names = employees.filter((_, i) => restDays[i] === d).map(e => e.name)
+          conflicts.push(`${names.join('、')} 同一天休息，可能导致人手不足`)
+        })
       }
 
-      const tips = []
-      if (peakHours) {
-        tips.push(`高峰时段（${peakHours}）建议增加人手或安排兼职`)
-      }
-      tips.push('新老搭配：每班次至少安排一名熟手带新人')
-      tips.push('关键岗位（店长/主厨/资深教练）必须在高峰时段在岗')
-      tips.push('每周复盘排班效率，根据实际客流和订单量微调')
-      tips.push('建立排班表共享机制，提前一周通知员工')
-
-      const industryRef = {
-        restaurant: {
-          '典型班次': '早班 9:00-17:00 / 晚班 14:00-22:00',
-          '高峰期': '11:30-13:30 午高峰，17:30-20:00 晚高峰',
-          '人工占比': '营业额的 15%-25%',
-          '全职兼职比': '建议 60% 全职 + 40% 兼职',
-          '排班频率': '每周排班一次，节假日提前两周'
-        },
-        education: {
-          '典型班次': '平日班 14:00-21:00 / 周末班 9:00-18:00',
-          '高峰期': '工作日 16:00-20:00，周末全天',
-          '人工占比': '营业额的 30%-45%',
-          '师生比': '1:6 到 1:12 根据课程类型',
-          '排班频率': '按月排班，结合学期节奏调整'
-        },
-        beauty: {
-          '典型班次': '早班 10:00-18:00 / 晚班 12:00-20:00',
-          '高峰期': '14:00-18:00，周末全天',
-          '人工占比': '营业额的 25%-35%',
-          '预约制': '建议采用预约排班，减少空闲等待',
-          '排班频率': '每周排班，周末提前锁定人手'
-        },
-        service: {
-          '典型班次': '早班 8:00-16:00 / 晚班 14:00-22:00',
-          '高峰期': '根据业务类型调整',
-          '人工占比': '营业额的 20%-30%',
-          '排班建议': '灵活排班，覆盖客户需求高峰',
-          '排班频率': '每周排班，预留弹性人手'
-        }
-      }
+      const tips = [
+        '新老搭配：每班次至少安排一名熟手带新人',
+        '关键岗位（店长/主厨/资深教练）必须在高峰时段在岗',
+        '每周复盘排班效率，根据实际客流和订单量微调',
+        '建立排班表共享机制，提前一周通知员工'
+      ]
 
       const weeklyCost = hoursStats.reduce((sum, h) => sum + h.estimatedPay, 0)
       const totalShifts = hoursStats.reduce((sum, h) => sum + h.workDays, 0)
 
       return {
-        summary: `${indName}排班表已生成（${employees.length}人，${shiftMode}班制，营业时间${openTime}:00-${closeTime}:00）`,
+        summary: `排班表已生成（${employees.length}人，营业时间${shifts[0].start}-${shifts[2].end}）`,
         days: DAYS,
         schedule,
         hoursStats,
         conflicts,
         tips,
-        industryRef: industryRef[industry] || industryRef.service,
         summary: {
           totalEmployees: employees.length,
           totalShifts,

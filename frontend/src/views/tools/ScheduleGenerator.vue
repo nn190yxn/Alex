@@ -2,114 +2,119 @@
   <ToolDetail :tool-info="toolInfo" :quota-info="quotaInfo" :result="result" @submit="handleSubmit">
     <template #inputs>
       <div class="schedule-form">
-        <div class="form-group">
-          <label class="form-label">行业类型</label>
-          <select v-model="form.industry" class="form-input">
-            <option value="restaurant">餐饮</option>
-            <option value="education">教培</option>
-            <option value="beauty">美业</option>
-            <option value="service">生活服务</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">员工信息（每行一个：姓名,角色,时薪）</label>
-          <textarea
-            v-model="form.employees"
-            class="form-input form-textarea"
-            rows="5"
-            placeholder="例如：&#10;张三,店长,25&#10;李四,厨师,22&#10;王五,服务员,18&#10;赵六,兼职,15"
-          />
-          <div class="form-hint">角色可选：店长/厨师/前厅/老师/教练/美容师/顾问/兼职等</div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">营业开始时间</label>
-            <select v-model="form.openTime" class="form-input">
-              <option value="8">08:00</option>
-              <option value="9" selected>09:00</option>
-              <option value="10">10:00</option>
-              <option value="11">11:00</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">营业结束时间</label>
-            <select v-model="form.closeTime" class="form-input">
-              <option value="20">20:00</option>
-              <option value="21">21:00</option>
-              <option value="22" selected>22:00</option>
-              <option value="23">23:00</option>
-            </select>
+        <div class="form-section">
+          <h3 class="section-title">营业时间设置</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">营业开始时间</label>
+              <input v-model="form.openTime" type="time" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">营业结束时间</label>
+              <input v-model="form.closeTime" type="time" class="form-input" />
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">班次模式</label>
-          <select v-model="form.shiftMode" class="form-input">
-            <option value="2">2班制（早班+晚班）</option>
-            <option value="3">3班制（早班+中班+晚班）</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">每人每周最多工作天数</label>
-            <select v-model="form.maxWorkDays" class="form-input">
-              <option value="5">5天</option>
-              <option value="6" selected>6天</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">每日最长工时(小时)</label>
-            <select v-model="form.maxDailyHours" class="form-input">
-              <option value="8">8小时</option>
-              <option value="9">9小时</option>
-              <option value="10" selected>10小时</option>
-            </select>
+        <div class="form-section">
+          <h3 class="section-title">班次时间设置</h3>
+          <div class="shift-config">
+            <div class="shift-row">
+              <span class="shift-label">早班</span>
+              <input v-model="form.morningStart" type="time" class="form-input small" placeholder="开始" />
+              <span class="shift-separator">至</span>
+              <input v-model="form.morningEnd" type="time" class="form-input small" placeholder="结束" />
+            </div>
+            <div class="shift-row">
+              <span class="shift-label">中班</span>
+              <input v-model="form.afternoonStart" type="time" class="form-input small" placeholder="开始" />
+              <span class="shift-separator">至</span>
+              <input v-model="form.afternoonEnd" type="time" class="form-input small" placeholder="结束" />
+            </div>
+            <div class="shift-row">
+              <span class="shift-label">晚班</span>
+              <input v-model="form.eveningStart" type="time" class="form-input small" placeholder="开始" />
+              <span class="shift-separator">至</span>
+              <input v-model="form.eveningEnd" type="time" class="form-input small" placeholder="结束" />
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">高峰时段（用逗号分隔，例如：11-13,17-20）</label>
-          <input
-            v-model="form.peakHours"
-            type="text"
-            class="form-input"
-            placeholder="例如：11-13,17-20"
-          />
+        <div class="form-section">
+          <h3 class="section-title">员工排班</h3>
+          <div class="employee-header">
+            <select v-model="selectedEmployee" class="form-input">
+              <option value="" disabled>选择员工</option>
+              <option v-for="name in availableEmployees" :key="name" :value="name">{{ name }}</option>
+            </select>
+            <button type="button" class="btn-add" @click="addEmployee" :disabled="!selectedEmployee">添加</button>
+          </div>
+
+          <div class="employee-list" v-if="form.employees.length">
+            <div class="employee-card" v-for="(emp, idx) in form.employees" :key="idx">
+              <div class="emp-header">
+                <span class="emp-name">{{ emp.name }}</span>
+                <button type="button" class="btn-remove" @click="removeEmployee(idx)">×</button>
+              </div>
+              <div class="emp-settings">
+                <div class="setting-row">
+                  <label>期望休息日</label>
+                  <select v-model="emp.restDay" class="form-input">
+                    <option value="0">周一</option>
+                    <option value="1">周二</option>
+                    <option value="2">周三</option>
+                    <option value="3">周四</option>
+                    <option value="4">周五</option>
+                    <option value="5">周六</option>
+                    <option value="6">周日</option>
+                  </select>
+                </div>
+                <div class="setting-row">
+                  <label>班次偏好</label>
+                  <select v-model="emp.shiftPref" class="form-input">
+                    <option value="auto">自动分配</option>
+                    <option value="morning">早班为主</option>
+                    <option value="afternoon">中班为主</option>
+                    <option value="evening">晚班为主</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-tip">请先添加至少2名员工</div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">特殊约束（选填）</label>
+        <div class="form-section">
+          <h3 class="section-title">特殊约束（选填）</h3>
           <textarea
             v-model="form.constraints"
             class="form-input form-textarea"
             rows="2"
-            placeholder="例如：&#10;张三和李四不能同天休息&#10;王五每周三必须上早班"
+            placeholder="例如：张三和李四不能同天休息"
           />
         </div>
       </div>
     </template>
+
     <template #result>
       <div class="schedule-result" v-if="result && !result.error">
         <div class="result-summary">
           <div class="summary-card">
-            <div class="summary-label">总员工数</div>
+            <div class="summary-label">员工数</div>
             <div class="summary-value">{{ result.summary.totalEmployees }}</div>
           </div>
           <div class="summary-card">
-            <div class="summary-label">总排班数</div>
+            <div class="summary-label">总班次</div>
             <div class="summary-value">{{ result.summary.totalShifts }}</div>
           </div>
           <div class="summary-card">
-            <div class="summary-label">预估周人工成本</div>
+            <div class="summary-label">周人工成本</div>
             <div class="summary-value">¥{{ result.summary.weeklyCost }}</div>
           </div>
           <div class="summary-card">
-            <div class="summary-label">冲突检测</div>
+            <div class="summary-label">冲突</div>
             <div class="summary-value" :class="result.summary.conflicts > 0 ? 'danger' : 'success'">
-              {{ result.summary.conflicts }} 个
+              {{ result.summary.conflicts }}
             </div>
           </div>
         </div>
@@ -121,19 +126,13 @@
               <thead>
                 <tr>
                   <th>员工</th>
-                  <th>角色</th>
                   <th v-for="day in result.days" :key="day">{{ day }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="row in result.schedule" :key="row.name">
                   <td class="emp-name">{{ row.name }}</td>
-                  <td class="emp-role">{{ row.role }}</td>
-                  <td
-                    v-for="(shift, di) in row.shifts"
-                    :key="di"
-                    :class="'shift-' + shift.type"
-                  >
+                  <td v-for="(shift, di) in row.shifts" :key="di" :class="'shift-' + shift.type">
                     <div class="shift-cell">
                       <span class="shift-name">{{ shift.label }}</span>
                       <span class="shift-time" v-if="shift.time">{{ shift.time }}</span>
@@ -152,8 +151,8 @@
               <div class="hours-name">{{ emp.name }}</div>
               <div class="hours-detail">
                 <span>总工时: {{ emp.totalHours }}h</span>
-                <span>工作天数: {{ emp.workDays }}天</span>
-                <span>预估薪资: ¥{{ emp.estimatedPay }}</span>
+                <span>工作: {{ emp.workDays }}天</span>
+                <span>薪资: ¥{{ emp.estimatedPay }}</span>
               </div>
               <div class="hours-bar">
                 <div class="hours-bar-fill" :style="{ width: emp.usagePercent + '%' }"></div>
@@ -167,7 +166,6 @@
           <h3 class="section-title">冲突与警告</h3>
           <div class="conflict-list">
             <div class="conflict-item" v-for="(c, i) in result.conflicts" :key="i">
-              <span class="conflict-icon">⚠️</span>
               <span class="conflict-text">{{ c }}</span>
             </div>
           </div>
@@ -179,16 +177,6 @@
             <li v-for="(tip, i) in result.tips" :key="i">{{ tip }}</li>
           </ul>
         </div>
-
-        <div class="industry-ref" v-if="result.industryRef">
-          <h3 class="section-title">行业参考标准</h3>
-          <div class="ref-grid">
-            <div class="ref-item" v-for="(item, key) in result.industryRef" :key="key">
-              <span class="ref-label">{{ item.label }}</span>
-              <span class="ref-value">{{ item.value }}</span>
-            </div>
-          </div>
-        </div>
       </div>
       <div v-else-if="result && result.error" class="error-msg">{{ result.error }}</div>
     </template>
@@ -196,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
 
@@ -206,32 +194,60 @@ const quotaInfo = ref(null)
 const result = ref(null)
 
 const form = reactive({
-  industry: 'restaurant',
-  employees: '',
-  openTime: '9',
-  closeTime: '22',
-  shiftMode: '2',
-  maxWorkDays: '6',
-  maxDailyHours: '10',
-  peakHours: '',
+  openTime: '09:00',
+  closeTime: '22:00',
+  morningStart: '09:00',
+  morningEnd: '14:00',
+  afternoonStart: '12:00',
+  afternoonEnd: '17:00',
+  eveningStart: '16:00',
+  eveningEnd: '22:00',
+  employees: [],
   constraints: ''
 })
 
-async function handleSubmit(formData) {
+const selectedEmployee = ref('')
+const employeeNames = ['张三', '李四', '王五', '赵六', '孙七', '周八', '吴九', '郑十', '陈十一', '林十二']
+
+const availableEmployees = computed(() => {
+  const used = form.employees.map(e => e.name)
+  return employeeNames.filter(n => !used.includes(n))
+})
+
+function addEmployee() {
+  if (!selectedEmployee.value) return
+  form.employees.push({
+    name: selectedEmployee.value,
+    restDay: (form.employees.length) % 7,
+    shiftPref: 'auto'
+  })
+  selectedEmployee.value = ''
+}
+
+function removeEmployee(idx) {
+  form.employees.splice(idx, 1)
+}
+
+async function handleSubmit() {
   result.value = null
+  if (form.employees.length < 2) {
+    result.value = { error: '至少需要添加2名员工' }
+    return
+  }
   try {
     const res = await fetch('/api/generate/schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        industry: form.industry,
+        openTime: form.openTime,
+        closeTime: form.closeTime,
+        morningStart: form.morningStart,
+        morningEnd: form.morningEnd,
+        afternoonStart: form.afternoonStart,
+        afternoonEnd: form.afternoonEnd,
+        eveningStart: form.eveningStart,
+        eveningEnd: form.eveningEnd,
         employees: form.employees,
-        openTime: parseInt(form.openTime),
-        closeTime: parseInt(form.closeTime),
-        shiftMode: parseInt(form.shiftMode),
-        maxWorkDays: parseInt(form.maxWorkDays),
-        maxDailyHours: parseInt(form.maxDailyHours),
-        peakHours: form.peakHours,
         constraints: form.constraints
       })
     })
@@ -251,7 +267,22 @@ async function handleSubmit(formData) {
 .schedule-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.section-title {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+  margin: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line-default);
 }
 
 .form-row {
@@ -272,9 +303,117 @@ async function handleSubmit(formData) {
   font-size: var(--text-body-sm);
 }
 
-.form-hint {
+.shift-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.shift-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.shift-label {
+  width: 60px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  font-size: var(--text-body-sm);
+}
+
+.form-input.small {
+  width: 120px;
+}
+
+.shift-separator {
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+}
+
+.employee-header {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.employee-header .form-input {
+  flex: 1;
+}
+
+.btn-add {
+  padding: var(--space-2) var(--space-4);
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  font-size: var(--text-body-sm);
+  white-space: nowrap;
+}
+
+.btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.employee-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.employee-card {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-btn);
+  padding: var(--space-3);
+}
+
+.emp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.emp-name {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-body);
+}
+
+.btn-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line-default);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--text-body);
+  line-height: 1;
+}
+
+.emp-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.setting-row label {
   font-size: var(--text-body-xs);
   color: var(--text-secondary);
+}
+
+.empty-tip {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  padding: var(--space-4);
 }
 
 .schedule-result {
@@ -311,51 +450,32 @@ async function handleSubmit(formData) {
 .summary-value.danger { color: var(--status-danger); }
 .summary-value.success { color: var(--status-success); }
 
-.section-title {
-  font-size: var(--text-body);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-main);
-  margin: 0;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--line-default);
-}
-
 .schedule-table-wrapper {
   overflow-x: auto;
 }
 
-.schedule-table {
-  overflow-x: auto;
-}
-
-table {
+.schedule-table table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-body-sm);
 }
 
-th, td {
+.schedule-table th,
+.schedule-table td {
   padding: var(--space-2) var(--space-3);
   text-align: center;
   border: 1px solid var(--line-default);
 }
 
-th {
+.schedule-table th {
   background-color: var(--bg-subtle);
   font-weight: var(--font-weight-semibold);
   color: var(--text-secondary);
 }
 
-.emp-name {
+.emp-name-cell {
   font-weight: var(--font-weight-medium);
-  color: var(--text-main);
   text-align: left;
-  white-space: nowrap;
-}
-
-.emp-role {
-  color: var(--text-secondary);
-  font-size: var(--text-body-xs);
 }
 
 .shift-cell {
@@ -426,17 +546,12 @@ th {
 }
 
 .conflict-item {
-  display: flex;
-  gap: var(--space-2);
-  align-items: flex-start;
   padding: var(--space-2) var(--space-3);
   background: #fef3c7;
   border-radius: var(--radius-btn);
   font-size: var(--text-body-sm);
   color: #92400e;
 }
-
-.conflict-icon { font-size: var(--text-body); }
 
 .tips-list {
   padding-left: var(--space-4);
@@ -446,24 +561,6 @@ th {
   font-size: var(--text-body-sm);
   color: var(--text-main);
 }
-
-.ref-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--space-3);
-}
-
-.ref-item {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-  background: var(--bg-subtle);
-  border-radius: var(--radius-btn);
-  font-size: var(--text-body-sm);
-}
-
-.ref-label { color: var(--text-secondary); }
-.ref-value { font-weight: var(--font-weight-semibold); }
 
 .error-msg {
   color: var(--status-danger);
