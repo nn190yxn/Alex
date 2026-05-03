@@ -136,7 +136,7 @@ export const DIAGNOSIS_TEMPLATES = {
     recommendedTools: {
       profitability: ['gross-margin-restaurant', 'dish-pricing'],
       costControl: ['food-waste-rate', 'salary-cost-ratio-restaurant'],
-      efficiency: ['turnover-rate-restaurant', 'labor-efficiency-restaurant'],
+      efficiency: ['turnover-rate-restaurant', 'salary-cost-ratio-restaurant'],
       customerOps: ['hook', 'friend', 'fission'],
       risk: ['cashflow-restaurant', 'sop']
     }

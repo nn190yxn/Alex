@@ -117,7 +117,6 @@ export const allTools = [
   createTool({ code: 'salary-cost-ratio-restaurant', name: '人工成本占比计算器（餐饮版）', description: '基于岗位明细拆分前/后/管人工成本，综合评估人效与成本结构，自动输出优化建议。', tag: '计算', iconColor: 'orange', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['人效', '成本控制', '排班优化'] }),
   createTool({ code: 'dish-pricing', name: '菜品定价计算器（结构设计版）', description: '基于三层产品组合矩阵（引流菜/主推菜/形象菜），科学设计菜单定价结构，自动推荐套餐组合，预测门店综合毛利。', tag: '计算', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['定价', '产品结构', '菜单设计', '套餐组合'] }),
   createTool({ code: 'food-waste-rate', name: '食材损耗率计算器', description: '帮你算后厨到底浪费了多少钱。', tag: '计算', iconColor: 'green', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['损耗', '成本控制'] }),
-  createTool({ code: 'labor-efficiency-restaurant', name: '人效计算器（餐饮版）', description: '帮你看清谁在养店、谁在混日子。', tag: '计算', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['人效', '排班'] }),
   createTool({ code: 'delivery-profit', name: '外卖利润计算器', description: '帮你算清外卖到底是在赚钱还是在给平台打工。', tag: '计算', iconColor: 'orange', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['外卖', '利润'] }),
   createTool({ code: 'payback-restaurant', name: '投资回本周期计算器（餐饮版）', description: '帮你算新店/新项目多久能回本。', tag: '计算', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['回本', '投资'] }),
   createTool({ code: 'cashflow-restaurant', name: '现金流预测计算器（餐饮版）', description: '按固定/变动成本拆分，预测未来逐月现金流，标记断裂风险和安全线。', tag: '计算', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['现金流', '预测', '资金断裂'] }),
@@ -357,7 +356,7 @@ export const industryEntries = [
     audience: '正餐、小吃、火锅、饮品等门店老板',
     summary: '围绕毛利、人效、活动、平台经营和复购做整套工具组合。',
     accent: '#f97316',
-    featuredCodes: ['roi', 'payback', 'schedule', 'festival', 'meituan', 'gross-margin-restaurant', 'break-even-restaurant', 'turnover-rate-restaurant', 'salary-cost-ratio-restaurant', 'dish-pricing', 'food-waste-rate', 'labor-efficiency-restaurant', 'delivery-profit', 'payback-restaurant', 'cashflow-restaurant', 'profit-rate-restaurant', 'return-rate-restaurant']
+    featuredCodes: ['roi', 'payback', 'schedule', 'festival', 'meituan', 'gross-margin-restaurant', 'break-even-restaurant', 'turnover-rate-restaurant', 'salary-cost-ratio-restaurant', 'dish-pricing', 'food-waste-rate', 'delivery-profit', 'payback-restaurant', 'cashflow-restaurant', 'profit-rate-restaurant', 'return-rate-restaurant']
   },
   {
     slug: 'education',

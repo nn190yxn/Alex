@@ -149,18 +149,111 @@ export const CALCULATORS = {
 
   'break-even-restaurant': {
     name: '盈亏平衡点计算器（餐饮版）',
-    inputs: ['fixedCost', 'avgRevenue', 'avgCostRate'],
-    calc: ({ fixedCost, avgRevenue, avgCostRate }) => {
-      const costRate = avgCostRate / 100
-      const dailyBE = safeDiv(fixedCost, 1 - costRate)
-      const dailyOrders = Math.ceil(dailyBE / avgRevenue)
-      const monthlyBE = dailyBE * 30
-      let status = dailyBE > fixedCost * 3 ? 'danger' : dailyBE > fixedCost * 2 ? 'warning' : 'success'
-      let statusText = status === 'danger' ? '偏高，经营压力大' : status === 'warning' ? '中等，需关注' : '合理'
-      return { sections: [
-        { title: '盈亏平衡点', items: [`每天需营收：¥${dailyBE.toFixed(0)}`, `每天需接单：${dailyOrders} 单`, `每月需营收：¥${monthlyBE.toFixed(0)}`] },
-        { title: '经营判断', items: [`盈亏平衡点评估：${statusText}`, `固定成本：¥${fixedCost}/月`, `平均客单价：¥${avgRevenue}`] }
-      ], summary: `每天需营收 ¥${dailyBE.toFixed(0)} 才能保本`, extra: { dailyBE: dailyBE.toFixed(0), dailyOrders, monthlyBE: monthlyBE.toFixed(0) } }
+    inputs: ['rent', 'salary', 'depreciation', 'otherFixed', 'dineInPct', 'dineInVarCost', 'deliveryPct', 'deliveryArrivalRate', 'deliveryVarCost', 'area', 'seats', 'hours', 'avgTicket', 'actualRevenue', 'targetProfit'],
+    calc: ({ rent, salary, depreciation, otherFixed, dineInPct, dineInVarCost, deliveryPct, deliveryArrivalRate, deliveryVarCost, area, seats, hours, avgTicket, actualRevenue, targetProfit }) => {
+      const totalFixed = (rent || 0) + (salary || 0) + (depreciation || 0) + (otherFixed || 0)
+      const dineInPctDec = (dineInPct || 0) / 100
+      const deliveryPctDec = (deliveryPct || 0) / 100
+
+      if (totalFixed <= 0) {
+        return { sections: [{ title: '提示', items: ['请至少填写一项固定成本（房租/人工/折旧/其他）'] }], summary: '缺少固定成本', extra: {} }
+      }
+      if ((dineInPct || 0) + (deliveryPct || 0) !== 100) {
+        return { sections: [{ title: '错误', items: ['堂食占比 + 外卖占比必须等于 100%'] }], summary: '占比不等于100%', extra: {} }
+      }
+
+      // 贡献率计算
+      const dineInVarRate = (dineInVarCost || 0) / 100
+      const deliveryVarRate = (deliveryVarCost || 0) / 100
+      const deliveryArrival = (deliveryArrivalRate || 0) / 100
+
+      const dineInContribution = 1 - dineInVarRate
+      const deliveryContributionVal = deliveryArrival - deliveryVarRate
+      const weightedContribution = dineInPctDec * dineInContribution + deliveryPctDec * deliveryContributionVal
+
+      if (weightedContribution <= 0) {
+        return { sections: [{ title: '警告', items: ['加权平均贡献率 <= 0，说明每卖一单都在亏钱。请调整变动成本或提高外卖到账率。'] }], summary: '贡献率为负', extra: {} }
+      }
+
+      const breakEvenMonthly = totalFixed / weightedContribution
+      const breakEvenDaily = breakEvenMonthly / 30
+      const breakEvenHourly = hours > 0 ? breakEvenDaily / hours : null
+      const breakEvenDineIn = breakEvenMonthly * dineInPctDec
+      const breakEvenDelivery = breakEvenMonthly * deliveryPctDec
+
+      // 多维度拆解
+      const areaVal = area || 0
+      const seatsVal = seats || 0
+      const dailyCustomers = avgTicket > 0 ? breakEvenDaily / avgTicket : null
+      const turnoverRate = (seatsVal > 0 && dailyCustomers != null) ? (dailyCustomers / seatsVal).toFixed(1) : null
+      const breakEvenPerSqm = areaVal > 0 ? breakEvenMonthly / areaVal : null
+
+      // 安全边际
+      let safetyMargin = null
+      let safetyText = '未填写实际营业额'
+      if (actualRevenue && actualRevenue > 0) {
+        safetyMargin = ((actualRevenue - breakEvenMonthly) / actualRevenue * 100)
+        safetyText = safetyMargin.toFixed(1) + '%'
+      }
+
+      // 目标利润营业额
+      let targetProfitRevenue = null
+      if (targetProfit && targetProfit > 0) {
+        targetProfitRevenue = (totalFixed + targetProfit) / weightedContribution
+      }
+
+      // 坪效分析
+      let pinXiaoText = ''
+      if (areaVal > 0 && actualRevenue && actualRevenue > 0) {
+        const actualPerSqm = actualRevenue / areaVal
+        if (actualPerSqm >= 3000) pinXiaoText = `优秀 — 实际坪效 ¥${actualPerSqm.toFixed(0)}/m²/月，高效产出`
+        else if (actualPerSqm >= 1500) pinXiaoText = `偏低 — 实际坪效 ¥${actualPerSqm.toFixed(0)}/m²/月，面积未充分利用`
+        else pinXiaoText = `过低 — 实际坪效 ¥${actualPerSqm.toFixed(0)}/m²/月，面积浪费`
+      }
+
+      // What-If 场景
+      const scenarioAFixed = totalFixed * 0.9
+      const scenarioABreakEven = scenarioAFixed / weightedContribution
+
+      const scenarioBArrival = Math.min(deliveryArrival + 0.1, 1)
+      const scenarioBDeliveryContrib = scenarioBArrival - deliveryVarRate
+      const scenarioBWeighted = dineInPctDec * dineInContribution + deliveryPctDec * scenarioBDeliveryContrib
+      const scenarioBBreakEven = scenarioBWeighted > 0 ? totalFixed / scenarioBWeighted : breakEvenMonthly
+
+      // 经营建议
+      const suggestions = []
+      if (deliveryContributionVal < 0) suggestions.push('⚠️ 外卖每卖一单都在亏钱！建议提高外卖定价或减少满减活动，降低变动成本')
+      else if (deliveryContributionVal < 0.1) suggestions.push('外卖贡献率偏低，接近亏损边缘。建议优化定价策略或控制包装成本')
+      if (dineInContribution < 0.4) suggestions.push('堂食贡献率偏低，建议优化食材采购降低食材成本率，调整菜品结构')
+      if (weightedContribution < 0.3) suggestions.push('整体贡献率偏低，保本压力大。建议提升高毛利菜品占比或适当调整定价')
+      if (safetyMargin !== null && safetyMargin < 15) suggestions.push('安全边际偏低，营业额小幅下滑就会亏损。建议推出引流活动增加稳定性')
+      if (suggestions.length === 0) {
+        if (safetyMargin !== null && safetyMargin >= 30) suggestions.push('经营状况良好，可适当扩大规模或开设分店')
+        else suggestions.push('各项指标在合理范围内，持续关注成本控制和营业额增长')
+      }
+
+      return {
+        sections: [
+          { title: '保本营业额', items: [`月保本：¥${breakEvenMonthly.toFixed(0)}`, `日保本：¥${breakEvenDaily.toFixed(0)}`, `小时保本：${breakEvenHourly != null ? '¥' + breakEvenHourly.toFixed(0) : '未设置'}`, `堂食保本：¥${breakEvenDineIn.toFixed(0)}（${dineInPct}%）`, `外卖保本：¥${breakEvenDelivery.toFixed(0)}（${deliveryPct}%）`] },
+          { title: '贡献率分析', items: [`堂食贡献率：${(dineInContribution * 100).toFixed(1)}%`, `外卖贡献率：${(deliveryContributionVal * 100).toFixed(1)}%`, `加权平均贡献率：${(weightedContribution * 100).toFixed(1)}%`] },
+          { title: '多维度拆解', items: dailyCustomers != null ? [`保本日客流：${dailyCustomers.toFixed(0)} 人`, `保本翻台率：${turnoverRate} 次/天`, `保本坪效：¥${breakEvenPerSqm.toFixed(0)}/m²/月`] : [`客单价/座位数未填写，无法拆解客流和翻台率`] },
+          { title: '安全边际', items: [actualRevenue ? `实际营业额：¥${actualRevenue.toLocaleString()}`, `安全边际率：${safetyText}`, safetyMargin !== null && safetyMargin >= 30 ? '✓ 经营状况良好' : safetyMargin !== null && safetyMargin >= 15 ? '⚠ 有一定风险' : safetyMargin !== null ? '🔴 危险，随时可能亏损' : '请填写实际月营业额'] },
+          { title: 'What-If 场景', items: [`固定成本降 10% → 月保本 ¥${scenarioABreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioABreakEven).toFixed(0)}）`, `外卖到账率提升 10% → 月保本 ¥${scenarioBBreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioBBreakEven).toFixed(0)}）`] },
+          { title: '经营建议', items: suggestions },
+          ...(pinXiaoText ? [{ title: '坪效分析', items: [pinXiaoText, `保本坪效线：¥${breakEvenPerSqm.toFixed(0)}/m²/月`, '行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000 元/m²/月'] }] : [])
+        ],
+        summary: `月保本 ¥${breakEvenMonthly.toFixed(0)} — 加权贡献率 ${(weightedContribution * 100).toFixed(1)}%`,
+        extra: {
+          breakEvenMonthly: breakEvenMonthly.toFixed(0),
+          breakEvenDaily: breakEvenDaily.toFixed(0),
+          weightedContribution: (weightedContribution * 100).toFixed(1),
+          dailyCustomers: dailyCustomers != null ? dailyCustomers.toFixed(0) : null,
+          turnoverRate,
+          breakEvenPerSqm: breakEvenPerSqm != null ? breakEvenPerSqm.toFixed(0) : null,
+          safetyMargin: safetyMargin != null ? safetyMargin.toFixed(1) : null,
+          targetProfitRevenue: targetProfitRevenue != null ? targetProfitRevenue.toFixed(0) : null
+        }
+      }
     }
   },
 
@@ -380,22 +473,6 @@ export const CALCULATORS = {
         { title: '判断', items: [`损耗状况：${statusText}`] },
         { title: '降本建议', items: ['严格按预估销量采购，避免过量', '先进先出原则，减少过期浪费', '边角料二次利用（高汤、员工餐）', '每日盘点，发现异常立即排查'] }
       ], summary: `损耗率 ${wasteRate.toFixed(1)}% — ${statusText}`, extra: { wasteRate: wasteRate.toFixed(1), wasteMoney: wasteMoney.toFixed(0) } }
-    }
-  },
-
-  'labor-efficiency-restaurant': {
-    name: '人效计算器（餐饮版）',
-    inputs: ['monthlyRevenue', 'employeeCount', 'totalSalary'],
-    calc: ({ monthlyRevenue, employeeCount, totalSalary }) => {
-      const revenuePerEmployee = safeDiv(monthlyRevenue, employeeCount)
-      const salaryRatio = safeDiv(totalSalary, monthlyRevenue) * 100
-      let laborStatus = salaryRatio <= 20 ? 'success' : salaryRatio <= 25 ? 'warning' : 'danger'
-      let laborText = salaryRatio <= 20 ? '合理' : salaryRatio <= 25 ? '偏高' : '严重超标'
-      return { sections: [
-        { title: '人效指标', items: [`人均产出：¥${revenuePerEmployee.toFixed(0)}/月`, `员工数：${employeeCount}`, `总薪资：¥${totalSalary}/月`, `人工成本占比：${salaryRatio.toFixed(1)}%`] },
-        { title: '判断', items: [`人工成本：${laborText}（基准 <=20%）`] },
-        { title: '优化建议', items: ['优化排班，避免闲时人力浪费', '一人多岗，提升单人产出', '引入自助点餐/扫码点单', '高峰期使用兼职补充'] }
-      ], summary: `人效 ¥${revenuePerEmployee.toFixed(0)}/人，人工占比 ${salaryRatio.toFixed(1)}%`, extra: { revenuePerEmployee: revenuePerEmployee.toFixed(0), salaryRatio: salaryRatio.toFixed(1) } }
     }
   },
 
