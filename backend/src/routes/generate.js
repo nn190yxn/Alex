@@ -65,24 +65,57 @@ ${knowledge}
       includeIndustry: true,
       includePlatform: true
     },
-    systemPrompt: () => `你是一个内容选题专家，为中小企业老板提供抖音/小红书爆款选题。
+    systemPrompt: (ind) => `你是一个内容选题专家，为中小企业老板生成短视频/图文选题方案。
 
-要求：
-1. 每条选题要有标题和推荐理由
-2. 标题要吸引人，能引发目标用户点击
-3. 推荐理由要说明为什么这个选题会火
-4. 不要使用热度指标，只提供实用建议
-5. 输出格式：标题|推荐理由，用换行分隔`,
-    userPromptTemplate: (formData, ind, knowledge) => `目标行业：${ind.name}
-行业痛点：${formData.painPoint || '获客难、转化低、复购差'}
-目标平台：${formData.platform || '抖音'}
-内容数量：${formData.count || 10}
+行业背景：${ind.name}
+
+你的职责：
+1. 根据用户选择的目标、内容类型、时长、场景和平台，生成精准的选题
+2. 每个选题包含：标题、推荐理由、内容标签
+3. 标题要能引发目标用户点击，有差异化
+4. 推荐理由要说明为什么这个选题会火
+5. 内容标签用于分类检索
+
+输出格式（JSON 数组）：
+[{"title": "选题标题", "reason": "推荐理由", "tags": ["标签1", "标签2"]}, ...]
+
+严格按 JSON 格式输出，不要添加任何额外文字。`,
+    userPromptTemplate: (formData, ind, knowledge) => {
+      const goalMap = {
+        exposure: '增加曝光', acquisition: '获取客户', 'boss-ip': '老板人设',
+        conversion: '促进转化', repurchase: '复购留存', interaction: '互动涨粉'
+      }
+      const typeMap = {
+        talking: '口播讲解', 'real-shot': '实拍记录', tutorial: '教程教学',
+        case: '案例分享', drama: '剧情演绎', interactive: '互动挑战'
+      }
+      const durMap = { '15s': '15秒以内', '30s': '30秒左右', '1min': '1分钟左右', '3min': '3分钟以上' }
+      const platMap = { douyin: '抖音', xiaohongshu: '小红书', 'video-account': '视频号' }
+      const sceneMap = {
+        store: '店内', kitchen: '后厨', office: '办公室',
+        outdoor: '户外', home: '居家'
+      }
+
+      const goals = (formData.goals || []).map(g => goalMap[g] || g).join('、')
+      const types = (formData.contentTypes || []).map(t => typeMap[t] || t).join('、')
+      const scenes = (formData.scenes || []).map(s => sceneMap[s] || s).join('、')
+      const platforms = (formData.platforms || []).map(p => platMap[p] || p).join('、')
+      const duration = durMap[formData.duration] || formData.duration
+
+      return `行业：${ind.name}
+主要目标：${goals}
+内容类型：${types}
+视频时长：${duration}
+拍摄场景：${scenes}
+目标平台：${platforms}
+生成数量：${formData.count || 10}个
 
 ${knowledge}
 
-请生成${formData.count || 10}个爆款选题：`,
+请生成 ${formData.count || 10} 个选题，每个包含标题、推荐理由和2-3个标签。`
+    },
     temperature: 0.85,
-    max_tokens: 2000
+    max_tokens: 3000
   },
 
   festival: {
