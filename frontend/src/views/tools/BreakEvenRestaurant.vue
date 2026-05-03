@@ -32,44 +32,58 @@
         </div>
       </div>
 
-      <!-- 变动成本率 -->
+      <!-- 堂食经营 -->
       <div class="section">
-        <div class="section-header" @click="toggleSection('variable')">
-          <span class="section-icon">📊</span>
-          <span class="section-title">变动成本率（每笔收入分出去多少）</span>
-          <span class="section-arrow" :class="{ open: sections.variable }">▾</span>
+        <div class="section-header" @click="toggleSection('dineIn')">
+          <span class="section-icon">🍽️</span>
+          <span class="section-title">堂食经营（到店堂食）</span>
+          <span class="section-arrow" :class="{ open: sections.dineIn }">▾</span>
         </div>
-        <div v-show="sections.variable" class="section-body">
+        <div v-show="sections.dineIn" class="section-body">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">食材成本率 %</label>
-              <input v-model.number="form.foodCost" type="number" class="form-input" placeholder="例：35" min="0" max="100" />
+              <label class="form-label">堂食占总营业额 %</label>
+              <input v-model.number="form.dineInPct" type="number" class="form-input" placeholder="例：60" min="0" max="100" />
             </div>
             <div class="form-group">
-              <label class="form-label">平台抽成 %（美团/饿了么）</label>
-              <input v-model.number="form.platformFee" type="number" class="form-input" placeholder="例：20" min="0" max="100" />
+              <label class="form-label">堂食变动成本率 %</label>
+              <input v-model.number="form.dineInVarCost" type="number" class="form-input" placeholder="食材+水电+提成等" min="0" max="100" />
+            </div>
+          </div>
+          <div class="hint">堂食没有平台抽成，变动成本主要是食材、水电燃气、提成等。100 元堂食收入，到手就是 100 元，扣除变动成本后剩下的就是贡献毛益。</div>
+        </div>
+      </div>
+
+      <!-- 外卖经营 -->
+      <div class="section">
+        <div class="section-header" @click="toggleSection('delivery')">
+          <span class="section-icon">🛵</span>
+          <span class="section-title">外卖经营（美团/饿了么）</span>
+          <span class="section-arrow" :class="{ open: sections.delivery }">▾</span>
+        </div>
+        <div v-show="sections.delivery" class="section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">外卖占总营业额 %</label>
+              <input v-model.number="form.deliveryPct" type="number" class="form-input" placeholder="例：40" min="0" max="100" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">外卖到账率 %</label>
+              <input v-model.number="form.deliveryArrivalRate" type="number" class="form-input" placeholder="卖100块实际到手多少" min="0" max="100" />
             </div>
           </div>
           <div class="form-row" style="margin-top: var(--space-3);">
             <div class="form-group">
-              <label class="form-label">水电燃气 %（占营业额）</label>
-              <input v-model.number="form.utility" type="number" class="form-input" placeholder="例：5" min="0" max="100" />
+              <label class="form-label">外卖变动成本率 %</label>
+              <input v-model.number="form.deliveryVarCost" type="number" class="form-input" placeholder="食材+包装+水电等" min="0" max="100" />
             </div>
             <div class="form-group">
-              <label class="form-label">包装耗材 %（外卖场景）</label>
-              <input v-model.number="form.packaging" type="number" class="form-input" placeholder="例：3" min="0" max="100" />
+              <label class="form-label">外卖贡献率（自动计算）</label>
+              <div class="form-input readonly" :class="{ negative: deliveryContribution < 0 }">{{ deliveryContribution }}%</div>
             </div>
           </div>
-          <div class="form-row" style="margin-top: var(--space-3);">
-            <div class="form-group">
-              <label class="form-label">提成/计件工资 %（占营业额）</label>
-              <input v-model.number="form.commission" type="number" class="form-input" placeholder="例：5" min="0" max="100" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">总变动成本率（自动计算）</label>
-              <div class="form-input readonly">{{ totalVariableCost }}%</div>
-            </div>
-          </div>
+          <div class="hint">外卖到账率：在美团上卖 100 元，实际到手多少钱。比如到手 40 元，到账率就是 40%。不用管平台抽多少，只看你实际收到多少。贡献率 = 到账率 - 变动成本率。</div>
+          <div v-if="deliveryContribution < 0" class="hint warn">⚠️ 外卖每卖一单都在亏钱！需要提高到账率或降低变动成本。</div>
         </div>
       </div>
 
@@ -134,12 +148,35 @@
             <div class="hero-label">月保本营业额</div>
             <div class="hero-value">¥{{ formatNum(result.breakEvenMonthly) }}</div>
             <div class="hero-sub">日均 ¥{{ formatNum(result.breakEvenDaily) }} · 每小时 ¥{{ formatNum(result.breakEvenHourly) }}</div>
+            <div class="hero-breakdown">
+              <span>堂食 ¥{{ formatNum(result.breakEvenDineIn) }}（{{ form.dineInPct }}%）</span>
+              <span>外卖 ¥{{ formatNum(result.breakEvenDelivery) }}（{{ form.deliveryPct }}%）</span>
+            </div>
           </div>
           <div v-if="result.targetProfitRevenue" class="hero-target">
             <div class="hero-label">要达到月利润 ¥{{ formatNum(form.targetProfit) }}</div>
             <div class="hero-value target">¥{{ formatNum(result.targetProfitRevenue) }}</div>
             <div class="hero-sub">目标营业额</div>
           </div>
+        </div>
+
+        <!-- 贡献率对比 -->
+        <div class="contribution-bar">
+          <div class="contrib-label">堂食贡献率</div>
+          <div class="contrib-track">
+            <div class="contrib-fill dinein" :style="{ width: Math.min(result.dineInContribution, 100) + '%' }"></div>
+          </div>
+          <div class="contrib-value">{{ result.dineInContribution }}%</div>
+          <div class="contrib-label">外卖贡献率</div>
+          <div class="contrib-track">
+            <div class="contrib-fill delivery" :style="{ width: Math.min(Math.max(result.deliveryContribution, 0), 100) + '%' }"></div>
+          </div>
+          <div class="contrib-value" :class="{ negative: result.deliveryContribution < 0 }">{{ result.deliveryContribution }}%</div>
+          <div class="contrib-label">加权平均贡献率</div>
+          <div class="contrib-track">
+            <div class="contrib-fill weighted" :style="{ width: Math.min(result.weightedContribution, 100) + '%' }"></div>
+          </div>
+          <div class="contrib-value weighted">{{ result.weightedContribution }}%</div>
         </div>
 
         <!-- 多维度拆解 -->
@@ -172,19 +209,7 @@
 
         <!-- 成本结构诊断 -->
         <div class="result-card">
-          <h3 class="card-title">成本结构诊断</h3>
-          <div class="cost-breakdown">
-            <div class="cost-bar">
-              <div class="cost-bar-fixed" :style="{ width: costRatio.fixed + '%' }" title="固定成本"></div>
-              <div class="cost-bar-variable" :style="{ width: costRatio.variable + '%' }" title="变动成本"></div>
-              <div class="cost-bar-profit" :style="{ width: costRatio.profit + '%' }" title="利润空间"></div>
-            </div>
-            <div class="cost-legend">
-              <span class="legend-item"><span class="legend-dot fixed"></span>固定成本 {{ costRatio.fixed }}%</span>
-              <span class="legend-item"><span class="legend-dot variable"></span>变动成本 {{ costRatio.variable }}%</span>
-              <span class="legend-item"><span class="legend-dot profit"></span>利润空间 {{ costRatio.profit }}%</span>
-            </div>
-          </div>
+          <h3 class="card-title">经营诊断</h3>
           <div class="cost-diagnostics">
             <div v-for="d in result.diagnostics" :key="d.key" class="diag-item" :class="d.status">
               <span class="diag-icon">{{ d.status === 'ok' ? '✓' : d.status === 'warn' ? '⚠' : '✗' }}</span>
@@ -203,7 +228,7 @@
                   <th></th>
                   <th>当前方案</th>
                   <th>固定成本降 10%</th>
-                  <th>变动成本率降 5%</th>
+                  <th>外卖到账率提升 10%</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,7 +278,7 @@ import { getToolByCode } from '@/constants/toolCatalog'
 
 const toolInfo = getToolByCode('break-even-restaurant')
 
-const sections = reactive({ fixed: true, variable: true, ops: true, optional: false })
+const sections = reactive({ fixed: true, dineIn: true, delivery: true, ops: true, optional: false })
 
 function toggleSection(key) {
   sections[key] = !sections[key]
@@ -264,11 +289,11 @@ const form = reactive({
   salary: null,
   depreciation: null,
   otherFixed: null,
-  foodCost: null,
-  platformFee: null,
-  utility: null,
-  packaging: null,
-  commission: null,
+  dineInPct: null,
+  dineInVarCost: null,
+  deliveryPct: null,
+  deliveryArrivalRate: null,
+  deliveryVarCost: null,
   area: null,
   seats: null,
   hours: null,
@@ -277,14 +302,10 @@ const form = reactive({
   targetProfit: null
 })
 
-const totalVariableCost = computed(() => {
-  let sum = 0
-  if (form.foodCost) sum += form.foodCost
-  if (form.platformFee) sum += form.platformFee
-  if (form.utility) sum += form.utility
-  if (form.packaging) sum += form.packaging
-  if (form.commission) sum += form.commission
-  return sum.toFixed(1)
+const deliveryContribution = computed(() => {
+  const rate = form.deliveryArrivalRate || 0
+  const cost = form.deliveryVarCost || 0
+  return (rate - cost).toFixed(1)
 })
 
 const result = ref(null)
@@ -296,21 +317,37 @@ function formatNum(n) {
 
 function handleSubmit() {
   const totalFixed = (form.rent || 0) + (form.salary || 0) + (form.depreciation || 0) + (form.otherFixed || 0)
-  const varRate = parseFloat(totalVariableCost.value) / 100
+  const dineInPct = (form.dineInPct || 0) / 100
+  const deliveryPct = (form.deliveryPct || 0) / 100
 
   if (totalFixed <= 0) {
     result.value = { error: '请至少填写一项固定成本' }
     return
   }
-  if (varRate <= 0 || varRate >= 1) {
-    result.value = { error: '变动成本率必须在 0%-100% 之间' }
+  if ((form.dineInPct || 0) + (form.deliveryPct || 0) !== 100) {
+    result.value = { error: '堂食占比 + 外卖占比必须等于 100%' }
     return
   }
 
-  const contributionRate = 1 - varRate
-  const breakEvenMonthly = totalFixed / contributionRate
+  // 贡献率计算
+  const dineInVarRate = (form.dineInVarCost || 0) / 100
+  const deliveryVarRate = (form.deliveryVarCost || 0) / 100
+  const deliveryArrival = (form.deliveryArrivalRate || 0) / 100
+
+  const dineInContribution = 1 - dineInVarRate
+  const deliveryContributionVal = deliveryArrival - deliveryVarRate
+  const weightedContribution = dineInPct * dineInContribution + deliveryPct * deliveryContributionVal
+
+  if (weightedContribution <= 0) {
+    result.value = { error: '加权平均贡献率 <= 0，说明每卖一单都在亏钱，无法计算保本点。请调整堂食/外卖的变动成本或提高外卖到账率。' }
+    return
+  }
+
+  const breakEvenMonthly = totalFixed / weightedContribution
   const breakEvenDaily = breakEvenMonthly / 30
   const breakEvenHourly = form.hours > 0 ? breakEvenDaily / form.hours : null
+  const breakEvenDineIn = breakEvenMonthly * dineInPct
+  const breakEvenDelivery = breakEvenMonthly * deliveryPct
 
   // 多维度拆解
   const avgTicket = form.avgTicket || 0
@@ -331,77 +368,72 @@ function handleSubmit() {
   // 目标利润营业额
   let targetProfitRevenue = null
   if (form.targetProfit && form.targetProfit > 0) {
-    targetProfitRevenue = (totalFixed + form.targetProfit) / contributionRate
+    targetProfitRevenue = (totalFixed + form.targetProfit) / weightedContribution
   }
 
-  // 成本结构诊断
+  // 诊断
   const diagnostics = []
-  const foodCostRate = form.foodCost || 0
-  const rentRate = form.rent && form.actualRevenue > 0 ? (form.rent / form.actualRevenue * 100) : null
-  const salaryRate = form.salary && form.actualRevenue > 0 ? (form.salary / form.actualRevenue * 100) : null
-  const grossMargin = (100 - foodCostRate).toFixed(0)
-
   diagnostics.push({
-    key: 'gross-margin',
-    status: grossMargin >= 55 ? 'ok' : grossMargin >= 45 ? 'warn' : 'bad',
-    label: '综合毛利率',
-    value: grossMargin + '%',
-    benchmark: '55%-70%'
+    key: 'dinein-contrib',
+    status: dineInContribution >= 0.5 ? 'ok' : dineInContribution >= 0.35 ? 'warn' : 'bad',
+    label: '堂食贡献率',
+    value: (dineInContribution * 100).toFixed(1) + '%',
+    benchmark: '50%-65%'
   })
 
-  if (rentRate !== null) {
-    diagnostics.push({
-      key: 'rent',
-      status: rentRate <= 15 ? 'ok' : rentRate <= 20 ? 'warn' : 'bad',
-      label: '房租占营收比',
-      value: rentRate.toFixed(1) + '%',
-      benchmark: '< 15%'
-    })
-  }
-
-  if (salaryRate !== null) {
-    diagnostics.push({
-      key: 'salary',
-      status: salaryRate <= 25 ? 'ok' : salaryRate <= 30 ? 'warn' : 'bad',
-      label: '人工占营收比',
-      value: salaryRate.toFixed(1) + '%',
-      benchmark: '18%-25%'
-    })
-  }
+  diagnostics.push({
+    key: 'delivery-contrib',
+    status: deliveryContributionVal >= 0.15 ? 'ok' : deliveryContributionVal >= 0 ? 'warn' : 'bad',
+    label: '外卖贡献率',
+    value: (deliveryContributionVal * 100).toFixed(1) + '%',
+    benchmark: '15%-30%'
+  })
 
   diagnostics.push({
-    key: 'food',
-    status: foodCostRate <= 35 ? 'ok' : foodCostRate <= 45 ? 'warn' : 'bad',
-    label: '食材成本率',
-    value: foodCostRate + '%',
-    benchmark: '25%-35%'
+    key: 'weighted-contrib',
+    status: weightedContribution >= 0.4 ? 'ok' : weightedContribution >= 0.25 ? 'warn' : 'bad',
+    label: '加权平均贡献率',
+    value: (weightedContribution * 100).toFixed(1) + '%',
+    benchmark: '35%-50%'
   })
+
+  if (deliveryArrival > 0) {
+    diagnostics.push({
+      key: 'arrival-rate',
+      status: deliveryArrival >= 0.45 ? 'ok' : deliveryArrival >= 0.35 ? 'warn' : 'bad',
+      label: '外卖到账率',
+      value: (deliveryArrival * 100).toFixed(0) + '%',
+      benchmark: '40%-55%'
+    })
+  }
 
   // What-If 场景
+  // 场景A：固定成本降10%
   const scenarioAFixed = totalFixed * 0.9
-  const scenarioABreakEven = scenarioAFixed / contributionRate
+  const scenarioABreakEven = scenarioAFixed / weightedContribution
   const scenarioACustomers = avgTicket > 0 ? (scenarioABreakEven / 30 / avgTicket) : null
   const scenarioATurnover = (seats > 0 && scenarioACustomers != null) ? (scenarioACustomers / seats).toFixed(1) : null
 
-  const scenarioBVarRate = varRate - 0.05
-  const scenarioBContribution = 1 - scenarioBVarRate
-  const scenarioBBreakEven = scenarioBVarRate > 0 ? totalFixed / scenarioBContribution : breakEvenMonthly
+  // 场景B：外卖到账率提升10%（绝对值+10%，比如从40%变50%）
+  const scenarioBArrival = Math.min(deliveryArrival + 0.1, 1)
+  const scenarioBDeliveryContrib = scenarioBArrival - deliveryVarRate
+  const scenarioBWeighted = dineInPct * dineInContribution + deliveryPct * scenarioBDeliveryContrib
+  const scenarioBBreakEven = scenarioBWeighted > 0 ? totalFixed / scenarioBWeighted : breakEvenMonthly
   const scenarioBCustomers = avgTicket > 0 ? (scenarioBBreakEven / 30 / avgTicket) : null
   const scenarioBTurnover = (seats > 0 && scenarioBCustomers != null) ? (scenarioBCustomers / seats).toFixed(1) : null
 
   // 经营建议
   const suggestions = []
-  if (grossMargin < 45) {
-    suggestions.push('毛利率偏低，建议优化菜品结构，提高高毛利菜品的推荐力度和占比。')
+  if (deliveryContributionVal < 0) {
+    suggestions.push('外卖每卖一单都在亏钱！建议：1）提高外卖定价或减少满减活动，提升到账率；2）降低外卖食材成本或减少过度包装。')
+  } else if (deliveryContributionVal < 0.1) {
+    suggestions.push('外卖贡献率偏低，接近亏损边缘。建议优化外卖定价策略或控制包装成本。')
   }
-  if (foodCostRate > 35) {
-    suggestions.push('食材成本率偏高，建议优化采购渠道、与供应商议价、减少后厨损耗。')
+  if (dineInContribution < 0.4) {
+    suggestions.push('堂食贡献率偏低，建议：1）优化食材采购降低食材成本率；2）适当调整菜品结构提高毛利率。')
   }
-  if (rentRate !== null && rentRate > 20) {
-    suggestions.push('房租占比过高，建议考虑：缩减非营业面积、增加外卖/外带比例摊薄租金成本。')
-  }
-  if (salaryRate !== null && salaryRate > 25) {
-    suggestions.push('人工成本偏高，建议优化排班、增加兼职覆盖高峰、提升人效。')
+  if (weightedContribution < 0.3) {
+    suggestions.push('整体贡献率偏低，保本压力较大。建议提升高毛利菜品占比，或适当调整定价。')
   }
   if (safetyMargin !== null && safetyMargin < 15) {
     suggestions.push('安全边际偏低，营业额小幅下滑就会亏损，建议推出引流活动增加营收稳定性。')
@@ -418,18 +450,22 @@ function handleSubmit() {
     breakEvenMonthly,
     breakEvenDaily,
     breakEvenHourly,
+    breakEvenDineIn,
+    breakEvenDelivery,
     dailyCustomers,
     turnoverRate,
     revenuePerSqm,
     safetyMargin,
     safetyMarginText,
     targetProfitRevenue,
+    dineInContribution: (dineInContribution * 100).toFixed(1),
+    deliveryContribution: (deliveryContributionVal * 100).toFixed(1),
+    weightedContribution: (weightedContribution * 100).toFixed(1),
     diagnostics,
     scenarioA: { breakEven: scenarioABreakEven, customers: scenarioACustomers, turnover: scenarioATurnover },
     scenarioB: { breakEven: scenarioBBreakEven, customers: scenarioBCustomers, turnover: scenarioBTurnover },
     suggestions,
     _totalFixed: totalFixed,
-    _varRate: varRate,
     _actualRevenue: form.actualRevenue
   }
 }
@@ -438,19 +474,6 @@ const safetyClass = computed(() => {
   const sm = result.value?.safetyMargin
   if (sm == null) return ''
   return sm >= 30 ? 'safe' : sm >= 15 ? 'warn' : 'danger'
-})
-
-const costRatio = computed(() => {
-  const ar = result.value?._actualRevenue
-  if (!ar || ar <= 0) {
-    return { fixed: 0, variable: 0, profit: 0 }
-  }
-  const tf = result.value._totalFixed
-  const vr = result.value._varRate
-  const fixedPct = Math.min(tf / ar * 100, 100)
-  const varPct = Math.min(vr * 100, 100 - fixedPct)
-  const profitPct = Math.max(100 - fixedPct - varPct, 0)
-  return { fixed: fixedPct.toFixed(0), variable: varPct.toFixed(0), profit: profitPct.toFixed(0) }
 })
 </script>
 
@@ -477,6 +500,8 @@ const costRatio = computed(() => {
 .section-arrow { font-size: var(--text-caption); color: var(--text-muted); transition: transform 0.2s; }
 .section-arrow.open { transform: rotate(180deg); }
 .section-body { padding: var(--space-3) var(--space-4) var(--space-4); }
+.hint { font-size: var(--text-caption); color: var(--text-muted); margin-top: var(--space-2); line-height: 1.5; }
+.hint.warn { color: #dc2626; font-weight: var(--font-weight-semibold); }
 
 .form-row {
   display: grid;
@@ -486,7 +511,8 @@ const costRatio = computed(() => {
 .form-group { display: flex; flex-direction: column; gap: var(--space-1); }
 .form-label { font-size: var(--text-caption); font-weight: var(--font-weight-medium); color: var(--text-secondary); }
 .form-input { padding: var(--space-2) var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); font-size: var(--text-body); }
-.form-input.readonly { background: var(--bg-base); color: var(--brand-primary); font-weight: var(--font-weight-semibold); }
+.form-input.readonly { background: var(--bg-base); font-weight: var(--font-weight-semibold); }
+.form-input.readonly.negative { color: #dc2626; background: #fef2f2; }
 
 .result-page { padding: var(--space-4); }
 .result-hero {
@@ -507,6 +533,25 @@ const costRatio = computed(() => {
 .hero-value { font-size: 40px; font-weight: var(--font-weight-bold); color: var(--text-main); line-height: 1; margin-bottom: var(--space-2); }
 .hero-value.target { color: var(--brand-primary); }
 .hero-sub { font-size: var(--text-body-sm); color: var(--text-tertiary); }
+.hero-breakdown { display: flex; justify-content: center; gap: var(--space-4); margin-top: var(--space-3); font-size: var(--text-caption); color: var(--text-secondary); }
+
+.contribution-bar {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.contrib-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-1); }
+.contrib-label:not(:first-child) { margin-top: var(--space-3); }
+.contrib-track { height: 12px; background: var(--bg-base); border-radius: 6px; overflow: hidden; }
+.contrib-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
+.contrib-fill.dinein { background: #3b82f6; }
+.contrib-fill.delivery { background: #f59e0b; }
+.contrib-fill.weighted { background: linear-gradient(90deg, #3b82f6 50%, #f59e0b 50%); }
+.contrib-value { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-top: 2px; }
+.contrib-value.negative { color: #dc2626; }
+.contrib-value.weighted { color: var(--brand-primary); }
 
 .result-grid {
   display: grid;
@@ -537,18 +582,6 @@ const costRatio = computed(() => {
   margin-bottom: var(--space-3);
 }
 .card-title { font-size: var(--text-body); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
-
-.cost-breakdown { margin-bottom: var(--space-4); }
-.cost-bar { display: flex; height: 24px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: var(--space-2); }
-.cost-bar-fixed { background: #3b82f6; }
-.cost-bar-variable { background: #f59e0b; }
-.cost-bar-profit { background: #22c55e; }
-.cost-legend { display: flex; gap: var(--space-4); flex-wrap: wrap; }
-.legend-item { font-size: var(--text-caption); color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-.legend-dot.fixed { background: #3b82f6; }
-.legend-dot.variable { background: #f59e0b; }
-.legend-dot.profit { background: #22c55e; }
 
 .cost-diagnostics { display: flex; flex-direction: column; gap: var(--space-2); }
 .diag-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--bg-base); font-size: var(--text-body-sm); }
