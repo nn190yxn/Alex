@@ -257,6 +257,123 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 开店投资 ======
+
+  'investment-budget': {
+    name: '开店投资预算计算器（餐饮版）',
+    inputs: ['storeType', 'cityLevel', 'area', 'isFranchise', 'franchiseFee', 'deposit', 'renovationPerSqm', 'equipmentCost', 'initialMaterial', 'rentMonthly', 'rentDepositMonths', 'licenseCost', 'marketingBudget', 'reserveMonths', 'otherCost'],
+    calc: ({ storeType, cityLevel, area, isFranchise, franchiseFee, deposit, renovationPerSqm, equipmentCost, initialMaterial, rentMonthly, rentDepositMonths, licenseCost, marketingBudget, reserveMonths, otherCost }) => {
+      const KB = CALCULATORS.KNOWLEDGE_BASE_INVESTMENT
+      const typeConfig = KB.storeTypes[storeType] || KB.storeTypes.normal
+      const cityConfig = KB.cityLevels[cityLevel] || KB.cityLevels.tier2
+
+      // 分类计算
+      const renovation = (renovationPerSqm || 0) * (area || 0)
+      const franchise = isFranchise ? (franchiseFee || 0) : 0
+      const totalDeposit = (deposit || 0) + (rentMonthly || 0) * (rentDepositMonths || 0)
+      const reserveFund = reserveMonths > 0 ? ((rentMonthly || 0) + (typeConfig.laborPerMonth * cityConfig.salaryMultiplier)) * reserveMonths : 0
+
+      const oneTimeCosts = {
+        franchise: { label: '加盟费/品牌费', amount: franchise, desc: isFranchise ? '一次性品牌授权费用' : '非加盟，无此项' },
+        deposit: { label: '保证金+租金押金', amount: totalDeposit, desc: `保证金 ${(deposit||0).toLocaleString()} + 押金 ${rentDepositMonths||0}个月租金` },
+        renovation: { label: '装修工程', amount: renovation, desc: `${renovationPerSqm||0} 元/m² × ${area||0} m²` },
+        equipment: { label: '设备采购', amount: equipmentCost || 0, desc: '厨房设备+前厅设备+收银系统' },
+        material: { label: '首批物料', amount: initialMaterial || 0, desc: '开业食材/餐具/耗材' },
+        license: { label: '证照办理', amount: licenseCost || 0, desc: '营业执照/食品经营/消防等' },
+        marketing: { label: '开业营销', amount: marketingBudget || 0, desc: '开业活动/线上推广/物料印刷' },
+        other: { label: '其他费用', amount: otherCost || 0, desc: '转让费/设计费/差旅等' }
+      }
+
+      const totalOneTime = Object.values(oneTimeCosts).reduce((s, c) => s + c.amount, 0)
+
+      // 月度运营成本
+      const monthlyRent = rentMonthly || 0
+      const monthlyLabor = typeConfig.laborPerMonth * cityConfig.salaryMultiplier
+      const monthlyUtilities = typeConfig.utilitiesPerMonth * cityConfig.costMultiplier
+      const monthlyOther = totalOneTime * 0.02 / 12 // 按总投资 2% 年摊销
+
+      const monthlyCosts = {
+        rent: { label: '房租', amount: monthlyRent },
+        labor: { label: '人工', amount: monthlyLabor },
+        utilities: { label: '水电燃气', amount: monthlyUtilities },
+        other: { label: '其他杂费', amount: monthlyOther }
+      }
+      const totalMonthly = Object.values(monthlyCosts).reduce((s, c) => s + c.amount, 0)
+
+      // 总投资
+      const totalInvestment = totalOneTime + reserveFund
+
+      // 占比分析
+      const categories = [
+        { label: '品牌费用', amount: franchise, pct: 0 },
+        { label: '装修工程', amount: renovation, pct: 0 },
+        { label: '设备采购', amount: equipmentCost || 0, pct: 0 },
+        { label: '首批物料', amount: initialMaterial || 0, pct: 0 },
+        { label: '押金保证金', amount: totalDeposit, pct: 0 },
+        { label: '开业营销', amount: marketingBudget || 0, pct: 0 },
+        { label: '证照办理', amount: licenseCost || 0, pct: 0 },
+        { label: '流动资金', amount: reserveFund, pct: 0 },
+        { label: '其他费用', amount: (otherCost || 0), pct: 0 }
+      ].filter(c => c.amount > 0)
+
+      categories.forEach(c => { c.pct = safeDiv(c.amount, totalInvestment) * 100 })
+
+      // 行业基准对比
+      const renovationBench = typeConfig.renovationRange[cityLevel] || typeConfig.renovationRange.tier2
+      const equipBench = typeConfig.equipmentRange
+      const benchmarks = []
+      if (renovationPerSqm > 0) {
+        if (renovationPerSqm > renovationBench.max) benchmarks.push({ status: 'warn', text: `装修单价 ${renovationPerSqm}元/m² 高于行业建议（${renovationBench.min}-${renovationBench.max}元/m²），建议控制装修标准` })
+        else if (renovationPerSqm < renovationBench.min) benchmarks.push({ status: 'good', text: `装修单价 ${renovationPerSqm}元/m² 在经济区间内，性价比高` })
+        else benchmarks.push({ status: 'good', text: `装修单价 ${renovationPerSqm}元/m² 在行业合理范围` })
+      }
+      if (equipBench && equipmentCost > 0) {
+        if (equipmentCost > equipBench.max) benchmarks.push({ status: 'warn', text: `设备投入 ${(equipmentCost||0).toLocaleString()}元 偏高，可考虑部分二手设备降本` })
+        else benchmarks.push({ status: 'good', text: `设备投入在行业合理范围` })
+      }
+
+      // 风险提示
+      const risks = []
+      const reserveRatio = safeDiv(reserveFund, totalInvestment) * 100
+      if (reserveRatio < 15) risks.push('⚠️ 流动资金占比过低（' + reserveRatio.toFixed(0) + '%），建议至少预留 3 个月运营资金（占总投资 20-30%）')
+      if (totalMonthly > 0) {
+        const rentRatio = safeDiv(monthlyRent, totalMonthly) * 100
+        if (rentRatio > 25) risks.push('⚠️ 房租占月运营成本 ' + rentRatio.toFixed(0) + '% 偏高，建议控制在 15-20% 以内')
+      }
+      if (risks.length === 0) risks.push('✅ 投资结构合理，各项占比在健康范围内')
+
+      // 保本推演
+      const avgTicket = typeConfig.avgTicket * cityConfig.ticketMultiplier
+      const grossMargin = typeConfig.grossMargin / 100
+      const breakEvenRevenue = safeDiv(totalMonthly, grossMargin)
+      const breakEvenCustomers = Math.ceil(breakEvenRevenue / avgTicket)
+      const breakEvenDailyCustomers = Math.ceil(breakEvenCustomers / 30)
+
+      return {
+        sections: [
+          { title: '总投资预算', items: [`总投资：¥${totalInvestment.toLocaleString()}`, `一次性投入：¥${totalOneTime.toLocaleString()}`, `流动资金储备：¥${reserveFund.toLocaleString()}（${reserveMonths}个月）`, `月运营成本：¥${totalMonthly.toLocaleString()}/月`] },
+          { title: '费用明细', items: categories.map(c => `${c.label}：¥${c.amount.toLocaleString()}（${c.pct.toFixed(1)}%）`) },
+          { title: '月度运营成本', items: Object.values(monthlyCosts).map(c => `${c.label}：¥${c.amount.toFixed(0)}/月`) },
+          { title: '保本推演', items: [`预估客单价：¥${avgTicket.toFixed(0)}`, `预估毛利率：${typeConfig.grossMargin}%`, `月保本营业额：¥${breakEvenRevenue.toFixed(0)}`, `月保本客流：${breakEvenCustomers} 人（日均 ${breakEvenDailyCustomers} 人）`] },
+          { title: '行业基准对比', items: benchmarks.map(b => `${b.status === 'good' ? '✅' : '⚠️'} ${b.text}`) },
+          { title: '风险提示', items: risks }
+        ],
+        summary: `总投资 ¥${totalInvestment.toLocaleString()} — 月保本 ¥${breakEvenRevenue.toFixed(0)}`,
+        extra: {
+          totalInvestment: totalInvestment.toLocaleString(),
+          totalOneTime: totalOneTime.toLocaleString(),
+          reserveFund: reserveFund.toLocaleString(),
+          totalMonthly: totalMonthly.toLocaleString(),
+          breakEvenRevenue: breakEvenRevenue.toFixed(0),
+          breakEvenDailyCustomers,
+          categories,
+          benchmarks,
+          risks
+        }
+      }
+    }
+  },
+
   'turnover-rate-restaurant': {
     name: '翻台率计算器（餐饮版）',
     inputs: ['totalCustomers', 'tableCount', 'mealPeriod'],
@@ -1165,6 +1282,62 @@ export const CALCULATORS = {
         { title: '项目利润', items: [`服务价格：¥${servicePrice}`, `产品成本：¥${productCost}`, `人工成本：¥${laborCost}`, `分摊费用：¥${overheadCost}`, `净利润：¥${profit.toFixed(2)}`, `净利率：${margin.toFixed(1)}%`] },
         { title: '判断', items: [`项目利润：${statusText}`] }
       ], summary: `项目净利润 ¥${profit.toFixed(2)} (${margin.toFixed(1)}%) — ${statusText}`, extra: { profit: profit.toFixed(2), margin: margin.toFixed(1), status, statusText } }
+    }
+  },
+
+  // ====== 开店投资知识库 ======
+  KNOWLEDGE_BASE_INVESTMENT: {
+    storeTypes: {
+      fast: {
+        label: '快餐/简餐',
+        renovationRange: { tier1: { min: 800, max: 1200 }, tier2: { min: 600, max: 1000 }, tier3: { min: 400, max: 800 } },
+        equipmentRange: { min: 50000, max: 150000 },
+        laborPerMonth: 30000,
+        utilitiesPerMonth: 5000,
+        avgTicket: 25,
+        grossMargin: 60
+      },
+      normal: {
+        label: '中档正餐',
+        renovationRange: { tier1: { min: 1200, max: 1800 }, tier2: { min: 800, max: 1500 }, tier3: { min: 600, max: 1200 } },
+        equipmentRange: { min: 80000, max: 250000 },
+        laborPerMonth: 50000,
+        utilitiesPerMonth: 8000,
+        avgTicket: 70,
+        grossMargin: 62
+      },
+      hotpot: {
+        label: '火锅',
+        renovationRange: { tier1: { min: 1500, max: 2200 }, tier2: { min: 1000, max: 1800 }, tier3: { min: 800, max: 1500 } },
+        equipmentRange: { min: 100000, max: 300000 },
+        laborPerMonth: 60000,
+        utilitiesPerMonth: 12000,
+        avgTicket: 90,
+        grossMargin: 58
+      },
+      coffee: {
+        label: '咖啡/茶饮',
+        renovationRange: { tier1: { min: 1500, max: 2500 }, tier2: { min: 1000, max: 2000 }, tier3: { min: 800, max: 1500 } },
+        equipmentRange: { min: 50000, max: 150000 },
+        laborPerMonth: 25000,
+        utilitiesPerMonth: 4000,
+        avgTicket: 30,
+        grossMargin: 65
+      },
+      premium: {
+        label: '高端餐厅',
+        renovationRange: { tier1: { min: 2000, max: 3500 }, tier2: { min: 1500, max: 2500 }, tier3: { min: 1000, max: 2000 } },
+        equipmentRange: { min: 150000, max: 500000 },
+        laborPerMonth: 80000,
+        utilitiesPerMonth: 15000,
+        avgTicket: 200,
+        grossMargin: 65
+      }
+    },
+    cityLevels: {
+      tier1: { label: '一线/新一线', salaryMultiplier: 1.3, costMultiplier: 1.2, ticketMultiplier: 1.2, rentFactor: 1.5 },
+      tier2: { label: '二线/省会', salaryMultiplier: 1.0, costMultiplier: 1.0, ticketMultiplier: 1.0, rentFactor: 1.0 },
+      tier3: { label: '三四线/县城', salaryMultiplier: 0.7, costMultiplier: 0.8, ticketMultiplier: 0.8, rentFactor: 0.6 }
     }
   }
 }

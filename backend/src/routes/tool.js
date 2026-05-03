@@ -44,6 +44,7 @@ const TOOL_QUOTAS = {
     'cashflow-restaurant': { daily: 5, type: 'count' },
     'profit-rate-restaurant': { daily: 5, type: 'count' },
     'return-rate-restaurant': { daily: 5, type: 'count' },
+    'investment-budget': { daily: 5, type: 'count' },
     'gross-margin-education': { daily: 5, type: 'count' },
     'break-even-education': { daily: 5, type: 'count' },
     'salary-cost-ratio-education': { daily: 5, type: 'count' },

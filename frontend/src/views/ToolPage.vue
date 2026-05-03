@@ -45,6 +45,7 @@ import PaybackRestaurant from './tools/PaybackRestaurant.vue'
 import CashflowRestaurant from './tools/CashflowRestaurant.vue'
 import ProfitRateRestaurant from './tools/ProfitRateRestaurant.vue'
 import ReturnRateRestaurant from './tools/ReturnRateRestaurant.vue'
+import InvestmentBudgetRestaurant from './tools/InvestmentBudgetRestaurant.vue'
 import GrossMarginEducation from './tools/GrossMarginEducation.vue'
 import BreakEvenEducation from './tools/BreakEvenEducation.vue'
 import SalaryCostRatioEducation from './tools/SalaryCostRatioEducation.vue'
@@ -197,6 +198,7 @@ const toolComponents = {
   'cashflow-restaurant': CashflowRestaurant,
   'profit-rate-restaurant': ProfitRateRestaurant,
   'return-rate-restaurant': ReturnRateRestaurant,
+  'investment-budget': InvestmentBudgetRestaurant,
   'gross-margin-education': GrossMarginEducation,
   'break-even-education': BreakEvenEducation,
   'salary-cost-ratio-education': SalaryCostRatioEducation,
