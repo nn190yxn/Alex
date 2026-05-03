@@ -60,7 +60,10 @@ export const CALCULATORS = {
         '甜品': { min: 65, max: 75 },
         '小吃': { min: 60, max: 70 },
         '烧烤': { min: 55, max: 65 },
-        '饮品': { min: 70, max: 80 }
+        '饮品': { min: 70, max: 80 },
+        '奶茶': { min: 65, max: 75 },
+        '果茶': { min: 60, max: 70 },
+        '咖啡': { min: 65, max: 75 }
       }
 
       let totalRevenue = 0
@@ -240,7 +243,7 @@ export const CALCULATORS = {
           { title: '安全边际', items: [actualRevenue ? `实际营业额：¥${actualRevenue.toLocaleString()}`, `安全边际率：${safetyText}`, safetyMargin !== null && safetyMargin >= 30 ? '✓ 经营状况良好' : safetyMargin !== null && safetyMargin >= 15 ? '⚠ 有一定风险' : safetyMargin !== null ? '🔴 危险，随时可能亏损' : '请填写实际月营业额'] },
           { title: 'What-If 场景', items: [`固定成本降 10% → 月保本 ¥${scenarioABreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioABreakEven).toFixed(0)}）`, `外卖到账率提升 10% → 月保本 ¥${scenarioBBreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioBBreakEven).toFixed(0)}）`] },
           { title: '经营建议', items: suggestions },
-          ...(pinXiaoText ? [{ title: '坪效分析', items: [pinXiaoText, `保本坪效线：¥${breakEvenPerSqm.toFixed(0)}/m²/月`, '行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000 元/m²/月'] }] : [])
+          ...(pinXiaoText ? [{ title: '坪效分析', items: [pinXiaoText, `保本坪效线：¥${breakEvenPerSqm.toFixed(0)}/m²/月`, '行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000，奶茶/小吃1500-3000 元/m²/月'] }] : [])
         ],
         summary: `月保本 ¥${breakEvenMonthly.toFixed(0)} — 加权贡献率 ${(weightedContribution * 100).toFixed(1)}%`,
         extra: {
@@ -433,8 +436,86 @@ export const CALCULATORS = {
       return { sections: [
         { title: '翻台率', items: [`翻台率：${perTable} 次/${mealPeriod}`, `状态：${statusText}`, `桌均接待：${perTable} 桌` ] },
         { title: '优化建议', items: [suggestion] },
-        { title: '行业参考', items: ['快餐：4-6次/天，正餐：2-3次/天，火锅：3-4次/天'] }
+        { title: '行业参考', items: ['快餐：4-6次/天，正餐：2-3次/天，火锅：3-4次/天', '奶茶/小吃：无翻台概念，使用"出杯效率"计算器'] }
       ], summary: `翻台率 ${perTable} 次 — ${statusText}`, extra: { turnoverRate: perTable, status, statusText } }
+    }
+  },
+
+  // ====== 奶茶/茶饮专用 ======
+
+  'cup-efficiency': {
+    name: '出杯效率计算器（奶茶/小吃版）',
+    inputs: ['dailyCups', 'operatingHours', 'staffCount', 'peakHours', 'peakCups'],
+    calc: ({ dailyCups, operatingHours, staffCount, peakHours, peakCups }) => {
+      const cupsPerHour = safeDiv(dailyCups, operatingHours)
+      const cupsPerStaff = safeDiv(dailyCups, staffCount)
+      const peakCupsPerHour = safeDiv(peakCups, peakHours)
+      const peakRatio = safeDiv(peakCupsPerHour, cupsPerHour)
+
+      let status, statusText
+      if (cupsPerHour >= 40) { status = 'success'; statusText = '高效' }
+      else if (cupsPerHour >= 25) { status = 'warning'; statusText = '正常' }
+      else { status = 'danger'; statusText = '偏低' }
+
+      let peakStatus, peakText
+      if (peakCupsPerHour >= 80) { peakStatus = 'danger'; peakText = '高峰压力大' }
+      else if (peakCupsPerHour >= 50) { peakStatus = 'warning'; peakText = '高峰正常' }
+      else { peakStatus = 'success'; peakText = '高峰轻松' }
+
+      const suggestions = []
+      if (cupsPerHour < 25) {
+        suggestions.push('出杯效率偏低，建议：1）优化操作流程，减少动作浪费；2）提前备料，高峰时直接取用；3）增加兼职人员。')
+      }
+      if (peakCupsPerHour >= 80) {
+        suggestions.push(`高峰期每小时 ${peakCupsPerHour.toFixed(0)} 杯，压力较大！建议：1）设置高峰期专属备料台；2）简化高峰期菜单；3）增加 1-2 名临时工。`)
+      }
+      if (peakRatio > 3) {
+        suggestions.push(`峰谷比 ${peakRatio.toFixed(1)}:1 过高，说明营业时间内客流极度不均匀，建议通过优惠引导错峰消费。`)
+      }
+      if (suggestions.length === 0) {
+        suggestions.push('出杯效率良好，建议持续监控高峰期表现，适时调整人员配置。')
+      }
+
+      return { sections: [
+        { title: '出杯效率', items: [`日均出杯：${dailyCups} 杯`, `营业时间：${operatingHours} 小时`, `平均出杯：${cupsPerHour.toFixed(0)} 杯/小时`, `人均出杯：${cupsPerStaff.toFixed(0)} 杯/人/天`] },
+        { title: '高峰分析', items: [`高峰出杯：${peakCupsPerHour.toFixed(0)} 杯/小时`, `高峰时长：${peakHours} 小时`, `高峰单量：${peakCups} 杯`, `峰谷比：${peakRatio.toFixed(1)}:1`] },
+        { title: '判断', items: [`出杯效率：${statusText}（行业参考 25-40 杯/小时）`, `高峰压力：${peakText}`] },
+        { title: '优化建议', items: suggestions }
+      ], summary: `平均出杯 ${cupsPerHour.toFixed(0)} 杯/小时 — ${statusText}`, extra: { cupsPerHour: cupsPerHour.toFixed(0), peakCupsPerHour: peakCupsPerHour.toFixed(0), peakRatio: peakRatio.toFixed(1), status, statusText } }
+    }
+  },
+
+  'drink-cost': {
+    name: '饮品配方成本计算器（奶茶版）',
+    inputs: ['drinkName', 'ingredients'],
+    calc: ({ drinkName, ingredients }) => {
+      let totalCost = 0
+      const items = ingredients.map(ing => {
+        const cost = safeDiv(ing.amount, ing.packageWeight) * ing.packagePrice
+        totalCost += cost
+        return { ...ing, cost: cost.toFixed(3) }
+      })
+
+      const suggestedPrice = totalCost / safeDiv(30, 100) // 30% 成本率对应售价
+      const actualPrice = suggestedPrice * 0.9 // 实际定价可能略低
+      const actualMargin = safeDiv(actualPrice - totalCost, actualPrice) * 100
+
+      let status = actualMargin >= 70 ? 'success' : actualMargin >= 60 ? 'warning' : 'danger'
+      let statusText = actualMargin >= 70 ? '毛利健康' : actualMargin >= 60 ? '毛利正常' : '毛利偏低'
+
+      const suggestions = []
+      if (actualMargin < 60) {
+        suggestions.push(`毛利率 ${actualMargin.toFixed(0)}% 偏低，奶茶行业建议 65-75%。建议：1）优化配方减少高成本原料用量；2）寻找更便宜的供应商；3）适当提高售价。`)
+      } else if (actualMargin >= 70) {
+        suggestions.push('毛利率健康，继续保持当前配方和成本控制。')
+      }
+
+      return { sections: [
+        { title: `${drinkName} 配方拆解`, items: items.map(i => `${i.name}：${i.amount}${i.unit}（${i.packagePrice}元/${i.packageWeight}${i.packageUnit}）= ¥${i.cost}`) },
+        { title: '成本汇总', items: [`总成本：¥${totalCost.toFixed(3)}/杯`, `建议售价：¥${suggestedPrice.toFixed(1)}/杯（按 30% 成本率）`, `实际售价：¥${actualPrice.toFixed(1)}/杯`, `毛利率：${actualMargin.toFixed(1)}%`] },
+        { title: '判断', items: [`利润状况：${statusText}`] },
+        { title: '优化建议', items: suggestions }
+      ], summary: `${drinkName} — 成本 ¥${totalCost.toFixed(2)}/杯，毛利率 ${actualMargin.toFixed(1)}%`, extra: { totalCost: totalCost.toFixed(2), actualPrice: actualPrice.toFixed(1), actualMargin: actualMargin.toFixed(1), status, statusText } }
     }
   },
 
@@ -860,7 +941,7 @@ export const CALCULATORS = {
       return { sections: [
         { title: '回本周期', items: [`总投资：¥${totalInvestment.toLocaleString()}`, `月净利润：¥${monthlyProfit.toLocaleString()}`, `回本周期：${months.toFixed(1)} 个月（约 ${years} 年）`] },
         { title: '判断', items: [`回本速度：${statusText}`] },
-        { title: '行业参考', items: ['快餐：8-12个月，正餐：12-18个月，咖啡店：12-24个月'] }
+        { title: '行业参考', items: ['快餐：8-12个月，正餐：12-18个月，咖啡店：12-24个月', '奶茶/茶饮：6-10个月，小吃/档口：4-8个月'] }
       ], summary: `回本周期 ${months.toFixed(1)} 个月 — ${statusText}`, extra: { months: months.toFixed(1), years, status, statusText } }
     }
   },
@@ -1459,7 +1540,7 @@ export const CALCULATORS = {
       }
       return { sections: [
         { title: '周转计算', items: [`平均库存：¥${avgInventory.toLocaleString()}`, `期间销货成本：¥${costOfGoods.toLocaleString()}`, `周转次数：${turnover.toFixed(1)} 次（${period}）`, `${daysOfInventory ? `库存天数：约 ${daysOfInventory} 天` : ''}`] },
-        { title: '判断', items: [`周转状况：${statusText}`, `行业参考：快餐 6-8 次/月，正餐 4-6 次/月，火锅 5-7 次/月`] },
+        { title: '判断', items: [`周转状况：${statusText}`, `行业参考：快餐 6-8 次/月，正餐 4-6 次/月，火锅 5-7 次/月，奶茶 15-25 次/月（原料周转快）`] },
         { title: '优化建议', items: suggestions }
       ], summary: `库存周转率 ${turnover.toFixed(1)} 次（${period}） — ${statusText}`, extra: { turnover: turnover.toFixed(1), daysOfInventory, status, statusText } }
     }
@@ -1531,7 +1612,7 @@ export const CALCULATORS = {
 
       return { sections: [
         { title: '复购计算', items: [`总顾客数：${totalCustomers} 人`, `回头客：${repeatCustomers} 人`, `复购率：${rate.toFixed(1)}%`, `统计周期：${period}`] },
-        { title: '判断', items: [`复购状况：${statusText}`, `行业参考：快餐 25-40%，正餐 20-35%，火锅 30-45%`] },
+        { title: '判断', items: [`复购状况：${statusText}`, `行业参考：快餐 25-40%，正餐 20-35%，火锅 30-45%，奶茶 35-55%（高频复购），小吃 20-35%`] },
         ...(avgRepeatInterval > 0 ? [{ title: 'LTV 估算', items: [`平均消费间隔：${avgRepeatInterval} 天`, `年均到店：${annualVisits} 次`, `客户生命周期价值：¥${customerLTV.toLocaleString()}`, `${newCustomerCost > 0 ? `获客成本：¥${newCustomerCost}，LTV/CAC = ${cacRatio.toFixed(1)}` : '填写获客成本可查看 LTV/CAC 比值'}`] }] : []),
         { title: '提升建议', items: suggestions }
       ], summary: `复购率 ${rate.toFixed(1)}% — ${statusText}`, extra: { rate: rate.toFixed(1), status, statusText, customerLTV: customerLTV.toLocaleString(), cacRatio: cacRatio ? cacRatio.toFixed(1) : null } }
@@ -1585,6 +1666,72 @@ export const CALCULATORS = {
         utilitiesPerMonth: 15000,
         avgTicket: 200,
         grossMargin: 65
+      },
+      bubbleTea: {
+        label: '奶茶/茶饮',
+        renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 500, max: 1000 }, tier3: { min: 300, max: 800 } },
+        equipmentRange: { min: 30000, max: 80000 },
+        laborPerMonth: 15000,
+        utilitiesPerMonth: 3000,
+        avgTicket: 15,
+        grossMargin: 70,
+        dailyCupsTarget: { tier1: 300, tier2: 200, tier3: 150 }
+      },
+      snack: {
+        label: '小吃/档口',
+        renovationRange: { tier1: { min: 500, max: 1000 }, tier2: { min: 300, max: 800 }, tier3: { min: 200, max: 500 } },
+        equipmentRange: { min: 10000, max: 40000 },
+        laborPerMonth: 10000,
+        utilitiesPerMonth: 2000,
+        avgTicket: 12,
+        grossMargin: 65,
+        dailyCupsTarget: { tier1: 200, tier2: 150, tier3: 100 }
+      },
+      bubbleTea: {
+        label: '奶茶/茶饮',
+        renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 500, max: 1000 }, tier3: { min: 300, max: 800 } },
+        equipmentRange: { min: 30000, max: 80000 },
+        laborPerMonth: 15000,
+        utilitiesPerMonth: 3000,
+        avgTicket: 15,
+        grossMargin: 70,
+        dailyCupsTarget: { tier1: 300, tier2: 200, tier3: 150 }
+      },
+      snack: {
+        label: '小吃/档口',
+        renovationRange: { tier1: { min: 500, max: 1000 }, tier2: { min: 300, max: 800 }, tier3: { min: 200, max: 500 } },
+        equipmentRange: { min: 10000, max: 40000 },
+        laborPerMonth: 10000,
+        utilitiesPerMonth: 2000,
+        avgTicket: 12,
+        grossMargin: 65,
+        dailyCupsTarget: { tier1: 200, tier2: 150, tier3: 100 }
+      },
+      bubbleTea: {
+        label: '奶茶/茶饮店',
+        renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 600, max: 1200 }, tier3: { min: 400, max: 900 } },
+        equipmentRange: { min: 30000, max: 80000 },
+        laborPerMonth: 15000,
+        utilitiesPerMonth: 3000,
+        avgTicket: 15,
+        grossMargin: 70,
+        avgDailyCups: { tier1: 300, tier2: 200, tier3: 150 },
+        deliveryRatio: { min: 60, max: 80 },
+        paybackMonths: { min: 6, max: 12 },
+        repurchaseRate: { min: 30, max: 50 }
+      },
+      snack: {
+        label: '小吃/快餐档口',
+        renovationRange: { tier1: { min: 500, max: 1000 }, tier2: { min: 300, max: 800 }, tier3: { min: 200, max: 600 } },
+        equipmentRange: { min: 15000, max: 50000 },
+        laborPerMonth: 12000,
+        utilitiesPerMonth: 2500,
+        avgTicket: 12,
+        grossMargin: 65,
+        avgDailyCups: { tier1: 200, tier2: 150, tier3: 100 },
+        deliveryRatio: { min: 40, max: 60 },
+        paybackMonths: { min: 4, max: 10 },
+        repurchaseRate: { min: 25, max: 40 }
       }
     },
     cityLevels: {

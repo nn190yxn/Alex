@@ -45,6 +45,8 @@ const TOOL_QUOTAS = {
     'inventory-turnover': { daily: 5, type: 'count' },
     'dish-contribution': { daily: 5, type: 'count' },
     'repurchase-rate': { daily: 5, type: 'count' },
+    'cup-efficiency': { daily: 5, type: 'count' },
+    'drink-cost': { daily: 5, type: 'count' },
     'payback-restaurant': { daily: 5, type: 'count' },
     'cashflow-restaurant': { daily: 5, type: 'count' },
     'profit-rate-restaurant': { daily: 5, type: 'count' },
