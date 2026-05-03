@@ -1400,6 +1400,79 @@ export const CALCULATORS = {
         }
       }
     }
+  },
+
+  // ====== 美业卡项知识库 ======
+  BEAUTY_CARD_KB: {
+    consumptionRate: { safe: 0.15, warning: 0.10, danger: 0.05 },
+    adviceTemplates: {
+      healthy: { icon: '✅', text: '耗卡率健康，沉淀资金处于安全区间。继续保持服务消耗节奏。' },
+      warning: { icon: '⚠️', text: '耗卡率偏低（{{rate}}%），沉淀资金持续积累。建议推出限时消耗活动（如"夏季护肤季"），加速客户到店。' },
+      danger: { icon: '🔴', text: '耗卡率严重不足（{{rate}}%）！大量预收款未转化为实收，财务上仍是负债。建议立即停止卖卡，全力做服务消耗，否则有"跑圈"风险。' },
+      cashHigh: { icon: '💡', text: '本月现金流良好，但需关注后续耗卡转化，避免"卖得多做得少"的虚假繁荣。' },
+      realIncomeLow: { icon: '⚠️', text: '实收业绩低于运营成本，虽然现金流为正，但实际在亏损。需加强耗卡管理。' },
+      refundWarning: { icon: '🔴', text: '退费金额占比过高（{{ratio}}%），客户满意度可能下降。建议加强服务质量管理。' }
+    }
+  },
+
+  'card-debt-beauty': {
+    name: '美业卡项负债与实收计算器',
+    inputs: ['periodStartDebt', 'monthSales', 'monthConsumption', 'monthRefund'],
+    calc: ({ periodStartDebt, monthSales, monthConsumption, monthRefund }) => {
+      const KB = CALCULATORS.BEAUTY_CARD_KB
+      const periodEndDebt = periodStartDebt + monthSales - monthConsumption - monthRefund
+      const consumptionRate = safeDiv(monthConsumption, periodStartDebt + monthSales) * 100
+      const netCashFlow = monthSales - monthRefund
+      const realIncome = monthConsumption
+      const refundRatio = safeDiv(monthRefund, monthSales) * 100
+
+      let debtStatus, debtStatusText, statusIcon
+      if (consumptionRate >= KB.consumptionRate.safe * 100) {
+        debtStatus = 'good'; debtStatusText = '健康'; statusIcon = '✅'
+      } else if (consumptionRate >= KB.consumptionRate.warning * 100) {
+        debtStatus = 'warning'; debtStatusText = '需关注'; statusIcon = '⚠️'
+      } else {
+        debtStatus = 'danger'; debtStatusText = '风险'; statusIcon = '🔴'
+      }
+
+      const suggestions = []
+      if (consumptionRate >= KB.consumptionRate.safe * 100) {
+        suggestions.push({ ...KB.adviceTemplates.healthy })
+      } else if (consumptionRate >= KB.consumptionRate.warning * 100) {
+        suggestions.push({ ...KB.adviceTemplates.warning, rate: consumptionRate.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.danger, rate: consumptionRate.toFixed(1) })
+      }
+
+      if (netCashFlow > 0 && realIncome < 30000) {
+        suggestions.push({ ...KB.adviceTemplates.cashHigh })
+      }
+      if (realIncome < 20000) {
+        suggestions.push({ ...KB.adviceTemplates.realIncomeLow })
+      }
+      if (refundRatio > 10) {
+        suggestions.push({ ...KB.adviceTemplates.refundWarning, ratio: refundRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '卡项资金分析', items: [`期初沉淀资金（负债）：¥${periodStartDebt.toLocaleString()}`, `本月卖卡（现金流）：¥${monthSales.toLocaleString()}`, `本月耗卡（实收）：¥${monthConsumption.toLocaleString()}`, `本月退费：¥${monthRefund.toLocaleString()}`, `期末沉淀资金（负债）：¥${periodEndDebt.toLocaleString()}`] },
+          { title: '核心指标', items: [`耗卡率：${consumptionRate.toFixed(1)}%（安全线≥15%）`, `本月净现金流：¥${netCashFlow.toLocaleString()}`, `本月实收业绩：¥${realIncome.toLocaleString()}`, `退费率：${refundRatio.toFixed(1)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `耗卡率 ${consumptionRate.toFixed(1)}% — ${debtStatusText} | 实收 ¥${realIncome.toLocaleString()}`,
+        extra: {
+          periodEndDebt: periodEndDebt.toLocaleString(),
+          consumptionRate: consumptionRate.toFixed(1),
+          netCashFlow: netCashFlow.toLocaleString(),
+          realIncome: realIncome.toLocaleString(),
+          refundRatio: refundRatio.toFixed(1),
+          debtStatus,
+          debtStatusText,
+          suggestions
+        }
+      }
+    }
   }
 }
 

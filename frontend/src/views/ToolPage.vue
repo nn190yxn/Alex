@@ -64,6 +64,7 @@ import ConversionRateBeauty from './tools/ConversionRateBeauty.vue'
 import ProjectProfitBeauty from './tools/ProjectProfitBeauty.vue'
 import ProjectStructureBeauty from './tools/ProjectStructureBeauty.vue'
 import LaborStructureBeauty from './tools/LaborStructureBeauty.vue'
+import CardDebtBeauty from './tools/CardDebtBeauty.vue'
 import LTVBeauty from './tools/LTVBeauty.vue'
 import RepurchaseRateBeauty from './tools/RepurchaseRateBeauty.vue'
 import PaybackBeauty from './tools/PaybackBeauty.vue'
@@ -218,6 +219,7 @@ const toolComponents = {
   'project-profit-beauty': ProjectProfitBeauty,
   'project-structure-beauty': ProjectStructureBeauty,
   'labor-structure-beauty': LaborStructureBeauty,
+  'card-debt-beauty': CardDebtBeauty,
   'ltv-beauty': LTVBeauty,
   'repurchase-rate-beauty': RepurchaseRateBeauty,
   'payback-beauty': PaybackBeauty,
