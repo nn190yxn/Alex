@@ -1816,6 +1816,54 @@ export const CALCULATORS = {
         }
       }
     }
+  },
+
+  BEAUTY_MEMBER_CARD_KB: {
+    discountRules: [
+      { range: '9.5折以上', min: 9.5, max: Infinity, impact: '轻微让利，客户感知弱', advice: '适合搭配高毛利项目做小额引流' },
+      { range: '9-8.5折', min: 8.5, max: 9.5, impact: '常规促销区间', advice: '注意控制赠送项目比例，避免透支未来利润' },
+      { range: '8-7.5折', min: 7.5, max: 8.5, impact: '折扣力度较大', advice: '需绑定长期锁客条款，防止一次性薅羊毛' },
+      { range: '7折以下', min: 0, max: 7.5, impact: '严重侵蚀利润，不建议长期执行', advice: '仅限大型节点（店庆/双十一）短期冲刺' }
+    ],
+    adviceTemplates: {
+      discountLow: { icon: '⚠️', text: '折扣率仅{{discountRate}}折，低于成本风险线！建议提高充值门槛或减少赠送金额' },
+      discountHigh: { icon: '💡', text: '折扣力度偏小（{{discountRate}}折），可搭配额外赠品或服务提升吸引力' },
+      marginThin: { icon: '📉', text: '折后毛利率仅{{afterDiscountMargin}}%，接近盈亏红线。建议控制储值活动频率' },
+      giftHigh: { icon: '🎁', text: '赠送比例达{{giftRatio}}%，建议设置分月到账或消费限制，防止资金一次性透支' },
+      category: { icon: '📊', text: '属于「{{category}}」区间：{{impact}}。{{advice}}' }
+    }
+  },
+
+  'member-card-design-beauty': {
+    name: '会员储值卡设计计算器',
+    inputs: ['rechargeAmount', 'giftAmount', 'marginRate'],
+    calc: ({ rechargeAmount, giftAmount, marginRate }) => {
+      const KB = CALCULATORS.BEAUTY_MEMBER_CARD_KB
+      const ga = giftAmount || 0
+      const totalBalance = rechargeAmount + ga
+      const discountRate = totalBalance > 0 ? (rechargeAmount / totalBalance * 10) : 10
+      const afterDiscountMargin = Math.max(0, marginRate * discountRate / 10)
+      const marginLoss = marginRate - afterDiscountMargin
+      const giftRatio = rechargeAmount > 0 ? (ga / rechargeAmount * 100) : 0
+      const extraRevenue = afterDiscountMargin > 0 ? Math.round(rechargeAmount * (marginRate - afterDiscountMargin) / afterDiscountMargin) : 0
+      const profitStatus = afterDiscountMargin >= 55 ? 'good' : afterDiscountMargin >= 40 ? 'warning' : 'danger'
+      const rule = KB.discountRules.find(r => discountRate >= r.min && discountRate < r.max)
+      const suggestions = []
+      if (discountRate <= 7.0) suggestions.push({ ...KB.adviceTemplates.discountLow, discountRate: discountRate.toFixed(1) })
+      if (discountRate >= 9.0) suggestions.push({ ...KB.adviceTemplates.discountHigh, discountRate: discountRate.toFixed(1) })
+      if (afterDiscountMargin < 40) suggestions.push({ ...KB.adviceTemplates.marginThin, afterDiscountMargin: afterDiscountMargin.toFixed(1) })
+      if (ga > 0 && giftRatio > 30) suggestions.push({ ...KB.adviceTemplates.giftHigh, giftRatio: giftRatio.toFixed(0) })
+      if (rule) suggestions.unshift({ ...KB.adviceTemplates.category, category: rule.range, impact: rule.impact, advice: rule.advice })
+      return {
+        sections: [
+          { title: '储值方案', items: [`充值金额：¥${rechargeAmount.toLocaleString()}`, `赠送金额：¥${ga.toLocaleString()}`, `到账总额：¥${totalBalance.toLocaleString()}`, `实际折扣：${discountRate.toFixed(1)}折`] },
+          { title: '毛利影响', items: [`原毛利率：${marginRate}%`, `折后毛利率：${afterDiscountMargin.toFixed(1)}%`, `毛利折损：${marginLoss.toFixed(1)}%`, `需多做业绩：¥${extraRevenue.toLocaleString()}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `充${rechargeAmount}送${ga}，实际${discountRate.toFixed(1)}折`,
+        extra: { discountRate: discountRate.toFixed(1), totalBalance: totalBalance.toLocaleString(), afterDiscountMargin: afterDiscountMargin.toFixed(1), marginLoss: marginLoss.toFixed(1), giftRatio: giftRatio.toFixed(0), extraRevenue: extraRevenue.toLocaleString(), profitStatus, suggestions }
+      }
+    }
   }
 }
 
