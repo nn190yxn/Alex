@@ -1415,6 +1415,19 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 美业卡项知识库 ======
+  BEAUTY_CARD_KB: {
+    consumptionRate: { safe: 0.15, warning: 0.10, danger: 0.05 },
+    adviceTemplates: {
+      healthy: { icon: '✅', text: '耗卡率健康，沉淀资金处于安全区间。继续保持服务消耗节奏。' },
+      warning: { icon: '⚠️', text: '耗卡率偏低（{{rate}}%），沉淀资金持续积累。建议推出限时消耗活动（如"夏季护肤季"），加速客户到店。' },
+      danger: { icon: '🔴', text: '耗卡率严重不足（{{rate}}%）！大量预收款未转化为实收，财务上仍是负债。建议立即停止卖卡，全力做服务消耗，否则有"跑圈"风险。' },
+      cashHigh: { icon: '💡', text: '本月现金流良好，但需关注后续耗卡转化，避免"卖得多做得少"的虚假繁荣。' },
+      realIncomeLow: { icon: '⚠️', text: '实收业绩低于运营成本，虽然现金流为正，但实际在亏损。需加强耗卡管理。' },
+      refundWarning: { icon: '🔴', text: '退费金额占比过高（{{ratio}}%），客户满意度可能下降。建议加强服务质量管理。' }
+    }
+  },
+
   'card-debt-beauty': {
     name: '美业卡项负债与实收计算器',
     inputs: ['periodStartDebt', 'monthSales', 'monthConsumption', 'monthRefund'],
@@ -1469,6 +1482,82 @@ export const CALCULATORS = {
           refundRatio: refundRatio.toFixed(1),
           debtStatus,
           debtStatusText,
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业拓客 LTV 知识库 ======
+  BEAUTY_FUNNEL_KB: {
+    conversionBenchmarks: {
+      visitToExperience: { min: 30, max: 50, label: '进店→体验' },
+      experienceToRetain: { min: 25, max: 40, label: '体验→留客' },
+      retainToRepurchase: { min: 40, max: 60, label: '留客→复购' }
+    },
+    ltvBenchmarks: {
+      life: { min: 3000, max: 10000, label: '生活美容' },
+      medical: { min: 10000, max: 50000, label: '轻医美' }
+    },
+    adviceTemplates: {
+      visitLow: { icon: '🔴', text: '进店转化率偏低（{{rate}}% < {{target}}%）！说明引流品吸引力不够或接待流程有问题。建议：1）优化引流品设计（99 元体验）；2）培训接待话术。' },
+      experienceLow: { icon: '⚠️', text: '体验→留客转化偏低（{{rate}}%）。体验效果可能未达预期，或留客方案设计不合理。建议：1）体验后 24 小时内跟进；2）设计阶梯式留客卡（980/1980/2980）。' },
+      repurchaseLow: { icon: '🔴', text: '复购率偏低（{{rate}}% < {{target}}%）！客户流失严重。建议：1）建立会员等级体系；2）周期护理提醒；3）老客专属福利。' },
+      cacHigh: { icon: '⚠️', text: '获客成本过高（¥{{cac}} > ¥{{target}}），拓客渠道效率低。建议：1）增加转介绍激励；2）优化线上投放 ROI；3）利用私域裂变。' },
+      ltvGood: { icon: '✅', text: '客户终身价值健康（¥{{ltv}}），LTV/CAC 比值合理，拓客投入可持续。' },
+      ltvHigh: { icon: '✅', text: 'LTV/CAC = {{ratio}}，客户价值极高！可适当提高拓客预算扩大规模。' },
+      ltvLow: { icon: '🔴', text: 'LTV/CAC = {{ratio}} < 3，获客成本高于客户价值！需立即优化：1）提高客单价；2）增加消费频次；3）降低拓客成本。' }
+    }
+  },
+
+  'funnel-ltv-beauty': {
+    name: '美业拓客转化与 LTV 计算器',
+    inputs: ['newVisitors', 'experienceCount', 'retainedCount', 'repurchasedCount', 'totalMarketingCost', 'avgOrderValue', 'purchaseFrequency', 'customerLifespan'],
+    calc: ({ newVisitors, experienceCount, retainedCount, repurchasedCount, totalMarketingCost, avgOrderValue, purchaseFrequency, customerLifespan }) => {
+      const KB = CALCULATORS.BEAUTY_FUNNEL_KB
+
+      const visitToExperience = safeDiv(experienceCount, newVisitors) * 100
+      const experienceToRetain = safeDiv(retainedCount, experienceCount) * 100
+      const retainToRepurchase = safeDiv(repurchasedCount, retainedCount) * 100
+      const cac = safeDiv(totalMarketingCost, newVisitors)
+      const ltv = avgOrderValue * purchaseFrequency * customerLifespan
+      const ltvCacRatio = safeDiv(ltv, cac)
+
+      const suggestions = []
+      if (visitToExperience < KB.conversionBenchmarks.visitToExperience.min) {
+        suggestions.push({ ...KB.adviceTemplates.visitLow, rate: visitToExperience.toFixed(0), target: KB.conversionBenchmarks.visitToExperience.min })
+      }
+      if (experienceToRetain < KB.conversionBenchmarks.experienceToRetain.min) {
+        suggestions.push({ ...KB.adviceTemplates.experienceLow, rate: experienceToRetain.toFixed(0) })
+      }
+      if (retainToRepurchase < KB.conversionBenchmarks.retainToRepurchase.min) {
+        suggestions.push({ ...KB.adviceTemplates.repurchaseLow, rate: retainToRepurchase.toFixed(0), target: KB.conversionBenchmarks.retainToRepurchase.min })
+      }
+      if (cac > 500) {
+        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0), target: 500 })
+      }
+      if (ltvCacRatio >= 5) {
+        suggestions.push({ ...KB.adviceTemplates.ltvHigh, ltv: ltv.toFixed(0), ratio: ltvCacRatio.toFixed(1) })
+      } else if (ltvCacRatio >= 3) {
+        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toFixed(0) })
+      } else if (cac > 0) {
+        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '转化漏斗', items: [`进店→体验：${visitToExperience.toFixed(1)}%（${newVisitors}人→${experienceCount}人）`, `体验→留客：${experienceToRetain.toFixed(1)}%（${experienceCount}人→${retainedCount}人）`, `留客→复购：${retainToRepurchase.toFixed(1)}%（${retainedCount}人→${repurchasedCount}人）`] },
+          { title: '获客与 LTV', items: [`单人获客成本（CAC）：¥${cac.toFixed(0)}`, `客户终身价值（LTV）：¥${ltv.toFixed(0)}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `LTV ¥${ltv.toFixed(0)}，CAC ¥${cac.toFixed(0)}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: {
+          visitToExperience: visitToExperience.toFixed(1),
+          experienceToRetain: experienceToRetain.toFixed(1),
+          retainToRepurchase: retainToRepurchase.toFixed(1),
+          cac: cac.toFixed(0),
+          ltv: ltv.toFixed(0),
+          ltvCacRatio: ltvCacRatio.toFixed(1),
           suggestions
         }
       }
