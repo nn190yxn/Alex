@@ -62,6 +62,7 @@ import SalaryCostRatioBeauty from './tools/SalaryCostRatioBeauty.vue'
 import LaborEfficiencyBeauty from './tools/LaborEfficiencyBeauty.vue'
 import ConversionRateBeauty from './tools/ConversionRateBeauty.vue'
 import ProjectProfitBeauty from './tools/ProjectProfitBeauty.vue'
+import ProjectStructureBeauty from './tools/ProjectStructureBeauty.vue'
 import LTVBeauty from './tools/LTVBeauty.vue'
 import RepurchaseRateBeauty from './tools/RepurchaseRateBeauty.vue'
 import PaybackBeauty from './tools/PaybackBeauty.vue'
@@ -214,6 +215,7 @@ const toolComponents = {
   'labor-efficiency-beauty': LaborEfficiencyBeauty,
   'conversion-rate-beauty': ConversionRateBeauty,
   'project-profit-beauty': ProjectProfitBeauty,
+  'project-structure-beauty': ProjectStructureBeauty,
   'ltv-beauty': LTVBeauty,
   'repurchase-rate-beauty': RepurchaseRateBeauty,
   'payback-beauty': PaybackBeauty,

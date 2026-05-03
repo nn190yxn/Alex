@@ -476,6 +476,47 @@ export const CALCULATORS = {
     }
   },
 
+  'labor-efficiency-restaurant': {
+    name: '人效计算器（餐饮版）',
+    inputs: ['monthlyRevenue', 'employeeCount', 'totalSalary'],
+    calc: ({ monthlyRevenue, employeeCount, totalSalary }) => {
+      const revenuePerEmployee = safeDiv(monthlyRevenue, employeeCount)
+      const salaryRatio = safeDiv(totalSalary, monthlyRevenue) * 100
+      let laborStatus = salaryRatio <= 20 ? 'success' : salaryRatio <= 25 ? 'warning' : 'danger'
+      let laborText = salaryRatio <= 20 ? '合理' : salaryRatio <= 25 ? '偏高' : '严重超标'
+      return { sections: [
+        { title: '人效指标', items: [`人均产出：¥${revenuePerEmployee.toFixed(0)}/月`, `员工数：${employeeCount}`, `总薪资：¥${totalSalary}/月`, `人工成本占比：${salaryRatio.toFixed(1)}%`] },
+        { title: '判断', items: [`人工成本：${laborText}（基准 <=20%）`] },
+        { title: '优化建议', items: ['优化排班，避免闲时人力浪费', '一人多岗，提升单人产出', '引入自助点餐/扫码点单', '高峰期使用兼职补充'] }
+      ], summary: `人效 ¥${revenuePerEmployee.toFixed(0)}/人，人工占比 ${salaryRatio.toFixed(1)}%`, extra: { revenuePerEmployee: revenuePerEmployee.toFixed(0), salaryRatio: salaryRatio.toFixed(1) } }
+    }
+  },
+
+  // ====== 美业结构化知识库 ======
+  BEAUTY_KNOWLEDGE_BASE: {
+    projectRoles: {
+      traffic: { label: '引流品', targetRatio: { min: 20, max: 30 }, marginRange: '10-30%', goal: '新客进店/激活' },
+      retention: { label: '留客品', targetRatio: { min: 40, max: 50 }, marginRange: '40-60%', goal: '建立信任/高频消耗' },
+      profit: { label: '利润品', targetRatio: { min: 20, max: 30 }, marginRange: '70%+', goal: '核心盈利/升单' },
+      retail: { label: '家居产品', targetRatio: { min: 10, max: 20 }, marginRange: '50-70%', goal: '连带销售' }
+    },
+    benchmarks: {
+      productRatio: { min: 5, max: 15 }, // 产品成本占售价比例
+      laborRatio: { min: 10, max: 20 },  // 美容师手工费占售价比例
+      bedEfficiency: { min: 800, max: 1500 } // 单床月产出（元）
+    },
+    adviceTemplates: {
+      trafficMissing: { icon: '🔴', text: '缺乏引流品！新客进店门槛太高，建议设计 99-199 元的体验项目。' },
+      retentionMissing: { icon: '⚠️', text: '缺乏留客品！体验完引流品后无处承接，客户极易流失。建议设置 980-2980 元的疗程卡。' },
+      profitMissing: { icon: '🔴', text: '缺乏利润品！全靠引流/留客无法覆盖房租人工。需补充高毛利特色项目或仪器类项目。' },
+      trafficTooHigh: { icon: '⚠️', text: '引流品占比过高（{{ratio}}%），客户只薅羊毛不升单，门店会"虚假繁荣"。' },
+      profitTooHigh: { icon: '⚠️', text: '利润品占比过高（{{ratio}}%），进店转化率可能偏低，客户觉得"太贵"。' },
+      structureHealthy: { icon: '✅', text: '品项结构健康，符合美业黄金比例（引流:留客:利润 ≈ 3:5:2）。' },
+      marginWarning: { icon: '⚠️', text: '项目"{{name}}"产品占比过高（{{ratio}}%），建议优化耗材成本或调整定价。' },
+      laborWarning: { icon: '⚠️', text: '项目"{{name}}"手工费占比过高（{{ratio}}%），建议简化流程、使用仪器替代或提高客单价。' }
+    }
+  },
+
   'salary-cost-ratio-restaurant': {
     name: '人工成本占比计算器（餐饮版）',
     inputs: ['storeType', 'revenue', 'front', 'back', 'mgmt'],
@@ -1165,6 +1206,67 @@ export const CALCULATORS = {
         { title: '项目利润', items: [`服务价格：¥${servicePrice}`, `产品成本：¥${productCost}`, `人工成本：¥${laborCost}`, `分摊费用：¥${overheadCost}`, `净利润：¥${profit.toFixed(2)}`, `净利率：${margin.toFixed(1)}%`] },
         { title: '判断', items: [`项目利润：${statusText}`] }
       ], summary: `项目净利润 ¥${profit.toFixed(2)} (${margin.toFixed(1)}%) — ${statusText}`, extra: { profit: profit.toFixed(2), margin: margin.toFixed(1), status, statusText } }
+    }
+  },
+
+  'project-structure-beauty': {
+    name: '美业品项结构与利润计算器',
+    inputs: ['beautyType', 'projects'],
+    calc: ({ beautyType, projects = [] }) => {
+      const KB = CALCULATORS.BEAUTY_KNOWLEDGE_BASE
+      const validProjects = projects.filter(p => p.name && p.price > 0)
+
+      if (validProjects.length === 0) {
+        return { sections: [{ title: '提示', items: ['请至少录入一个项目信息'] }], summary: '请录入项目数据', extra: { projects: [], structure: [], totalMargin: 0 } }
+      }
+
+      let totalRevenue = 0, totalProfit = 0
+      const roleCounts = { traffic: 0, retention: 0, profit: 0, retail: 0 }
+      const detailedProjects = validProjects.map(p => {
+        const labor = p.price * (p.laborRate || 10) / 100
+        const product = p.price * (p.productRate || 8) / 100
+        const profit = p.price - product - labor
+        const margin = safeDiv(profit, p.price) * 100
+
+        totalRevenue += p.price
+        totalProfit += profit
+        roleCounts[p.role]++
+
+        let marginStatus = margin >= 70 ? 'excellent' : margin >= 50 ? 'good' : margin >= 30 ? 'warning' : 'danger'
+        return { ...p, labor, product, profit, margin, marginStatus }
+      })
+
+      const overallMargin = safeDiv(totalProfit, totalRevenue) * 100
+      const totalCount = validProjects.length
+      const structure = Object.entries(KB.projectRoles).map(([key, config]) => {
+        const count = roleCounts[key]
+        const ratio = safeDiv(count * 100, totalCount)
+        const isHealthy = ratio >= config.targetRatio.min && ratio <= config.targetRatio.max
+        return { key, label: config.label, count, ratio: ratio.toFixed(0), target: `${config.targetRatio.min}-${config.targetRatio.max}`, status: isHealthy ? 'healthy' : 'warn', color: key === 'traffic' ? '#f59e0b' : key === 'retention' ? '#10b981' : key === 'profit' ? '#3b82f6' : '#8b5cf6' }
+      })
+
+      const suggestions = []
+      if (roleCounts.traffic === 0) suggestions.push({ ...KB.adviceTemplates.trafficMissing })
+      if (roleCounts.retention === 0) suggestions.push({ ...KB.adviceTemplates.retentionMissing })
+      if (roleCounts.profit === 0) suggestions.push({ ...KB.adviceTemplates.profitMissing })
+      if (roleCounts.traffic / totalCount > 0.4) suggestions.push({ ...KB.adviceTemplates.trafficTooHigh, ratio: safeDiv(roleCounts.traffic * 100, totalCount).toFixed(0) })
+      if (roleCounts.profit / totalCount > 0.5) suggestions.push({ ...KB.adviceTemplates.profitTooHigh, ratio: safeDiv(roleCounts.profit * 100, totalCount).toFixed(0) })
+      if (roleCounts.traffic > 0 && roleCounts.retention > 0 && roleCounts.profit > 0) suggestions.push({ ...KB.adviceTemplates.structureHealthy })
+
+      for (const p of detailedProjects) {
+        if (p.product / p.price > 0.2) suggestions.push({ ...KB.adviceTemplates.marginWarning, name: p.name, ratio: safeDiv(p.product * 100, p.price).toFixed(0) })
+        if (p.labor / p.price > 0.25) suggestions.push({ ...KB.adviceTemplates.laborWarning, name: p.name, ratio: safeDiv(p.labor * 100, p.price).toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '综合毛利预测', items: [`项目总数：${totalCount}个`, `平均售价：¥${safeDiv(totalRevenue, totalCount).toFixed(0)}`, `综合毛利率：${overallMargin.toFixed(1)}%（基于角色销量占比模型）`] },
+          { title: '品项结构诊断', items: structure.map(s => `${s.label}：${s.count}个 (${s.ratio}%) — 目标 ${s.target}% — ${s.status === 'healthy' ? '健康' : '需调整'}`) },
+          { title: '优化建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `综合毛利率 ${overallMargin.toFixed(1)}%，项目结构${roleCounts.traffic > 0 && roleCounts.retention > 0 && roleCounts.profit > 0 ? '健康' : '需优化'}`,
+        extra: { overallMargin: overallMargin.toFixed(1), totalCount, structure, projects: detailedProjects, suggestions }
+      }
     }
   }
 }
