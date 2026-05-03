@@ -146,6 +146,7 @@ export const allTools = [
   createTool({ code: 'profit-rate-beauty', name: '利润率计算器（美业版）', description: '帮你算出美业门店的真实净利。', tag: '计算', iconColor: 'green', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['利润率', '成本结构'] }),
   createTool({ code: 'return-rate-beauty', name: '回报率计算器（美业版）', description: '帮你判断拓客活动/仪器采购到底值不值。', tag: '计算', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['ROI', '营销'] }),
   createTool({ code: 'project-structure-beauty', name: '美业品项结构与利润计算器', description: '品项分层分析（引流/留客/利润），诊断结构健康度。', tag: '核心', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['品项结构', '利润分析'] }),
+  createTool({ code: 'labor-structure-beauty', name: '美业人工成本与人效分析器', description: '美容师/顾问分组录入，计算人效、单床产出。', tag: '核心', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['人效', '成本控制'] }),
 ]
 
 export const standaloneCapabilities = [
@@ -375,7 +376,7 @@ export const industryEntries = [
     audience: '美容、美发、美甲、轻医美等门店老板',
     summary: '聚焦复购、储值、发圈种草、服务流程和老板 IP。',
     accent: '#db2777',
-    featuredCodes: ['friend', 'xiaohongshu', 'membership-design', 'ip-agent', 'festival', 'card-consumption-rate-beauty', 'gross-margin-beauty', 'break-even-beauty', 'salary-cost-ratio-beauty', 'labor-efficiency-beauty', 'conversion-rate-beauty', 'project-profit-beauty', 'project-structure-beauty', 'ltv-beauty', 'repurchase-rate-beauty', 'payback-beauty', 'cashflow-beauty', 'profit-rate-beauty', 'return-rate-beauty']
+    featuredCodes: ['friend', 'xiaohongshu', 'membership-design', 'ip-agent', 'festival', 'card-consumption-rate-beauty', 'gross-margin-beauty', 'break-even-beauty', 'salary-cost-ratio-beauty', 'labor-efficiency-beauty', 'conversion-rate-beauty', 'project-profit-beauty', 'project-structure-beauty', 'labor-structure-beauty', 'ltv-beauty', 'repurchase-rate-beauty', 'payback-beauty', 'cashflow-beauty', 'profit-rate-beauty', 'return-rate-beauty']
   },
   {
     slug: 'service',

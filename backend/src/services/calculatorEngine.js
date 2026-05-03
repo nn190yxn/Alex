@@ -517,6 +517,31 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 美业人工成本知识库 ======
+  BEAUTY_LABOR_KB: {
+    storeTypes: {
+      small: { label: '小型店（3-5 张床）', laborRatioTarget: { min: 25, max: 35 }, bedEffTarget: 8000 },
+      medium: { label: '中型店（6-10 张床）', laborRatioTarget: { min: 30, max: 40 }, bedEffTarget: 10000 },
+      large: { label: '大型店/会所（10+ 张床）', laborRatioTarget: { min: 35, max: 45 }, bedEffTarget: 12000 }
+    },
+    roleBenchmarks: {
+      beautician: { costRatio: { min: 15, max: 25 }, salaryRange: { min: 5000, max: 12000 } },
+      consultant: { costRatio: { min: 8, max: 15 }, salaryRange: { min: 8000, max: 20000 } },
+      manager: { costRatio: { min: 5, max: 10 }, salaryRange: { min: 10000, max: 25000 } },
+      reception: { costRatio: { min: 3, max: 6 }, salaryRange: { min: 4000, max: 7000 } }
+    },
+    adviceTemplates: {
+      ratioHigh: { icon: '🔴', text: '人工占比过高（{{ratio}}% > {{max}}%）！提成结构可能不合理，建议设置阶梯提成封顶。' },
+      ratioGood: { icon: '✅', text: '人工占比健康，人效处于合理区间。' },
+      beauticianEffLow: { icon: '⚠️', text: '美容师人效偏低（¥{{value}} < ¥{{target}}），存在闲时浪费。建议：1）闲时排培训/手法练习；2）推出闲时特惠卡提高床位利用率。' },
+      consultantHigh: { icon: '⚠️', text: '顾问薪资占比偏高（{{ratio}}%），需核实其业绩产出是否匹配高提成。建议设置业绩考核门槛。' },
+      managerHigh: { icon: '🔴', text: '管理层薪资占比过高，小店建议店长兼任顾问或美容师，降低固定成本。' },
+      structureUnbalanced: { icon: '⚠️', text: '人员结构失衡！美容师:顾问:前台比例建议为 3:1:1 或 4:1:1。' },
+      bedEffHigh: { icon: '✅', text: '单床产出优秀，床位利用率高！' },
+      bedEffLow: { icon: '⚠️', text: '单床产出偏低（¥{{value}} < ¥{{target}}），床位闲置严重。建议增加项目品类或延长营业时间。' }
+    }
+  },
+
   'salary-cost-ratio-restaurant': {
     name: '人工成本占比计算器（餐饮版）',
     inputs: ['storeType', 'revenue', 'front', 'back', 'mgmt'],
@@ -1266,6 +1291,113 @@ export const CALCULATORS = {
         ],
         summary: `综合毛利率 ${overallMargin.toFixed(1)}%，项目结构${roleCounts.traffic > 0 && roleCounts.retention > 0 && roleCounts.profit > 0 ? '健康' : '需优化'}`,
         extra: { overallMargin: overallMargin.toFixed(1), totalCount, structure, projects: detailedProjects, suggestions }
+      }
+    }
+  },
+
+  'labor-structure-beauty': {
+    name: '美业人工成本与人效分析器',
+    inputs: ['storeType', 'revenue', 'bedCount', 'beauticians', 'consultants', 'managers', 'receptions'],
+    calc: ({ storeType, revenue, bedCount = 0, beauticians = [], consultants = [], managers = [], receptions = [] }) => {
+      const KB = CALCULATORS.BEAUTY_LABOR_KB
+      const typeConfig = KB.storeTypes[storeType] || KB.storeTypes.medium
+
+      const calcTotal = (arr) => arr.reduce((s, i) => s + (i.count * i.salary), 0)
+      const calcCount = (arr) => arr.reduce((s, i) => s + i.count, 0)
+
+      const beauticianTotal = calcTotal(beauticians)
+      const consultantTotal = calcTotal(consultants)
+      const managerTotal = calcTotal(managers)
+      const receptionTotal = calcTotal(receptions)
+      const totalLabor = beauticianTotal + consultantTotal + managerTotal + receptionTotal
+
+      const beauticianCount = calcCount(beauticians)
+      const consultantCount = calcCount(consultants)
+      const managerCount = calcCount(managers)
+      const receptionCount = calcCount(receptions)
+      const totalCount = beauticianCount + consultantCount + managerCount + receptionCount
+
+      const laborRatio = safeDiv(totalLabor, revenue) * 100
+      const beauticianRatio = safeDiv(beauticianTotal, revenue) * 100
+      const consultantRatio = safeDiv(consultantTotal, revenue) * 100
+      const managerRatio = safeDiv(managerTotal, revenue) * 100
+      const receptionRatio = safeDiv(receptionTotal, revenue) * 100
+
+      let laborStatus, laborStatusText
+      if (laborRatio <= typeConfig.laborRatioTarget.min) { laborStatus = 'good'; laborStatusText = '优秀' }
+      else if (laborRatio <= typeConfig.laborRatioTarget.max) { laborStatus = 'good'; laborStatusText = '达标' }
+      else { laborStatus = 'bad'; laborStatusText = '超标' }
+
+      const beauticianEff = safeDiv(revenue, beauticianCount)
+      const totalEff = safeDiv(revenue, totalCount)
+      const bedEff = safeDiv(revenue, bedCount)
+
+      const suggestions = []
+      if (laborRatio > typeConfig.laborRatioTarget.max) {
+        suggestions.push({ ...KB.adviceTemplates.ratioHigh, ratio: laborRatio.toFixed(1), max: typeConfig.laborRatioTarget.max })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.ratioGood })
+      }
+
+      if (beauticianEff < typeConfig.bedEffTarget * 0.7) {
+        suggestions.push({ ...KB.adviceTemplates.beauticianEffLow, value: beauticianEff.toFixed(0), target: typeConfig.bedEffTarget })
+      }
+      if (consultantRatio > 15) {
+        suggestions.push({ ...KB.adviceTemplates.consultantHigh, ratio: consultantRatio.toFixed(1) })
+      }
+      if (managerRatio > 12) {
+        suggestions.push({ ...KB.adviceTemplates.managerHigh })
+      }
+
+      if (beauticianCount > 0) {
+        const ratioBC = beauticianCount / (consultantCount + 1)
+        if (ratioBC > 5 || ratioBC < 2) {
+          suggestions.push({ ...KB.adviceTemplates.structureUnbalanced })
+        }
+      }
+
+      if (bedCount > 0) {
+        if (bedEff >= typeConfig.bedEffTarget * 1.2) {
+          suggestions.push({ ...KB.adviceTemplates.bedEffHigh })
+        } else if (bedEff < typeConfig.bedEffTarget * 0.8) {
+          suggestions.push({ ...KB.adviceTemplates.bedEffLow, value: bedEff.toFixed(0), target: typeConfig.bedEffTarget })
+        }
+      }
+
+      const beauticianHeadRatio = safeDiv(beauticianCount, totalCount) * 100
+      const consultantHeadRatio = safeDiv(consultantCount, totalCount) * 100
+      const managerHeadRatio = safeDiv(managerCount, totalCount) * 100
+      const receptionHeadRatio = safeDiv(receptionCount, totalCount) * 100
+
+      return {
+        sections: [
+          { title: '人工成本分析', items: [`总人工成本：¥${totalLabor.toFixed(0)}`, `人工占比：${laborRatio.toFixed(1)}% (基准: ${typeConfig.laborRatioTarget.min}-${typeConfig.laborRatioTarget.max}%)`, `总人数：${totalCount}人`] },
+          { title: '人效统计', items: [`美容师人效：¥${beauticianEff.toFixed(0)}/人`, `全店人均产出：¥${totalEff.toFixed(0)}/人`, `单床月产出：¥${bedEff.toFixed(0)}/床`] },
+          { title: '优化建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `人工占比 ${laborRatio.toFixed(1)}%，美容师人效 ¥${beauticianEff.toFixed(0)}`,
+        extra: {
+          laborRatio: laborRatio.toFixed(1),
+          laborStatus,
+          laborStatusText,
+          beauticianTotalCost: beauticianTotal.toFixed(0),
+          consultantTotalCost: consultantTotal.toFixed(0),
+          managerTotalCost: managerTotal.toFixed(0),
+          receptionTotalCost: receptionTotal.toFixed(0),
+          beauticianRatio: beauticianRatio.toFixed(1),
+          consultantRatio: consultantRatio.toFixed(1),
+          managerRatio: managerRatio.toFixed(1),
+          receptionRatio: receptionRatio.toFixed(1),
+          beauticianEfficiency: beauticianEff.toFixed(0),
+          totalEfficiency: totalEff.toFixed(0),
+          bedEfficiency: bedEff.toFixed(0),
+          beauticianCount, consultantCount, managerCount, receptionCount, totalCount,
+          beauticianHeadRatio: beauticianHeadRatio.toFixed(0),
+          consultantHeadRatio: consultantHeadRatio.toFixed(0),
+          managerHeadRatio: managerHeadRatio.toFixed(0),
+          receptionHeadRatio: receptionHeadRatio.toFixed(0),
+          suggestions
+        }
       }
     }
   }
