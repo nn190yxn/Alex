@@ -374,6 +374,53 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 食材出成率/净料率 ======
+
+  'food-yield-rate': {
+    name: '食材出成率计算器（餐饮版）',
+    inputs: ['rawWeight', 'netWeight', 'purchasePrice', 'wasteSellable', 'wastePrice'],
+    calc: ({ rawWeight, netWeight, purchasePrice, wasteSellable, wastePrice }) => {
+      const wasteWeight = rawWeight - netWeight
+      const yieldRate = safeDiv(netWeight, rawWeight) * 100
+      const wasteRate = safeDiv(wasteWeight, rawWeight) * 100
+      const totalCost = rawWeight * purchasePrice
+      const wasteRevenue = wasteSellable ? (wasteWeight * (wastePrice || 0)) : 0
+      const netCost = totalCost - wasteRevenue
+      const actualUnitCost = safeDiv(netCost, netWeight)
+      const markupOnWaste = wasteSellable && wastePrice > 0 ? safeDiv(wasteRevenue, totalCost) * 100 : 0
+
+      // 行业基准：肉类70-85%，鱼类50-65%，蔬菜75-90%，冻品80-95%
+      let status = yieldRate >= 80 ? 'success' : yieldRate >= 60 ? 'warning' : 'danger'
+      let statusText = yieldRate >= 80 ? '出成优秀' : yieldRate >= 60 ? '正常范围' : '出成偏低'
+
+      // 判断建议
+      const suggestions = []
+      if (yieldRate < 60) {
+        suggestions.push('出成率低于 60%，损耗过大！检查：1）原料品质是否达标；2）加工手法是否规范；3）是否可按标准净料采购。')
+      } else if (yieldRate < 70) {
+        suggestions.push('出成率偏低，建议优化加工工艺或更换供应商。')
+      }
+      if (wasteSellable && wastePrice > 0) {
+        suggestions.push(`边角料回收做得好！每月可挽回 ¥${(wasteRevenue * 30).toLocaleString()}（按日用量计算）。`)
+      } else if (wasteWeight > 0) {
+        suggestions.push('边角料全部废弃，建议评估是否可回收利用（如熬汤、做员工餐、出售给饲料厂等）。')
+      }
+
+      const wasteStatus = yieldRate >= 80 ? '✅' : yieldRate >= 60 ? '⚠️' : '❌'
+
+      return {
+        sections: [
+          { title: '出成率计算', items: [`采购毛重：${rawWeight} 斤`, `可用净重：${netWeight} 斤`, `损耗重量：${wasteWeight.toFixed(1)} 斤`, `出成率：${yieldRate.toFixed(1)}%`, `损耗率：${wasteRate.toFixed(1)}%`] },
+          { title: '成本核算', items: [`采购单价：¥${purchasePrice}/斤`, `采购总价：¥${totalCost.toFixed(1)}`, `${wasteSellable ? `边角料回收：¥${wasteRevenue.toFixed(1)}` : '边角料回收：未利用'}`, `实际净料成本：¥${actualUnitCost.toFixed(2)}/斤`, `${wasteSellable && wastePrice > 0 ? `损耗挽回率：${markupOnWaste.toFixed(1)}%` : '损耗全部浪费'}`] },
+          { title: '判断', items: [`出成状况：${wasteStatus} ${statusText}`, `行业参考：肉类 70-85%，鱼类 50-65%，蔬菜 75-90%，冻品 80-95%`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `出成率 ${yieldRate.toFixed(1)}% — ${statusText}，净料成本 ¥${actualUnitCost.toFixed(2)}/斤`,
+        extra: { yieldRate: yieldRate.toFixed(1), wasteRate: wasteRate.toFixed(1), actualUnitCost: actualUnitCost.toFixed(2), status, statusText }
+      }
+    }
+  },
+
   'turnover-rate-restaurant': {
     name: '翻台率计算器（餐饮版）',
     inputs: ['totalCustomers', 'tableCount', 'mealPeriod'],

@@ -39,6 +39,7 @@ const TOOL_QUOTAS = {
     'salary-cost-ratio-restaurant': { daily: 5, type: 'count' },
     'dish-pricing': { daily: 5, type: 'count' },
     'food-waste-rate': { daily: 5, type: 'count' },
+    'food-yield-rate': { daily: 5, type: 'count' },
     'delivery-profit': { daily: 5, type: 'count' },
     'payback-restaurant': { daily: 5, type: 'count' },
     'cashflow-restaurant': { daily: 5, type: 'count' },
