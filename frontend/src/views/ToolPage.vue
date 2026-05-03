@@ -70,6 +70,13 @@ import SalaryCostRatioBeauty from './tools/SalaryCostRatioBeauty.vue'
 import LaborEfficiencyBeauty from './tools/LaborEfficiencyBeauty.vue'
 import ConversionRateBeauty from './tools/ConversionRateBeauty.vue'
 import ProjectProfitBeauty from './tools/ProjectProfitBeauty.vue'
+import ProjectStructureBeauty from './tools/ProjectStructureBeauty.vue'
+import LaborStructureBeauty from './tools/LaborStructureBeauty.vue'
+import CardDebtBeauty from './tools/CardDebtBeauty.vue'
+import FunnelLTVBeauty from './tools/FunnelLTVBeauty.vue'
+import BreakevenProfitBeauty from './tools/BreakevenProfitBeauty.vue'
+import DeviceROIBeauty from './tools/DeviceROIBeauty.vue'
+import MemberCardDesignBeauty from './tools/MemberCardDesignBeauty.vue'
 import LTVBeauty from './tools/LTVBeauty.vue'
 import RepurchaseRateBeauty from './tools/RepurchaseRateBeauty.vue'
 import PaybackBeauty from './tools/PaybackBeauty.vue'
@@ -230,6 +237,13 @@ const toolComponents = {
   'labor-efficiency-beauty': LaborEfficiencyBeauty,
   'conversion-rate-beauty': ConversionRateBeauty,
   'project-profit-beauty': ProjectProfitBeauty,
+  'project-structure-beauty': ProjectStructureBeauty,
+  'labor-structure-beauty': LaborStructureBeauty,
+  'card-debt-beauty': CardDebtBeauty,
+  'funnel-ltv-beauty': FunnelLTVBeauty,
+  'breakeven-profit-beauty': BreakevenProfitBeauty,
+  'device-roi-beauty': DeviceROIBeauty,
+  'member-card-design-beauty': MemberCardDesignBeauty,
   'ltv-beauty': LTVBeauty,
   'repurchase-rate-beauty': RepurchaseRateBeauty,
   'payback-beauty': PaybackBeauty,

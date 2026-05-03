@@ -240,7 +240,7 @@ export const CALCULATORS = {
           { title: '保本营业额', items: [`月保本：¥${breakEvenMonthly.toFixed(0)}`, `日保本：¥${breakEvenDaily.toFixed(0)}`, `小时保本：${breakEvenHourly != null ? '¥' + breakEvenHourly.toFixed(0) : '未设置'}`, `堂食保本：¥${breakEvenDineIn.toFixed(0)}（${dineInPct}%）`, `外卖保本：¥${breakEvenDelivery.toFixed(0)}（${deliveryPct}%）`] },
           { title: '贡献率分析', items: [`堂食贡献率：${(dineInContribution * 100).toFixed(1)}%`, `外卖贡献率：${(deliveryContributionVal * 100).toFixed(1)}%`, `加权平均贡献率：${(weightedContribution * 100).toFixed(1)}%`] },
           { title: '多维度拆解', items: dailyCustomers != null ? [`保本日客流：${dailyCustomers.toFixed(0)} 人`, `保本翻台率：${turnoverRate} 次/天`, `保本坪效：¥${breakEvenPerSqm.toFixed(0)}/m²/月`] : [`客单价/座位数未填写，无法拆解客流和翻台率`] },
-          { title: '安全边际', items: [actualRevenue ? `实际营业额：¥${actualRevenue.toLocaleString()}`, `安全边际率：${safetyText}`, safetyMargin !== null && safetyMargin >= 30 ? '✓ 经营状况良好' : safetyMargin !== null && safetyMargin >= 15 ? '⚠ 有一定风险' : safetyMargin !== null ? '🔴 危险，随时可能亏损' : '请填写实际月营业额'] },
+          { title: '安全边际', items: actualRevenue != null ? [`实际营业额：¥${actualRevenue.toLocaleString()}`, `安全边际率：${safetyText}`, safetyMargin !== null && safetyMargin >= 30 ? '✓ 经营状况良好' : safetyMargin !== null && safetyMargin >= 15 ? '⚠ 有一定风险' : '🔴 危险，随时可能亏损'] : ['请填写实际月营业额'] },
           { title: 'What-If 场景', items: [`固定成本降 10% → 月保本 ¥${scenarioABreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioABreakEven).toFixed(0)}）`, `外卖到账率提升 10% → 月保本 ¥${scenarioBBreakEven.toFixed(0)}（降 ¥${(breakEvenMonthly - scenarioBBreakEven).toFixed(0)}）`] },
           { title: '经营建议', items: suggestions },
           ...(pinXiaoText ? [{ title: '坪效分析', items: [pinXiaoText, `保本坪效线：¥${breakEvenPerSqm.toFixed(0)}/m²/月`, '行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000，奶茶/小吃1500-3000 元/m²/月'] }] : [])
@@ -718,6 +718,72 @@ export const CALCULATORS = {
         { title: '判断', items: [`损耗状况：${statusText}`] },
         { title: '降本建议', items: ['严格按预估销量采购，避免过量', '先进先出原则，减少过期浪费', '边角料二次利用（高汤、员工餐）', '每日盘点，发现异常立即排查'] }
       ], summary: `损耗率 ${wasteRate.toFixed(1)}% — ${statusText}`, extra: { wasteRate: wasteRate.toFixed(1), wasteMoney: wasteMoney.toFixed(0) } }
+    }
+  },
+
+  'labor-efficiency-restaurant': {
+    name: '人效计算器（餐饮版）',
+    inputs: ['monthlyRevenue', 'employeeCount', 'totalSalary'],
+    calc: ({ monthlyRevenue, employeeCount, totalSalary }) => {
+      const revenuePerEmployee = safeDiv(monthlyRevenue, employeeCount)
+      const salaryRatio = safeDiv(totalSalary, monthlyRevenue) * 100
+      let laborStatus = salaryRatio <= 20 ? 'success' : salaryRatio <= 25 ? 'warning' : 'danger'
+      let laborText = salaryRatio <= 20 ? '合理' : salaryRatio <= 25 ? '偏高' : '严重超标'
+      return { sections: [
+        { title: '人效指标', items: [`人均产出：¥${revenuePerEmployee.toFixed(0)}/月`, `员工数：${employeeCount}`, `总薪资：¥${totalSalary}/月`, `人工成本占比：${salaryRatio.toFixed(1)}%`] },
+        { title: '判断', items: [`人工成本：${laborText}（基准 <=20%）`] },
+        { title: '优化建议', items: ['优化排班，避免闲时人力浪费', '一人多岗，提升单人产出', '引入自助点餐/扫码点单', '高峰期使用兼职补充'] }
+      ], summary: `人效 ¥${revenuePerEmployee.toFixed(0)}/人，人工占比 ${salaryRatio.toFixed(1)}%`, extra: { revenuePerEmployee: revenuePerEmployee.toFixed(0), salaryRatio: salaryRatio.toFixed(1) } }
+    }
+  },
+
+  // ====== 美业结构化知识库 ======
+  BEAUTY_KNOWLEDGE_BASE: {
+    projectRoles: {
+      traffic: { label: '引流品', targetRatio: { min: 20, max: 30 }, marginRange: '10-30%', goal: '新客进店/激活' },
+      retention: { label: '留客品', targetRatio: { min: 40, max: 50 }, marginRange: '40-60%', goal: '建立信任/高频消耗' },
+      profit: { label: '利润品', targetRatio: { min: 20, max: 30 }, marginRange: '70%+', goal: '核心盈利/升单' },
+      retail: { label: '家居产品', targetRatio: { min: 10, max: 20 }, marginRange: '50-70%', goal: '连带销售' }
+    },
+    benchmarks: {
+      productRatio: { min: 5, max: 15 }, // 产品成本占售价比例
+      laborRatio: { min: 10, max: 20 },  // 美容师手工费占售价比例
+      bedEfficiency: { min: 800, max: 1500 } // 单床月产出（元）
+    },
+    adviceTemplates: {
+      trafficMissing: { icon: '🔴', text: '缺乏引流品！新客进店门槛太高，建议设计 99-199 元的体验项目。' },
+      retentionMissing: { icon: '⚠️', text: '缺乏留客品！体验完引流品后无处承接，客户极易流失。建议设置 980-2980 元的疗程卡。' },
+      profitMissing: { icon: '🔴', text: '缺乏利润品！全靠引流/留客无法覆盖房租人工。需补充高毛利特色项目或仪器类项目。' },
+      trafficTooHigh: { icon: '⚠️', text: '引流品占比过高（{{ratio}}%），客户只薅羊毛不升单，门店会"虚假繁荣"。' },
+      profitTooHigh: { icon: '⚠️', text: '利润品占比过高（{{ratio}}%），进店转化率可能偏低，客户觉得"太贵"。' },
+      structureHealthy: { icon: '✅', text: '品项结构健康，符合美业黄金比例（引流:留客:利润 ≈ 3:5:2）。' },
+      marginWarning: { icon: '⚠️', text: '项目"{{name}}"产品占比过高（{{ratio}}%），建议优化耗材成本或调整定价。' },
+      laborWarning: { icon: '⚠️', text: '项目"{{name}}"手工费占比过高（{{ratio}}%），建议简化流程、使用仪器替代或提高客单价。' }
+    }
+  },
+
+  // ====== 美业人工成本知识库 ======
+  BEAUTY_LABOR_KB: {
+    storeTypes: {
+      small: { label: '小型店（3-5 张床）', laborRatioTarget: { min: 25, max: 35 }, bedEffTarget: 8000 },
+      medium: { label: '中型店（6-10 张床）', laborRatioTarget: { min: 30, max: 40 }, bedEffTarget: 10000 },
+      large: { label: '大型店/会所（10+ 张床）', laborRatioTarget: { min: 35, max: 45 }, bedEffTarget: 12000 }
+    },
+    roleBenchmarks: {
+      beautician: { costRatio: { min: 15, max: 25 }, salaryRange: { min: 5000, max: 12000 } },
+      consultant: { costRatio: { min: 8, max: 15 }, salaryRange: { min: 8000, max: 20000 } },
+      manager: { costRatio: { min: 5, max: 10 }, salaryRange: { min: 10000, max: 25000 } },
+      reception: { costRatio: { min: 3, max: 6 }, salaryRange: { min: 4000, max: 7000 } }
+    },
+    adviceTemplates: {
+      ratioHigh: { icon: '🔴', text: '人工占比过高（{{ratio}}% > {{max}}%）！提成结构可能不合理，建议设置阶梯提成封顶。' },
+      ratioGood: { icon: '✅', text: '人工占比健康，人效处于合理区间。' },
+      beauticianEffLow: { icon: '⚠️', text: '美容师人效偏低（¥{{value}} < ¥{{target}}），存在闲时浪费。建议：1）闲时排培训/手法练习；2）推出闲时特惠卡提高床位利用率。' },
+      consultantHigh: { icon: '⚠️', text: '顾问薪资占比偏高（{{ratio}}%），需核实其业绩产出是否匹配高提成。建议设置业绩考核门槛。' },
+      managerHigh: { icon: '🔴', text: '管理层薪资占比过高，小店建议店长兼任顾问或美容师，降低固定成本。' },
+      structureUnbalanced: { icon: '⚠️', text: '人员结构失衡！美容师:顾问:前台比例建议为 3:1:1 或 4:1:1。' },
+      bedEffHigh: { icon: '✅', text: '单床产出优秀，床位利用率高！' },
+      bedEffLow: { icon: '⚠️', text: '单床产出偏低（¥{{value}} < ¥{{target}}），床位闲置严重。建议增加项目品类或延长营业时间。' }
     }
   },
 
@@ -1668,46 +1734,6 @@ export const CALCULATORS = {
         grossMargin: 65
       },
       bubbleTea: {
-        label: '奶茶/茶饮',
-        renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 500, max: 1000 }, tier3: { min: 300, max: 800 } },
-        equipmentRange: { min: 30000, max: 80000 },
-        laborPerMonth: 15000,
-        utilitiesPerMonth: 3000,
-        avgTicket: 15,
-        grossMargin: 70,
-        dailyCupsTarget: { tier1: 300, tier2: 200, tier3: 150 }
-      },
-      snack: {
-        label: '小吃/档口',
-        renovationRange: { tier1: { min: 500, max: 1000 }, tier2: { min: 300, max: 800 }, tier3: { min: 200, max: 500 } },
-        equipmentRange: { min: 10000, max: 40000 },
-        laborPerMonth: 10000,
-        utilitiesPerMonth: 2000,
-        avgTicket: 12,
-        grossMargin: 65,
-        dailyCupsTarget: { tier1: 200, tier2: 150, tier3: 100 }
-      },
-      bubbleTea: {
-        label: '奶茶/茶饮',
-        renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 500, max: 1000 }, tier3: { min: 300, max: 800 } },
-        equipmentRange: { min: 30000, max: 80000 },
-        laborPerMonth: 15000,
-        utilitiesPerMonth: 3000,
-        avgTicket: 15,
-        grossMargin: 70,
-        dailyCupsTarget: { tier1: 300, tier2: 200, tier3: 150 }
-      },
-      snack: {
-        label: '小吃/档口',
-        renovationRange: { tier1: { min: 500, max: 1000 }, tier2: { min: 300, max: 800 }, tier3: { min: 200, max: 500 } },
-        equipmentRange: { min: 10000, max: 40000 },
-        laborPerMonth: 10000,
-        utilitiesPerMonth: 2000,
-        avgTicket: 12,
-        grossMargin: 65,
-        dailyCupsTarget: { tier1: 200, tier2: 150, tier3: 100 }
-      },
-      bubbleTea: {
         label: '奶茶/茶饮店',
         renovationRange: { tier1: { min: 800, max: 1500 }, tier2: { min: 600, max: 1200 }, tier3: { min: 400, max: 900 } },
         equipmentRange: { min: 30000, max: 80000 },
@@ -1738,6 +1764,656 @@ export const CALCULATORS = {
       tier1: { label: '一线/新一线', salaryMultiplier: 1.3, costMultiplier: 1.2, ticketMultiplier: 1.2, rentFactor: 1.5 },
       tier2: { label: '二线/省会', salaryMultiplier: 1.0, costMultiplier: 1.0, ticketMultiplier: 1.0, rentFactor: 1.0 },
       tier3: { label: '三四线/县城', salaryMultiplier: 0.7, costMultiplier: 0.8, ticketMultiplier: 0.8, rentFactor: 0.6 }
+    }
+  },
+
+  // ====== 美业卡项知识库 ======
+  'project-structure-beauty': {
+    name: '美业品项结构与利润计算器',
+    inputs: ['beautyType', 'projects'],
+    calc: ({ beautyType, projects = [] }) => {
+      const KB = CALCULATORS.BEAUTY_KNOWLEDGE_BASE
+      const validProjects = projects.filter(p => p.name && p.price > 0)
+
+      if (validProjects.length === 0) {
+        return { sections: [{ title: '提示', items: ['请至少录入一个项目信息'] }], summary: '请录入项目数据', extra: { projects: [], structure: [], totalMargin: 0 } }
+      }
+
+      let totalRevenue = 0, totalProfit = 0
+      const roleCounts = { traffic: 0, retention: 0, profit: 0, retail: 0 }
+      const detailedProjects = validProjects.map(p => {
+        const labor = p.price * (p.laborRate || 10) / 100
+        const product = p.price * (p.productRate || 8) / 100
+        const profit = p.price - product - labor
+        const margin = safeDiv(profit, p.price) * 100
+
+        totalRevenue += p.price
+        totalProfit += profit
+        roleCounts[p.role]++
+
+        let marginStatus = margin >= 70 ? 'excellent' : margin >= 50 ? 'good' : margin >= 30 ? 'warning' : 'danger'
+        return { ...p, labor, product, profit, margin, marginStatus }
+      })
+
+      const overallMargin = safeDiv(totalProfit, totalRevenue) * 100
+      const totalCount = validProjects.length
+      const structure = Object.entries(KB.projectRoles).map(([key, config]) => {
+        const count = roleCounts[key]
+        const ratio = safeDiv(count * 100, totalCount)
+        const isHealthy = ratio >= config.targetRatio.min && ratio <= config.targetRatio.max
+        return { key, label: config.label, count, ratio: ratio.toFixed(0), target: `${config.targetRatio.min}-${config.targetRatio.max}`, status: isHealthy ? 'healthy' : 'warn', color: key === 'traffic' ? '#f59e0b' : key === 'retention' ? '#10b981' : key === 'profit' ? '#3b82f6' : '#8b5cf6' }
+      })
+
+      const suggestions = []
+      if (roleCounts.traffic === 0) suggestions.push({ ...KB.adviceTemplates.trafficMissing })
+      if (roleCounts.retention === 0) suggestions.push({ ...KB.adviceTemplates.retentionMissing })
+      if (roleCounts.profit === 0) suggestions.push({ ...KB.adviceTemplates.profitMissing })
+      if (roleCounts.traffic / totalCount > 0.4) suggestions.push({ ...KB.adviceTemplates.trafficTooHigh, ratio: safeDiv(roleCounts.traffic * 100, totalCount).toFixed(0) })
+      if (roleCounts.profit / totalCount > 0.5) suggestions.push({ ...KB.adviceTemplates.profitTooHigh, ratio: safeDiv(roleCounts.profit * 100, totalCount).toFixed(0) })
+      if (roleCounts.traffic > 0 && roleCounts.retention > 0 && roleCounts.profit > 0) suggestions.push({ ...KB.adviceTemplates.structureHealthy })
+
+      for (const p of detailedProjects) {
+        if (p.product / p.price > 0.2) suggestions.push({ ...KB.adviceTemplates.marginWarning, name: p.name, ratio: safeDiv(p.product * 100, p.price).toFixed(0) })
+        if (p.labor / p.price > 0.25) suggestions.push({ ...KB.adviceTemplates.laborWarning, name: p.name, ratio: safeDiv(p.labor * 100, p.price).toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '综合毛利预测', items: [`项目总数：${totalCount}个`, `平均售价：¥${safeDiv(totalRevenue, totalCount).toFixed(0)}`, `综合毛利率：${overallMargin.toFixed(1)}%（基于角色销量占比模型）`] },
+          { title: '品项结构诊断', items: structure.map(s => `${s.label}：${s.count}个 (${s.ratio}%) — 目标 ${s.target}% — ${s.status === 'healthy' ? '健康' : '需调整'}`) },
+          { title: '优化建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `综合毛利率 ${overallMargin.toFixed(1)}%，项目结构${roleCounts.traffic > 0 && roleCounts.retention > 0 && roleCounts.profit > 0 ? '健康' : '需优化'}`,
+        extra: { overallMargin: overallMargin.toFixed(1), totalCount, structure, projects: detailedProjects, suggestions }
+      }
+    }
+  },
+
+  'labor-structure-beauty': {
+    name: '美业人工成本与人效分析器',
+    inputs: ['storeType', 'revenue', 'bedCount', 'beauticians', 'consultants', 'managers', 'receptions'],
+    calc: ({ storeType, revenue, bedCount = 0, beauticians = [], consultants = [], managers = [], receptions = [] }) => {
+      const KB = CALCULATORS.BEAUTY_LABOR_KB
+      const typeConfig = KB.storeTypes[storeType] || KB.storeTypes.medium
+
+      const calcTotal = (arr) => arr.reduce((s, i) => s + (i.count * i.salary), 0)
+      const calcCount = (arr) => arr.reduce((s, i) => s + i.count, 0)
+
+      const beauticianTotal = calcTotal(beauticians)
+      const consultantTotal = calcTotal(consultants)
+      const managerTotal = calcTotal(managers)
+      const receptionTotal = calcTotal(receptions)
+      const totalLabor = beauticianTotal + consultantTotal + managerTotal + receptionTotal
+
+      const beauticianCount = calcCount(beauticians)
+      const consultantCount = calcCount(consultants)
+      const managerCount = calcCount(managers)
+      const receptionCount = calcCount(receptions)
+      const totalCount = beauticianCount + consultantCount + managerCount + receptionCount
+
+      const laborRatio = safeDiv(totalLabor, revenue) * 100
+      const beauticianRatio = safeDiv(beauticianTotal, revenue) * 100
+      const consultantRatio = safeDiv(consultantTotal, revenue) * 100
+      const managerRatio = safeDiv(managerTotal, revenue) * 100
+      const receptionRatio = safeDiv(receptionTotal, revenue) * 100
+
+      let laborStatus, laborStatusText
+      if (laborRatio <= typeConfig.laborRatioTarget.min) { laborStatus = 'good'; laborStatusText = '优秀' }
+      else if (laborRatio <= typeConfig.laborRatioTarget.max) { laborStatus = 'good'; laborStatusText = '达标' }
+      else { laborStatus = 'bad'; laborStatusText = '超标' }
+
+      const beauticianEff = safeDiv(revenue, beauticianCount)
+      const totalEff = safeDiv(revenue, totalCount)
+      const bedEff = safeDiv(revenue, bedCount)
+
+      const suggestions = []
+      if (laborRatio > typeConfig.laborRatioTarget.max) {
+        suggestions.push({ ...KB.adviceTemplates.ratioHigh, ratio: laborRatio.toFixed(1), max: typeConfig.laborRatioTarget.max })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.ratioGood })
+      }
+
+      if (beauticianEff < typeConfig.bedEffTarget * 0.7) {
+        suggestions.push({ ...KB.adviceTemplates.beauticianEffLow, value: beauticianEff.toFixed(0), target: typeConfig.bedEffTarget })
+      }
+      if (consultantRatio > 15) {
+        suggestions.push({ ...KB.adviceTemplates.consultantHigh, ratio: consultantRatio.toFixed(1) })
+      }
+      if (managerRatio > 12) {
+        suggestions.push({ ...KB.adviceTemplates.managerHigh })
+      }
+
+      if (beauticianCount > 0) {
+        const ratioBC = beauticianCount / (consultantCount + 1)
+        if (ratioBC > 5 || ratioBC < 2) {
+          suggestions.push({ ...KB.adviceTemplates.structureUnbalanced })
+        }
+      }
+
+      if (bedCount > 0) {
+        if (bedEff >= typeConfig.bedEffTarget * 1.2) {
+          suggestions.push({ ...KB.adviceTemplates.bedEffHigh })
+        } else if (bedEff < typeConfig.bedEffTarget * 0.8) {
+          suggestions.push({ ...KB.adviceTemplates.bedEffLow, value: bedEff.toFixed(0), target: typeConfig.bedEffTarget })
+        }
+      }
+
+      const beauticianHeadRatio = safeDiv(beauticianCount, totalCount) * 100
+      const consultantHeadRatio = safeDiv(consultantCount, totalCount) * 100
+      const managerHeadRatio = safeDiv(managerCount, totalCount) * 100
+      const receptionHeadRatio = safeDiv(receptionCount, totalCount) * 100
+
+      return {
+        sections: [
+          { title: '人工成本分析', items: [`总人工成本：¥${totalLabor.toFixed(0)}`, `人工占比：${laborRatio.toFixed(1)}% (基准: ${typeConfig.laborRatioTarget.min}-${typeConfig.laborRatioTarget.max}%)`, `总人数：${totalCount}人`] },
+          { title: '人效统计', items: [`美容师人效：¥${beauticianEff.toFixed(0)}/人`, `全店人均产出：¥${totalEff.toFixed(0)}/人`, `单床月产出：¥${bedEff.toFixed(0)}/床`] },
+          { title: '优化建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `人工占比 ${laborRatio.toFixed(1)}%，美容师人效 ¥${beauticianEff.toFixed(0)}`,
+        extra: {
+          laborRatio: laborRatio.toFixed(1),
+          laborStatus,
+          laborStatusText,
+          beauticianTotalCost: beauticianTotal.toFixed(0),
+          consultantTotalCost: consultantTotal.toFixed(0),
+          managerTotalCost: managerTotal.toFixed(0),
+          receptionTotalCost: receptionTotal.toFixed(0),
+          beauticianRatio: beauticianRatio.toFixed(1),
+          consultantRatio: consultantRatio.toFixed(1),
+          managerRatio: managerRatio.toFixed(1),
+          receptionRatio: receptionRatio.toFixed(1),
+          beauticianEfficiency: beauticianEff.toFixed(0),
+          totalEfficiency: totalEff.toFixed(0),
+          bedEfficiency: bedEff.toFixed(0),
+          beauticianCount, consultantCount, managerCount, receptionCount, totalCount,
+          beauticianHeadRatio: beauticianHeadRatio.toFixed(0),
+          consultantHeadRatio: consultantHeadRatio.toFixed(0),
+          managerHeadRatio: managerHeadRatio.toFixed(0),
+          receptionHeadRatio: receptionHeadRatio.toFixed(0),
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业卡项知识库 ======
+  BEAUTY_CARD_KB: {
+    consumptionRate: { safe: 0.15, warning: 0.10, danger: 0.05 },
+    adviceTemplates: {
+      healthy: { icon: '✅', text: '耗卡率健康，沉淀资金处于安全区间。继续保持服务消耗节奏。' },
+      warning: { icon: '⚠️', text: '耗卡率偏低（{{rate}}%），沉淀资金持续积累。建议推出限时消耗活动（如"夏季护肤季"），加速客户到店。' },
+      danger: { icon: '🔴', text: '耗卡率严重不足（{{rate}}%）！大量预收款未转化为实收，财务上仍是负债。建议立即停止卖卡，全力做服务消耗，否则有"跑圈"风险。' },
+      cashHigh: { icon: '💡', text: '本月现金流良好，但需关注后续耗卡转化，避免"卖得多做得少"的虚假繁荣。' },
+      realIncomeLow: { icon: '⚠️', text: '实收业绩低于运营成本，虽然现金流为正，但实际在亏损。需加强耗卡管理。' },
+      refundWarning: { icon: '🔴', text: '退费金额占比过高（{{ratio}}%），客户满意度可能下降。建议加强服务质量管理。' }
+    }
+  },
+
+  // ====== 美业卡项知识库 ======
+  BEAUTY_CARD_KB: {
+    consumptionRate: { safe: 0.15, warning: 0.10, danger: 0.05 },
+    adviceTemplates: {
+      healthy: { icon: '✅', text: '耗卡率健康，沉淀资金处于安全区间。继续保持服务消耗节奏。' },
+      warning: { icon: '⚠️', text: '耗卡率偏低（{{rate}}%），沉淀资金持续积累。建议推出限时消耗活动（如"夏季护肤季"），加速客户到店。' },
+      danger: { icon: '🔴', text: '耗卡率严重不足（{{rate}}%）！大量预收款未转化为实收，财务上仍是负债。建议立即停止卖卡，全力做服务消耗，否则有"跑圈"风险。' },
+      cashHigh: { icon: '💡', text: '本月现金流良好，但需关注后续耗卡转化，避免"卖得多做得少"的虚假繁荣。' },
+      realIncomeLow: { icon: '⚠️', text: '实收业绩低于运营成本，虽然现金流为正，但实际在亏损。需加强耗卡管理。' },
+      refundWarning: { icon: '🔴', text: '退费金额占比过高（{{ratio}}%），客户满意度可能下降。建议加强服务质量管理。' }
+    }
+  },
+
+  'card-debt-beauty': {
+    name: '美业卡项负债与实收计算器',
+    inputs: ['periodStartDebt', 'monthSales', 'monthConsumption', 'monthRefund'],
+    calc: ({ periodStartDebt, monthSales, monthConsumption, monthRefund }) => {
+      const KB = CALCULATORS.BEAUTY_CARD_KB
+      const periodEndDebt = periodStartDebt + monthSales - monthConsumption - monthRefund
+      const consumptionRate = safeDiv(monthConsumption, periodStartDebt + monthSales) * 100
+      const netCashFlow = monthSales - monthRefund
+      const realIncome = monthConsumption
+      const refundRatio = safeDiv(monthRefund, monthSales) * 100
+
+      let debtStatus, debtStatusText, statusIcon
+      if (consumptionRate >= KB.consumptionRate.safe * 100) {
+        debtStatus = 'good'; debtStatusText = '健康'; statusIcon = '✅'
+      } else if (consumptionRate >= KB.consumptionRate.warning * 100) {
+        debtStatus = 'warning'; debtStatusText = '需关注'; statusIcon = '⚠️'
+      } else {
+        debtStatus = 'danger'; debtStatusText = '风险'; statusIcon = '🔴'
+      }
+
+      const suggestions = []
+      if (consumptionRate >= KB.consumptionRate.safe * 100) {
+        suggestions.push({ ...KB.adviceTemplates.healthy })
+      } else if (consumptionRate >= KB.consumptionRate.warning * 100) {
+        suggestions.push({ ...KB.adviceTemplates.warning, rate: consumptionRate.toFixed(1) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.danger, rate: consumptionRate.toFixed(1) })
+      }
+
+      if (netCashFlow > 0 && realIncome < 30000) {
+        suggestions.push({ ...KB.adviceTemplates.cashHigh })
+      }
+      if (realIncome < 20000) {
+        suggestions.push({ ...KB.adviceTemplates.realIncomeLow })
+      }
+      if (refundRatio > 10) {
+        suggestions.push({ ...KB.adviceTemplates.refundWarning, ratio: refundRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '卡项资金分析', items: [`期初沉淀资金（负债）：¥${periodStartDebt.toLocaleString()}`, `本月卖卡（现金流）：¥${monthSales.toLocaleString()}`, `本月耗卡（实收）：¥${monthConsumption.toLocaleString()}`, `本月退费：¥${monthRefund.toLocaleString()}`, `期末沉淀资金（负债）：¥${periodEndDebt.toLocaleString()}`] },
+          { title: '核心指标', items: [`耗卡率：${consumptionRate.toFixed(1)}%（安全线≥15%）`, `本月净现金流：¥${netCashFlow.toLocaleString()}`, `本月实收业绩：¥${realIncome.toLocaleString()}`, `退费率：${refundRatio.toFixed(1)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `耗卡率 ${consumptionRate.toFixed(1)}% — ${debtStatusText} | 实收 ¥${realIncome.toLocaleString()}`,
+        extra: {
+          periodEndDebt: periodEndDebt.toLocaleString(),
+          consumptionRate: consumptionRate.toFixed(1),
+          netCashFlow: netCashFlow.toLocaleString(),
+          realIncome: realIncome.toLocaleString(),
+          refundRatio: refundRatio.toFixed(1),
+          debtStatus,
+          debtStatusText,
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业拓客 LTV 知识库 ======
+  BEAUTY_FUNNEL_KB: {
+    conversionBenchmarks: {
+      visitToExperience: { min: 30, max: 50, label: '进店→体验' },
+      experienceToRetain: { min: 25, max: 40, label: '体验→留客' },
+      retainToRepurchase: { min: 40, max: 60, label: '留客→复购' }
+    },
+    ltvBenchmarks: {
+      life: { min: 3000, max: 10000, label: '生活美容' },
+      medical: { min: 10000, max: 50000, label: '轻医美' }
+    },
+    adviceTemplates: {
+      visitLow: { icon: '🔴', text: '进店转化率偏低（{{rate}}% < {{target}}%）！说明引流品吸引力不够或接待流程有问题。建议：1）优化引流品设计（99 元体验）；2）培训接待话术。' },
+      experienceLow: { icon: '⚠️', text: '体验→留客转化偏低（{{rate}}%）。体验效果可能未达预期，或留客方案设计不合理。建议：1）体验后 24 小时内跟进；2）设计阶梯式留客卡（980/1980/2980）。' },
+      repurchaseLow: { icon: '🔴', text: '复购率偏低（{{rate}}% < {{target}}%）！客户流失严重。建议：1）建立会员等级体系；2）周期护理提醒；3）老客专属福利。' },
+      cacHigh: { icon: '⚠️', text: '获客成本过高（¥{{cac}} > ¥{{target}}），拓客渠道效率低。建议：1）增加转介绍激励；2）优化线上投放 ROI；3）利用私域裂变。' },
+      ltvGood: { icon: '✅', text: '客户终身价值健康（¥{{ltv}}），LTV/CAC 比值合理，拓客投入可持续。' },
+      ltvHigh: { icon: '✅', text: 'LTV/CAC = {{ratio}}，客户价值极高！可适当提高拓客预算扩大规模。' },
+      ltvLow: { icon: '🔴', text: 'LTV/CAC = {{ratio}} < 3，获客成本高于客户价值！需立即优化：1）提高客单价；2）增加消费频次；3）降低拓客成本。' }
+    }
+  },
+
+  'funnel-ltv-beauty': {
+    name: '美业拓客转化与 LTV 计算器',
+    inputs: ['newVisitors', 'experienceCount', 'retainedCount', 'repurchasedCount', 'totalMarketingCost', 'avgOrderValue', 'purchaseFrequency', 'customerLifespan'],
+    calc: ({ newVisitors, experienceCount, retainedCount, repurchasedCount, totalMarketingCost, avgOrderValue, purchaseFrequency, customerLifespan }) => {
+      const KB = CALCULATORS.BEAUTY_FUNNEL_KB
+
+      const visitToExperience = safeDiv(experienceCount, newVisitors) * 100
+      const experienceToRetain = safeDiv(retainedCount, experienceCount) * 100
+      const retainToRepurchase = safeDiv(repurchasedCount, retainedCount) * 100
+      const cac = safeDiv(totalMarketingCost, newVisitors)
+      const ltv = avgOrderValue * purchaseFrequency * customerLifespan
+      const ltvCacRatio = safeDiv(ltv, cac)
+
+      const suggestions = []
+      if (visitToExperience < KB.conversionBenchmarks.visitToExperience.min) {
+        suggestions.push({ ...KB.adviceTemplates.visitLow, rate: visitToExperience.toFixed(0), target: KB.conversionBenchmarks.visitToExperience.min })
+      }
+      if (experienceToRetain < KB.conversionBenchmarks.experienceToRetain.min) {
+        suggestions.push({ ...KB.adviceTemplates.experienceLow, rate: experienceToRetain.toFixed(0) })
+      }
+      if (retainToRepurchase < KB.conversionBenchmarks.retainToRepurchase.min) {
+        suggestions.push({ ...KB.adviceTemplates.repurchaseLow, rate: retainToRepurchase.toFixed(0), target: KB.conversionBenchmarks.retainToRepurchase.min })
+      }
+      if (cac > 500) {
+        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0), target: 500 })
+      }
+      if (ltvCacRatio >= 5) {
+        suggestions.push({ ...KB.adviceTemplates.ltvHigh, ltv: ltv.toFixed(0), ratio: ltvCacRatio.toFixed(1) })
+      } else if (ltvCacRatio >= 3) {
+        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toFixed(0) })
+      } else if (cac > 0) {
+        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '转化漏斗', items: [`进店→体验：${visitToExperience.toFixed(1)}%（${newVisitors}人→${experienceCount}人）`, `体验→留客：${experienceToRetain.toFixed(1)}%（${experienceCount}人→${retainedCount}人）`, `留客→复购：${retainToRepurchase.toFixed(1)}%（${retainedCount}人→${repurchasedCount}人）`] },
+          { title: '获客与 LTV', items: [`单人获客成本（CAC）：¥${cac.toFixed(0)}`, `客户终身价值（LTV）：¥${ltv.toFixed(0)}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `LTV ¥${ltv.toFixed(0)}，CAC ¥${cac.toFixed(0)}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: {
+          visitToExperience: visitToExperience.toFixed(1),
+          experienceToRetain: experienceToRetain.toFixed(1),
+          retainToRepurchase: retainToRepurchase.toFixed(1),
+          cac: cac.toFixed(0),
+          ltv: ltv.toFixed(0),
+          ltvCacRatio: ltvCacRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
+  },
+
+  'breakeven-profit-beauty': {
+    name: '美业盈亏平衡与净利预测器',
+    inputs: ['rent', 'fixedSalary', 'utilities', 'otherFixed', 'productRate', 'laborCommissionRate', 'platformRate', 'revenue', 'targetProfit'],
+    calc: ({ rent, fixedSalary, utilities, otherFixed, productRate, laborCommissionRate, platformRate, revenue = 0, targetProfit = 0 }) => {
+      const KB = CALCULATORS.BEAUTY_BREAK_EVEN_KB
+      const totalFixed = (rent || 0) + (fixedSalary || 0) + (utilities || 0) + (otherFixed || 0)
+      const totalVariableRate = (productRate || 10) + (laborCommissionRate || 15) + (platformRate || 5)
+      const contributionRate = 1 - totalVariableRate / 100
+
+      const breakevenRevenue = safeDiv(totalFixed, contributionRate)
+      const dailyBreakeven = breakevenRevenue / 30
+      const avgOrderValue = 300
+      const dailyOrders = Math.ceil(dailyBreakeven / avgOrderValue)
+
+      let actualProfit = 0, actualProfitRate = 0, actualRentRatio = 0, actualLaborRatio = 0
+      if (revenue > 0) {
+        const productCost = revenue * (productRate || 10) / 100
+        const laborCommission = revenue * (laborCommissionRate || 15) / 100
+        const platformFee = revenue * (platformRate || 5) / 100
+        actualProfit = revenue - totalFixed - productCost - laborCommission - platformFee
+        actualProfitRate = safeDiv(actualProfit, revenue) * 100
+        actualRentRatio = safeDiv(rent, revenue) * 100
+        actualLaborRatio = safeDiv(fixedSalary + laborCommission, revenue) * 100
+      }
+
+      const targetRevenue = targetProfit > 0 ? safeDiv(totalFixed + targetProfit, contributionRate) : 0
+
+      const suggestions = []
+      if (breakevenRevenue > 100000) {
+        suggestions.push({ ...KB.adviceTemplates.breakevenHigh, breakeven: breakevenRevenue.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.breakevenLow, breakeven: breakevenRevenue.toFixed(0) })
+      }
+
+      if (revenue > 0) {
+        if (actualRentRatio > KB.costBenchmarks.rent.max) {
+          suggestions.push({ ...KB.adviceTemplates.rentHigh, ratio: actualRentRatio.toFixed(1), max: KB.costBenchmarks.rent.max })
+        }
+        if (actualLaborRatio > KB.costBenchmarks.labor.max) {
+          suggestions.push({ ...KB.adviceTemplates.laborHigh, ratio: actualLaborRatio.toFixed(1) })
+        }
+        if (actualProfitRate >= 15) {
+          suggestions.push({ ...KB.adviceTemplates.marginGood })
+        } else if (revenue > 0) {
+          suggestions.push({ ...KB.adviceTemplates.marginLow, margin: actualProfitRate.toFixed(1) })
+        }
+      }
+
+      if (targetProfit > 0) {
+        suggestions.push({ ...KB.adviceTemplates.targetAdvice, target: targetProfit.toLocaleString(), required: targetRevenue.toLocaleString(), daily: (targetRevenue / 30).toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '盈亏平衡分析', items: [`月固定成本：¥${totalFixed.toLocaleString()}`, `变动成本率：${totalVariableRate.toFixed(0)}%（产品+提成+平台）`, `保本营业额：¥${breakevenRevenue.toFixed(0)}/月`, `日均保本：¥${dailyBreakeven.toFixed(0)}（约${dailyOrders}单/天，客单价¥${avgOrderValue}）`] },
+          { title: '目标利润预测', items: targetProfit > 0 ? [`目标利润：¥${targetProfit.toLocaleString()}`, `需达营业额：¥${targetRevenue.toLocaleString()}/月`, `日均需做：¥${(targetRevenue / 30).toFixed(0)}`] : ['请输入目标利润进行预测'] },
+          ...(revenue > 0 ? [{ title: '实际经营分析', items: [`实际营业额：¥${revenue.toLocaleString()}`, `实际净利润：¥${actualProfit.toLocaleString()}`, `净利率：${actualProfitRate.toFixed(1)}%`, `房租占比：${actualRentRatio.toFixed(1)}%`, `人工占比：${actualLaborRatio.toFixed(1)}%`] }] : []),
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `保本业绩 ¥${breakevenRevenue.toFixed(0)}/月，日均 ¥${dailyBreakeven.toFixed(0)}`,
+        extra: {
+          breakevenRevenue: breakevenRevenue.toFixed(0),
+          dailyBreakeven: dailyBreakeven.toFixed(0),
+          dailyOrders,
+          totalFixed: totalFixed.toFixed(0),
+          totalVariableRate: totalVariableRate.toFixed(0),
+          contributionRate: (contributionRate * 100).toFixed(0),
+          targetRevenue: targetRevenue.toFixed(0),
+          actualProfit: actualProfit.toLocaleString(),
+          actualProfitRate: actualProfitRate.toFixed(1),
+          actualRentRatio: actualRentRatio.toFixed(1),
+          actualLaborRatio: actualLaborRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业仪器投资知识库 ======
+  BEAUTY_DEVICE_KB: {
+    adviceTemplates: {
+      paybackFast: { icon: '✅', text: '回本周期 {{months}} 个月，属于快速回本项目！建议重点推广。' },
+      paybackNormal: { icon: '⚠️', text: '回本周期 {{months}} 个月，属于正常区间。需保证每月稳定客源。' },
+      paybackSlow: { icon: '🔴', text: '回本周期 {{months}} 个月过长！设备可能闲置率高或定价偏低。建议：1）增加营销推广；2）推出体验价引流；3）考虑二手设备降低投入。' },
+      breakEven: { icon: '💡', text: '每月至少需要 {{count}} 个客人使用该设备才能保本。请评估当前客源是否足够。' },
+      profitPerSession: { icon: '💰', text: '单次服务净利 ¥{{profit}}，毛利率 {{margin}}%。' }
+    }
+  },
+
+  'device-roi-beauty': {
+    name: '美容仪器投资回报计算器',
+    inputs: ['deviceCost', 'deviceLifespan', 'costPerSession', 'operatorCommissionRate', 'pricePerSession', 'sessionsPerMonth'],
+    calc: ({ deviceCost, deviceLifespan, costPerSession, operatorCommissionRate, pricePerSession, sessionsPerMonth }) => {
+      const KB = CALCULATORS.BEAUTY_DEVICE_KB
+      const monthlyDepreciation = safeDiv(deviceCost, deviceLifespan * 12)
+      const commissionPerSession = pricePerSession * operatorCommissionRate / 100
+      const profitPerSession = pricePerSession - costPerSession - commissionPerSession
+      const monthlyProfit = profitPerSession * sessionsPerMonth - monthlyDepreciation
+
+      const totalInvestment = deviceCost
+      const paybackMonths = monthlyProfit > 0 ? safeDiv(totalInvestment, monthlyProfit) : Infinity
+      const breakEvenSessions = profitPerSession > 0 ? Math.ceil(safeDiv(monthlyDepreciation, profitPerSession)) : 0
+      const annualROI = monthlyProfit > 0 ? safeDiv(monthlyProfit * 12, totalInvestment) * 100 : 0
+      const margin = safeDiv(profitPerSession, pricePerSession) * 100
+
+      const suggestions = []
+      if (paybackMonths <= 6) {
+        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths <= 12) {
+        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths !== Infinity) {
+        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
+      }
+      suggestions.push({ ...KB.adviceTemplates.breakEven, count: breakEvenSessions })
+      suggestions.push({ ...KB.adviceTemplates.profitPerSession, profit: profitPerSession.toFixed(0), margin: margin.toFixed(0) })
+
+      return {
+        sections: [
+          { title: '投资分析', items: [`设备投入：¥${deviceCost.toLocaleString()}`, `使用年限：${deviceLifespan}年`, `月折旧：¥${monthlyDepreciation.toFixed(0)}`] },
+          { title: '单次利润拆解', items: [`服务收费：¥${pricePerSession}`, `耗材成本：¥${costPerSession}`, `操作提成：¥${commissionPerSession.toFixed(0)} (${operatorCommissionRate}%)`, `单次净利：¥${profitPerSession.toFixed(0)}`] },
+          { title: '回报预测', items: [`月净利：¥${monthlyProfit.toFixed(0)}（按${sessionsPerMonth}单/月）`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + ' 个月'}`, `年化收益率：${annualROI.toFixed(0)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `回本周期 ${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，月净利 ¥${monthlyProfit.toFixed(0)}`,
+        extra: {
+          monthlyDepreciation: monthlyDepreciation.toFixed(0),
+          profitPerSession: profitPerSession.toFixed(0),
+          monthlyProfit: monthlyProfit.toFixed(0),
+          paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1),
+          breakEvenSessions,
+          annualROI: annualROI.toFixed(0),
+          margin: margin.toFixed(0),
+          suggestions
+        }
+      }
+    }
+  },
+
+  'funnel-ltv-beauty': {
+    name: '美业拓客转化与 LTV 计算器',
+    inputs: ['newVisitors', 'experienceCount', 'retainedCount', 'repurchasedCount', 'totalMarketingCost', 'avgOrderValue', 'purchaseFrequency', 'customerLifespan'],
+    calc: ({ newVisitors, experienceCount, retainedCount, repurchasedCount, totalMarketingCost, avgOrderValue, purchaseFrequency, customerLifespan }) => {
+      const KB = CALCULATORS.BEAUTY_FUNNEL_KB
+
+      const visitToExperience = safeDiv(experienceCount, newVisitors) * 100
+      const experienceToRetain = safeDiv(retainedCount, experienceCount) * 100
+      const retainToRepurchase = safeDiv(repurchasedCount, retainedCount) * 100
+      const cac = safeDiv(totalMarketingCost, newVisitors)
+      const ltv = avgOrderValue * purchaseFrequency * customerLifespan
+      const ltvCacRatio = safeDiv(ltv, cac)
+
+      const suggestions = []
+      if (visitToExperience < KB.conversionBenchmarks.visitToExperience.min) {
+        suggestions.push({ ...KB.adviceTemplates.visitLow, rate: visitToExperience.toFixed(0), target: KB.conversionBenchmarks.visitToExperience.min })
+      }
+      if (experienceToRetain < KB.conversionBenchmarks.experienceToRetain.min) {
+        suggestions.push({ ...KB.adviceTemplates.experienceLow, rate: experienceToRetain.toFixed(0) })
+      }
+      if (retainToRepurchase < KB.conversionBenchmarks.retainToRepurchase.min) {
+        suggestions.push({ ...KB.adviceTemplates.repurchaseLow, rate: retainToRepurchase.toFixed(0), target: KB.conversionBenchmarks.retainToRepurchase.min })
+      }
+      if (cac > 500) {
+        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0), target: 500 })
+      }
+      if (ltvCacRatio >= 5) {
+        suggestions.push({ ...KB.adviceTemplates.ltvHigh, ltv: ltv.toFixed(0), ratio: ltvCacRatio.toFixed(1) })
+      } else if (ltvCacRatio >= 3) {
+        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toFixed(0) })
+      } else if (cac > 0) {
+        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
+      }
+
+      return {
+        sections: [
+          { title: '转化漏斗', items: [`进店→体验：${visitToExperience.toFixed(1)}%（${newVisitors}人→${experienceCount}人）`, `体验→留客：${experienceToRetain.toFixed(1)}%（${experienceCount}人→${retainedCount}人）`, `留客→复购：${retainToRepurchase.toFixed(1)}%（${retainedCount}人→${repurchasedCount}人）`] },
+          { title: '获客与 LTV', items: [`单人获客成本（CAC）：¥${cac.toFixed(0)}`, `客户终身价值（LTV）：¥${ltv.toFixed(0)}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `LTV ¥${ltv.toFixed(0)}，CAC ¥${cac.toFixed(0)}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: {
+          visitToExperience: visitToExperience.toFixed(1),
+          experienceToRetain: experienceToRetain.toFixed(1),
+          retainToRepurchase: retainToRepurchase.toFixed(1),
+          cac: cac.toFixed(0),
+          ltv: ltv.toFixed(0),
+          ltvCacRatio: ltvCacRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
+  },
+
+  // ====== 美业盈亏平衡知识库 ======
+  BEAUTY_BREAK_EVEN_KB: {
+    costBenchmarks: {
+      rent: { min: 15, max: 25, label: '房租占比' },
+      labor: { min: 30, max: 40, label: '人工占比' },
+      product: { min: 5, max: 15, label: '产品耗材占比' },
+      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
+    },
+    adviceTemplates: {
+      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
+      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
+      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
+      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
+      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
+      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
+      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
+    }
+  },
+
+  // ====== 美业仪器投资知识库 ======
+  BEAUTY_DEVICE_KB: {
+    adviceTemplates: {
+      paybackFast: { icon: '✅', text: '回本周期 {{months}} 个月，属于快速回本项目！建议重点推广。' },
+      paybackNormal: { icon: '⚠️', text: '回本周期 {{months}} 个月，属于正常区间。需保证每月稳定客源。' },
+      paybackSlow: { icon: '🔴', text: '回本周期 {{months}} 个月过长！设备可能闲置率高或定价偏低。建议：1）增加营销推广；2）推出体验价引流；3）考虑二手设备降低投入。' },
+      breakEven: { icon: '💡', text: '每月至少需要 {{count}} 个客人使用该设备才能保本。请评估当前客源是否足够。' },
+      profitPerSession: { icon: '💰', text: '单次服务净利 ¥{{profit}}，毛利率 {{margin}}%。' }
+    }
+  },
+
+  'device-roi-beauty': {
+    name: '美容仪器投资回报计算器',
+    inputs: ['deviceCost', 'deviceLifespan', 'costPerSession', 'operatorCommissionRate', 'pricePerSession', 'sessionsPerMonth'],
+    calc: ({ deviceCost, deviceLifespan, costPerSession, operatorCommissionRate, pricePerSession, sessionsPerMonth }) => {
+      const KB = CALCULATORS.BEAUTY_DEVICE_KB
+      const monthlyDepreciation = safeDiv(deviceCost, deviceLifespan * 12)
+      const commissionPerSession = pricePerSession * operatorCommissionRate / 100
+      const profitPerSession = pricePerSession - costPerSession - commissionPerSession
+      const monthlyProfit = profitPerSession * sessionsPerMonth - monthlyDepreciation
+
+      const totalInvestment = deviceCost
+      const paybackMonths = monthlyProfit > 0 ? safeDiv(totalInvestment, monthlyProfit) : Infinity
+      const breakEvenSessions = profitPerSession > 0 ? Math.ceil(safeDiv(monthlyDepreciation, profitPerSession)) : 0
+      const annualROI = monthlyProfit > 0 ? safeDiv(monthlyProfit * 12, totalInvestment) * 100 : 0
+      const margin = safeDiv(profitPerSession, pricePerSession) * 100
+
+      const suggestions = []
+      if (paybackMonths <= 6) {
+        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths <= 12) {
+        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
+      } else if (paybackMonths !== Infinity) {
+        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
+      }
+      suggestions.push({ ...KB.adviceTemplates.breakEven, count: breakEvenSessions })
+      suggestions.push({ ...KB.adviceTemplates.profitPerSession, profit: profitPerSession.toFixed(0), margin: margin.toFixed(0) })
+
+      return {
+        sections: [
+          { title: '投资分析', items: [`设备投入：¥${deviceCost.toLocaleString()}`, `使用年限：${deviceLifespan}年`, `月折旧：¥${monthlyDepreciation.toFixed(0)}`] },
+          { title: '单次利润拆解', items: [`服务收费：¥${pricePerSession}`, `耗材成本：¥${costPerSession}`, `操作提成：¥${commissionPerSession.toFixed(0)} (${operatorCommissionRate}%)`, `单次净利：¥${profitPerSession.toFixed(0)}`] },
+          { title: '回报预测', items: [`月净利：¥${monthlyProfit.toFixed(0)}（按${sessionsPerMonth}单/月）`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + ' 个月'}`, `年化收益率：${annualROI.toFixed(0)}%`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `回本周期 ${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，月净利 ¥${monthlyProfit.toFixed(0)}`,
+        extra: {
+          monthlyDepreciation: monthlyDepreciation.toFixed(0),
+          profitPerSession: profitPerSession.toFixed(0),
+          monthlyProfit: monthlyProfit.toFixed(0),
+          paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1),
+          breakEvenSessions,
+          annualROI: annualROI.toFixed(0),
+          margin: margin.toFixed(0),
+          suggestions
+        }
+      }
+    }
+  },
+
+  BEAUTY_MEMBER_CARD_KB: {
+    discountRules: [
+      { range: '9.5折以上', min: 9.5, max: Infinity, impact: '轻微让利，客户感知弱', advice: '适合搭配高毛利项目做小额引流' },
+      { range: '9-8.5折', min: 8.5, max: 9.5, impact: '常规促销区间', advice: '注意控制赠送项目比例，避免透支未来利润' },
+      { range: '8-7.5折', min: 7.5, max: 8.5, impact: '折扣力度较大', advice: '需绑定长期锁客条款，防止一次性薅羊毛' },
+      { range: '7折以下', min: 0, max: 7.5, impact: '严重侵蚀利润，不建议长期执行', advice: '仅限大型节点（店庆/双十一）短期冲刺' }
+    ],
+    adviceTemplates: {
+      discountLow: { icon: '⚠️', text: '折扣率仅{{discountRate}}折，低于成本风险线！建议提高充值门槛或减少赠送金额' },
+      discountHigh: { icon: '💡', text: '折扣力度偏小（{{discountRate}}折），可搭配额外赠品或服务提升吸引力' },
+      marginThin: { icon: '📉', text: '折后毛利率仅{{afterDiscountMargin}}%，接近盈亏红线。建议控制储值活动频率' },
+      giftHigh: { icon: '🎁', text: '赠送比例达{{giftRatio}}%，建议设置分月到账或消费限制，防止资金一次性透支' },
+      category: { icon: '📊', text: '属于「{{category}}」区间：{{impact}}。{{advice}}' }
+    }
+  },
+
+  'member-card-design-beauty': {
+    name: '会员储值卡设计计算器',
+    inputs: ['rechargeAmount', 'giftAmount', 'marginRate'],
+    calc: ({ rechargeAmount, giftAmount, marginRate }) => {
+      const KB = CALCULATORS.BEAUTY_MEMBER_CARD_KB
+      const ga = giftAmount || 0
+      const totalBalance = rechargeAmount + ga
+      const discountRate = totalBalance > 0 ? (rechargeAmount / totalBalance * 10) : 10
+      const afterDiscountMargin = Math.max(0, marginRate * discountRate / 10)
+      const marginLoss = marginRate - afterDiscountMargin
+      const giftRatio = rechargeAmount > 0 ? (ga / rechargeAmount * 100) : 0
+      const extraRevenue = afterDiscountMargin > 0 ? Math.round(rechargeAmount * (marginRate - afterDiscountMargin) / afterDiscountMargin) : 0
+      const profitStatus = afterDiscountMargin >= 55 ? 'good' : afterDiscountMargin >= 40 ? 'warning' : 'danger'
+      const rule = KB.discountRules.find(r => discountRate >= r.min && discountRate < r.max)
+      const suggestions = []
+      if (discountRate <= 7.0) suggestions.push({ ...KB.adviceTemplates.discountLow, discountRate: discountRate.toFixed(1) })
+      if (discountRate >= 9.0) suggestions.push({ ...KB.adviceTemplates.discountHigh, discountRate: discountRate.toFixed(1) })
+      if (afterDiscountMargin < 40) suggestions.push({ ...KB.adviceTemplates.marginThin, afterDiscountMargin: afterDiscountMargin.toFixed(1) })
+      if (ga > 0 && giftRatio > 30) suggestions.push({ ...KB.adviceTemplates.giftHigh, giftRatio: giftRatio.toFixed(0) })
+      if (rule) suggestions.unshift({ ...KB.adviceTemplates.category, category: rule.range, impact: rule.impact, advice: rule.advice })
+      return {
+        sections: [
+          { title: '储值方案', items: [`充值金额：¥${rechargeAmount.toLocaleString()}`, `赠送金额：¥${ga.toLocaleString()}`, `到账总额：¥${totalBalance.toLocaleString()}`, `实际折扣：${discountRate.toFixed(1)}折`] },
+          { title: '毛利影响', items: [`原毛利率：${marginRate}%`, `折后毛利率：${afterDiscountMargin.toFixed(1)}%`, `毛利折损：${marginLoss.toFixed(1)}%`, `需多做业绩：¥${extraRevenue.toLocaleString()}`] },
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `充${rechargeAmount}送${ga}，实际${discountRate.toFixed(1)}折`,
+        extra: { discountRate: discountRate.toFixed(1), totalBalance: totalBalance.toLocaleString(), afterDiscountMargin: afterDiscountMargin.toFixed(1), marginLoss: marginLoss.toFixed(1), giftRatio: giftRatio.toFixed(0), extraRevenue: extraRevenue.toLocaleString(), profitStatus, suggestions }
+      }
     }
   }
 }
