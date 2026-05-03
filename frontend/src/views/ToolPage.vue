@@ -42,6 +42,7 @@ import DishPricing from './tools/DishPricing.vue'
 import FoodWasteRate from './tools/FoodWasteRate.vue'
 import FoodYieldRate from './tools/FoodYieldRate.vue'
 import DeliveryProfit from './tools/DeliveryProfit.vue'
+import DeliveryAnalysis from './tools/DeliveryAnalysis.vue'
 import PaybackRestaurant from './tools/PaybackRestaurant.vue'
 import CashflowRestaurant from './tools/CashflowRestaurant.vue'
 import ProfitRateRestaurant from './tools/ProfitRateRestaurant.vue'
@@ -196,6 +197,7 @@ const toolComponents = {
   'food-waste-rate': FoodWasteRate,
   'food-yield-rate': FoodYieldRate,
   'delivery-profit': DeliveryProfit,
+  'delivery-analysis': DeliveryAnalysis,
   'payback-restaurant': PaybackRestaurant,
   'cashflow-restaurant': CashflowRestaurant,
   'profit-rate-restaurant': ProfitRateRestaurant,

@@ -41,6 +41,7 @@ const TOOL_QUOTAS = {
     'food-waste-rate': { daily: 5, type: 'count' },
     'food-yield-rate': { daily: 5, type: 'count' },
     'delivery-profit': { daily: 5, type: 'count' },
+    'delivery-analysis': { daily: 5, type: 'count' },
     'payback-restaurant': { daily: 5, type: 'count' },
     'cashflow-restaurant': { daily: 5, type: 'count' },
     'profit-rate-restaurant': { daily: 5, type: 'count' },

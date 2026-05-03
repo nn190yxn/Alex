@@ -742,6 +742,113 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 外卖经营综合分析 ======
+
+  'delivery-analysis': {
+    name: '外卖经营综合分析器',
+    inputs: ['monthlyOrders', 'avgOrderValue', 'platformFeeRate', 'foodCostRate', 'packageCostPerOrder', 'deliverySubsidyPerOrder', 'monthlyMarketing', 'monthlyFixed', 'repeatRate', 'dineInRevenue', 'dineInMargin'],
+    calc: ({ monthlyOrders, avgOrderValue, platformFeeRate, foodCostRate, packageCostPerOrder, deliverySubsidyPerOrder, monthlyMarketing, monthlyFixed, repeatRate, dineInRevenue, dineInMargin }) => {
+      // 单件利润拆解
+      const platformFeeAmount = avgOrderValue * (platformFeeRate / 100)
+      const foodCost = avgOrderValue * (foodCostRate / 100)
+      const packageCost = packageCostPerOrder || 0
+      const deliverySubsidy = deliverySubsidyPerOrder || 0
+      const totalCostPerOrder = foodCost + packageCost + platformFeeAmount + deliverySubsidy
+      const profitPerOrder = avgOrderValue - totalCostPerOrder
+      const marginPerOrder = safeDiv(profitPerOrder, avgOrderValue) * 100
+
+      // 月度汇总
+      const monthlyRevenue = monthlyOrders * avgOrderValue
+      const monthlyFoodCost = monthlyOrders * foodCost
+      const monthlyPackageCost = monthlyOrders * packageCost
+      const monthlyPlatformFee = monthlyOrders * platformFeeAmount
+      const monthlyDeliverySubsidy = monthlyOrders * deliverySubsidy
+      const monthlyGrossProfit = monthlyRevenue - monthlyFoodCost - monthlyPackageCost - monthlyPlatformFee - monthlyDeliverySubsidy
+      const monthlyNetProfit = monthlyGrossProfit - (monthlyMarketing || 0) - (monthlyFixed || 0)
+      const netMargin = safeDiv(monthlyNetProfit, monthlyRevenue) * 100
+
+      // 年度推演
+      const annualRevenue = monthlyRevenue * 12
+      const annualNetProfit = monthlyNetProfit * 12
+
+      // 堂食 vs 外卖对比
+      const deliveryRevenueShare = safeDiv(monthlyRevenue, monthlyRevenue + (dineInRevenue || 0)) * 100
+      const dineInProfit = (dineInRevenue || 0) * ((dineInMargin || 0) / 100)
+      const deliveryVsDineIn = dineInProfit > 0 ? safeDiv(profitPerOrder, (dineInRevenue || 0) / 30 / 10) * 100 : null
+
+      // 健康度评分
+      const scores = {}
+      scores.margin = marginPerOrder >= 25 ? 5 : marginPerOrder >= 15 ? 3 : 1
+      scores.repeatRate = (repeatRate || 0) >= 30 ? 5 : (repeatRate || 0) >= 15 ? 3 : 1
+      scores.marketingROI = monthlyMarketing > 0 ? safeDiv(monthlyGrossProfit - monthlyNetProfit + (monthlyMarketing || 0), monthlyMarketing || 1) : 0
+
+      // 诊断建议
+      const suggestions = []
+      if (marginPerOrder < 0) {
+        suggestions.push('🔴 每单外卖都在亏钱！需要立即：1）提高定价或减少满减；2）降低食材成本率；3）优化包装成本。')
+      } else if (marginPerOrder < 15) {
+        suggestions.push('⚠️ 单件利润率偏低，建议：1）推出高毛利套餐组合；2）适当提价或减少满减力度；3）优化食材采购成本。')
+      } else {
+        suggestions.push('✅ 单件利润率健康，建议持续监控平台费率变动和食材成本波动。')
+      }
+
+      if ((repeatRate || 0) < 15) {
+        suggestions.push('⚠️ 外卖复购率偏低，建议：1）优化包装体验和口味稳定性；2）设置收藏店铺优惠；3）做好评价回复和客服。')
+      } else if ((repeatRate || 0) >= 30) {
+        suggestions.push('✅ 复购率优秀，说明顾客认可口味和服务。')
+      }
+
+      if (monthlyMarketing > 0) {
+        const mROI = safeDiv(monthlyGrossProfit, monthlyMarketing)
+        if (mROI < 3) {
+          suggestions.push(`⚠️ 外卖营销 ROI 仅 ${mROI.toFixed(1)}，建议优化投放策略，目标 ROI 应 >= 3。`)
+        } else {
+          suggestions.push(`✅ 营销 ROI ${mROI.toFixed(1)}，投放效率不错。`)
+        }
+      }
+
+      if (monthlyFixed > 0) {
+        const fixedRatio = safeDiv(monthlyFixed, monthlyRevenue) * 100
+        if (fixedRatio > 30) {
+          suggestions.push(`⚠️ 外卖固定成本占比 ${fixedRatio.toFixed(0)}% 偏高（含专职骑手/打包人工等），建议评估是否需要全职人员。`)
+        }
+      }
+
+      if (deliveryRevenueShare > 60) {
+        suggestions.push('⚠️ 外卖营收占比超过 60%，过度依赖平台存在风险，建议平衡堂食与外卖比例。')
+      }
+
+      // 平台费用效率
+      const platformFeeImpact = safeDiv(monthlyPlatformFee, monthlyRevenue) * 100
+
+      // 保本订单量
+      const contributionPerOrder = avgOrderValue - foodCost - packageCost - deliverySubsidy
+      const breakEvenOrders = contributionPerOrder > 0 ? Math.ceil(((monthlyMarketing || 0) + (monthlyFixed || 0)) / contributionPerOrder) : null
+
+      return {
+        sections: [
+          { title: '月度外卖经营', items: [`月订单量：${monthlyOrders} 单`, `月营业额：¥${monthlyRevenue.toLocaleString()}`, `月毛利润：¥${monthlyGrossProfit.toFixed(0)}`, `月净利润：¥${monthlyNetProfit.toFixed(0)}`, `净利率：${netMargin.toFixed(1)}%`] },
+          { title: '单件利润拆解', items: [`客单价：¥${avgOrderValue}`, `平台抽成：¥${platformFeeAmount.toFixed(1)}（${platformFeeRate}%）`, `食材成本：¥${foodCost.toFixed(1)}（${foodCostRate}%）`, `包装成本：¥${packageCost.toFixed(1)}`, `配送补贴：¥${deliverySubsidy.toFixed(1)}`, `单件净利润：¥${profitPerOrder.toFixed(2)}`, `单件利润率：${marginPerOrder.toFixed(1)}%`] },
+          { title: '平台费用效率', items: [`平台抽成占总营收：${platformFeeImpact.toFixed(1)}%`, `每 100 元营业额被平台抽走：¥${platformFeeImpact.toFixed(1)}`] },
+          { title: '年度推演', items: [`年外卖营业额：¥${annualRevenue.toLocaleString()}`, `年外卖净利润：¥${annualNetProfit.toLocaleString()}`] },
+          ...(breakEvenOrders ? [{ title: '保本线', items: [`每单贡献毛益：¥${contributionPerOrder.toFixed(1)}`, `月保本订单量：${breakEvenOrders} 单`, `日均保本订单：${Math.ceil(breakEvenOrders / 30)} 单`] }] : []),
+          ...(dineInRevenue > 0 ? [{ title: '堂食 vs 外卖', items: [`外卖营收占比：${deliveryRevenueShare.toFixed(0)}%`, `堂食月营收：¥${dineInRevenue.toLocaleString()}`, `堂食月利润：¥${dineInProfit.toLocaleString()}`, `外卖月利润：¥${monthlyNetProfit.toLocaleString()}`] }] : []),
+          { title: '经营建议', items: suggestions }
+        ],
+        summary: `外卖月净利润 ¥${monthlyNetProfit.toFixed(0)}（${netMargin.toFixed(1)}%），单件利润率 ${marginPerOrder.toFixed(1)}%`,
+        extra: {
+          monthlyNetProfit: monthlyNetProfit.toFixed(0),
+          netMargin: netMargin.toFixed(1),
+          marginPerOrder: marginPerOrder.toFixed(1),
+          profitPerOrder: profitPerOrder.toFixed(2),
+          annualNetProfit: annualNetProfit.toLocaleString(),
+          scores,
+          breakEvenOrders
+        }
+      }
+    }
+  },
+
   'payback-restaurant': {
     name: '投资回本周期计算器（餐饮版）',
     inputs: ['totalInvestment', 'monthlyProfit'],
