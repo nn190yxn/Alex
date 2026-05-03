@@ -1,37 +1,108 @@
 <template>
   <ToolDetail :tool-info="toolInfo" :result="result" @submit="handleSubmit">
     <template #inputs>
-      <div class="form-row">
+      <div class="store-info-section">
+        <h3 class="section-title">门店信息</h3>
         <div class="form-group">
-          <label class="form-label">售价（元）</label>
-          <input v-model.number="form.price" type="number" class="form-input" placeholder="输入菜品售价" min="0" step="0.01" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">食材成本（元）</label>
-          <input v-model.number="form.cost" type="number" class="form-input" placeholder="输入食材成本" min="0" step="0.01" />
+          <label class="form-label">门店名称（选填）</label>
+          <input v-model="storeName" type="text" class="form-input" placeholder="输入门店名称" />
         </div>
       </div>
+
+      <div class="categories-section">
+        <h3 class="section-title">品类录入</h3>
+        
+        <div v-for="(cat, idx) in categories" :key="idx" class="category-card">
+          <div class="category-header">
+            <span class="category-badge">#{{ idx + 1 }}</span>
+            <button v-if="categories.length > 1" class="btn-remove" @click="removeCategory(idx)" title="删除此品类">×</button>
+          </div>
+          
+          <div class="category-grid">
+            <div class="form-group">
+              <label class="form-label">品类名称</label>
+              <select v-model="cat.name" class="form-input">
+                <option value="">选择或自定义</option>
+                <option value="火锅">火锅</option>
+                <option value="炒菜">炒菜</option>
+                <option value="凉菜">凉菜</option>
+                <option value="酒水">酒水</option>
+                <option value="主食">主食</option>
+                <option value="甜品">甜品</option>
+                <option value="小吃">小吃</option>
+                <option value="烧烤">烧烤</option>
+                <option value="饮品">饮品</option>
+              </select>
+              <input 
+                v-if="cat.name === '' || cat.name === '自定义'" 
+                v-model="cat.customName" 
+                type="text" 
+                class="form-input mt-2" 
+                placeholder="输入自定义品类名" 
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">月销售额（元）</label>
+              <input v-model.number="cat.revenue" type="number" class="form-input" placeholder="例如：50000" min="0" step="0.01" />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">月食材成本（元）</label>
+              <input v-model.number="cat.cost" type="number" class="form-input" placeholder="例如：20000" min="0" step="0.01" />
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-add" @click="addCategory">+ 添加品类</button>
+      </div>
     </template>
+    
     <template #result>
-      <div class="margin-result" v-if="result">
-        <div class="result-main">
-          <div class="result-label">毛利率</div>
-          <div class="result-value numeral">{{ result.extra?.margin || result.margin }}%</div>
-          <div class="result-status" :class="result.extra?.status || result.status">{{ result.extra?.statusText || result.statusText }}</div>
-        </div>
-        <div class="result-details">
-          <div class="detail-item" v-for="(item, i) in detailItems" :key="i">
-            <span>{{ item.label }}</span>
-            <span class="numeral">{{ item.value }}</span>
+      <div class="result-container" v-if="result">
+        <div class="overall-margin-card">
+          <div class="overall-label">综合毛利率</div>
+          <div class="overall-value">{{ result.extra?.overallMargin || '0.0' }}%</div>
+          <div class="overall-status" :class="getOverallStatusClass(result.extra?.overallMargin)">
+            {{ getOverallStatusText(result.extra?.overallMargin) }}
           </div>
         </div>
-        <div v-if="result.sections" class="result-sections-backend">
-          <div v-for="(section, i) in result.sections" :key="i" class="section-block">
-            <h4>{{ section.title }}</h4>
-            <ul v-if="section.items">
-              <li v-for="(item, j) in section.items" :key="j">{{ item }}</li>
-            </ul>
+
+        <div class="categories-grid">
+          <div v-for="(cat, idx) in result.extra?.categories || []" :key="idx" class="category-result-card">
+            <div class="cat-header">
+              <span class="cat-name">{{ cat.name }}</span>
+              <span class="cat-status" :class="cat.status">{{ cat.statusText }}</span>
+            </div>
+            <div class="cat-stats">
+              <div class="stat-row">
+                <span>毛利率</span>
+                <span class="numeral highlight">{{ cat.margin }}%</span>
+              </div>
+              <div class="stat-row">
+                <span>销售额</span>
+                <span class="numeral">¥{{ cat.revenue }}</span>
+              </div>
+              <div class="stat-row">
+                <span>毛利额</span>
+                <span class="numeral">¥{{ cat.profit }}</span>
+              </div>
+              <div class="stat-row">
+                <span>毛利占比</span>
+                <span class="numeral">{{ cat.profitRatio }}%</span>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div v-if="result.extra?.suggestions?.length" class="suggestions-section">
+          <h4 class="section-subtitle">经营建议</h4>
+          <ul class="suggestion-list">
+            <li v-for="(s, i) in result.extra.suggestions" :key="i" class="suggestion-item">
+              <span class="suggestion-icon" :class="s.type">{{ getTypeIcon(s.type) }}</span>
+              <span class="suggestion-text">{{ s.text }}</span>
+            </li>
+          </ul>
         </div>
       </div>
     </template>
@@ -46,36 +117,66 @@ import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('gross-margin-restaurant')
 
-const form = reactive({
-  price: null,
-  cost: null
-})
+const storeName = ref('')
+const categories = reactive([
+  { name: '火锅', customName: '', revenue: null, cost: null },
+  { name: '酒水', customName: '', revenue: null, cost: null }
+])
 
 const result = ref(null)
 
-const detailItems = computed(() => {
-  const items = []
-  if (result.value?.extra?.margin) items.push({ label: '毛利率', value: `${result.value.extra.margin}%` })
-  if (result.value?.extra?.profit) items.push({ label: '单份毛利', value: `¥${result.value.extra.profit}` })
-  if (form.price) items.push({ label: '售价', value: `¥${form.price}` })
-  if (form.cost) items.push({ label: '食材成本', value: `¥${form.cost}` })
-  return items
-})
+function addCategory() {
+  categories.push({ name: '', customName: '', revenue: null, cost: null })
+}
+
+function removeCategory(idx) {
+  categories.splice(idx, 1)
+}
+
+function getOverallStatusClass(margin) {
+  const m = parseFloat(margin)
+  if (m >= 65) return 'success'
+  if (m >= 55) return 'warning'
+  return 'danger'
+}
+
+function getOverallStatusText(margin) {
+  const m = parseFloat(margin)
+  if (m >= 65) return '优秀'
+  if (m >= 55) return '达标'
+  return '偏低，需关注'
+}
+
+function getTypeIcon(type) {
+  if (type === 'good') return '👍'
+  if (type === 'warn') return '⚠️'
+  if (type === 'alert') return '🔴'
+  return '💡'
+}
 
 async function handleSubmit() {
-  if (!form.price || !form.cost || form.price <= 0 || form.cost < 0) {
-    result.value = { error: '请输入有效的售价和成本' }
-    return
-  }
-  if (form.cost > form.price) {
-    result.value = { error: '食材成本不能高于售价，这道菜在亏钱！' }
+  const validCategories = categories
+    .filter(c => {
+      const hasName = c.name || c.customName
+      const hasRevenue = c.revenue > 0
+      const hasCost = c.cost >= 0
+      return hasName && hasRevenue && hasCost !== null
+    })
+    .map(c => ({
+      name: c.name === '自定义' || !c.name ? c.customName : c.name,
+      revenue: c.revenue,
+      cost: c.cost
+    }))
+
+  if (validCategories.length === 0) {
+    result.value = { error: '请至少完整填写一个品类信息' }
     return
   }
 
   try {
     const backendResult = await generateTool('gross-margin-restaurant', {
-      price: form.price,
-      cost: form.cost
+      storeName: storeName.value,
+      categories: validCategories
     })
     result.value = backendResult
   } catch (e) {
@@ -85,10 +186,13 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
+.section-title {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line-default);
 }
 
 .form-group {
@@ -100,7 +204,7 @@ async function handleSubmit() {
 .form-label {
   font-size: var(--text-body-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .form-input {
@@ -110,117 +214,216 @@ async function handleSubmit() {
   font-size: var(--text-body);
 }
 
-.margin-result {
+.category-card {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
   padding: var(--space-4);
-  background-color: var(--bg-base);
-  border-radius: var(--radius-card);
+  margin-bottom: var(--space-3);
 }
 
-.result-main {
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.category-badge {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+.btn-remove {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-disabled);
+  font-size: var(--text-body-lg);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.btn-remove:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.btn-add {
+  width: 100%;
+  padding: var(--space-3);
+  background: var(--bg-base);
+  border: 1px dashed var(--line-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.overall-margin-card {
   text-align: center;
   padding: var(--space-5);
-  margin-bottom: var(--space-4);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-card);
+  color: white;
 }
 
-.result-label {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
+.overall-label {
+  font-size: var(--text-body);
+  opacity: 0.9;
   margin-bottom: var(--space-2);
 }
 
-.result-value {
-  font-size: 56px;
+.overall-value {
+  font-size: 64px;
   font-weight: var(--font-weight-bold);
-  color: var(--text-main);
   line-height: 1;
   margin-bottom: var(--space-3);
 }
 
-.result-status {
+.overall-status {
   display: inline-block;
   padding: var(--space-1) var(--space-4);
   border-radius: 9999px;
   font-size: var(--text-body-sm);
   font-weight: var(--font-weight-semibold);
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.result-status.success {
-  background-color: #dcfce7;
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.category-result-card {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line-default);
+}
+
+.cat-name {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.cat-status {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+.cat-status.success {
+  background: #dcfce7;
   color: #166534;
 }
 
-.result-status.warning {
-  background-color: #fef3c7;
+.cat-status.warning {
+  background: #fef3c7;
   color: #92400e;
 }
 
-.result-status.danger {
-  background-color: #fee2e2;
+.cat-status.danger {
+  background: #fee2e2;
   color: #991b1b;
 }
 
-.result-details {
+.cat-stats {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-default);
 }
 
-.detail-item {
+.stat-row {
   display: flex;
   justify-content: space-between;
   font-size: var(--text-body-sm);
   color: var(--text-secondary);
 }
 
-.result-suggestion,
-.result-reference {
-  margin-top: var(--space-4);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: white;
-}
-
-.result-suggestion h4,
-.result-reference h4 {
-  font-size: var(--text-body-sm);
+.stat-row .numeral {
   font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-2);
   color: var(--text-primary);
 }
 
-.result-suggestion p,
-.result-reference p {
+.stat-row .numeral.highlight {
+  color: #7c3aed;
+  font-size: var(--text-body);
+}
+
+.suggestions-section {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.section-subtitle {
   font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-body-lg);
-}
-
-.result-sections-backend {
-  margin-top: var(--space-4);
-}
-
-.result-sections-backend .section-block {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
   margin-bottom: var(--space-3);
 }
 
-.result-sections-backend .section-block h4 {
-  font-size: var(--text-body-sm);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-2);
-  color: var(--text-primary);
+.suggestion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.result-sections-backend .section-block ul {
-  list-style: disc;
-  padding-left: var(--space-4);
-}
-
-.result-sections-backend .section-block li {
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
   font-size: var(--text-body-sm);
   color: var(--text-secondary);
   line-height: var(--leading-body-lg);
-  margin-bottom: var(--space-1);
+}
+
+.suggestion-icon {
+  font-size: var(--text-body);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mt-2 {
+  margin-top: var(--space-2);
 }
 </style>

@@ -48,21 +48,99 @@ export const CALCULATORS = {
   // ====== 餐饮计算器 ======
 
   'gross-margin-restaurant': {
-    name: '毛利率计算器（餐饮版）',
-    inputs: ['price', 'cost'],
-    calc: ({ price, cost }) => {
-      const margin = safeDiv(price - cost, price) * 100
-      const profit = price - cost
-      let status = 'warning', statusText = '及格', suggestion = '', reference = '火锅50-60%，中餐55-68%，快餐60-70%，西餐70%+'
-      if (margin >= 70) { status = 'success'; statusText = '利润款'; suggestion = '毛利很高，适合做利润主力。可适当营销推广，或搭配引流品做套餐。' }
-      else if (margin >= 55) { status = 'success'; statusText = '爆款'; suggestion = '毛利空间健康，适合作为主力推荐菜品。' }
-      else if (margin >= 40) { status = 'warning'; statusText = '引流品'; suggestion = '毛利偏低，可作为引流菜吸引客流。建议搭配高毛利菜品销售。' }
-      else { status = 'danger'; statusText = '亏本'; suggestion = '毛利率过低，建议优化食材采购成本、调整份量或适当提价。' }
-      return { sections: [
-        { title: '计算结果', items: [`毛利率：${margin.toFixed(1)}%`, `状态：${statusText}`, `单份毛利：¥${profit.toFixed(2)}`] },
-        { title: '定价建议', items: [suggestion] },
-        { title: '行业参考', items: [reference] }
-      ], summary: `毛利率 ${margin.toFixed(1)}% — ${statusText}`, extra: { margin: margin.toFixed(1), profit: profit.toFixed(2), status, statusText } }
+    name: '品类毛利计算器（餐饮版）',
+    inputs: ['storeName', 'categories'],
+    calc: ({ storeName, categories }) => {
+      const industryBenchmarks = {
+        '火锅': { min: 55, max: 65 },
+        '炒菜': { min: 60, max: 70 },
+        '凉菜': { min: 60, max: 70 },
+        '酒水': { min: 70, max: 80 },
+        '主食': { min: 50, max: 60 },
+        '甜品': { min: 65, max: 75 },
+        '小吃': { min: 60, max: 70 },
+        '烧烤': { min: 55, max: 65 },
+        '饮品': { min: 70, max: 80 }
+      }
+
+      let totalRevenue = 0
+      let totalCost = 0
+      let totalProfit = 0
+
+      const processed = categories.map(cat => {
+        const rev = cat.revenue || 0
+        const cost = cat.cost || 0
+        const profit = rev - cost
+        const margin = safeDiv(profit, rev) * 100
+
+        totalRevenue += rev
+        totalCost += cost
+        totalProfit += profit
+
+        let status = 'warning', statusText = '达标'
+        if (margin >= 70) { status = 'success'; statusText = '优秀' }
+        else if (margin >= 60) { status = 'success'; statusText = '良好' }
+        else if (margin >= 50) { status = 'warning'; statusText = '达标' }
+        else if (margin >= 40) { status = 'warning'; statusText = '偏低' }
+        else { status = 'danger'; statusText = '预警' }
+
+        return {
+          name: cat.name,
+          revenue: rev.toFixed(0),
+          cost: cost.toFixed(0),
+          profit: profit.toFixed(0),
+          margin: margin.toFixed(1),
+          status,
+          statusText,
+          profitRatio: 0,
+          benchmark: industryBenchmarks[cat.name] || null
+        }
+      })
+
+      const overallMargin = safeDiv(totalProfit, totalRevenue) * 100
+
+      let maxProfitCat = processed.reduce((max, c) => parseFloat(c.profit) > parseFloat(max.profit) ? c : max, processed[0])
+
+      processed.forEach(cat => {
+        cat.profitRatio = safeDiv(parseFloat(cat.profit), totalProfit) * 100
+      })
+
+      const suggestions = []
+      processed.forEach(cat => {
+        const m = parseFloat(cat.margin)
+        const pr = cat.profitRatio
+
+        if (m >= 70 && pr < 15) {
+          suggestions.push({ type: 'warn', text: `${cat.name} 毛利率高但贡献低，建议加大推广，提升销量` })
+        }
+        if (m < 50 && pr > 25) {
+          suggestions.push({ type: 'alert', text: `${cat.name} 毛利偏低但占比高，拖累了整体利润，建议优化成本或调整定价` })
+        }
+        if (cat.benchmark && m < cat.benchmark.min) {
+          suggestions.push({ type: 'warn', text: `${cat.name} 毛利率(${m}%)低于行业参考(${cat.benchmark.min}%)，需重点关注` })
+        }
+        if (m >= 65 && pr > 30) {
+          suggestions.push({ type: 'good', text: `${cat.name} 是明星品类，继续保持并考虑开发相关新品` })
+        }
+      })
+
+      if (suggestions.length === 0) {
+        suggestions.push({ type: 'good', text: '各品类毛利率健康，结构合理，保持稳定运营即可' })
+      }
+
+      return {
+        sections: [
+          { title: '整体表现', items: [`综合毛利率：${overallMargin.toFixed(1)}%`, `总销售额：¥${totalRevenue.toFixed(0)}`, `总毛利额：¥${totalProfit.toFixed(0)}`, `主力贡献品类：${maxProfitCat.name} (占比${maxProfitCat.profitRatio.toFixed(1)}%)`] },
+          { title: '经营建议', items: suggestions.map(s => `${s.type === 'good' ? '👍' : s.type === 'warn' ? '⚠️' : '🔴'} ${s.text}`) }
+        ],
+        summary: `综合毛利率 ${overallMargin.toFixed(1)}% — 共 ${processed.length} 个品类`,
+        extra: {
+          storeName,
+          overallMargin: overallMargin.toFixed(1),
+          categories: processed,
+          suggestions
+        }
+      }
     }
   },
 
