@@ -43,11 +43,8 @@
         <div class="form-section">
           <h3 class="section-title">员工排班</h3>
           <div class="employee-header">
-            <select v-model="selectedEmployee" class="form-input">
-              <option value="" disabled>选择员工</option>
-              <option v-for="name in availableEmployees" :key="name" :value="name">{{ name }}</option>
-            </select>
-            <button type="button" class="btn-add" @click="addEmployee" :disabled="!selectedEmployee">添加</button>
+            <input v-model="newEmployeeName" type="text" class="form-input" placeholder="输入员工姓名" @keyup.enter="addEmployee" />
+            <button type="button" class="btn-add" @click="addEmployee" :disabled="!newEmployeeName.trim()">添加</button>
           </div>
 
           <div class="employee-list" v-if="form.employees.length">
@@ -81,7 +78,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="empty-tip">请先添加至少2名员工</div>
+          <div v-else class="empty-tip">请输入员工姓名并点击"添加"</div>
         </div>
 
         <div class="form-section">
@@ -184,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
 
@@ -206,22 +203,20 @@ const form = reactive({
   constraints: ''
 })
 
-const selectedEmployee = ref('')
-const employeeNames = ['张三', '李四', '王五', '赵六', '孙七', '周八', '吴九', '郑十', '陈十一', '林十二']
-
-const availableEmployees = computed(() => {
-  const used = form.employees.map(e => e.name)
-  return employeeNames.filter(n => !used.includes(n))
-})
+const newEmployeeName = ref('')
 
 function addEmployee() {
-  if (!selectedEmployee.value) return
+  const name = newEmployeeName.value.trim()
+  if (!name) return
+  if (form.employees.some(e => e.name === name)) {
+    return
+  }
   form.employees.push({
-    name: selectedEmployee.value,
+    name,
     restDay: (form.employees.length) % 7,
     shiftPref: 'auto'
   })
-  selectedEmployee.value = ''
+  newEmployeeName.value = ''
 }
 
 function removeEmployee(idx) {
