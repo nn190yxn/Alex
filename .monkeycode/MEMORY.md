@@ -611,3 +611,23 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 后端返回结果结构：{ summary, sections, extra }，前端通过 `result.extra` 访问扩展数据。
   - 错误处理：try/catch 捕获异常，将 `{ error: message }` 赋值给 result，前端用 `v-if="result.error"` 展示。
   - toolInfo 通过 `getToolByCode(toolCode)` 从 toolCatalog.js 获取。
+
+[奶茶/小吃品类行业基准数据]
+- Date: 2026-05-03
+- Context: Agent 在执行"奶茶/小吃品类全量改造"时建立
+- Category: 代码结构
+- Instructions:
+  - `KNOWLEDGE_BASE_INVESTMENT` 中 `bubbleTea`（奶茶/茶饮）配置：装修 800-1500/600-1200/400-900 元/m²（一二三线），设备 3-8 万，人工 1.5 万/月，水电 3000/月，客单价 15 元，毛利 70%，日出杯目标 300/200/150，外卖占比 60-80%，回本 6-12 个月，复购率 30-50%。
+  - `snack`（小吃/档口）配置：装修 500-1000/300-800/200-600 元/m²，设备 1.5-5 万，人工 1.2 万/月，水电 2500/月，客单价 12 元，毛利 65%，日出杯目标 200/150/100，外卖占比 40-60%，回本 4-10 个月，复购率 25-40%。
+  - 奶茶/小吃与正餐核心差异：无翻台概念（用出杯效率替代）、毛利极高（65-75%）、固定成本低（小店/档口模式）、外卖占比高、复购率高。
+  - 新增专用计算器：`cup-efficiency`（出杯效率，替代翻台率）、`drink-cost`（饮品配方成本，拆解单杯原料成本）。
+  - 现有计算器（盈亏平衡/人工成本/翻台率/外卖分析/复购率/库存周转/投资预算）均已同步更新奶茶小吃基准。
+
+[美业计算器全链路已合并到主分支]
+- Date: 2026-05-03
+- Context: Agent 在执行"美业计算器合并冲突解决"时完成
+- Category: 代码结构
+- Instructions:
+  - 美业 20 个计算器 + 7 个独立知识库已完整合并到 `backend/src/services/calculatorEngine.js`。
+  - 合并过程中修复了 KNOWLEDGE_BASE_INVESTMENT 重复定义、breakeven-profit-beauty/funnel-ltv-beauty 代码块错位、安全边际数组语法错误。
+  - 前后端构建验证通过，所有美业计算器前后端链路完整。
