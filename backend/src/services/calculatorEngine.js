@@ -161,7 +161,7 @@ export const CALCULATORS = {
       if (totalFixed <= 0) {
         return { sections: [{ title: '提示', items: ['请至少填写一项固定成本（房租/人工/折旧/其他）'] }], summary: '缺少固定成本', extra: {} }
       }
-      if ((dineInPct || 0) + (deliveryPct || 0) !== 100) {
+      if (Math.abs((dineInPct || 0) + (deliveryPct || 0) - 100) > 0.01) {
         return { sections: [{ title: '错误', items: ['堂食占比 + 外卖占比必须等于 100%'] }], summary: '占比不等于100%', extra: {} }
       }
 
@@ -1426,12 +1426,13 @@ export const CALCULATORS = {
     inputs: ['fixedCost', 'avgRevenue', 'avgCostRate'],
     calc: ({ fixedCost, avgRevenue, avgCostRate }) => {
       const costRate = avgCostRate / 100
-      const dailyBE = safeDiv(fixedCost, 1 - costRate)
-      const dailyOrders = Math.ceil(dailyBE / avgRevenue)
+      const monthlyBE = safeDiv(fixedCost, 1 - costRate)
+      const dailyBE = monthlyBE / 30
+      const dailyOrders = avgRevenue > 0 ? Math.ceil(dailyBE / avgRevenue) : 0
       return { sections: [
-        { title: '盈亏平衡', items: [`每天需营收：¥${dailyBE.toFixed(0)}`, `每天需接单：${dailyOrders} 单`, `每月需营收：¥${(dailyBE * 30).toFixed(0)}`] },
-        { title: '经营判断', items: [`固定成本：¥${fixedCost}/月`, `平均客单价：¥${avgRevenue}`] }
-      ], summary: `每天需营收 ¥${dailyBE.toFixed(0)} 才能保本`, extra: { dailyBE: dailyBE.toFixed(0), dailyOrders } }
+        { title: '盈亏平衡', items: [`每月需营收：¥${monthlyBE.toFixed(0)}`, `每天需营收：¥${dailyBE.toFixed(0)}`, `每天需接单：${dailyOrders} 单（客单价¥${avgRevenue}）`] },
+        { title: '经营判断', items: [`固定成本：¥${fixedCost}/月`, `变动成本率：${avgCostRate}%`] }
+      ], summary: `每月需营收 ¥${monthlyBE.toFixed(0)} 才能保本（日均 ¥${dailyBE.toFixed(0)}）`, extra: { monthlyBE: monthlyBE.toFixed(0), dailyBE: dailyBE.toFixed(0), dailyOrders } }
     }
   },
 
@@ -1949,19 +1950,6 @@ export const CALCULATORS = {
     }
   },
 
-  // ====== 美业卡项知识库 ======
-  BEAUTY_CARD_KB: {
-    consumptionRate: { safe: 0.15, warning: 0.10, danger: 0.05 },
-    adviceTemplates: {
-      healthy: { icon: '✅', text: '耗卡率健康，沉淀资金处于安全区间。继续保持服务消耗节奏。' },
-      warning: { icon: '⚠️', text: '耗卡率偏低（{{rate}}%），沉淀资金持续积累。建议推出限时消耗活动（如"夏季护肤季"），加速客户到店。' },
-      danger: { icon: '🔴', text: '耗卡率严重不足（{{rate}}%）！大量预收款未转化为实收，财务上仍是负债。建议立即停止卖卡，全力做服务消耗，否则有"跑圈"风险。' },
-      cashHigh: { icon: '💡', text: '本月现金流良好，但需关注后续耗卡转化，避免"卖得多做得少"的虚假繁荣。' },
-      realIncomeLow: { icon: '⚠️', text: '实收业绩低于运营成本，虽然现金流为正，但实际在亏损。需加强耗卡管理。' },
-      refundWarning: { icon: '🔴', text: '退费金额占比过高（{{ratio}}%），客户满意度可能下降。建议加强服务质量管理。' }
-    }
-  },
-
   'card-debt-beauty': {
     name: '美业卡项负债与实收计算器',
     inputs: ['periodStartDebt', 'monthSales', 'monthConsumption', 'monthRefund'],
@@ -2095,6 +2083,25 @@ export const CALCULATORS = {
           suggestions
         }
       }
+    }
+  },
+
+  // ====== 美业盈亏平衡知识库 ======
+  BEAUTY_BREAK_EVEN_KB: {
+    costBenchmarks: {
+      rent: { min: 15, max: 25, label: '房租占比' },
+      labor: { min: 30, max: 40, label: '人工占比' },
+      product: { min: 5, max: 15, label: '产品耗材占比' },
+      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
+    },
+    adviceTemplates: {
+      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
+      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
+      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
+      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
+      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
+      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
+      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
     }
   },
 
@@ -2369,6 +2376,7 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 美业会员卡知识库 ======
   BEAUTY_MEMBER_CARD_KB: {
     discountRules: [
       { range: '9.5折以上', min: 9.5, max: Infinity, impact: '轻微让利，客户感知弱', advice: '适合搭配高毛利项目做小额引流' },
