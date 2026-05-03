@@ -1439,6 +1439,105 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 餐饮 P3 计算器 ======
+
+  'inventory-turnover': {
+    name: '库存周转率计算器（餐饮版）',
+    inputs: ['avgInventory', 'costOfGoods', 'period'],
+    calc: ({ avgInventory, costOfGoods, period }) => {
+      const turnover = safeDiv(costOfGoods, avgInventory)
+      const daysOfInventory = turnover > 0 ? (parseInt(period) / turnover).toFixed(0) : null
+      let status = turnover >= 4 ? 'success' : turnover >= 2 ? 'warning' : 'danger'
+      let statusText = turnover >= 4 ? '周转健康' : turnover >= 2 ? '正常' : '积压'
+      const suggestions = []
+      if (turnover < 2) {
+        suggestions.push('库存周转率偏低，食材积压严重！建议：1）减少采购频次和单次采购量；2）清理临期食材（促销/员工餐）；3）优化菜单减少低销量菜品的备料。')
+      } else if (turnover < 4) {
+        suggestions.push('周转率一般，建议建立安全库存线，避免过多备货占用资金。')
+      } else {
+        suggestions.push('周转健康，食材新鲜度高，继续保持"少量多次"采购策略。')
+      }
+      return { sections: [
+        { title: '周转计算', items: [`平均库存：¥${avgInventory.toLocaleString()}`, `期间销货成本：¥${costOfGoods.toLocaleString()}`, `周转次数：${turnover.toFixed(1)} 次（${period}）`, `${daysOfInventory ? `库存天数：约 ${daysOfInventory} 天` : ''}`] },
+        { title: '判断', items: [`周转状况：${statusText}`, `行业参考：快餐 6-8 次/月，正餐 4-6 次/月，火锅 5-7 次/月`] },
+        { title: '优化建议', items: suggestions }
+      ], summary: `库存周转率 ${turnover.toFixed(1)} 次（${period}） — ${statusText}`, extra: { turnover: turnover.toFixed(1), daysOfInventory, status, statusText } }
+    }
+  },
+
+  'dish-contribution': {
+    name: '菜品贡献度分析器（BCG 四象限）',
+    inputs: ['dishName', 'dishPrice', 'dishCost', 'dishSales', 'totalSales', 'totalDishes'],
+    calc: ({ dishName, dishPrice, dishCost, dishSales, totalSales, totalDishes }) => {
+      const profit = dishPrice - dishCost
+      const margin = safeDiv(profit, dishPrice) * 100
+      const salesShare = safeDiv(dishSales, totalSales) * 100
+      const avgSales = safeDiv(totalSales, totalDishes)
+      const popularity = dishSales >= avgSales ? 'high' : 'low'
+      const profitability = margin >= 50 ? 'high' : margin >= 30 ? 'medium' : 'low'
+
+      let quadrant, quadrantLabel, quadrantColor, strategy
+      if (popularity === 'high' && profitability === 'high') {
+        quadrant = 'star'; quadrantLabel = '明星菜品'; quadrantColor = '#22c55e'
+        strategy = '保持品质稳定，可作为招牌推广，适当提价测试市场反应。'
+      } else if (popularity === 'high' && profitability !== 'high') {
+        quadrant = 'cashcow'; quadrantLabel = '现金流菜品'; quadrantColor = '#3b82f6'
+        strategy = '高销量但利润薄，尝试优化成本或搭配高毛利配菜/饮品提升综合利润。'
+      } else if (popularity === 'low' && profitability === 'high') {
+        quadrant = 'problem'; quadrantLabel = '潜力菜品'; quadrantColor = '#f59e0b'
+        strategy = '高毛利但卖不动，需要加强推荐（服务员主推/菜单突出位置）或调整定价。'
+      } else {
+        quadrant = 'dog'; quadrantLabel = '淘汰候选'; quadrantColor = '#dc2626'
+        strategy = '低销量低毛利，建议下架或替换，释放备料和出餐资源。'
+      }
+
+      return { sections: [
+        { title: '菜品分析', items: [`菜品：${dishName}`, `售价：¥${dishPrice}`, `成本：¥${dishCost}`, `单件利润：¥${profit.toFixed(1)}`, `毛利率：${margin.toFixed(1)}%`] },
+        { title: '销售表现', items: [`销量：${dishSales} 份`, `总销量：${totalSales} 份`, `销售占比：${salesShare.toFixed(1)}%`, `平均单菜销量：${avgSales.toFixed(0)} 份`, `${dishSales >= avgSales ? '✓ 高于平均' : '✗ 低于平均'} (${dishSales >= avgSales ? '+' : ''}${(dishSales - avgSales).toFixed(0)} 份)`] },
+        { title: '四象限定位', items: [`所属象限：${quadrantLabel}`, `人气：${popularity === 'high' ? '高' : '低'}`, `利润：${profitability === 'high' ? '高' : profitability === 'medium' ? '中' : '低'}`, `策略：${strategy}`] }
+      ], summary: `${dishName} — ${quadrantLabel}（毛利率 ${margin.toFixed(1)}%，占比 ${salesShare.toFixed(1)}%）`, extra: { quadrant, quadrantLabel, quadrantColor, margin: margin.toFixed(1), salesShare: salesShare.toFixed(1), strategy } }
+    }
+  },
+
+  'repurchase-rate': {
+    name: '复购率/回头客计算器（餐饮版）',
+    inputs: ['totalCustomers', 'repeatCustomers', 'period', 'avgRepeatInterval', 'avgOrderValue', 'newCustomerCost'],
+    calc: ({ totalCustomers, repeatCustomers, period, avgRepeatInterval, avgOrderValue, newCustomerCost }) => {
+      const rate = safeDiv(repeatCustomers, totalCustomers) * 100
+      let status = rate >= 40 ? 'success' : rate >= 20 ? 'warning' : 'danger'
+      let statusText = rate >= 40 ? '复购优秀' : rate >= 20 ? '正常' : '偏低'
+
+      // LTV 估算
+      const annualVisits = avgRepeatInterval > 0 ? Math.round(365 / avgRepeatInterval) : 0
+      const customerLTV = avgOrderValue * annualVisits
+      const cacRatio = newCustomerCost > 0 ? safeDiv(customerLTV, newCustomerCost) : null
+
+      const suggestions = []
+      if (rate < 20) {
+        suggestions.push('🔴 复购率低于 20%，顾客来了就走！建议：1）建立会员积分体系；2）做好口味一致性；3）增加消费后触达（短信/微信）。')
+      } else if (rate < 40) {
+        suggestions.push('⚠️ 复购率有提升空间，建议推出储值优惠、会员日活动，增加顾客粘性。')
+      } else {
+        suggestions.push('✅ 复购率优秀，说明顾客认可你的产品和服务。')
+      }
+
+      if (cacRatio != null) {
+        if (cacRatio >= 3) {
+          suggestions.push(`✅ LTV/CAC = ${cacRatio.toFixed(1)}（>3 健康），获客投入回报良好。`)
+        } else {
+          suggestions.push(`⚠️ LTV/CAC = ${cacRatio.toFixed(1)}（<3 不健康），获客成本偏高或复购太低，需要优化。`)
+        }
+      }
+
+      return { sections: [
+        { title: '复购计算', items: [`总顾客数：${totalCustomers} 人`, `回头客：${repeatCustomers} 人`, `复购率：${rate.toFixed(1)}%`, `统计周期：${period}`] },
+        { title: '判断', items: [`复购状况：${statusText}`, `行业参考：快餐 25-40%，正餐 20-35%，火锅 30-45%`] },
+        ...(avgRepeatInterval > 0 ? [{ title: 'LTV 估算', items: [`平均消费间隔：${avgRepeatInterval} 天`, `年均到店：${annualVisits} 次`, `客户生命周期价值：¥${customerLTV.toLocaleString()}`, `${newCustomerCost > 0 ? `获客成本：¥${newCustomerCost}，LTV/CAC = ${cacRatio.toFixed(1)}` : '填写获客成本可查看 LTV/CAC 比值'}`] }] : []),
+        { title: '提升建议', items: suggestions }
+      ], summary: `复购率 ${rate.toFixed(1)}% — ${statusText}`, extra: { rate: rate.toFixed(1), status, statusText, customerLTV: customerLTV.toLocaleString(), cacRatio: cacRatio ? cacRatio.toFixed(1) : null } }
+    }
+  },
+
   // ====== 开店投资知识库 ======
   KNOWLEDGE_BASE_INVESTMENT: {
     storeTypes: {
