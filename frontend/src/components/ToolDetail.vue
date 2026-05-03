@@ -1,7 +1,7 @@
 <template>
   <div class="tool-detail-page">
     <div class="container">
-      <div v-if="!hasAccess" class="upgrade-required card">
+      <div v-if="!hasAccess" class="upgrade-required card-upgrade">
         <div class="upgrade-icon">
           <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
             <path d="M12 1a5 5 0 00-5 5v4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V12a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 9H9V6a3 3 0 116 0v4z"/>
@@ -161,6 +161,17 @@
 
           <div v-else class="result-content">
             <slot name="result">{{ resultText }}</slot>
+          </div>
+        </div>
+
+        <div v-if="hasResult" class="premium-cta">
+          <div class="premium-cta-content">
+            <div class="premium-icon">💎</div>
+            <div class="premium-text">
+              <h4>高阶会员专享</h4>
+              <p>高阶会员可获得行业专家知识库的针对性经营建议</p>
+            </div>
+            <router-link to="/membership" class="btn btn-primary">立即升级</router-link>
           </div>
         </div>
       </div>
@@ -761,8 +772,22 @@ function handleSave() {
   text-align: center;
 }
 
+.card-upgrade {
+  background: linear-gradient(135deg, var(--pillar-private-bg), var(--pillar-ip-bg));
+  border: 1px solid var(--pillar-private);
+  color: var(--pillar-ip);
+}
+
+.card-upgrade h2, .card-upgrade p {
+  color: var(--pillar-ip);
+}
+
+.card-upgrade .sub-text {
+  color: var(--pillar-private);
+}
+
 .upgrade-icon {
-  color: var(--text-muted);
+  color: var(--pillar-ip);
   margin-bottom: var(--space-4);
 }
 
@@ -816,5 +841,34 @@ function handleSave() {
 
 .spreadsheet-table tbody tr:hover {
   background: var(--bg-subtle);
+}
+
+.premium-cta {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: linear-gradient(135deg, var(--pillar-private-bg), var(--pillar-ip-bg));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--pillar-private);
+}
+
+.premium-cta-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.premium-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.premium-text h4 {
+  margin-bottom: var(--space-1);
+  color: var(--pillar-ip);
+}
+
+.premium-text p {
+  color: var(--pillar-private);
+  font-size: var(--text-body-sm);
 }
 </style>

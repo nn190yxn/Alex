@@ -58,13 +58,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'cashflow-education',
-  name: '现金流预测计算器（教培版）',
-  description: '帮你提前预判资金链断裂风险',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('cashflow-education')
 
 const form = reactive({ monthlyIncome: null, monthlyExpense: null, balance: null, predictMonths: 6 })
 const result = ref(null)

@@ -84,15 +84,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'delivery-profit',
-  name: '外卖利润计算器',
-  description: '帮你算清外卖到底是在赚钱还是在给平台打工，很多店外卖越多人越亏',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('delivery-profit')
 
 const form = reactive({
   deliveryRevenue: null,

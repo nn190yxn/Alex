@@ -72,14 +72,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'schedule',
-  name: '员工排班表生成器',
-  description: '输入员工和班次，自动生成本周排班表',
-  badge: '免费',
-  badgeClass: 'badge-free'
-}
+const toolInfo = getToolByCode('schedule')
 
 const quotaInfo = ref(null)
 const result = ref(null)

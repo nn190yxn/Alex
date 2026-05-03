@@ -22,10 +22,10 @@
           <section v-if="result.dimensionRank && result.dimensionRank.length" class="report-section card">
             <h2>维度排序（从弱到强）</h2>
             <div class="rank-list">
-              <div v-for="(dim, i) in result.dimensionRank" :key="dim" class="rank-item">
+              <div v-for="(dim, i) in result.dimensionRank" :key="getRankItemKey(dim, i)" class="rank-item">
                 <span class="rank-num">{{ i + 1 }}</span>
-                <span class="rank-name">{{ dim }}</span>
-                <span v-if="result.scores && result.scores[dim]" class="rank-score">{{ typeof result.scores[dim] === 'object' ? result.scores[dim].score : result.scores[dim] }}/5</span>
+                <span class="rank-name">{{ getRankItemLabel(dim) }}</span>
+                <span v-if="getRankItemScore(dim) !== null" class="rank-score">{{ getRankItemScore(dim) }}/{{ getRankItemMaxScore(dim) }}</span>
               </div>
             </div>
           </section>
@@ -89,7 +89,7 @@
                 :to="`/tools/${toolCode}`"
                 class="tool-chip"
               >
-                {{ toolCode }}
+                {{ getToolDisplayName(toolCode) }}
               </router-link>
             </div>
           </section>
@@ -101,126 +101,6 @@
               <router-link to="/membership" class="btn btn-primary">查看会员权益</router-link>
             </div>
           </section>
-        </div>
-      </template>
-
-      <template v-else>
-        <div class="report-content">
-        <!-- 行业画像 -->
-        <section class="report-section card">
-          <h2>一、行业画像</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">客户类型</span>
-              <span class="info-value">{{ answers.stage0[0] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">客单价</span>
-              <span class="info-value">{{ answers.stage0[1] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">决策周期</span>
-              <span class="info-value">{{ answers.stage0[2] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">线上化程度</span>
-              <span class="info-value">{{ answers.stage0[3] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">竞争格局</span>
-              <span class="info-value">{{ answers.stage0[4] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">复购属性</span>
-              <span class="info-value">{{ answers.stage0[5] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">地域覆盖</span>
-              <span class="info-value">{{ answers.stage0[6] }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">核心痛点</span>
-              <span class="info-value highlight">{{ answers.stage0[7] }}</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- 创始人能力雷达 -->
-        <section class="report-section card">
-          <h2>二、创始人能力画像</h2>
-          <div class="radar-chart">
-            <div v-for="(ability, index) in founderAbilities" :key="ability.name" class="radar-item">
-              <div class="radar-label">{{ ability.name }}</div>
-              <div class="radar-bar">
-                <div class="radar-fill" :style="{ width: `${(answers.founder[index] || 3) * 20}%` }"></div>
-              </div>
-              <div class="radar-score">{{ answers.founder[index] || 3 }}分</div>
-            </div>
-          </div>
-          <div class="ability-summary">
-            <div class="summary-item">
-              <span class="summary-label">最强能力</span>
-              <span class="summary-value text-success">{{ strongestAbility }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">最短板</span>
-              <span class="summary-value text-danger">{{ weakestAbility }}</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- 快速扫描 -->
-        <section class="report-section card">
-          <h2>三、快速扫描结果</h2>
-          <div class="scan-grid">
-            <div v-for="(dimension, index) in scanDimensions" :key="dimension.name" class="scan-item">
-              <div class="scan-header">
-                <span class="scan-name">{{ dimension.name }}</span>
-                <span class="scan-score" :class="getScoreClass(answers.scan[index])">
-                  {{ answers.scan[index] || 3 }}分
-                </span>
-              </div>
-              <div class="scan-bar">
-                <div class="scan-fill" :style="{ width: `${(answers.scan[index] || 3) * 20}%` }"></div>
-              </div>
-            </div>
-          </div>
-          <div class="bottleneck-analysis">
-            <h4>核心瓶颈</h4>
-            <p>{{ bottleneckAnalysis }}</p>
-          </div>
-        </section>
-
-        <!-- 增长建议 -->
-        <section class="report-section card">
-          <h2>四、增长建议</h2>
-          <div class="suggestions">
-            <div class="suggestion-item" v-for="suggestion in suggestions" :key="suggestion.period">
-              <h4>{{ suggestion.period }}</h4>
-              <p>{{ suggestion.content }}</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- AI 智能分析 -->
-        <section class="report-section card ai-section" v-if="aiLoading || aiAnalysis">
-          <h2>五、AI 智能分析 <span v-if="aiLoading" class="ai-loading">分析中...</span></h2>
-          <div v-if="aiLoading" class="ai-loading-state">
-            <div class="loading-spinner"></div>
-            <p>正在生成深度分析...</p>
-          </div>
-          <div v-else-if="aiAnalysis" class="ai-insights">
-            <div
-              v-for="(insight, index) in aiAnalysis.aiInsights"
-              :key="index"
-              class="insight-item"
-              :class="getInsightClass(insight.type)"
-            >
-              <h4>{{ insight.title }}</h4>
-              <p>{{ insight.content }}</p>
-            </div>
-          </div>
-        </section>
         </div>
       </template>
 
@@ -237,41 +117,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getToolByCode } from '@/constants/toolCatalog'
 
 const router = useRouter()
-
-const answers = ref({
-  stage0: {},
-  founder: {},
-  scan: {}
-})
 
 const result = ref({})
 const isUnifiedResult = ref(false)
 const reportTitle = ref('企业增长诊断报告')
-
-const aiAnalysis = ref(null)
-const aiLoading = ref(false)
-
-const founderAbilities = [
-  { name: '商业洞察' },
-  { name: '获客能力' },
-  { name: '团队领导' },
-  { name: '财务意识' },
-  { name: '学习进化' },
-  { name: '角色定位' }
-]
-
-const scanDimensions = [
-  { name: '获客能力' },
-  { name: '盈利效率' },
-  { name: '复购与推荐' },
-  { name: '复制能力' },
-  { name: '组织能力' },
-  { name: '战略清晰' }
-]
 
 function getScoreClass(score, maxScore) {
   const pct = maxScore ? score / maxScore : score / 100
@@ -280,66 +134,37 @@ function getScoreClass(score, maxScore) {
   return 'text-danger'
 }
 
-const strongestAbility = computed(() => {
-  if (aiAnalysis.value?.founderAnalysis?.strongest) {
-    return aiAnalysis.value.founderAnalysis.strongest
-  }
-  const scores = Object.values(answers.value.founder)
-  if (scores.length === 0) return '待评估'
-  const maxScore = Math.max(...scores)
-  const index = scores.indexOf(maxScore)
-  return founderAbilities[index].name
-})
+function getRankItemKey(item, index) {
+  if (typeof item === 'string') return item
+  return item?.dimension || item?.label || `rank-${index}`
+}
 
-const weakestAbility = computed(() => {
-  if (aiAnalysis.value?.founderAnalysis?.weakest) {
-    return aiAnalysis.value.founderAnalysis.weakest
-  }
-  const scores = Object.values(answers.value.founder)
-  if (scores.length === 0) return '待评估'
-  const minScore = Math.min(...scores)
-  const index = scores.indexOf(minScore)
-  return founderAbilities[index].name
-})
+function getRankItemLabel(item) {
+  if (typeof item === 'string') return item
+  return item?.label || item?.dimension || '未命名维度'
+}
 
-const bottleneckAnalysis = computed(() => {
-  if (aiAnalysis.value?.scanAnalysis?.worstBottleneck) {
-    const wb = aiAnalysis.value.scanAnalysis.worstBottleneck
-    return `当前最严重的瓶颈是「${wb.dimension}」，评分仅${wb.score}分。建议优先解决此问题。`
+function getRankItemScore(item) {
+  if (typeof item === 'object' && item?.score != null) {
+    return item.score
   }
-  const scores = Object.entries(answers.value.scan)
-  if (scores.length === 0) return '暂无数据'
-  const sorted = scores.sort((a, b) => (a[1] || 3) - (b[1] || 3))
-  const worst = sorted[0]
-  const dimension = scanDimensions[parseInt(worst[0])]
-  return `当前最严重的瓶颈是「${dimension?.name || '未知'}」，评分仅${worst[1] || 3}分。建议优先解决此问题。`
-})
+  const label = getRankItemLabel(item)
+  const score = result.value?.scores?.[label]
+  if (typeof score === 'object') return score.score
+  if (typeof score === 'number') return score
+  return null
+}
 
-const suggestions = computed(() => {
-  if (aiAnalysis.value?.actionPlan) {
-    const plan = aiAnalysis.value.actionPlan
-    return [
-      { period: '短期（1-3个月）', content: plan.short },
-      { period: '中期（3-6个月）', content: plan.mid },
-      { period: '长期（6-12个月）', content: plan.long }
-    ]
-  }
-  const mainIssue = answers.value.stage0[7] || '获客难'
-  return [
-    {
-      period: '短期（1-3个月）',
-      content: `针对「${mainIssue}」的核心问题，梳理现有资源，找到1-2个可快速执行的突破点，建立最小可行性方案。`
-    },
-    {
-      period: '中期（3-6个月）',
-      content: '在短期方案验证后，整理成功经验，建立标准化流程，尝试复制到其他渠道或场景。'
-    },
-    {
-      period: '长期（6-12个月）',
-      content: '根据业务发展情况，评估是否需要引入外部资源（团队、资本），制定规模化增长计划。'
-    }
-  ]
-})
+function getRankItemMaxScore(item) {
+  const label = getRankItemLabel(item)
+  const score = result.value?.scores?.[label]
+  if (typeof score === 'object' && score?.maxScore != null) return score.maxScore
+  return 5
+}
+
+function getToolDisplayName(toolCode) {
+  return getToolByCode(toolCode)?.name || toolCode
+}
 
 function getRiskClass(note) {
   if (note.includes('🔴') || note.includes('紧急')) return 'risk-urgent'
@@ -347,52 +172,19 @@ function getRiskClass(note) {
   return 'risk-normal'
 }
 
-function getInsightClass(type) {
-  if (type === 'urgent' || type === 'danger') return 'insight-danger'
-  if (type === 'warning') return 'insight-warning'
-  if (type === 'success') return 'insight-success'
-  return 'insight-info'
-}
-
 function handleShare() {
   // TODO: 生成分享链接
 }
-
-async function fetchAIAnalysis() {
-  aiLoading.value = true
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/diagnosis/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ answers: answers.value })
-    })
-    if (response.ok) {
-      const data = await response.json()
-      aiAnalysis.value = data.analysis
-    }
-  } catch (error) {
-    console.error('Failed to fetch AI analysis:', error)
-  } finally {
-    aiLoading.value = false
-  }
-}
-
-onMounted(async () => {
+onMounted(() => {
   const state = history.state
-  if (state) {
-    if (state.result) {
-      result.value = state.result
-      isUnifiedResult.value = true
-      reportTitle.value = state.title || '诊断报告'
-    } else if (state.answers) {
-      answers.value = state.answers
-      await fetchAIAnalysis()
-    }
+  if (state?.result) {
+    result.value = state.result
+    isUnifiedResult.value = true
+    reportTitle.value = state.title || '诊断报告'
+    return
   }
+
+  router.replace({ name: 'Diagnosis' })
 })
 </script>
 
@@ -432,263 +224,6 @@ onMounted(async () => {
   border-bottom: 1px solid var(--line-default);
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.info-label {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-}
-
-.info-value {
-  font-size: var(--text-body-md);
-  font-weight: var(--font-weight-medium);
-}
-
-.info-value.highlight {
-  color: var(--brand-accent);
-}
-
-.radar-chart {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-}
-
-.radar-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.radar-label {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-}
-
-.radar-bar {
-  height: 8px;
-  background-color: var(--bg-subtle);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.radar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-weak));
-  border-radius: 4px;
-}
-
-.radar-score {
-  font-size: var(--text-caption);
-  color: var(--brand-primary);
-  font-weight: var(--font-weight-semibold);
-}
-
-.ability-summary {
-  display: flex;
-  gap: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-default);
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.summary-label {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-}
-
-.summary-value {
-  font-weight: var(--font-weight-semibold);
-}
-
-.scan-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-}
-
-.scan-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.scan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.scan-name {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-}
-
-.scan-score {
-  font-size: var(--text-body-sm);
-  font-weight: var(--font-weight-semibold);
-}
-
-.score-high { color: var(--state-success); }
-.score-mid { color: var(--state-warning); }
-.score-low { color: var(--state-danger); }
-
-.scan-bar {
-  height: 6px;
-  background-color: var(--bg-subtle);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.scan-fill {
-  height: 100%;
-  border-radius: 3px;
-}
-
-.bottleneck-analysis {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line-default);
-}
-
-.bottleneck-analysis h4 {
-  font-size: var(--text-body-sm);
-  color: var(--state-danger);
-  margin-bottom: var(--space-2);
-}
-
-.bottleneck-analysis p {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-body-sm);
-}
-
-.suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.suggestion-item h4 {
-  font-size: var(--text-body-md);
-  color: var(--brand-primary);
-  margin-bottom: var(--space-2);
-}
-
-.suggestion-item p {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-  line-height: var(--leading-body-sm);
-}
-
-.ai-section h2 {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.ai-loading {
-  font-size: var(--text-body-sm);
-  font-weight: normal;
-  color: var(--text-secondary);
-}
-
-.ai-loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--space-6);
-  gap: var(--space-3);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--bg-subtle);
-  border-top-color: var(--brand-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.ai-loading-state p {
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-}
-
-.ai-insights {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.insight-item {
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  border-left: 4px solid;
-}
-
-.insight-item h4 {
-  font-size: var(--text-body-md);
-  margin-bottom: var(--space-2);
-}
-
-.insight-item p {
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body-sm);
-}
-
-.insight-danger {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: var(--state-danger);
-}
-
-.insight-danger h4 { color: var(--state-danger); }
-.insight-danger p { color: var(--text-primary); }
-
-.insight-warning {
-  background: rgba(245, 158, 11, 0.08);
-  border-color: var(--state-warning);
-}
-
-.insight-warning h4 { color: var(--state-warning); }
-.insight-warning p { color: var(--text-primary); }
-
-.insight-success {
-  background: rgba(34, 197, 94, 0.08);
-  border-color: var(--state-success);
-}
-
-.insight-success h4 { color: var(--state-success); }
-.insight-success p { color: var(--text-primary); }
-
-.insight-info {
-  background: rgba(59, 130, 246, 0.08);
-  border-color: var(--brand-primary);
-}
-
-.insight-info h4 { color: var(--brand-primary); }
-.insight-info p { color: var(--text-primary); }
-
 .report-actions {
   display: flex;
   justify-content: center;
@@ -697,16 +232,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 640px) {
-  .info-grid,
-  .radar-chart {
-    grid-template-columns: 1fr;
-  }
-
-  .ability-summary {
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
   .report-actions {
     flex-direction: column;
   }

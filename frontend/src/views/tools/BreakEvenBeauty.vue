@@ -32,13 +32,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'break-even-beauty',
-  name: '盈亏平衡点计算器（美业版）',
-  description: '帮你算出每月至少做多少业绩才不亏',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('break-even-beauty')
 
 const form = reactive({ fixedCost: null, marginRate: null, avgPrice: null })
 const result = ref(null)

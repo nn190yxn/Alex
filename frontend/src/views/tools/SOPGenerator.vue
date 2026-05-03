@@ -50,14 +50,9 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolQuota, generateWithAI } from '@/api/tool'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'sop',
-  name: 'SOP流程文档生成器',
-  description: '输入流程类型和场景，生成标准化的SOP文档',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('sop')
 
 const quotaInfo = ref(null)
 const result = ref(null)

@@ -62,14 +62,9 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { generateWithAI, getToolQuota } from '@/api/tool'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'salary',
-  name: '薪酬结构设计器',
-  description: '根据企业规模和营业额，智能设计员工薪酬结构方案',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('salary')
 
 const quotaInfo = ref(null)
 const result = ref(null)

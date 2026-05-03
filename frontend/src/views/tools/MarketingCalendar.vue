@@ -31,15 +31,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { getToolQuota, generateWithAI } from '@/api/tool'
 
-const toolInfo = {
-  code: 'marketing-calendar',
-  name: '智能营销日历定制',
-  description: '生成全年营销日历和节日营销方案',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('marketing-calendar')
 
 const quotaInfo = ref(null)
 const result = ref(null)

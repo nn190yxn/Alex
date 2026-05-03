@@ -11,6 +11,7 @@ import { getDiagnosisTemplate, calculateDiagnosisScore, generateDiagnosisActions
 import { generateStructured } from '../services/ai.js'
 import { createCalculatorTools } from './calculatorTools.js'
 import { createSpreadsheetTools } from './spreadsheetTools.js'
+import { canAccessLevel, getRequiredMemberLevel } from '../config/toolAccess.js'
 
 const router = express.Router()
 
@@ -23,6 +24,11 @@ async function trackUsage(userId, toolCode) {
   } catch (e) {
     logger.error('generate', `Track usage failed: ${e.message}`)
   }
+}
+
+async function getUserMemberLevel(userId) {
+  const users = await query('SELECT member_level FROM users WHERE id = ?', [userId])
+  return users[0]?.member_level || 'free'
 }
 
 const TOOL_DEFINITIONS = {
@@ -1532,6 +1538,17 @@ ${knowledge}
     templateBuilder: async (formData, ind) => {
       const industry = ind.name || '门店'
       const contentType = formData.contentType || '种草笔记'
+      const product = formData.product || ''
+      const style = formData.style || '种草'
+      const target = formData.target || ''
+      const highlights = formData.highlights || ''
+
+      const styleMap = {
+        '种草': '真实体验分享，突出产品优点和使用感受',
+        '干货': '教程/攻略类型，步骤清晰、实用性强',
+        '探店': '实地探店记录，环境 + 体验 + 评价',
+        'Plog': '生活记录风格，碎片化但有氛围感'
+      }
 
       return {
         summary: `「${industry}」小红书内容已生成`,
@@ -1563,13 +1580,382 @@ ${knowledge}
             '图上可以加文字标题，字体要大',
             '前后对比图效果最好',
             '配色统一，形成个人风格'
-          ]}
+          ]},
+          { title: '风格建议', items: [
+            styleMap[style] || styleMap['种草'],
+            product ? `产品/服务：${product}` : '',
+            target ? `目标人群：${target}` : '',
+            highlights ? `核心卖点：${highlights}` : ''
+          ].filter(Boolean) }
         ],
         actions: [
           { priority: 'critical', title: '替换真实内容', description: '将模板中的占位符替换为实际内容', owner: '运营', timeline: '今天' },
           { priority: 'high', title: '准备配图', description: '拍摄或制作3-5张高清配图', owner: '运营', timeline: '2天内' }
         ],
         recommendedTools: ['friend', 'hook', 'headline']
+      }
+    }
+  },
+
+  'xhs-topic': {
+    name: '小红书选题策划助手',
+    engineType: 'template',
+    templateBuilder: async (formData, ind) => {
+      const industry = ind.name || '门店'
+      const audience = formData.audience || '目标客户'
+      const painPoint = formData.painPoint || '行业常见痛点'
+
+      return {
+        summary: `「${industry}」选题库已生成`,
+        sections: [
+          { title: '爆款因子叠加法', items: [
+            '公式：【人群】+【场景】+【问题】，用【形式】解决',
+            `示例1：${audience}（人群）+ 周末约会（场景）+ 不知道去哪（问题）+ 攻略清单（形式）`,
+            `示例2：${audience}（人群）+ 第一次体验（场景）+ 怕踩坑（问题）+ 避坑指南（形式）`,
+            `示例3：${audience}（人群）+ 预算有限（场景）+ 想省钱（问题）+ 平价推荐（形式）`
+          ]},
+          { title: '九宫格选题法', items: [
+            '横向：3类人群标签（如新手/老手/高端客户）',
+            '纵向：3类场景（如工作日/周末/节假日）',
+            '交叉：3个痛点（如${painPoint}、选择困难、性价比）',
+            '组合生成9个选题，每个含具体人群+场景+可执行动作'
+          ]},
+          { title: '5大万能选题方向', items: [
+            '实用价值：教程/避坑/工具推荐（如"5步搞定${industry}选择"）',
+            '情感共鸣：群体经历/成长故事（如"做${industry}3年的真心话"）',
+            '认知提升：行业内幕/趋势解读（如"${industry}不为人知的3个真相"）',
+            '小众视角：反常识/冷门知识（如"为什么越便宜的${industry}越不推荐"）',
+            '热点借势：节日/影视/明星相关（如"跟着XX学${industry}"）'
+          ]},
+          { title: '热点选题法', items: [
+            '关注站内热搜榜、热门话题',
+            '结合自身领域进行二次创作',
+            '节日热点、季节热点、社会热点',
+            '只追与自身领域相关的热点'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '建立选题库', description: '用上述方法生成20-30个选题，存入选题库', owner: '运营', timeline: '1周内' },
+          { priority: 'high', title: '测试选题', description: '每周选3-5个选题发布，记录数据反馈', owner: '运营', timeline: '持续' }
+        ],
+        recommendedTools: ['xiaohongshu', 'headline', 'hook']
+      }
+    }
+  },
+
+  'xhs-traffic': {
+    name: '薯条投放顾问',
+    engineType: 'template',
+    templateBuilder: async (formData, ind) => {
+      const industry = ind.name || '门店'
+      const budget = formData.budget || 500
+      const goal = formData.goal || '互动量'
+
+      return {
+        summary: `「${industry}」薯条投放策略已生成`,
+        sections: [
+          { title: '投放前筛选', items: [
+            '✓ 封面点击率 ≥ 5%（低于5%先优化封面）',
+            '✓ 完读率 ≥ 40%（内容质量达标）',
+            '✓ 评论区无大量负面情绪',
+            '✓ 笔记未被限流（创作者中心检查）'
+          ]},
+          { title: '推广目标选择', items: [
+            goal === '互动量' ? '✓ 互动量：适合种草类笔记，提升内容价值信号' : '',
+            goal === '商品购买' ? '✓ 商品购买：含购物车链接的笔记必选' : '',
+            goal === '引流到店' ? '✓ 引流到店：本地生活类笔记必选，激活LBS定向' : '',
+            '⚠ 避免选择"关注用户"，效率不如互动量'
+          ].filter(Boolean) },
+          { title: '人群定向策略', items: [
+            '外层（破圈）：兴趣标签定向，选3-5个宽泛标签',
+            '中层（聚拢）：搜索行为定向，输入2-3个具体关键词',
+            '核心层（收割）：自定义人群，近7天互动用户+粉丝',
+            '新手建议：先用智能推荐，积累数据后再自定义'
+          ]},
+          { title: '预算与节奏', items: [
+            `当前预算：¥${budget}`,
+            '首投：6小时 + ¥75元（≈5000次曝光）',
+            '数据好（CTR>4%）：2小时内追加，¥120元/12小时',
+            '同一笔记当日最多3个订单，间隔≥2小时',
+            '黄金时段：发布后1小时内，晚间20:00-22:00'
+          ]},
+          { title: '监测指标', items: [
+            'CTR（点击率）：< 3% 暂停投放，优化封面标题',
+            '互动成本：< 3.5元 可追加投放',
+            'CPM（千次曝光成本）：持续上升需调整定向',
+            '前30分钟数据决定是否继续'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '筛选可投笔记', description: '检查近7天笔记数据，选出CTR≥5%、完读率≥40%的笔记', owner: '运营', timeline: '今天' },
+          { priority: 'high', title: '首投测试', description: '按建议参数进行首投测试，30分钟后查看数据', owner: '运营', timeline: '1小时内' }
+        ],
+        recommendedTools: ['xiaohongshu', 'headline', 'topic']
+      }
+    }
+  },
+
+  'xhs-diagnosis': {
+    name: '小红书账号诊断工具',
+    engineType: 'template',
+    templateBuilder: async (formData, ind) => {
+      const industry = ind.name || '门店'
+      const followerCount = formData.followerCount || 0
+      const noteCount = formData.noteCount || 0
+      const avgEngagement = formData.avgEngagement || 0
+      const avgViews = formData.avgViews || 0
+
+      const engagementRate = avgViews > 0 ? ((avgEngagement / avgViews) * 100).toFixed(1) : 0
+      const healthScore = engagementRate >= 5 ? 85 : engagementRate >= 3 ? 65 : 45
+
+      return {
+        summary: `「${industry}」账号健康度诊断（${healthScore}分）`,
+        sections: [
+          { title: '账号概览', items: [
+            `粉丝数：${followerCount}`,
+            `笔记数：${noteCount}`,
+            `平均阅读量：${avgViews}`,
+            `平均互动数：${avgEngagement}`,
+            `互动率：${engagementRate}%（健康标准：5%-15%）`
+          ]},
+          { title: '健康度评估', items: [
+            healthScore >= 80 ? `✓ 健康度 ${healthScore}分：账号状态良好，继续保持` : healthScore >= 60 ? `⚠ 健康度 ${healthScore}分：存在1-2个短板，需针对性优化` : `✗ 健康度 ${healthScore}分：运营模式存在偏差，需全面复盘`,
+            '内容垂直度（权重30%）：领域相关笔记数/总笔记数，达标值>80%',
+            '更新频率稳定性（权重20%）：3-5篇/周，周发布量标准差<2',
+            '优质笔记占比（权重50%）：互动超均值笔记数/总笔记数，达标值>30%'
+          ]},
+          { title: '限流排查', items: [
+            '1. 官方规则排查：创作中心 → 账号状态 → 违规记录',
+            '2. 隐性限流3大原因：',
+            '   - 内容质量差：视频清晰度低、文案潦草、同质化严重',
+            '   - 账号标签混乱：内容领域频繁切换',
+            '   - 历史表现差：连续10篇以上互动率<1%',
+            '3. 解决方案：删除低质笔记，聚焦垂直领域，连续发布优质内容'
+          ]},
+          { title: '优化建议', items: [
+            '互动率低 → 增加互动钩子（文末提问、投票组件）',
+            '曝光量低 → 优化封面标题，A/B测试',
+            '涨粉差 → 强化人设记忆点，建立专业形象',
+            '搜索流量低 → 优化关键词布局，嵌入标题和正文'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '清理低质笔记', description: '删除近30天阅读量<500且无转化的笔记', owner: '运营', timeline: '3天内' },
+          { priority: 'high', title: '制定内容计划', description: '每周发布3-5篇，保持垂直度和更新频率', owner: '运营', timeline: '1周内' }
+        ],
+        recommendedTools: ['xiaohongshu', 'topic', 'headline']
+      }
+    }
+  },
+
+  'xhs-title': {
+    name: '爆款标题生成器',
+    engineType: 'template',
+    templateBuilder: async (formData) => {
+      const topic = formData.topic || ''
+      const target = formData.target || ''
+      const formula = formData.formula || '智能匹配'
+      const count = formData.count || '10'
+
+      return {
+        summary: `「${topic}」${count} 个爆款标题已生成`,
+        sections: [
+          { title: '数字+结果型', items: [
+            `3 天搞懂${topic}，新手必看`,
+            `${target}收藏的${topic}攻略，看完省一半`,
+            `试了 20 种${topic}方案，这 3 个最有效`
+          ]},
+          { title: '人群+痛点型', items: [
+            `${target}必看！${topic}避坑指南`,
+            `${target}都在用的${topic}方法，简单有效`,
+            `给${target}的${topic}建议，少走 3 年弯路`
+          ]},
+          { title: '悬念+揭秘型', items: [
+            `为什么懂${topic}的人越来越少了？真相是...`,
+            `做${topic}3 年才知道的事，现在告诉你`,
+            `${topic}行业内幕，老板不想让你知道`
+          ]},
+          { title: '对比+反差型', items: [
+            `同样的${topic}，为什么效果差这么多？`,
+            `别人花 1 万学的${topic}，我免费分享`,
+            `${topic}网红款 vs 实用款，我替你踩雷了`
+          ]},
+          { title: '使用建议', items: [
+            '选择与内容最匹配的标题公式类型',
+            '标题中植入核心关键词（利于搜索）',
+            'A/B 测试：准备 3 个备选，观察数据',
+            '标题长度控制在 12-20 字'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '选择最佳标题', description: '从生成的标题中挑选最匹配内容的一个', owner: '运营', timeline: '今天' },
+          { priority: 'high', title: 'A/B 测试', description: '下次发布时换不同标题，对比点击率', owner: '运营', timeline: '持续' }
+        ],
+        recommendedTools: ['xiaohongshu', 'xhs-seo']
+      }
+    }
+  },
+
+  'xhs-seo': {
+    name: '搜索 SEO 优化',
+    engineType: 'template',
+    templateBuilder: async (formData) => {
+      const title = formData.title || ''
+      const content = formData.content || ''
+      const tags = formData.tags || ''
+      const keyword = formData.keyword || ''
+      const industry = formData.industry || ''
+
+      return {
+        summary: `「${title || '笔记'}」SEO 优化建议已生成`,
+        sections: [
+          { title: '标题优化', items: [
+            `当前标题：${title || '（未填写）'}`,
+            keyword ? `建议核心关键词「${keyword}」放在标题前 10 个字` : '请在标题前 10 个字内嵌入核心关键词',
+            '标题长度控制在 12-20 字，超过会被截断',
+            '标题格式：【核心关键词】+ 吸引力钩子'
+          ]},
+          { title: '正文关键词布局', items: [
+            '开头 50 字：必须包含核心关键词',
+            '正文中段：自然分布 3-5 个长尾关键词',
+            '结尾段落：再次出现核心关键词',
+            '关键词密度控制在 3-5%，避免堆砌'
+          ]},
+          { title: '标签优化', items: [
+            tags ? `当前标签：${tags}` : '建议添加 7-10 个标签',
+            '标签黄金比例：2 个大标签 + 5 个垂类标签 + 2 个长尾标签 + 1 个品牌标签',
+            '每个标签都要与内容强相关',
+            `#${industry} #${industry}推荐 #${industry}攻略`
+          ]},
+          { title: '搜索排名提升技巧', items: [
+            '发布后 1 小时内引导收藏（收藏率影响搜索排名最大）',
+            '发布后 24 小时内回复所有评论',
+            '发布后 48 小时是搜索排名关键期',
+            '旧笔记 SEO 优化：修改标题和标签可重新激活搜索流量'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '优化标题关键词', description: '确保核心关键词在标题前 10 个字', owner: '运营', timeline: '今天' },
+          { priority: 'high', title: '补充标签', description: '按 2+5+2+1 比例补充标签', owner: '运营', timeline: '今天' }
+        ],
+        recommendedTools: ['xiaohongshu', 'xhs-title']
+      }
+    }
+  },
+
+  'xhs-review': {
+    name: '笔记数据复盘',
+    engineType: 'template',
+    templateBuilder: async (formData) => {
+      const title = formData.title || ''
+      const type = formData.type || '图文'
+      const exposure = parseInt(formData.exposure) || 0
+      const clicks = parseInt(formData.clicks) || 0
+      const likes = parseInt(formData.likes) || 0
+      const saves = parseInt(formData.saves) || 0
+      const comments = parseInt(formData.comments) || 0
+      const newFollowers = parseInt(formData.newFollowers) || 0
+      const focus = formData.focus || 'overall'
+
+      const ctr = exposure > 0 ? ((clicks / exposure) * 100).toFixed(1) : 0
+      const engagementRate = exposure > 0 ? (((likes + saves + comments) / exposure) * 100).toFixed(1) : 0
+      const saveRate = exposure > 0 ? ((saves / exposure) * 100).toFixed(1) : 0
+
+      const ctrLevel = ctr >= 10 ? '优秀' : ctr >= 5 ? '良好' : '需优化'
+      const engagementLevel = engagementRate >= 5 ? '优秀' : engagementRate >= 3 ? '良好' : '需优化'
+
+      return {
+        summary: `「${title}」数据复盘报告`,
+        sections: [
+          { title: '核心数据', items: [
+            `曝光量：${exposure}`,
+            `点击率（CTR）：${ctr}% — ${ctrLevel}`,
+            `互动率：${engagementRate}% — ${engagementLevel}`,
+            `收藏率：${saveRate}%`,
+            `新增粉丝：${newFollowers}`,
+            `笔记类型：${type}`
+          ]},
+          { title: '数据诊断', items: [
+            ctr >= 10 ? '✓ 点击率优秀，封面和标题有吸引力' : ctr >= 5 ? '⚠ 点击率一般，建议优化封面或标题' : '✗ 点击率偏低，封面和标题需要重做',
+            engagementRate >= 5 ? '✓ 互动率优秀，内容质量被认可' : engagementRate >= 3 ? '⚠ 互动率一般，可以增加互动引导' : '✗ 互动率偏低，内容价值感不足',
+            saveRate >= 3 ? '✓ 收藏率达标，内容有实用价值' : '⚠ 收藏率偏低，增加干货含量'
+          ]},
+          { title: '优化建议', items: [
+            focus === 'ctr' || focus === 'overall' ? '提升点击率：优化封面图（3:4 比例）、标题植入关键词、使用数字/悬念钩子' : '',
+            focus === 'engagement' || focus === 'overall' ? '提升互动率：文末加互动引导（提问/投票）、在评论区主动发起讨论' : '',
+            focus === 'seo' || focus === 'overall' ? '提升搜索排名：标题/正文/标签中嵌入关键词、引导收藏提升搜索权重' : '',
+            focus === 'conversion' || focus === 'overall' ? '提升转化效果：评论区引导私信、主页设置引流入口' : ''
+          ].filter(Boolean) },
+          { title: '对标参考', items: [
+            `${type}笔记行业基准：CTR ${type === '图文' ? '8-15%' : '5-12%'}，互动率 ${type === '图文' ? '3-8%' : '5-12%'}`,
+            '收藏率 >3% 说明内容有实用价值',
+            '涨粉率 >0.5% 说明内容有吸引力'
+          ]}
+        ],
+        actions: [
+          { priority: 'critical', title: '分析数据短板', description: '根据诊断结果确定最需要优化的指标', owner: '运营', timeline: '今天' },
+          { priority: 'high', title: '制定优化方案', description: '针对短板指标制定下一篇笔记的优化策略', owner: '运营', timeline: '2天内' }
+        ],
+        recommendedTools: ['xiaohongshu', 'xhs-title', 'xhs-seo']
+      }
+    }
+  },
+
+  'xhs-conversion': {
+    name: '转化引流方案',
+    engineType: 'template',
+    templateBuilder: async (formData) => {
+      const industry = formData.industry || ''
+      const goal = formData.goal || 'private'
+      const hasStore = formData.hasStore || 'yes'
+      const type = formData.type || 'full'
+      const price = formData.price || ''
+
+      const goalMap = {
+        private: '私域引流（微信/社群）',
+        store: '到店引流',
+        consult: '咨询转化',
+        shop: '店铺成交'
+      }
+
+      return {
+        summary: `「${industry}」${goalMap[goal]}方案已生成`,
+        sections: [
+          { title: '安全引流原则', items: [
+            '绝不直接在笔记/评论中放微信号/手机号',
+            '使用平台内功能承接：私信、群聊、主页',
+            '引导用户主动行动，而非被动接收',
+            '每周引流相关内容不超过 3 篇，避免过度营销'
+          ]},
+          { title: '评论区互动策略', items: [
+            '发布后 1 小时内回复前 10 条评论',
+            '置顶评论：补充说明/福利信息/互动引导',
+            '回复话术："已私信~"、"可以看我的主页哦"、"评论区说不清楚，私信聊"',
+            '引导互动："想要详细攻略的扣 1" → 私信发送'
+          ]},
+          type === 'private' || type === 'full' ? { title: '私域引流话术', items: [
+            '第一阶段（建立信任）："你好呀，感谢关注~ 有什么想了解的可以问我"',
+            '第二阶段（提供价值）："这是你要的攻略/资料，希望对你有帮助~"',
+            '第三阶段（引导行动）："后续有需要可以随时联系我~"',
+            `目标客单价：${price || '未填写'}，根据客单价调整话术深度`
+          ]} : null,
+          hasStore === 'yes' && (type === 'poi' || type === 'full') ? { title: 'POI 门店运营', items: [
+            '认领门店：在小红书搜索门店名称，申请认领',
+            '完善信息：地址、电话、营业时间、照片',
+            '引导打卡：店内设置拍照点，推出"打卡送小食"活动',
+            '维护评价：及时回复所有评价，差评 24 小时内响应'
+          ]} : null,
+          { title: '内容引流技巧', items: [
+            '价值前置：笔记中给出 80% 干货，剩余引导私信获取完整版',
+            '系列内容："这是系列第 1 篇，关注我不错过后续"',
+            '互动活动："评论区留下你的需求，我帮你分析"'
+          ]}
+        ].filter(Boolean),
+        actions: [
+          { priority: 'critical', title: '检查违规风险', description: '确认所有引流方式符合平台规范', owner: '运营', timeline: '今天' },
+          { priority: 'high', title: '执行引流方案', description: '按方案执行评论互动和私信引导', owner: '运营', timeline: '1周内' }
+        ],
+        recommendedTools: ['xiaohongshu', 'xhs-diagnosis']
       }
     }
   },
@@ -1684,6 +2070,12 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
     const toolDef = TOOL_DEFINITIONS[toolCode]
     if (!toolDef) {
       return res.status(400).json({ error: `Unknown tool: ${toolCode}` })
+    }
+
+    const memberLevel = await getUserMemberLevel(userId)
+    const requiredLevel = getRequiredMemberLevel(toolCode)
+    if (!canAccessLevel(memberLevel, requiredLevel)) {
+      return res.status(403).json({ error: '当前会员等级无法使用该工具' })
     }
 
     // Track tool submission event

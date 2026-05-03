@@ -81,6 +81,24 @@ const routes = [
     meta: { title: '个人中心', requiresAuth: true }
   },
   {
+    path: '/tools/xhs-ops',
+    name: 'XhsOperations',
+    component: () => import('@/views/tools/XhsOperations.vue'),
+    meta: { title: '小红书运营' }
+  },
+  {
+    path: '/tools/douyin-ops',
+    name: 'DouyinOperations',
+    component: () => import('@/views/tools/DouyinOperations.vue'),
+    meta: { title: '抖音经营' }
+  },
+  {
+    path: '/tools/xiaohongshu',
+    name: 'XiaohongshuGenerator',
+    component: () => import('@/views/tools/XiaohongshuGenerator.vue'),
+    meta: { title: '小红书笔记生成器' }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin.vue'),

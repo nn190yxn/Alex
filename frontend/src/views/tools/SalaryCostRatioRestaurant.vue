@@ -64,15 +64,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'salary-cost-ratio-restaurant',
-  name: '员工成本占比计算器（餐饮版）',
-  description: '帮你发现"人没少用、钱没多赚"的根源，每降1%就是纯利润',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('salary-cost-ratio-restaurant')
 
 const form = reactive({
   totalSalary: null,

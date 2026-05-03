@@ -41,16 +41,10 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { generateTool } from '@/api/index.js'
 
-const toolInfo = {
-  code: 'gross-margin-restaurant',
-  name: '毛利率计算器（餐饮版）',
-  description: '输入售价和食材成本，快速判断每道菜的利润空间，揪出"看着卖得好其实在亏"的菜品。',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('gross-margin-restaurant')
 
 const form = reactive({
   price: null,

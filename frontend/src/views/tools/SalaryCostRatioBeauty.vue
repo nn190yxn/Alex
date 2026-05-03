@@ -34,13 +34,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'salary-cost-ratio-beauty',
-  name: '员工成本占比计算器（美业版）',
-  description: '帮你看清手工费/提成是不是吃掉了太多营收',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('salary-cost-ratio-beauty')
 
 const form = reactive({ totalSalary: null, revenue: null, baseSalary: null, commission: null })
 const result = ref(null)

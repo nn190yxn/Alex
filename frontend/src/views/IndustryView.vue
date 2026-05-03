@@ -4,8 +4,7 @@
       <section class="industry-switcher card">
         <div class="switcher-copy">
           <p class="eyebrow">行业专版</p>
-          <h2>先选行业，再看对应工具和模板</h2>
-          <p>这里和首页的行业入口保持一致，进入后可直接切换到其他行业专版。</p>
+          <h2>行业专版</h2>
         </div>
         <div class="switcher-tabs">
           <router-link
@@ -35,15 +34,14 @@
         <div class="hero-panel">
           <div class="panel-label">推荐输入示例</div>
           <div class="panel-input">帮我做一个{{ industry.shortName }}门店本月活动方案，并估算 ROI 与执行节奏。</div>
-          <div class="panel-note">从场景出发选能力，而不是先记工具名。</div>
           <div class="panel-metrics">
             <div class="metric-box">
               <strong class="numeral">{{ accessibleCount }}</strong>
               <span>当前可用工具</span>
             </div>
             <div class="metric-box">
-              <strong class="numeral">{{ industry.featuredTools.length }}</strong>
-              <span>推荐入口</span>
+              <strong class="numeral">{{ activePillarData?.tools.filter(t => canAccessTool(t)).length || 0 }}</strong>
+              <span>当前板块可用</span>
             </div>
             <div class="metric-box">
               <strong class="numeral">{{ templates.length }}</strong>
@@ -53,71 +51,48 @@
         </div>
       </section>
 
-      <section class="section-block workspace-grid single-column">
-        <div class="workspace-card card">
-          <div class="section-head compact-head">
-            <div>
-              <h2>会员层级提示</h2>
-              <p>按你当前身份，先用哪些能力最划算。</p>
-            </div>
-          </div>
-          <div class="level-summary">
-            <div v-for="item in levelGuides" :key="item.code" class="level-item" :class="{ active: item.code === userStore.memberLevel }">
-              <div class="level-top">
-                <strong>{{ item.name }}</strong>
-                <span class="badge" :class="item.badgeClass">{{ item.badge }}</span>
-              </div>
-              <p>{{ item.summary }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section-block">
+      <section v-if="activePillars.length" class="section-block pillar-section">
         <div class="section-head">
           <div>
-            <h2>高频场景标签墙</h2>
-            <p>锁定状态会根据当前账号会员层级自动展示。</p>
+            <h2>八大经营支柱</h2>
+            <p>按业务模块查看专属工具，当前会员层级已为你自动过滤可入口。</p>
           </div>
           <div class="current-level">当前会员：{{ userStore.memberLabel }}</div>
         </div>
-        <div class="scenario-groups">
-          <div v-for="group in industry.scenarioGroups" :key="group.group" class="scenario-card card">
-            <h3>{{ group.group }}</h3>
-            <div class="scenario-tags">
-              <span v-for="item in group.items" :key="item" class="scenario-tag">{{ item }}</span>
-            </div>
-            <div v-if="group.tools.length" class="linked-tools">
-              <router-link
-                v-for="tool in group.tools"
-                :key="tool.code"
-                :to="tool.path"
-                class="linked-tool"
-                :class="{ locked: !canAccessTool(tool) }"
-              >
-                <span>{{ tool.name }}</span>
-                <span class="badge" :class="tool.badgeClass">{{ tool.badge }}</span>
-              </router-link>
-            </div>
-            <p v-else class="empty-tip">该分组当前以场景引导为主，后续会继续补齐真实工具入口。</p>
-          </div>
-        </div>
-      </section>
 
-      <section class="section-block">
-        <div class="section-head">
-          <div>
-            <h2>当前专版推荐工具</h2>
-            <p>先从最常用的 4-5 个入口开始，不需要一次学会全部能力。</p>
-          </div>
+        <div class="pillar-tabs">
+          <button
+            v-for="pillar in activePillars"
+            :key="pillar.key"
+            class="pillar-tab"
+            :class="{ active: activePillar === pillar.key }"
+            @click="activePillar = pillar.key"
+          >
+            <span class="pillar-icon"><component :is="pillar.icon" /></span>
+            <span class="pillar-name">{{ pillar.name }}</span>
+            <span class="pillar-count">{{ pillar.tools.filter(t => canAccessTool(t)).length }}/{{ pillar.tools.length }}</span>
+          </button>
         </div>
-        <div class="tools-grid">
-          <ToolCard
-            v-for="tool in industry.featuredTools"
-            :key="tool.code"
-            :tool="tool"
-            :is-locked="!canAccessTool(tool)"
-          />
+
+        <div v-if="activePillarData" class="pillar-content card">
+          <div class="pillar-header">
+            <h3>{{ activePillarData.name }}</h3>
+            <p>{{ activePillarData.description }}</p>
+          </div>
+
+          <div v-if="activePillarData.scenarios.length" class="scenario-tags">
+            <span v-for="item in activePillarData.scenarios" :key="item" class="scenario-tag">{{ item }}</span>
+          </div>
+
+          <div class="tools-grid">
+            <ToolCard
+              v-for="tool in activePillarData.tools"
+              :key="tool.code"
+              :tool="tool"
+              :is-locked="!canAccessTool(tool)"
+            />
+          </div>
+          <p v-if="!activePillarData.tools.length" class="empty-tip">该支柱下暂无专属工具，后续会持续补充。</p>
         </div>
       </section>
 
@@ -169,28 +144,18 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ToolCard from '@/components/ToolCard.vue'
 import { useUserStore } from '@/stores/user'
 import { canAccessLevel } from '@/constants/membership'
-import { getIndustryBySlug, industryEntries, getIndustryTemplatesBySlug, getToolByCode } from '@/constants/toolCatalog'
+import { getIndustryBySlug, visibleIndustryEntries, getIndustryTemplatesBySlug, getToolByCode } from '@/constants/toolCatalog'
 
 const route = useRoute()
 const userStore = useUserStore()
 
 const industry = computed(() => getIndustryBySlug(route.params.slug))
-
 const templates = computed(() => getIndustryTemplatesBySlug(route.params.slug))
-
-const levelGuides = [
-  { code: 'free', name: '免费版', badge: '免费', badgeClass: 'badge-free', summary: '适合先体验计算、基础文案和高频小工具。' },
-  { code: 'starter', name: '初阶版', badge: '初阶', badgeClass: 'badge-starter', summary: '开始进入行业模板、制度和可执行场景。' },
-  { code: 'pro', name: '进阶版', badge: '进阶', badgeClass: 'badge-pro', summary: '解锁诊断、经营方案和更深的增长分析。' },
-  { code: 'annual', name: '高阶版', badge: '高阶', badgeClass: 'badge-annual', summary: '适合要做老板 IP、长期增长和深度策略的用户。' }
-]
-
-const visibleIndustryEntries = industryEntries.filter(entry => ['restaurant', 'education', 'beauty', 'service'].includes(entry.slug))
 
 const accessibleCount = computed(() => {
   if (!industry.value) return 0
@@ -205,381 +170,93 @@ function getToolName(code) {
   const tool = getToolByCode(code)
   return tool ? tool.name : code
 }
+
+const activePillars = computed(() => {
+  if (!industry.value?.pillarData) return []
+  return industry.value.pillarData.filter(p => p.tools.length > 0)
+})
+
+const activePillar = ref('management')
+const activePillarData = computed(() => activePillars.value.find(p => p.key === activePillar.value))
+
+watch(activePillars, (newPillars) => {
+  if (newPillars.length && !newPillars.find(p => p.key === activePillar.value)) {
+    activePillar.value = newPillars[0].key
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
-.industry-page,
-.industry-empty {
-  padding: var(--space-6) 0 var(--space-9);
-}
+.industry-page, .industry-empty { padding: var(--space-6) 0 var(--space-9); }
 
-.industry-switcher {
-  padding: var(--space-5);
-  margin-bottom: var(--space-5);
-}
+.industry-switcher { padding: var(--space-5); margin-bottom: var(--space-5); }
+.switcher-copy { margin-bottom: var(--space-4); }
+.switcher-copy h2 { margin-bottom: var(--space-2); }
+.switcher-copy p { color: var(--text-secondary); }
+.switcher-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--space-3); }
+.switcher-tab { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); background: var(--bg-subtle); color: var(--text-secondary); text-decoration: none; font-weight: var(--font-weight-medium); }
+.switcher-tab.active { color: var(--brand-primary); background: rgba(30, 58, 138, 0.06); outline: 1px solid rgba(30, 58, 138, 0.18); }
+.switcher-dot { width: 10px; height: 10px; border-radius: 9999px; }
 
-.switcher-copy {
-  margin-bottom: var(--space-4);
-}
+.industry-hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--space-6); padding: var(--space-6); margin-bottom: var(--space-8); }
+.eyebrow { font-size: var(--text-caption); color: var(--brand-primary); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); }
+.industry-hero h1 { font-size: var(--text-h2); margin-bottom: var(--space-3); }
+.hero-desc, .hero-audience { color: var(--text-secondary); margin-bottom: var(--space-3); }
+.hero-actions { display: flex; gap: var(--space-3); }
+.hero-panel { background: var(--bg-subtle); border-radius: var(--radius-lg); padding: var(--space-5); }
+.panel-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: var(--space-4); }
+.metric-box { padding: var(--space-3); border-radius: var(--radius-md); background: white; }
+.metric-box strong { display: block; margin-bottom: var(--space-1); color: var(--brand-primary); font-size: var(--text-h3); }
+.metric-box span, .empty-tip { color: var(--text-secondary); }
+.panel-label { font-size: var(--text-caption); color: var(--text-muted); margin-bottom: var(--space-2); }
+.panel-input { padding: var(--space-4); border-radius: var(--radius-md); background: white; line-height: var(--leading-body-lg); margin-bottom: var(--space-3); }
+.panel-note { color: var(--text-secondary); }
 
-.switcher-copy h2 {
-  margin-bottom: var(--space-2);
-}
+.section-block { margin-bottom: var(--space-8); }
+.section-head { display: flex; justify-content: space-between; gap: var(--space-4); align-items: flex-end; margin-bottom: var(--space-5); }
+.section-head h2 { margin-bottom: var(--space-1); }
+.section-head p, .current-level { color: var(--text-secondary); }
 
-.switcher-copy p {
-  color: var(--text-secondary);
-}
+.pillar-tabs { display: flex; gap: var(--space-3); margin-bottom: var(--space-5); flex-wrap: wrap; }
+.pillar-tab { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid transparent; cursor: pointer; font-weight: var(--font-weight-medium); transition: all 0.2s; }
+.pillar-tab:hover { background: rgba(30, 58, 138, 0.05); color: var(--brand-primary); }
+.pillar-tab.active { background: white; border-color: var(--brand-primary); color: var(--brand-primary); box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1); }
+.pillar-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.pillar-icon :deep(svg) { width: 18px; height: 18px; }
+.pillar-count { font-size: var(--text-caption); padding: 2px 6px; border-radius: 9999px; background: rgba(30, 58, 138, 0.08); color: var(--brand-primary); }
 
-.switcher-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
-}
+.pillar-content { padding: var(--space-6); }
+.pillar-header { margin-bottom: var(--space-4); }
+.pillar-header h3 { font-size: var(--text-h3); margin-bottom: var(--space-2); }
+.pillar-header p { color: var(--text-secondary); }
 
-.switcher-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: var(--font-weight-medium);
-}
+.scenario-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
+.scenario-tag { padding: 6px 10px; border-radius: 9999px; background: var(--bg-subtle); font-size: var(--text-body-sm); color: var(--text-secondary); }
 
-.switcher-tab.active {
-  color: var(--brand-primary);
-  background: rgba(30, 58, 138, 0.06);
-  outline: 1px solid rgba(30, 58, 138, 0.18);
-}
+.tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.empty-tip { font-size: var(--text-body-sm); color: var(--text-muted); text-align: center; padding: var(--space-6) 0; }
 
-.switcher-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 9999px;
-}
-
-.industry-hero {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: var(--space-6);
-  padding: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-.eyebrow {
-  font-size: var(--text-caption);
-  color: var(--brand-primary);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-2);
-}
-
-.industry-hero h1 {
-  font-size: var(--text-h2);
-  margin-bottom: var(--space-3);
-}
-
-.hero-desc,
-.hero-audience {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-3);
-}
-
-.hero-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.hero-panel {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-}
-
-.panel-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-.metric-box {
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: white;
-}
-
-.metric-box strong {
-  display: block;
-  margin-bottom: var(--space-1);
-  color: var(--brand-primary);
-  font-size: var(--text-h3);
-}
-
-.metric-box span,
-.empty-tip,
-.level-item p {
-  color: var(--text-secondary);
-}
-
-.panel-label {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-  margin-bottom: var(--space-2);
-}
-
-.panel-input {
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: white;
-  line-height: var(--leading-body-lg);
-  margin-bottom: var(--space-3);
-}
-
-.panel-note {
-  color: var(--text-secondary);
-}
-
-.section-block {
-  margin-bottom: var(--space-8);
-}
-
-.workspace-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-.workspace-grid.single-column {
-  grid-template-columns: 1fr;
-}
-
-.workspace-card {
-  padding: var(--space-5);
-}
-
-.compact-head {
-  margin-bottom: var(--space-4);
-}
-
-.level-summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.level-item {
-  display: block;
-}
-
-.level-item.active {
-  outline: 1px solid var(--brand-primary);
-  background: rgba(30, 58, 138, 0.05);
-}
-
-.level-top {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  align-items: center;
-  margin-bottom: var(--space-2);
-}
-
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  align-items: flex-end;
-  margin-bottom: var(--space-5);
-}
-
-.section-head h2 {
-  margin-bottom: var(--space-1);
-}
-
-.section-head p,
-.current-level {
-  color: var(--text-secondary);
-}
-
-.scenario-groups {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-.scenario-card {
-  padding: var(--space-5);
-}
-
-.scenario-card h3 {
-  margin-bottom: var(--space-3);
-}
-
-.scenario-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-}
-
-.scenario-tag {
-  padding: 6px 10px;
-  border-radius: 9999px;
-  background: var(--bg-subtle);
-  font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-}
-
-.linked-tools {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.linked-tool {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  color: inherit;
-  text-decoration: none;
-}
-
-.linked-tool.locked {
-  opacity: 0.7;
-}
-
-.empty-tip {
-  font-size: var(--text-body-sm);
-}
-
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-}
-
-.templates-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-.template-card {
-  padding: var(--space-5);
-}
-
-.template-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-
-.template-top h3 {
-  margin-bottom: var(--space-1);
-}
-
-.template-subtitle {
-  font-size: var(--text-body-sm);
-  color: var(--text-muted);
-}
-
-.template-summary {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-3);
-}
-
-.template-fields,
-.template-outputs,
-.template-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-
-.field-label,
-.output-label,
-.links-label {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-  width: 100%;
-}
-
-.field-tag {
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: var(--bg-subtle);
-  font-size: var(--text-body-sm);
-  color: var(--text-primary);
-}
-
-.field-tag.more {
-  color: var(--brand-primary);
-}
-
-.output-tag {
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: rgba(30, 58, 138, 0.06);
-  font-size: var(--text-body-sm);
-  color: var(--brand-primary);
-}
-
-.link-tool {
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: var(--bg-subtle);
-  font-size: var(--text-body-sm);
-  color: var(--text-primary);
-}
-
-.link-tool.planned {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.empty-card {
-  padding: var(--space-8);
-  text-align: center;
-}
+.templates-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); }
+.template-card { padding: var(--space-5); }
+.template-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-2); }
+.template-top h3 { margin-bottom: var(--space-1); }
+.template-subtitle { font-size: var(--text-body-sm); color: var(--text-muted); }
+.template-summary { color: var(--text-secondary); margin-bottom: var(--space-3); }
+.template-fields, .template-outputs, .template-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+.field-label, .output-label, .links-label { font-size: var(--text-caption); color: var(--text-muted); width: 100%; }
+.field-tag { padding: 4px 8px; border-radius: 9999px; background: var(--bg-subtle); font-size: var(--text-body-sm); color: var(--text-primary); }
+.field-tag.more { color: var(--brand-primary); }
+.output-tag { padding: 4px 8px; border-radius: 9999px; background: rgba(30, 58, 138, 0.06); font-size: var(--text-body-sm); color: var(--brand-primary); }
+.link-tool { padding: 4px 8px; border-radius: 9999px; background: var(--bg-subtle); font-size: var(--text-body-sm); color: var(--text-primary); }
+.link-tool.planned { color: var(--text-muted); font-style: italic; }
+.empty-card { padding: var(--space-8); text-align: center; }
 
 @media (max-width: 1023px) {
-  .switcher-tabs,
-  .industry-hero,
-  .workspace-grid,
-  .scenario-groups,
-  .tools-grid,
-  .templates-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .switcher-tabs, .industry-hero, .tools-grid, .templates-grid { grid-template-columns: 1fr; }
+  .section-head { flex-direction: column; align-items: flex-start; }
 }
-
 @media (max-width: 639px) {
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .panel-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .linked-tool {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+  .hero-actions { flex-direction: column; }
+  .panel-metrics { grid-template-columns: 1fr; }
 }
 </style>

@@ -31,6 +31,83 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 
 ## 条目
 
+[诊断链路分为模板诊断与增长诊断两套]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续代码审查并修复诊断链路断点”时发现
+- Category: 代码结构
+- Instructions:
+  - `frontend/src/views/DiagnosisQuestionnaire.vue` 现在同时承载两类问卷：`growth-diagnosis` 走三阶段自定义流程，其他行业诊断代码走 `diagnosisEngine` 模板问卷。
+  - 行业模板诊断前端通过 `/api/diagnosis/template/:code` 拉取题目，通过 `/api/diagnosis/analyze` 提交 `templateCode + answers`。
+  - `growth-diagnosis` 仍然独立走 `/api/generate/growth-diagnosis`，不要把它误接到模板诊断接口上。
+  - 后端 `backend/src/routes/diagnosis.js` 现在会按模板 `memberLevel` 过滤和校验访问权限，前后端权限口径必须保持一致。
+
+[前台页面需要短页高级感与模块化结构]
+- Date: 2026-05-02
+- Context: 用户在评审首页、工具箱与行业专版改版时再次明确产品表达要求
+- Instructions:
+  - 首页和工具箱不应做成长叙事页或超长下拉页，优先做成短页面、模块化、并列式入口。
+  - 不要强行规划用户先看什么后看什么，页面需要清晰明确，减少冗长导览式结构。
+  - 行业专版只保留真正行业入口，不要把 `小红书运营` 这类专项能力混进行业专版。
+  - `小红书运营`、`抖音经营`、`老板IP`、`企业诊断` 应作为专项模块或高阶能力独立呈现。
+  - 视觉表达要更高级，避免 emoji 图标、廉价感卡片和后台配置页式的信息堆叠。
+
+[toolCatalog 顶层初始化顺序约束]
+- Date: 2026-05-02
+- Context: Agent 在执行“排查首页白屏问题”时发现
+- Category: 代码模式
+- Instructions:
+  - `frontend/src/constants/toolCatalog.js` 中，凡是被 `createTool()` 在顶层初始化阶段直接读取的常量，必须定义在 `allTools` 之前。
+  - 特别是 `pillarTagMap` 这类 `const`，如果放在 `allTools` 之后，会因为暂时性死区触发 `Cannot access before initialization`，直接导致首页白屏。
+
+[前台模块入口与旧模块页保持同源]
+- Date: 2026-05-02
+- Context: Agent 在执行“首页/工具箱模块化改版后的残留清理”时发现
+- Category: 代码模式
+- Instructions:
+  - `frontend/src/constants/toolCatalog.js` 中的 `homeToolCategories` 不能再按旧 `finance/content/...` 分类手写维护，应从 `pillarMeta + mapToolToPillar + allTools` 派生。
+  - 这样可以保证 `/modules/:id`、首页模块入口和工具箱 8 大模块使用同一套分组口径，避免新旧结构并存后出现名称和工具归属不一致。
+
+[前台页面去掉说明式辅助文案]
+- Date: 2026-05-02
+- Context: 用户在继续收口首页与工具箱表达时再次明确要求
+- Instructions:
+  - 首页、工具箱、行业页中类似“使用方式”“先选模块”“直接进入”“从场景出发”等说明式辅助文字默认不要展示。
+  - 页面优先保留标题、入口、数据和必要标签，不额外添加导览式解释文案。
+
+[工具箱模块区改为四列网格]
+- Date: 2026-05-02
+- Context: 用户继续收口工具箱布局时明确新的结构要求
+- Instructions:
+  - 工具箱页面的模块入口不要使用竖排侧栏，应改为卡片网格。
+  - 模块入口在桌面端按每行 4 个展示，再在下方展示当前模块详情。
+
+[首页 Hero 强调真实会员数字]
+- Date: 2026-05-02
+- Context: 用户继续调整首页左上 Hero 表达时明确要求
+- Instructions:
+  - 首页 Hero 优先展示单一会员统计数字，当前按“本站已有会员 867”表达，不同时展示多个会员数字。
+  - 不再把 Hero 右侧主要位置用于展示“行业专版 / 专项能力”列表。
+  - Hero 需搭配一句简洁口号，强调“老板必备”“帮老板增效”的 AI 平台定位。
+  - 会员数字允许做成滚动或增长中的视觉效果，重点是营造站内已有较多会员在用的社证明感觉。
+
+[小红书专项入口应指向专题聚合页]
+- Date: 2026-05-02
+- Context: Agent 在执行“审查抖音/小红书专项入口与能力闭环”时发现
+- Category: 代码结构
+- Instructions:
+  - `frontend/src/views/tools/XhsOperations.vue` 是小红书专题聚合页，适合承接专题工具导航；`frontend/src/views/tools/XiaohongshuGrowth.vue` 是 `xiaohongshu-growth` 的真实独立执行页。
+  - 首页、工具箱和高阶能力卡片中的 `小红书运营` 主入口现在统一跳到 `/tools/xiaohongshu-growth`，专题补充导航继续保留在 `/tools/xhs-ops`。
+  - `XhsOperations.vue` 中场景卡片的 `icon` 必须传真实 Vue 组件，不能只传字符串名，否则 `<component :is="...">` 不会渲染出图标。
+
+[抖音专项优先用独立专题页承接]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续补抖音经营专题工作台”时发现
+- Category: 代码结构
+- Instructions:
+  - `frontend/src/views/tools/DouyinOperations.vue` 是抖音专题聚合页，适合承接专题工具导航；`frontend/src/views/tools/DouyinGrowth.vue` 是 `douyin-growth` 的真实独立执行页。
+  - 首页、工具箱和专项能力卡片中的 `抖音经营` 主入口现在统一跳到 `/tools/douyin-growth`，专题补充导航继续保留在 `/tools/douyin-ops`。
+  - 不要再把抖音相关入口散落回 `?pillar=douyin` 或 `?category=douyin` 这类旧筛选页。
+
 [模板工具页与后台权限对齐规则]
 - Date: 2026-05-01
 - Context: Agent 在执行“继续修复工具连线与后台权限问题”时发现
@@ -63,6 +140,16 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 每次开发都必须同步更新一个工作区文档，文件名为 `工程开发进度.md`。
   - 文档记录要足够详细，能够在新对话中恢复完整开发上下文，避免中断或从头再来。
   - 进度文档不替代 MEMORY.md，二者都要持续维护。
+
+[每日开发进度文档制度]
+- Date: 2026-05-03
+- Context: 用户要求建立每日开发进度文档，方便多 Agent 协作和跨会话衔接
+- Instructions:
+  - 每天新建一个以日期命名的进度文档，如 `docs/5月3日开发进度.md`。
+  - 每次开发动作完成后，必须立即更新当日的开发进度文档。
+  - 每次开发前，必须先阅读当日开发进度文档和注意事项。
+  - 有另一个 Agent 同时在工作，进度文档是协作沟通的关键载体。
+  - 进度文档记录：开发内容、改动文件、状态、待处理问题。
 
 [视觉体系参考 brand-design-md]
 - Date: 2026-04-30
@@ -252,6 +339,51 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 后续若继续改造执行引擎、诊断页、配额系统或批量接入新工具，应优先参考该清单，不要只依赖聊天上下文。
   - 该清单已经明确当前代码基线问题、推荐开发批次、文件级改造入口和验收标准。
 
+[后端工具权限改为共享配置收口]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续收口普通工具会员权限与配额校验”时发现
+- Category: 代码模式
+- Instructions:
+  - `backend/src/config/toolAccess.js` 现在是普通工具会员权限的共享来源，统一维护 `member level order`、`toolCode -> requiredLevel` 映射，以及 badge 元数据。
+
+[前端专题工具页需从 toolCatalog 读取 toolInfo]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续清理前端工具页会员口径残留”时发现
+- Category: 代码模式
+- Instructions:
+  - `frontend/src/views/tools/` 下的专题页、模板页和聚合页，如果不直接走 `ToolPage.vue`，也不要在页面本地手写 `badge / badgeClass / requiredLevel / name / description`。
+  - 普通工具页应优先通过 `getToolByCode(code)` 读取 `frontend/src/constants/toolCatalog.js` 的主目录元数据。
+  - 小红书专题子工具页应通过 `getXhsOperationTool(code)` 读取 `frontend/src/constants/toolCatalog.js` 中的专题工具元数据，避免再次回退到页面本地硬编码。
+  - `XhsOperations.vue` 这类专题聚合页展示的工具卡片，也应直接复用 `toolCatalog` 中的专题工具列表，而不是额外维护一套 badge 映射。
+  - `backend/src/routes/generate.js` 和 `backend/src/routes/tool.js` 都应通过该配置做等级判断，避免前端锁定但后端可直接调用的绕过风险。
+  - `tool.js` 的配额接口在用户等级不足时应返回锁定态配额（如 `locked: true`、`remain: 0`），而不是继续回退到免费额度。
+
+[前端普通工具页已批量切到 getToolByCode]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续把剩余工具页元数据收口到主目录”时发现
+- Category: 代码模式
+- Instructions:
+  - `frontend/src/views/tools/` 下普通工具页现在应优先通过 `getToolByCode(code)` 获取 `toolInfo`，不要再在页面里本地声明 `const toolInfo = { ... }`。
+  - 若后续新增独立普通工具页，应在 `toolCatalog.js` 先定义工具元数据，再在页面中直接读取，避免名称、描述、badge、`requiredLevel` 再次漂移。
+  - 小红书专题页除外，继续通过 `getXhsOperationTool(code)` 读取专题元数据。
+
+[小红书子工具页不能依赖 catalog 默认权限]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续清理前端会员等级残留口径”时发现
+- Category: 代码模式
+- Instructions:
+  - `xhs-title / xhs-topic / xhs-traffic / xhs-seo / xhs-diagnosis / xhs-review / xhs-conversion` 这批页面当前不在主 `toolCatalog` 中，`ToolDetail.vue` 无法自动从目录补全 `requiredLevel`。
+  - 这类工具页若继续独立存在，`toolInfo` 中必须显式传入 `requiredLevel`，否则会回退成 `free` 并错误放开页面访问。
+  - `frontend/src/views/tools/XhsOperations.vue` 当前也单独维护小红书子工具卡片列表；调整 badge/层级时需要和这些独立工具页同步修改。
+
+[诊断路由权限判断也应复用共享配置]
+- Date: 2026-05-02
+- Context: Agent 在执行“继续统一后端会员权限实现”时发现
+- Category: 代码模式
+- Instructions:
+  - `backend/src/routes/diagnosis.js` 不应再单独维护会员等级顺序；应直接复用 `backend/src/config/toolAccess.js` 中的 `canAccessLevel()`。
+  - 这样模板诊断与普通工具的会员判断才能保持同源，避免后续某一侧新增等级或兼容值时只改一半。
+
 [toolCatalog 已开始承载权限结构元数据]
 - Date: 2026-05-01
 - Context: Agent 在执行“把结构文档回填到共享前端目录”时发现
@@ -406,7 +538,7 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 前端工具总数：75 个 allTools + 40 个 industryTemplateEntries（sheets）= 115 个
   - 后端工具总数：13 个内联 TOOL_DEFINITIONS + 39 个 CALCULATORS + 40 个 spreadsheetEngine + 23 个其他（诊断/模板）= 115 个
   - 前后端工具定义 100% 匹配，无遗漏、无断链
-  - `diagnosis`、`douyin-growth`、`growth-diagnosis`、`boss-ip`、`xiaohongshu-growth` 这 5 个是独立页面或导航卡片，不是 API 工具，无需后端定义
+  - `diagnosis` 和 `growth-diagnosis` 属于独立页面/诊断入口；`douyin-growth`、`xiaohongshu-growth`、`boss-ip` 属于后端已定义的真实工具能力
   - `standaloneCapabilities` 条目是独立页面入口，`advancedCapabilityCards` 条目是高阶能力导航卡片
   - ToolPage.vue 中 72 个工具组件 + 40 个 sheet 组件全部正确映射
   - 对比方法：分别提取 `toolCatalog.js` 的 `allTools` + `industryTemplateEntries` 的 code，与 `generate.js` 的 `TOOL_DEFINITIONS` + `calculatorEngine.js` 的 `CALCULATORS` + `spreadsheetEngine.js` 的表格 key 做全量对比

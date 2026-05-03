@@ -48,14 +48,9 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { generateWithAI, getToolQuota } from '@/api/tool'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'topic',
-  name: '爆款选题生成器',
-  description: '输入行业和痛点，智能生成抖音/小红书爆款选题方向',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('topic')
 
 const quotaInfo = ref(null)
 const result = ref(null)

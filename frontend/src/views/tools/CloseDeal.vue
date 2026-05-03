@@ -39,15 +39,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { generateWithAI } from '@/api/tool'
 
-const toolInfo = {
-  code: 'close-deal',
-  name: '促单话术生成器',
-  description: '输入产品和客户类型，生成逼单话术',
-  badge: '免费',
-  badgeClass: 'badge-free'
-}
+const toolInfo = getToolByCode('close-deal')
 
 const quotaInfo = ref(null)
 const result = ref(null)

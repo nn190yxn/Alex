@@ -4,6 +4,24 @@
   --brand-primary-weak: #3B82F6;
   --brand-accent: #F97316;
   --brand-accent-weak: #FB923C;
+
+  /* 8 大板块专属色 */
+  --pillar-management: #d97706;
+  --pillar-management-bg: #fef3c7;
+  --pillar-marketing: #2563eb;
+  --pillar-marketing-bg: #dbeafe;
+  --pillar-system: #059669;
+  --pillar-system-bg: #d1fae5;
+  --pillar-douyin: #dc2626;
+  --pillar-douyin-bg: #fee2e2;
+  --pillar-xiaohongshu: #ff2442;
+  --pillar-xiaohongshu-bg: #ffe4e6;
+  --pillar-private: #7c3aed;
+  --pillar-private-bg: #ede9fe;
+  --pillar-diagnosis: #0891b2;
+  --pillar-diagnosis-bg: #cffafe;
+  --pillar-ip: #6366f1;
+  --pillar-ip-bg: #e0e7ff;
   --bg-base: #FFFFFF;
   --bg-soft: #FAF8F5;
   --bg-subtle: #F8FAFC;

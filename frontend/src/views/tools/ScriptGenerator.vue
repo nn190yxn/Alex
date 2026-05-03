@@ -48,15 +48,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { generateWithAI } from '@/api/tool'
 
-const toolInfo = {
-  code: 'script',
-  name: '短视频脚本生成器',
-  description: '输入选题，生成完整口播逐字稿',
-  badge: '免费',
-  badgeClass: 'badge-free'
-}
+const toolInfo = getToolByCode('script')
 
 const quotaInfo = ref(null)
 const result = ref(null)

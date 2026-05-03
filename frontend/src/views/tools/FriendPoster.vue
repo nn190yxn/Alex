@@ -39,15 +39,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { generateWithAI } from '@/api/tool'
 
-const toolInfo = {
-  code: 'friend',
-  name: '朋友圈文案生成器',
-  description: '选择文案类型，3秒生成朋友圈文案',
-  badge: '免费',
-  badgeClass: 'badge-free'
-}
+const toolInfo = getToolByCode('friend')
 
 const quotaInfo = ref(null)
 const result = ref(null)

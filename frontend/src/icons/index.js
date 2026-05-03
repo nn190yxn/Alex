@@ -116,6 +116,114 @@ export const IconBeautyHealth = () => h('svg', { viewBox: '0 0 24 24', fill: 'cu
   h('path', { d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' })
 ])
 
+export const IconPillarManagement = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('rect', { x: '4', y: '5', width: '16', height: '14', rx: '3' }),
+  h('path', { d: 'M8 15l2.5-3 2.2 1.8L16 9l2 2' }),
+  h('path', { d: 'M8 9h3' })
+])
+
+export const IconPillarMarketing = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M5 15V9' }),
+  h('path', { d: 'M10 18V6' }),
+  h('path', { d: 'M15 13V11' }),
+  h('path', { d: 'M19 9v6' }),
+  h('path', { d: 'M4 19h16' })
+])
+
+export const IconPillarSystem = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('rect', { x: '5', y: '4', width: '14', height: '16', rx: '3' }),
+  h('path', { d: 'M9 9h6' }),
+  h('path', { d: 'M9 13h6' }),
+  h('path', { d: 'M9 17h4' })
+])
+
+export const IconPillarDouyin = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M14 5c.6 1.6 1.7 2.9 3 3.8' }),
+  h('path', { d: 'M14 5v9.2a3.8 3.8 0 1 1-3.8-3.8' }),
+  h('path', { d: 'M14 9.5c1.1.7 2.2 1 3.6 1' })
+])
+
+export const IconPillarXiaohongshu = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('rect', { x: '5', y: '4', width: '14', height: '16', rx: '3' }),
+  h('path', { d: 'M9 9h6' }),
+  h('path', { d: 'M9 13h6' }),
+  h('path', { d: 'M9 17h4' }),
+  h('path', { d: 'M15.5 4v4' })
+])
+
+export const IconPillarPrivate = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M7 15a4 4 0 1 1 0-8h10' }),
+  h('path', { d: 'M17 7l3 4-3 4' }),
+  h('path', { d: 'M17 11H9' })
+])
+
+export const IconPillarDiagnosis = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('circle', { cx: '11', cy: '11', r: '5.5' }),
+  h('path', { d: 'M16 16l4 4' }),
+  h('path', { d: 'M11 8v3l2 2' })
+])
+
+export const IconPillarIP = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('circle', { cx: '12', cy: '8', r: '3.5' }),
+  h('path', { d: 'M5.5 19a6.5 6.5 0 0 1 13 0' }),
+  h('path', { d: 'M18 6h2' })
+])
+
+export const IconStore = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M4 10h16' }),
+  h('path', { d: 'M6 10V6.5A1.5 1.5 0 0 1 7.5 5h9A1.5 1.5 0 0 1 18 6.5V10' }),
+  h('path', { d: 'M5 10v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8' }),
+  h('path', { d: 'M9 19v-4h6v4' })
+])
+
+export const IconBook = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M6 4.5A2.5 2.5 0 0 1 8.5 2H19v17H8.5A2.5 2.5 0 0 0 6 21.5' }),
+  h('path', { d: 'M6 4.5v17' }),
+  h('path', { d: 'M10 7h5' })
+])
+
+export const IconScissors = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('circle', { cx: '6', cy: '6', r: '2.5' }),
+  h('circle', { cx: '6', cy: '18', r: '2.5' }),
+  h('path', { d: 'M20 4L8.2 15.8' }),
+  h('path', { d: 'M20 20L11 11' })
+])
+
+export const IconClipboard = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('rect', { x: '6', y: '4', width: '12', height: '16', rx: '2' }),
+  h('path', { d: 'M9 4.5h6' }),
+  h('path', { d: 'M9 9h6' }),
+  h('path', { d: 'M9 13h6' })
+])
+
+export const IconCalendar = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('rect', { x: '4', y: '5', width: '16', height: '15', rx: '2' }),
+  h('path', { d: 'M8 3v4' }),
+  h('path', { d: 'M16 3v4' }),
+  h('path', { d: 'M4 10h16' })
+])
+
+export const IconUsers = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M16 19a4 4 0 0 0-8 0' }),
+  h('circle', { cx: '12', cy: '11', r: '3' }),
+  h('path', { d: 'M5 19a3.5 3.5 0 0 1 2-3.17' }),
+  h('path', { d: 'M19 19a3.5 3.5 0 0 0-2-3.17' }),
+  h('path', { d: 'M7.5 10a2.5 2.5 0 1 1 0-5' }),
+  h('path', { d: 'M16.5 5a2.5 2.5 0 1 1 0 5' })
+])
+
+export const IconBox = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('path', { d: 'M12 3l7 4v10l-7 4-7-4V7l7-4z' }),
+  h('path', { d: 'M5 7l7 4 7-4' }),
+  h('path', { d: 'M12 11v10' })
+])
+
+export const IconCoin = () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+  h('circle', { cx: '12', cy: '12', r: '8' }),
+  h('path', { d: 'M9.5 13.5c.5 1 1.6 1.5 2.8 1.5 1.4 0 2.7-.7 2.7-2 0-2.9-5.8-1.2-5.8-4 0-1.3 1.2-2 2.7-2 1 0 2 .3 2.6 1.2' }),
+  h('path', { d: 'M12 6v12' })
+])
+
 export const iconMap = {
   headline: IconHeadline,
   friend: IconFriend,

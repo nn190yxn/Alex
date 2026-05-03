@@ -76,16 +76,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { generateWithAI, getToolQuota } from '@/api/tool'
 
-const toolInfo = {
-  code: 'ip-agent',
-  name: 'IP打造智能体',
-  description: '打造个人IP人设、内容策略和变现路径',
-  badge: '高阶',
-  badgeClass: 'badge-annual',
-  requiredLevel: 'annual'
-}
+const toolInfo = getToolByCode('ip-agent')
 
 const quotaInfo = ref(null)
 const result = ref(null)

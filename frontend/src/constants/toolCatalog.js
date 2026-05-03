@@ -5,7 +5,17 @@ import {
   MEMBER_LEVEL_STARTER,
   canAccessLevel
 } from '@/constants/membership'
-import { iconMap } from '@/icons'
+import {
+  iconMap,
+  IconPillarManagement,
+  IconPillarMarketing,
+  IconPillarSystem,
+  IconPillarDouyin,
+  IconPillarXiaohongshu,
+  IconPillarPrivate,
+  IconPillarDiagnosis,
+  IconPillarIP
+} from '@/icons'
 
 const badgeMap = {
   [MEMBER_LEVEL_FREE]: { badge: '免费', badgeClass: 'badge-free' },
@@ -24,6 +34,17 @@ const categoryMeta = {
   planning: { name: '方案策划', description: '适合做经营方案、会员设计和增长动作编排。' }
 }
 
+const pillarTagMap = {
+  'roi': '必备', 'gross-margin-restaurant': '必备', 'break-even-restaurant': '必备',
+  'salary-cost-ratio-restaurant': '必备', 'gross-margin-education': '必备', 'break-even-education': '必备',
+  'salary-cost-ratio-education': '必备', 'gross-margin-beauty': '必备', 'break-even-beauty': '必备',
+  'salary-cost-ratio-beauty': '必备', 'salary': '必备', 'sop': '必备',
+  'marketing-plan': '高频', 'friend': '高频', 'team-training': '高频',
+  'script': '高阶发展', 'douyin-growth': '高阶发展', 'xiaohongshu-growth': '高阶发展',
+  'ip-agent': '高阶发展', 'competitor-strategy': '高阶发展', 'membership-design': '高阶发展',
+  'business-plan': '高阶发展'
+}
+
 function resolveDefaultFreePolicy(config) {
   if (config.freePolicy) return config.freePolicy
   return config.requiredLevel === MEMBER_LEVEL_FREE ? 'limited' : 'upgrade-required'
@@ -36,9 +57,17 @@ function createTool(config) {
     capabilityType: config.capabilityType || 'generic',
     freePolicy: resolveDefaultFreePolicy(config),
     sceneTags: config.sceneTags || [],
+    tags: config.tags || [pillarTagMap[config.code] || null].filter(Boolean),
     ...badgeMap[config.requiredLevel],
     icon: iconMap[config.code],
     path: config.path || `/tools/${config.code}`
+  }
+}
+
+function createStandaloneToolMeta(config) {
+  return {
+    ...config,
+    ...badgeMap[config.requiredLevel]
   }
 }
 
@@ -92,7 +121,7 @@ export const allTools = [
   createTool({ code: 'labor-efficiency-restaurant', name: '人效计算器（餐饮版）', description: '帮你看清谁在养店、谁在混日子。', tag: '计算', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['人效', '排班'] }),
   createTool({ code: 'delivery-profit', name: '外卖利润计算器', description: '帮你算清外卖到底是在赚钱还是在给平台打工。', tag: '计算', iconColor: 'orange', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['外卖', '利润'] }),
   createTool({ code: 'payback-restaurant', name: '投资回本周期计算器（餐饮版）', description: '帮你算新店/新项目多久能回本。', tag: '计算', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['回本', '投资'] }),
-  createTool({ code: 'cashflow-restaurant', name: '现金流预测计算器（餐饮版）', description: '帮你提前看到现金流什么时候会断裂。', tag: '计算', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['现金流', '预测'] }),
+  createTool({ code: 'cashflow-restaurant', name: '现金流预测计算器（餐饮版）', description: '按固定/变动成本拆分，预测未来逐月现金流，标记断裂风险和安全线。', tag: '计算', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['现金流', '预测', '资金断裂'] }),
   createTool({ code: 'profit-rate-restaurant', name: '利润率计算器（餐饮版）', description: '帮你算出门店真正赚了多少。', tag: '计算', iconColor: 'green', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['利润率', '成本结构'] }),
   createTool({ code: 'return-rate-restaurant', name: '回报率计算器（餐饮版）', description: '帮你判断营销活动/投流到底值不值。', tag: '计算', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['ROI', '营销'] }),
   createTool({ code: 'gross-margin-education', name: '毛利率计算器（教培版）', description: '帮你算清每门课的真实利润，哪些课看着热闹其实在亏钱。', tag: '计算', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['education'], freePolicy: '5/day', sceneTags: ['毛利率', '课程利润'] }),
@@ -138,8 +167,38 @@ export const standaloneCapabilities = [
   }
 ]
 
+export const xhsOperationTools = [
+  createStandaloneToolMeta({ code: 'xhs-note', name: '小红书笔记生成器', description: '输入产品/服务，一键生成完整笔记内容', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xiaohongshu' }),
+  createStandaloneToolMeta({ code: 'xhs-title', name: '爆款标题生成器', description: '12 种公式生成高点击率标题', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xhs-title' }),
+  createStandaloneToolMeta({ code: 'xhs-topic', name: '选题策划助手', description: '爆款因子叠加法，无限生成选题', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-topic' }),
+  createStandaloneToolMeta({ code: 'xhs-traffic', name: '薯条投放顾问', description: '根据笔记数据给出投放策略', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-traffic' }),
+  createStandaloneToolMeta({ code: 'xhs-seo', name: '搜索 SEO 优化', description: '关键词布局建议，提升搜索排名', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-seo' }),
+  createStandaloneToolMeta({ code: 'xhs-diagnosis', name: '账号诊断工具', description: '15 项指标评估账号健康度', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-diagnosis' }),
+  createStandaloneToolMeta({ code: 'xhs-review', name: '笔记数据复盘', description: '单篇笔记数据分析 + 优化建议', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-review' }),
+  createStandaloneToolMeta({ code: 'xhs-conversion', name: '转化引流方案', description: '私域引流 + 评论互动 + 门店运营', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xhs-conversion' }),
+  createStandaloneToolMeta({ code: 'xhs-competitor', name: '竞品分析', description: '拆解竞品爆款，找到差异化角度', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xhs-competitor', disabled: true }),
+  createStandaloneToolMeta({ code: 'xhs-hotspot', name: '热点追踪', description: '实时追踪行业热点，结合建议', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-hotspot', disabled: true })
+]
+
+export const strategyCapabilityTools = [
+  createStandaloneToolMeta({ code: 'douyin-growth', name: '抖音增长方案', description: '围绕账号定位、内容策略和投放计划输出专项增长方案。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/douyin-growth' }),
+  createStandaloneToolMeta({ code: 'xiaohongshu-growth', name: '小红书增长方案', description: '围绕种草内容、账号运营和转化链路输出增长建议。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xiaohongshu-growth' }),
+  createStandaloneToolMeta({ code: 'boss-ip', name: '老板IP打造方案', description: '围绕老板定位、内容矩阵和表达方式给出长期品牌方案。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/boss-ip' })
+]
+
+export const douyinOperationTools = [
+  'headline',
+  'hook',
+  'script',
+  'topic',
+  'roi',
+  'meituan',
+  'ip-agent',
+  'douyin-growth'
+].map(code => getToolByCode(code)).filter(Boolean)
+
 export const toolCount = allTools.length
-export const capabilityCount = allTools.length + standaloneCapabilities.length
+export const capabilityCount = allTools.length + standaloneCapabilities.length + strategyCapabilityTools.length
 
 export const toolTabs = [
   { value: 'all', label: '全部能力' },
@@ -153,7 +212,7 @@ export const toolCountsByLevel = {
   [MEMBER_LEVEL_FREE]: allTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_FREE).length,
   [MEMBER_LEVEL_STARTER]: allTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_STARTER).length,
   [MEMBER_LEVEL_PRO]: allTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_PRO).length + standaloneCapabilities.filter(tool => tool.requiredLevel === MEMBER_LEVEL_PRO).length,
-  [MEMBER_LEVEL_ANNUAL]: allTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_ANNUAL).length
+  [MEMBER_LEVEL_ANNUAL]: allTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_ANNUAL).length + strategyCapabilityTools.filter(tool => tool.requiredLevel === MEMBER_LEVEL_ANNUAL).length
 }
 
 export const toolCategories = Object.entries(categoryMeta).map(([key, meta]) => ({
@@ -162,50 +221,7 @@ export const toolCategories = Object.entries(categoryMeta).map(([key, meta]) => 
   tools: allTools.filter(tool => tool.category === key)
 })).filter(category => category.tools.length > 0)
 
-export const homeToolCategories = [
-  {
-    id: 'finance',
-    name: '财务优化',
-    description: '毛利、ROI、人效、回本周期',
-    tools: allTools.filter(t => t.category === 'finance').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'content',
-    name: '内容运营',
-    description: '标题、文案、脚本、选题',
-    tools: allTools.filter(t => t.category === 'content').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'marketing',
-    name: '营销推广',
-    description: '朋友圈、裂变、节日营销',
-    tools: allTools.filter(t => t.category === 'marketing').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'planning',
-    name: '方案策划',
-    description: '营销方案、商业计划书',
-    tools: allTools.filter(t => t.category === 'planning').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'operations',
-    name: '制度管理',
-    description: '薪酬、SOP、培训、激励',
-    tools: allTools.filter(t => t.category === 'operations').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'diagnosis',
-    name: '诊断分析',
-    description: '门店健康度、平台经营',
-    tools: allTools.filter(t => t.category === 'diagnosis').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  },
-  {
-    id: 'ip',
-    name: '老板IP',
-    description: '人设定位、直播表达',
-    tools: allTools.filter(t => t.category === 'ip').map(t => ({ code: t.code, name: t.name, path: t.path }))
-  }
-]
+export let homeToolCategories = []
 
 export const capabilityCards = [
   {
@@ -234,9 +250,105 @@ export const capabilityCards = [
     description: '抖音运营、直播脚本、老板 IP，把内容变成资产。',
     scenes: ['抖音运营', '直播脚本', '老板 IP'],
     highlight: '做增长',
-    path: '/tools?category=douyin'
+    path: '/tools/douyin-ops'
   }
 ]
+
+export const pillarMeta = {
+  management: { name: '经营管理', description: '毛利、ROI、人效、回本与排班计算', icon: IconPillarManagement, color: 'var(--pillar-management)', bg: 'var(--pillar-management-bg)', cues: ['算利润', '看ROI', '做人效'] },
+  marketing: { name: '营销获客', description: '活动、裂变、节日营销与朋友圈文案', icon: IconPillarMarketing, color: 'var(--pillar-marketing)', bg: 'var(--pillar-marketing-bg)', cues: ['做活动', '拉新客', '促复购'] },
+  system: { name: '制度优化', description: '薪酬、SOP、团队培训与员工激励', icon: IconPillarSystem, color: 'var(--pillar-system)', bg: 'var(--pillar-system-bg)', cues: ['定制度', '搭SOP', '带团队'] },
+  douyin: { name: '抖音运营', description: '短视频脚本、直播、投流 ROI、团购组品', icon: IconPillarDouyin, color: 'var(--pillar-douyin)', bg: 'var(--pillar-douyin-bg)', cues: ['做短视频', '开直播', '算投流'] },
+  xiaohongshu: { name: '小红书运营', description: '笔记生成、种草、选题、搜索 SEO', icon: IconPillarXiaohongshu, color: 'var(--pillar-xiaohongshu)', bg: 'var(--pillar-xiaohongshu-bg)', cues: ['做种草', '写笔记', '抓搜索'] },
+  private: { name: '私域运营', description: '微信社群、会员体系、客户管理、复购追踪', icon: IconPillarPrivate, color: 'var(--pillar-private)', bg: 'var(--pillar-private-bg)', cues: ['做社群', '管会员', '追复购'] },
+  diagnosis: { name: '企业诊断', description: '门店健康度、竞品分析与平台经营', icon: IconPillarDiagnosis, color: 'var(--pillar-diagnosis)', bg: 'var(--pillar-diagnosis-bg)', cues: ['查问题', '看竞品', '定动作'] },
+  ip: { name: '老板 IP', description: '人设定位、直播表达、内容方向、长期品牌', icon: IconPillarIP, color: 'var(--pillar-ip)', bg: 'var(--pillar-ip-bg)', cues: ['做人设', '强表达', '沉淀品牌'] }
+}
+
+export function mapToolToPillar(tool) {
+  const { category, code } = tool
+  if (category === 'finance') return 'management'
+  if (category === 'operations') return 'system'
+  if (category === 'marketing') return 'marketing'
+  if (category === 'diagnosis') return 'diagnosis'
+  if (category === 'ip') return 'ip'
+  if (category === 'content') {
+    if (code === 'friend' || code === 'fission' || code === 'festival' || code === 'promotion-plan') return 'marketing'
+    if (code === 'xiaohongshu') return 'xiaohongshu'
+    if (code === 'hook' || code === 'script' || code === 'headline') return 'douyin'
+    if (code === 'close-deal' || code === 'selling-point') return 'private'
+    return 'douyin'
+  }
+  if (category === 'planning') {
+    if (code === 'marketing-plan' || code === 'store-opening' || code === 'anniversary-event' || code === 'marketing-calendar') return 'marketing'
+    if (code === 'membership-design') return 'private'
+    if (code === 'competitor-strategy' || code === 'business-plan') return 'diagnosis'
+    return 'management'
+  }
+  return 'management'
+}
+
+homeToolCategories = Object.entries(pillarMeta).map(([key, meta]) => ({
+  id: key,
+  name: meta.name,
+  description: meta.description,
+  tools: allTools
+    .filter(tool => mapToolToPillar(tool) === key)
+    .map(tool => ({ code: tool.code, name: tool.name, path: tool.path }))
+}))
+
+const industryPillarScenarios = {
+  restaurant: {
+    management: ['算毛利', '算人效', '盈亏平衡', '翻台率', '食材成本率', '投流 ROI'],
+    marketing: ['活动方案', '朋友圈文案', '爆款标题', '节日促销', '裂变转介绍'],
+    system: ['员工制度', '薪酬方案', '后厨标准', '排班管理', '奖惩制度'],
+    douyin: ['投流 ROI', '组品方案', '直播脚本', '抖音团购', '短视频脚本'],
+    xiaohongshu: ['探店笔记', '菜品种草', '同城引流', '素人铺量', '差评管理'],
+    private: ['会员日方案', '社群运营', '私域引流', '复购机制', '储值设计'],
+    diagnosis: ['运营诊断', '毛利诊断', '客流分析', '竞品对比', '平台经营'],
+    ip: ['老板定位', '餐饮人设', '后厨日常', '创业故事', '直播表达']
+  },
+  education: {
+    management: ['续费率测算', '课消计算', '人效测算', '盈亏平衡', '校区利润'],
+    marketing: ['招生文案', '活动海报', '家长社群话术', '裂变方案', '节日营销'],
+    system: ['顾问薪酬', '班主任 SOP', '试听流程', '奖惩制度', '团队培训'],
+    douyin: ['短视频选题', '直播脚本', '名师 IP', '成果展示', '家长见证'],
+    xiaohongshu: ['学习打卡', '提分案例', '素质展示', '教育干货', '校区种草'],
+    private: ['学员管理', '消课追踪', '续费预警', '私域运营', '会员体系'],
+    diagnosis: ['校区诊断', '流失分析', '竞品分析', '增长方案', '健康度评估'],
+    ip: ['校长人设', '教育理念', '干货分享', '家长信任', '直播招生']
+  },
+  beauty: {
+    management: ['客单价测算', '人效测算', '储值回收', '排班计算', '耗卡率'],
+    marketing: ['发圈文案', '活动促销', '会员日方案', '节日营销', '裂变活动'],
+    system: ['顾问提成', '护理师薪酬', '服务流程', '门店制度', '员工激励'],
+    douyin: ['项目展示', '前后对比', '手法教学', '同城引流', '达人探店'],
+    xiaohongshu: ['护肤干货', '项目种草', '避坑指南', '沉浸式护理', '素人改造'],
+    private: ['会员管理', '客户档案', '复购追踪', '私域运营', '会员日'],
+    diagnosis: ['复购诊断', '客流分析', '竞品对比', '经营诊断', '健康度评估'],
+    ip: ['创始人故事', '美业专业 IP', '审美表达', '信任背书', '长期陪伴']
+  },
+  service: {
+    management: ['报价毛利', '人效测算', '订单回本', '排班效率', '投流 ROI'],
+    marketing: ['朋友圈文案', '裂变转介绍', '节日活动', '促销海报', '获客方案'],
+    system: ['接单流程', '上门服务 SOP', '薪酬方案', '考核规则', '服务标准'],
+    douyin: ['案例展示', '避坑科普', '同城引流', '服务过程', '客户好评'],
+    xiaohongshu: ['避坑指南', '攻略种草', '本地生活', '干货科普', '案例分享'],
+    private: ['客户管理', '会员体系', '私域运营', '复购机制', '社群维护'],
+    diagnosis: ['服务诊断', '客诉分析', '竞品对比', '平台经营', '健康度评估'],
+    ip: ['匠人精神', '专业表达', '本地口碑', '服务故事', '信任建设']
+  },
+  xiaohongshu: {
+    management: ['薯条 ROI', '投放回本', '客资成本', '流量变现', '转化测算'],
+    marketing: ['私域引流', '门店 POI', '团购转化', '评论互动', '活动预热'],
+    system: ['内容 SOP', '发布规范', '数据复盘流程', '团队协作', '素材管理'],
+    douyin: ['跨平台引流', '短视频联动', '直播转化', '多平台运营', '矩阵打法'],
+    xiaohongshu: ['笔记生成', '标题创作', '选题策划', '搜索 SEO', '流量增长'],
+    private: ['粉丝运营', '私信转化', '社群维护', '会员体系', '复购机制'],
+    diagnosis: ['账号诊断', '数据复盘', '限流排查', '流量分析', '竞品拆解'],
+    ip: ['人设定位', '内容方向', '长期品牌', '价值主张', '粉丝互动']
+  }
+}
 
 export const industryEntries = [
   {
@@ -274,6 +386,56 @@ export const industryEntries = [
     summary: '帮助服务型门店做报价表达、流程标准和客户转介绍。',
     accent: '#0f766e',
     featuredCodes: ['selling-point', 'sop', 'fission', 'competitor', 'marketing-calendar']
+  },
+  {
+    slug: 'xiaohongshu',
+    name: '小红书运营版',
+    shortName: '小红书',
+    audience: '所有想通过小红书获客的实体老板和内容创作者',
+    summary: '围绕笔记创作、选题策划、流量增长、数据诊断和转化引流，把小红书做成稳定的获客渠道。',
+    accent: '#ff2442',
+    featuredCodes: ['xiaohongshu', 'headline', 'topic', 'hook', 'xiaohongshu-growth']
+  }
+]
+
+export const visibleIndustryEntries = industryEntries.filter(entry => ['restaurant', 'education', 'beauty', 'service'].includes(entry.slug))
+
+export const specialModuleEntries = [
+  {
+    code: 'douyin-growth',
+    name: '抖音经营',
+    description: '围绕投流、直播、团购和内容起量做经营专项。',
+    audience: '适合做抖音获客与转化增长的老板',
+    path: '/tools/douyin-growth',
+    badge: '专项模块',
+    badgeClass: 'badge-annual'
+  },
+  {
+    code: 'xiaohongshu-growth',
+    name: '小红书运营',
+    description: '围绕笔记、种草、搜索和转化做长期内容运营。',
+    audience: '适合依赖内容种草和口碑转化的老板',
+    path: '/tools/xiaohongshu-growth',
+    badge: '专项模块',
+    badgeClass: 'badge-annual'
+  },
+  {
+    code: 'diagnosis-special',
+    name: '企业诊断',
+    description: '先看清问题和增长短板，再给下一步动作。',
+    audience: '适合不知道该先优化哪一块的老板',
+    path: '/diagnosis',
+    badge: '专项模块',
+    badgeClass: 'badge-pro'
+  },
+  {
+    code: 'boss-ip-special',
+    name: '老板 IP',
+    description: '围绕人设、表达、内容方向与长期品牌建设。',
+    audience: '适合做个人品牌和长期影响力的老板',
+    path: '/tools/boss-ip',
+    badge: '专项模块',
+    badgeClass: 'badge-annual'
   }
 ]
 
@@ -286,7 +448,7 @@ export const advancedCapabilityCards = [
     scenes: ['团购组品', '投流 ROI', '直播脚本'],
     badge: '高阶专项',
     badgeClass: 'badge-annual',
-    path: '/tools'
+    path: '/tools/douyin-growth'
   },
   {
     code: 'growth-diagnosis',
@@ -306,7 +468,7 @@ export const advancedCapabilityCards = [
     scenes: ['老板定位', '内容方向', '直播表达'],
     badge: '高阶专项',
     badgeClass: 'badge-annual',
-    path: '/tools/ip-agent'
+    path: '/tools/boss-ip'
   },
   {
     code: 'xiaohongshu-growth',
@@ -316,7 +478,7 @@ export const advancedCapabilityCards = [
     scenes: ['笔记生成', '选题方向', '转化表达'],
     badge: '高阶专项',
     badgeClass: 'badge-annual',
-    path: '/tools/xiaohongshu'
+    path: '/tools/xiaohongshu-growth'
   }
 ]
 
@@ -355,6 +517,13 @@ const industryScenarioTemplates = {
     { group: '组品方案', items: ['套餐设计', '活动利益点', '卖点提炼', '团购方案'] },
     { group: '经营诊断', items: ['投流诊断', '转化分析', '内容复盘', '竞品拆解'] },
     { group: '高阶能力', items: ['老板 IP', '知识库助手', '长期内容策划'] }
+  ],
+  xiaohongshu: [
+    { group: '笔记创作', items: ['笔记生成', '标题创作', '封面文案', '标签推荐'] },
+    { group: '选题策划', items: ['选题生成', '热点追踪', '竞品分析', '九宫格选题'] },
+    { group: '流量增长', items: ['薯条投放', '搜索 SEO', '发布时间', '互动策略'] },
+    { group: '数据诊断', items: ['账号诊断', '数据复盘', '限流排查', '流量分析'] },
+    { group: '转化引流', items: ['私域引流', '评论互动', '门店 POI', '团购转化'] }
   ]
 }
 
@@ -377,10 +546,26 @@ export const industryPages = industryEntries.map(industry => {
     })
   }))
 
+  // 8 pillar data
+  const pillarData = Object.keys(pillarMeta).map(pillarKey => {
+    const scenarios = industryPillarScenarios[industry.slug]?.[pillarKey] || []
+    const tools = allTools.filter(tool => {
+      if (mapToolToPillar(tool) !== pillarKey) return false
+      return industry.featuredCodes.includes(tool.code) || tool.industries.includes(industry.slug)
+    })
+    return {
+      key: pillarKey,
+      ...pillarMeta[pillarKey],
+      scenarios,
+      tools: tools.slice(0, 12)
+    }
+  })
+
   return {
     ...industry,
     featuredTools,
-    scenarioGroups
+    scenarioGroups,
+    pillarData
   }
 })
 
@@ -1010,6 +1195,8 @@ export const pricingPlans = [
     cta: '免费使用',
     recommended: false,
     featured: false,
+    badge: '免费',
+    badgeClass: 'badge-free',
     features: ['7 大类通用工具入口', '智能计算器与基础内容工具', '基础运营诊断与每日体验额度']
   },
   {
@@ -1020,6 +1207,8 @@ export const pricingPlans = [
     cta: '开通初阶',
     recommended: true,
     featured: false,
+    badge: '初阶',
+    badgeClass: 'badge-starter',
     features: ['包含全部免费版能力', '行业专用模板包与制度生成', '更适合把工具用进日常经营']
   },
   {
@@ -1030,6 +1219,8 @@ export const pricingPlans = [
     cta: '开通进阶',
     recommended: false,
     featured: true,
+    badge: '进阶',
+    badgeClass: 'badge-pro',
     features: ['包含全部初阶版能力', '行业深度诊断与经营方案', '平台经营工具与营销日历能力']
   },
   {
@@ -1040,6 +1231,8 @@ export const pricingPlans = [
     cta: '开通高阶',
     recommended: false,
     featured: false,
+    badge: '高阶',
+    badgeClass: 'badge-annual',
     features: ['包含全部进阶版能力', '老板 IP 打造与深度助手', '高阶增长工具与长期策略能力']
   }
 ]
@@ -1065,7 +1258,14 @@ export const homeFaqs = [
 ]
 
 export function getToolByCode(code) {
-  return allTools.find(tool => tool.code === code) || standaloneCapabilities.find(item => item.code === code) || null
+  return allTools.find(tool => tool.code === code)
+    || standaloneCapabilities.find(item => item.code === code)
+    || strategyCapabilityTools.find(item => item.code === code)
+    || null
+}
+
+export function getXhsOperationTool(code) {
+  return xhsOperationTools.find(tool => tool.code === code) || null
 }
 
 export function getTemplateByCode(code) {

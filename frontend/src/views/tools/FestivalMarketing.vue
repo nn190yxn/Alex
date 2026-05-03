@@ -68,14 +68,9 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { generateWithAI, getToolQuota } from '@/api/tool'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'festival',
-  name: '节日营销文案生成器',
-  description: '输入节日和行业，快速生成节日营销文案，支持多场景',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('festival')
 
 const quotaInfo = ref(null)
 const result = ref(null)

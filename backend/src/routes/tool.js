@@ -3,8 +3,13 @@ import { authMiddleware } from '../middleware/auth.js'
 import { query } from '../models/db.js'
 import { redis } from '../config/redis.js'
 import { logger } from '../middleware/logger.js'
+import { canAccessLevel, getRequiredMemberLevel, getToolAccessMeta } from '../config/toolAccess.js'
 
 const router = express.Router()
+
+function createLockedQuota(code, requiredLevel) {
+  return { code, total: 0, used: 0, remain: 0, unlimited: false, locked: true, requiredLevel }
+}
 
 const TOOL_QUOTAS = {
   free: {
@@ -18,6 +23,9 @@ const TOOL_QUOTAS = {
     hook: { daily: 3, type: 'count' },
     script: { daily: 1, type: 'count' },
     xiaohongshu: { daily: 1, type: 'count' },
+    'xhs-title': { daily: 3, type: 'count' },
+    'xhs-seo': { daily: 2, type: 'count' },
+    'xhs-review': { daily: 3, type: 'count' },
     'store-health': { daily: 3, type: 'count' },
     'restaurant-health': { daily: 3, type: 'count' },
     'education-health': { daily: 3, type: 'count' },
@@ -110,6 +118,13 @@ const TOOL_QUOTAS = {
     hook: { daily: -1, type: 'unlimited' },
     script: { daily: 3, type: 'count' },
     xiaohongshu: { daily: 3, type: 'count' },
+    'xhs-title': { daily: -1, type: 'unlimited' },
+    'xhs-topic': { daily: 5, type: 'count' },
+    'xhs-traffic': { daily: 3, type: 'count' },
+    'xhs-seo': { daily: -1, type: 'unlimited' },
+    'xhs-diagnosis': { daily: 3, type: 'count' },
+    'xhs-review': { daily: -1, type: 'unlimited' },
+    'xhs-conversion': { daily: 2, type: 'count' },
     topic: { daily: 10, type: 'count' },
     festival: { daily: 10, type: 'count' },
     salary: { daily: 10, type: 'count' },
@@ -447,29 +462,32 @@ const TOOL_QUOTAS = {
 
 router.get('/', async (req, res) => {
   const tools = [
-    { code: 'headline', name: '爆款标题生成器', category: '文案', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'friend', name: '朋友圈文案生成器', category: '文案', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'selling-point', name: '产品卖点提炼器', category: '文案', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'close-deal', name: '促单话术生成器', category: '文案', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'roi', name: '抖音ROI计算器', category: '计算', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'payback', name: '投资回报计算器', category: '计算', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'schedule', name: '员工排班表生成器', category: '计算', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'hook', name: '引流钩子设计器', category: '内容', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'script', name: '短视频脚本生成器', category: '内容', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'xiaohongshu', name: '小红书笔记生成器', category: '内容', badge: '免费', badgeClass: 'badge-free' },
-    { code: 'topic', name: '爆款选题生成器', category: '进阶', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'festival', name: '节日营销文案生成器', category: '进阶', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'salary', name: '薪酬结构设计器', category: '进阶', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'fission', name: '私域裂变方案生成器', category: '进阶', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'sop', name: 'SOP流程文档生成器', category: '进阶', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'diagnosis', name: '企业健康度诊断', category: '诊断', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'meituan', name: '美团经营自诊器', category: '诊断', badge: '进阶', badgeClass: 'badge-pro' },
-    { code: 'ip-agent', name: 'IP打造智能体', category: '高阶', badge: '高阶', badgeClass: 'badge-annual' },
-    { code: 'competitor', name: '竞品内容分析器', category: '高阶', badge: '高阶', badgeClass: 'badge-annual' },
-    { code: 'business-plan', name: '商业计划书生成器', category: '高阶', badge: '高阶', badgeClass: 'badge-annual' },
-    { code: 'membership-design', name: '会员体系设计器', category: '高阶', badge: '高阶', badgeClass: 'badge-annual' },
-    { code: 'marketing-calendar', name: '智能营销日历定制', category: '高阶', badge: '高阶', badgeClass: 'badge-annual' }
-  ]
+    { code: 'headline', name: '爆款标题生成器', category: '文案' },
+    { code: 'friend', name: '朋友圈文案生成器', category: '文案' },
+    { code: 'selling-point', name: '产品卖点提炼器', category: '文案' },
+    { code: 'close-deal', name: '促单话术生成器', category: '文案' },
+    { code: 'roi', name: '抖音ROI计算器', category: '计算' },
+    { code: 'payback', name: '投资回报计算器', category: '计算' },
+    { code: 'schedule', name: '员工排班表生成器', category: '计算' },
+    { code: 'hook', name: '引流钩子设计器', category: '内容' },
+    { code: 'script', name: '短视频脚本生成器', category: '内容' },
+    { code: 'xiaohongshu', name: '小红书笔记生成器', category: '内容' },
+    { code: 'topic', name: '爆款选题生成器', category: '进阶' },
+    { code: 'festival', name: '节日营销文案生成器', category: '进阶' },
+    { code: 'salary', name: '薪酬结构设计器', category: '进阶' },
+    { code: 'fission', name: '私域裂变方案生成器', category: '进阶' },
+    { code: 'sop', name: 'SOP流程文档生成器', category: '进阶' },
+    { code: 'diagnosis', name: '企业健康度诊断', category: '诊断' },
+    { code: 'meituan', name: '美团经营自诊器', category: '诊断' },
+    { code: 'ip-agent', name: 'IP打造智能体', category: '高阶' },
+    { code: 'competitor', name: '竞品内容分析器', category: '高阶' },
+    { code: 'business-plan', name: '商业计划书生成器', category: '高阶' },
+    { code: 'membership-design', name: '会员体系设计器', category: '高阶' },
+    { code: 'marketing-calendar', name: '智能营销日历定制', category: '高阶' }
+  ].map(tool => ({
+    ...tool,
+    ...getToolAccessMeta(tool.code)
+  }))
   res.json(tools)
 })
 
@@ -487,25 +505,38 @@ router.get('/quotas', authMiddleware, async (req, res) => {
       ...Object.keys(TOOL_QUOTAS.pro),
       ...Object.keys(TOOL_QUOTAS.annual)
     ])]
-    const quotas = {}
 
+    const usageResult = await query(
+      'SELECT tool_code, COUNT(*) as count FROM tool_usage WHERE user_id = ? AND DATE(created_at) = ? GROUP BY tool_code',
+      [userId, today]
+    )
+    const usageMap = {}
+    for (const row of usageResult) {
+      usageMap[row.tool_code] = row.count
+    }
+
+    const quotas = {}
     for (const code of toolCodes) {
+      const requiredLevel = getRequiredMemberLevel(code)
+      if (!canAccessLevel(memberLevel, requiredLevel)) {
+        quotas[code] = createLockedQuota(code, requiredLevel)
+        continue
+      }
+
       const quota = TOOL_QUOTAS[memberLevel]?.[code] || TOOL_QUOTAS.free[code]
 
       if (quota.type === 'unlimited' || quota.daily === -1) {
-        quotas[code] = { code, total: -1, used: 0, remain: -1, unlimited: true }
+        quotas[code] = { code, total: -1, used: 0, remain: -1, unlimited: true, locked: false, requiredLevel }
       } else {
-        const usedResult = await query(
-          'SELECT COUNT(*) as count FROM tool_usage WHERE user_id = ? AND tool_code = ? AND DATE(created_at) = ?',
-          [userId, code, today]
-        )
-        const used = usedResult[0]?.count || 0
+        const used = usageMap[code] || 0
         quotas[code] = {
           code,
           total: quota.daily,
           used,
           remain: Math.max(0, quota.daily - used),
-          unlimited: false
+          unlimited: false,
+          locked: false,
+          requiredLevel
         }
       }
     }
@@ -525,14 +556,20 @@ router.get('/:code/quota', authMiddleware, async (req, res) => {
   try {
     const users = await query('SELECT member_level FROM users WHERE id = ?', [userId])
     const memberLevel = users[0]?.member_level || 'free'
+    const requiredLevel = getRequiredMemberLevel(code)
+
+    if (!canAccessLevel(memberLevel, requiredLevel)) {
+      return res.json(createLockedQuota(code, requiredLevel))
+    }
+
     const quota = TOOL_QUOTAS[memberLevel]?.[code] || TOOL_QUOTAS.free[code]
 
     if (!quota) {
-      return res.json({ total: -1, used: 0, remain: -1, unlimited: true })
+      return res.json({ total: -1, used: 0, remain: -1, unlimited: true, locked: false, requiredLevel })
     }
 
     if (quota.type === 'unlimited' || quota.daily === -1) {
-      return res.json({ total: -1, used: 0, remain: -1, unlimited: true })
+      return res.json({ total: -1, used: 0, remain: -1, unlimited: true, locked: false, requiredLevel })
     }
 
     const usedResult = await query(
@@ -542,7 +579,7 @@ router.get('/:code/quota', authMiddleware, async (req, res) => {
     const used = usedResult[0]?.count || 0
     const remain = Math.max(0, quota.daily - used)
 
-    res.json({ total: quota.daily, used, remain })
+    res.json({ total: quota.daily, used, remain, unlimited: false, locked: false, requiredLevel })
   } catch (error) {
     logger.error('tool', `Get quota error: ${error.message}`)
     res.status(500).json({ message: '获取配额失败' })
@@ -558,6 +595,12 @@ router.post('/:code/run', authMiddleware, async (req, res) => {
   try {
     const users = await query('SELECT member_level FROM users WHERE id = ?', [userId])
     const memberLevel = users[0]?.member_level || 'free'
+    const requiredLevel = getRequiredMemberLevel(code)
+
+    if (!canAccessLevel(memberLevel, requiredLevel)) {
+      return res.status(403).json({ message: '当前会员等级无法使用该工具' })
+    }
+
     const quota = TOOL_QUOTAS[memberLevel]?.[code] || TOOL_QUOTAS.free[code]
 
     if (quota && quota.type !== 'unlimited' && quota.daily > 0) {

@@ -70,15 +70,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'renewal-rate-education',
-  name: '续费率计算器（教培版）',
-  description: '输入到期学员和续费学员，快速计算续费率，判断教学质量与学员留存健康度。',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('renewal-rate-education')
 
 const form = reactive({
   expiredStudents: null,

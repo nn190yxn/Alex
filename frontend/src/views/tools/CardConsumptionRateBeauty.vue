@@ -66,15 +66,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'card-consumption-rate-beauty',
-  name: '耗卡率计算器（美业版）',
-  description: '帮你揪出"充了钱却不来消费"的沉睡客户，卡里剩的钱就是你的定时炸弹',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('card-consumption-rate-beauty')
 
 const form = reactive({
   cardTotal: null,

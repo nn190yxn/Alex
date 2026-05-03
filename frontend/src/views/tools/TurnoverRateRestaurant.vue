@@ -50,15 +50,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'turnover-rate-restaurant',
-  name: '翻台率计算器（餐饮版）',
-  description: '帮你判断餐桌是不是在"空等客人"，翻台每提0.5次月营收能涨20%+',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('turnover-rate-restaurant')
 
 const form = reactive({
   dailyTables: null,

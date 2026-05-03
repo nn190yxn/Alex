@@ -13,7 +13,10 @@
       <p class="tool-desc">{{ tool.description }}</p>
     </div>
     <div class="tool-footer">
-      <span class="badge" :class="tool.badgeClass">{{ tool.badge }}</span>
+      <div class="tool-tags">
+        <span class="badge" :class="tool.badgeClass">{{ tool.badge }}</span>
+        <span v-for="tag in tool.tags" :key="tag" class="tool-pill" :class="`pill-${tag}`">{{ tag }}</span>
+      </div>
       <span class="tool-tag">{{ tool.tag }}</span>
     </div>
   </router-link>
@@ -135,6 +138,34 @@ const iconComponent = computed(() => {
   justify-content: space-between;
   padding-top: var(--space-3);
   border-top: 1px solid var(--line-default);
+}
+
+.tool-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tool-pill {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.pill-必备 {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pill-高频 {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.pill-高阶发展 {
+  background: #f3e8ff;
+  color: #7c3aed;
 }
 
 .tool-tag {

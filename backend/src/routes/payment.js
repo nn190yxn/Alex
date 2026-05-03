@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { query } from '../models/db.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { logger } from '../middleware/logger.js'
+import { PLAN_PRICES, PLAN_CYCLES } from '../config/plans.js'
 
 const router = express.Router()
 const PAYMENT_CALLBACK_SECRET = process.env.PAYMENT_CALLBACK_SECRET
@@ -24,20 +25,14 @@ router.post('/create-order', authMiddleware, async (req, res) => {
   const { planCode } = req.body
   const userId = req.user.userId
 
-  const planPrices = {
-    starter: 29,
-    pro: 99,
-    annual: 499
-  }
-
-  if (!planPrices[planCode]) {
+  if (!PLAN_PRICES[planCode]) {
     return res.status(400).json({ message: '无效的套餐' })
   }
 
   try {
     const result = await query(
       'INSERT INTO orders (user_id, plan_code, amount, status, created_at) VALUES (?, ?, ?, ?, NOW())',
-      [userId, planCode, planPrices[planCode], 'pending']
+      [userId, planCode, PLAN_PRICES[planCode], 'pending']
     )
 
     const orderId = result.insertId
@@ -47,7 +42,7 @@ router.post('/create-order', authMiddleware, async (req, res) => {
     res.json({
       orderId,
       payUrl: wechatPayUrl,
-      amount: planPrices[planCode]
+      amount: PLAN_PRICES[planCode]
     })
   } catch (error) {
     logger.error('payment', `Create order error: ${error.message}`)
@@ -88,15 +83,9 @@ router.post('/callback', async (req, res) => {
 
       await query('UPDATE orders SET status = ?, paid_at = NOW() WHERE id = ? AND status != ?', ['paid', orderId, 'paid'])
 
-      const cycles = {
-        starter: 1,
-        pro: 1,
-        annual: 12
-      }
-
       await query(
         'UPDATE users SET member_level = ?, member_expire_at = DATE_ADD(NOW(), INTERVAL ? MONTH) WHERE id = ?',
-        [order.plan_code, cycles[order.plan_code] || 1, order.user_id]
+        [order.plan_code, PLAN_CYCLES[order.plan_code] || 1, order.user_id]
       )
 
       res.json({ message: '支付成功' })

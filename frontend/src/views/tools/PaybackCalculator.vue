@@ -80,14 +80,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'payback',
-  name: '投资回报计算器',
-  description: '输入投资金额和预期回报，计算回本周期和年化收益率',
-  badge: '免费',
-  badgeClass: 'badge-free'
-}
+const toolInfo = getToolByCode('payback')
 
 const quotaInfo = ref(null)
 const result = ref(null)

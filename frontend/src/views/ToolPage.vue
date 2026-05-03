@@ -81,6 +81,16 @@ import PriceIncrease from './tools/PriceIncrease.vue'
 import PromotionPlan from './tools/PromotionPlan.vue'
 import ComplaintHandling from './tools/ComplaintHandling.vue'
 import CompetitorStrategy from './tools/CompetitorStrategy.vue'
+import BossIP from './tools/BossIP.vue'
+import DouyinGrowth from './tools/DouyinGrowth.vue'
+import XiaohongshuGrowth from './tools/XiaohongshuGrowth.vue'
+import XhsTitle from './tools/XhsTitle.vue'
+import XhsTopic from './tools/XhsTopic.vue'
+import XhsTraffic from './tools/XhsTraffic.vue'
+import XhsSEO from './tools/XhsSEO.vue'
+import XhsDiagnosis from './tools/XhsDiagnosis.vue'
+import XhsReview from './tools/XhsReview.vue'
+import XhsConversion from './tools/XhsConversion.vue'
 
 // 通用表格
 import DailyRevenueSheet from './sheets/DailyRevenueSheet.vue'
@@ -143,6 +153,13 @@ const toolComponents = {
   'hook': HookDesigner,
   'script': ScriptGenerator,
   'xiaohongshu': XiaohongshuGenerator,
+  'xhs-title': XhsTitle,
+  'xhs-topic': XhsTopic,
+  'xhs-traffic': XhsTraffic,
+  'xhs-seo': XhsSEO,
+  'xhs-diagnosis': XhsDiagnosis,
+  'xhs-review': XhsReview,
+  'xhs-conversion': XhsConversion,
   'meituan': MeituanDiagnoser,
   'topic': TopicGenerator,
   'festival': FestivalMarketing,
@@ -165,6 +182,9 @@ const toolComponents = {
   'promotion-plan': PromotionPlan,
   'complaint-handling': ComplaintHandling,
   'competitor-strategy': CompetitorStrategy,
+  'boss-ip': BossIP,
+  'douyin-growth': DouyinGrowth,
+  'xiaohongshu-growth': XiaohongshuGrowth,
   'gross-margin-restaurant': GrossMarginRestaurant,
   'break-even-restaurant': BreakEvenRestaurant,
   'turnover-rate-restaurant': TurnoverRateRestaurant,

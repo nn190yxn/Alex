@@ -71,15 +71,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { getToolQuota, generateWithAI } from '@/api/tool'
 
-const toolInfo = {
-  code: 'membership-design',
-  name: '会员体系设计器',
-  description: '设计完整的会员体系、权益和积分机制',
-  badge: '高阶',
-  badgeClass: 'badge-annual'
-}
+const toolInfo = getToolByCode('membership-design')
 
 const quotaInfo = ref(null)
 const result = ref(null)

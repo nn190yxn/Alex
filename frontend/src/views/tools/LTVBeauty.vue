@@ -31,13 +31,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'ltv-beauty',
-  name: '客户生命周期价值计算器（美业版）',
-  description: '帮你算出一个客户从进店到流失总共贡献了多少',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('ltv-beauty')
 
 const form = reactive({ monthlySpend: null, monthsStayed: null, cac: null })
 const result = ref(null)

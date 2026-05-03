@@ -55,15 +55,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'dish-pricing',
-  name: '菜品定价计算器',
-  description: '从成本反推合理售价，定高了没人买、定低了白忙活',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('dish-pricing')
 
 const form = reactive({
   ingredientCost: null,

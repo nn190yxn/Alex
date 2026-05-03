@@ -32,13 +32,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'conversion-rate-beauty',
-  name: '拓客转化率计算器（美业版）',
-  description: '帮你判断拓客活动到底有没有用',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('conversion-rate-beauty')
 
 const form = reactive({ acquisitionCount: null, dealCount: null, acquisitionCost: null })
 const result = ref(null)

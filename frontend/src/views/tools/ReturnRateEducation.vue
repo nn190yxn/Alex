@@ -29,13 +29,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'return-rate-education',
-  name: '回报率计算器（教培版）',
-  description: '帮你判断体验课/地推/转介绍哪种获客方式最值',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('return-rate-education')
 
 const form = reactive({ investment: null, output: null })
 const result = ref(null)

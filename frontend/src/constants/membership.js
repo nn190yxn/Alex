@@ -31,7 +31,7 @@ export function getMemberLevelLabel(level) {
 }
 
 export function canAccessLevel(userLevel, requiredLevel = MEMBER_LEVEL_FREE) {
-  // 开发阶段：放开所有权限限制，所有工具均可使用
+  // 开发阶段临时放开所有权限，方便测试高阶功能
   return true
   const normalizedUserLevel = normalizeMemberLevel(userLevel)
   const normalizedRequiredLevel = normalizeMemberLevel(requiredLevel)

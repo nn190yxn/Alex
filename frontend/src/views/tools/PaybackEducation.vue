@@ -34,13 +34,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'payback-education',
-  name: '投资回本周期计算器（教培版）',
-  description: '帮你算新校区/新项目多久能回本',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('payback-education')
 
 const form = reactive({ investment: null, monthlyNetProfit: null })
 const result = ref(null)

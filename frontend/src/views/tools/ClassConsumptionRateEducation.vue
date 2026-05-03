@@ -63,15 +63,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'class-consumption-rate-education',
-  name: '课时消耗率计算器（教培版）',
-  description: '帮你发现"卖了很多课但消耗很慢"的隐患，消耗慢=续费慢=收入断层',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('class-consumption-rate-education')
 
 const form = reactive({
   remainingClasses: null,

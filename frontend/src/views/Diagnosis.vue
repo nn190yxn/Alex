@@ -8,7 +8,7 @@
 
       <!-- 核心诊断：企业增长诊断（新框架） -->
       <div class="primary-diagnosis card" @click="startGrowthDiagnosis">
-        <div class="primary-icon">📊</div>
+        <div class="primary-icon"><IconPillarDiagnosis /></div>
         <div class="primary-body">
           <div class="primary-badge">核心诊断</div>
           <h3>企业增长诊断</h3>
@@ -35,10 +35,10 @@
           v-for="t in diagnosisTypes"
           :key="t.code"
           class="diagnosis-card card"
-          :class="{ locked: t.requiresAuth && !isAuthenticated, 'coming-soon': !t.enabled }"
+          :class="{ locked: isLocked(t), 'coming-soon': !t.enabled }"
           @click="t.enabled ? startDiagnosis(t) : null"
         >
-          <div class="card-icon">{{ t.icon }}</div>
+          <div class="card-icon"><component :is="t.icon" /></div>
           <div class="card-body">
             <h3>{{ t.name }}</h3>
             <p class="card-desc">{{ t.description }}</p>
@@ -48,7 +48,7 @@
               <span class="dimension-count">{{ t.dimensionCount }} 个维度</span>
             </div>
           </div>
-          <div class="card-arrow" v-if="t.enabled && (!t.requiresAuth || isAuthenticated)">
+          <div class="card-arrow" v-if="t.enabled && !isLocked(t)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
@@ -71,19 +71,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { canAccessLevel } from '@/constants/membership'
+import { IconPillarDiagnosis, IconStore, IconRestaurantHealth, IconEducationHealth, IconBeautyHealth } from '@/icons'
 
 const router = useRouter()
-const token = computed(() => localStorage.getItem('token'))
-const isAuthenticated = computed(() => !!token.value)
+const userStore = useUserStore()
+const isAuthenticated = computed(() => userStore.isLoggedIn)
 
 const diagnosisTypes = [
   {
     code: 'store-health',
     name: '门店运营健康度诊断',
     description: '从获客、转化、留存、复购四个维度全面评估门店运营健康状况，找出最薄弱环节。',
-    icon: '🏪',
+    icon: IconStore,
     memberLevel: 'free',
     memberLevelLabel: '免费版',
     questionCount: 20,
@@ -95,7 +98,7 @@ const diagnosisTypes = [
     code: 'restaurant-health',
     name: '餐饮门店健康度诊断',
     description: '专为餐饮行业设计，覆盖翻台、客流、成本、利润、服务、卫生六大维度。',
-    icon: '🍽️',
+    icon: IconRestaurantHealth,
     memberLevel: 'starter',
     memberLevelLabel: '基础版',
     questionCount: 18,
@@ -107,7 +110,7 @@ const diagnosisTypes = [
     code: 'education-health',
     name: '校区健康度诊断',
     description: '面向教育培训机构，涵盖招生、转化、续费、人效、服务、管理核心维度。',
-    icon: '📚',
+    icon: IconEducationHealth,
     memberLevel: 'starter',
     memberLevelLabel: '基础版',
     questionCount: 18,
@@ -119,7 +122,7 @@ const diagnosisTypes = [
     code: 'beauty-health',
     name: '美业门店健康度诊断',
     description: '针对美容美发行业，聚焦拓客、转化、耗卡、人效、服务、管理全链路。',
-    icon: '💇',
+    icon: IconBeautyHealth,
     memberLevel: 'starter',
     memberLevelLabel: '基础版',
     questionCount: 18,
@@ -133,13 +136,26 @@ function levelBadge(level) {
   return `badge-${level}`
 }
 
+function isLocked(type) {
+  if (!isAuthenticated.value) return true
+  return !canAccessLevel(userStore.memberLevel, type.memberLevel)
+}
+
 function startGrowthDiagnosis() {
+  if (!isAuthenticated.value) {
+    router.push('/login?redirect=/diagnosis/questionnaire/growth-diagnosis')
+    return
+  }
   router.push('/diagnosis/questionnaire/growth-diagnosis')
 }
 
 function startDiagnosis(type) {
-  if (type.requiresAuth && !isAuthenticated.value) {
-    router.push('/login?redirect=/diagnosis')
+  if (!isAuthenticated.value) {
+    router.push(`/login?redirect=/diagnosis/questionnaire/${type.code}`)
+    return
+  }
+  if (!canAccessLevel(userStore.memberLevel, type.memberLevel)) {
+    router.push('/membership')
     return
   }
   router.push(`/diagnosis/questionnaire/${type.code}`)
@@ -186,9 +202,18 @@ function startDiagnosis(type) {
 }
 
 .primary-icon {
-  font-size: 3rem;
-  line-height: 1;
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: var(--brand-primary);
+}
+
+.primary-icon :deep(svg) {
+  width: 32px;
+  height: 32px;
 }
 
 .primary-body {
@@ -283,9 +308,20 @@ function startDiagnosis(type) {
 }
 
 .card-icon {
-  font-size: 2.5rem;
-  line-height: 1;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: var(--brand-primary);
+  background: rgba(30, 58, 138, 0.06);
+  border-radius: 14px;
+}
+
+.card-icon :deep(svg) {
+  width: 24px;
+  height: 24px;
 }
 
 .card-body {

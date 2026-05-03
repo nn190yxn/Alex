@@ -57,14 +57,9 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { generateWithAI, getToolQuota } from '@/api/tool'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'fission',
-  name: '私域裂变方案生成器',
-  description: '输入企业信息，生成完整的私域流量裂变方案和执行计划',
-  badge: '进阶',
-  badgeClass: 'badge-pro'
-}
+const toolInfo = getToolByCode('fission')
 
 const quotaInfo = ref(null)
 const result = ref(null)

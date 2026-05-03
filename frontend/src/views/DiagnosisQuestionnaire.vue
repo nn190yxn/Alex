@@ -15,7 +15,7 @@
 
       <div v-else-if="error" class="error-card card">
         <p class="error-text">{{ error }}</p>
-        <button class="btn btn-primary" @click="submit">重试</button>
+        <button class="btn btn-primary" @click="handleRetry">重试</button>
       </div>
 
       <template v-else>
@@ -50,6 +50,19 @@
               @click="selectAnswer(opt)"
             >
               {{ opt }}
+            </button>
+          </div>
+
+          <div v-else-if="isTemplateDiagnosis && currentQuestion.options" class="options-list">
+            <button
+              v-for="opt in currentQuestion.options"
+              :key="opt.label"
+              class="option-btn option-multi"
+              :class="{ selected: currentAnswer === opt.value }"
+              @click="selectAnswer(opt.value, opt.advice)"
+            >
+              <span class="symptom-label">{{ opt.label }}</span>
+              <span v-if="opt.advice" class="symptom-desc">{{ opt.advice }}</span>
             </button>
           </div>
 
@@ -149,6 +162,7 @@ const router = useRouter()
 
 const loading = ref(false)
 const error = ref(null)
+const diagnosisTemplate = ref(null)
 const currentStage = ref('stage0') // stage0 | founder | scan
 const currentQuestionIndex = ref(0)
 const answers = ref({})
@@ -156,6 +170,9 @@ const founderAnswers = ref({})
 const founderIndirectAnswers = ref([])
 const founderVersion = ref('direct') // 'direct' | 'indirect'
 const currentFeedback = ref('')
+const diagnosisCode = computed(() => route.params.code || 'growth-diagnosis')
+const isGrowthDiagnosis = computed(() => diagnosisCode.value === 'growth-diagnosis')
+const isTemplateDiagnosis = computed(() => !isGrowthDiagnosis.value)
 
 // ===== 阶段0：行业诊断（8问） =====
 const stage0Questions = [
@@ -412,8 +429,22 @@ const stages = {
   }
 }
 
+const templateQuestionEntries = computed(() => {
+  if (!diagnosisTemplate.value?.dimensions) return []
+  return Object.entries(diagnosisTemplate.value.dimensions).flatMap(([dimensionKey, dimension]) =>
+    (dimension.questions || []).map((question) => ({
+      ...question,
+      dimensionKey,
+      dimensionLabel: dimension.label
+    }))
+  )
+})
+
 const currentStageData = computed(() => stages[currentStage.value])
 const currentQuestions = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return templateQuestionEntries.value
+  }
   if (currentStage.value === 'founder') {
     return founderVersion.value === 'direct' ? founderDirectQuestions : [founderIndirectQuestions]
   }
@@ -423,6 +454,9 @@ const currentQuestion = computed(() => currentQuestions.value[currentQuestionInd
 const currentAnswer = computed(() => answers.value[currentQuestion.value.key])
 
 const isLastQuestion = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return currentQuestionIndex.value >= currentQuestions.value.length - 1
+  }
   if (currentStage.value === 'scan') {
     return currentQuestionIndex.value >= scanQuestions.length - 1
   }
@@ -437,6 +471,9 @@ const isLastQuestion = computed(() => {
 
 // Global question index for progress
 const globalQuestionIndex = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return currentQuestionIndex.value
+  }
   let offset = 0
   if (currentStage.value === 'founder') {
     offset = stage0Questions.length
@@ -447,6 +484,9 @@ const globalQuestionIndex = computed(() => {
 })
 
 const totalQuestions = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return currentQuestions.value.length
+  }
   return stage0Questions.length + (founderVersion.value === 'direct' ? founderDirectQuestions.length : 1) + scanQuestions.length
 })
 
@@ -461,6 +501,9 @@ const overallProgress = computed(() => {
 })
 
 const allAnswered = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return currentQuestions.value.length > 0 && currentQuestions.value.every(q => answers.value[q.key] != null)
+  }
   // Check all stages have answers
   const s0Answered = stage0Questions.every(q => answers.value[q.key] != null)
   let fAnswered = false
@@ -477,6 +520,9 @@ const allAnswered = computed(() => {
 })
 
 const hasAnswer = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return currentAnswer.value != null
+  }
   if (currentStage.value === 'stage0') {
     return currentAnswer.value != null
   }
@@ -491,14 +537,33 @@ const hasAnswer = computed(() => {
   return currentAnswer.value != null
 })
 
-const currentTitle = computed(() => currentStageData.value.title)
-const currentStageLabel = computed(() => currentStageData.value.label)
-const currentStageDesc = computed(() => currentStageData.value.desc)
-const currentStageClass = computed(() => `badge-${currentStage.value}`)
+const currentTitle = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return diagnosisTemplate.value?.name || '行业专属诊断'
+  }
+  return currentStageData.value.title
+})
+const currentStageLabel = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return diagnosisTemplate.value?.industry === 'restaurant' ? '行业专版' : '专项诊断'
+  }
+  return currentStageData.value.label
+})
+const currentStageDesc = computed(() => {
+  if (isTemplateDiagnosis.value) {
+    return diagnosisTemplate.value?.description || '按模板完成问卷并生成结构化诊断报告'
+  }
+  return currentStageData.value.desc
+})
+const currentStageClass = computed(() => isTemplateDiagnosis.value ? 'badge-template' : `badge-${currentStage.value}`)
 
 // ===== Methods =====
-function selectAnswer(val) {
+function selectAnswer(val, feedback = '') {
   answers.value[currentQuestion.value.key] = val
+  if (isTemplateDiagnosis.value) {
+    currentFeedback.value = feedback || ''
+    return
+  }
   // 即时反馈
   const q = currentQuestion.value
   if (q.feedback && q.feedback[val]) {
@@ -526,6 +591,14 @@ function toggleFounderIndirect(label) {
 
 function next() {
   if (!hasAnswer.value) return
+
+  if (isTemplateDiagnosis.value) {
+    if (currentQuestionIndex.value < currentQuestions.value.length - 1) {
+      currentQuestionIndex.value++
+    }
+    currentFeedback.value = ''
+    return
+  }
 
   // 如果是阶段0第一题后，询问创始人诊断版本
   if (currentStage.value === 'stage0' && currentQuestionIndex.value === 0) {
@@ -561,6 +634,12 @@ function next() {
 function prev() {
   if (globalQuestionIndex.value === 0) return
 
+  if (isTemplateDiagnosis.value) {
+    currentQuestionIndex.value--
+    currentFeedback.value = ''
+    return
+  }
+
   if (currentQuestionIndex.value > 0) {
     currentQuestionIndex.value--
   } else {
@@ -582,6 +661,28 @@ async function submit() {
   error.value = null
   try {
     const token = localStorage.getItem('token')
+
+    if (isTemplateDiagnosis.value) {
+      const res = await fetch('/api/diagnosis/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          templateCode: diagnosisCode.value,
+          answers: answers.value
+        })
+      })
+      if (!res.ok) throw new Error('生成失败')
+      const data = await res.json()
+      router.push({
+        name: 'DiagnosisReport',
+        state: { result: data.analysis, title: diagnosisTemplate.value?.name || '诊断报告' }
+      })
+      return
+    }
+
     const payload = {
       stage0: {},
       founder: { version: founderVersion.value },
@@ -629,8 +730,40 @@ async function submit() {
   }
 }
 
-onMounted(() => {
-  // 默认直接进入阶段0
+async function loadDiagnosisTemplate() {
+  loading.value = true
+  error.value = null
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`/api/diagnosis/template/${diagnosisCode.value}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (!res.ok) throw new Error('获取诊断模板失败')
+    diagnosisTemplate.value = await res.json()
+    answers.value = {}
+    currentQuestionIndex.value = 0
+  } catch (e) {
+    error.value = e.message || '加载问卷失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleRetry() {
+  if (isTemplateDiagnosis.value) {
+    await loadDiagnosisTemplate()
+    return
+  }
+  await submit()
+}
+
+onMounted(async () => {
+  if (isTemplateDiagnosis.value) {
+    await loadDiagnosisTemplate()
+    return
+  }
   currentStage.value = 'stage0'
   currentQuestionIndex.value = 0
 })
@@ -683,6 +816,11 @@ onMounted(() => {
 .badge-scan {
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
+}
+
+.badge-template {
+  background: rgba(30, 58, 138, 0.1);
+  color: var(--brand-primary);
 }
 
 .diagnosis-header h1 {

@@ -40,13 +40,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'break-even-education',
-  name: '盈亏平衡点计算器（教培版）',
-  description: '帮你算出每月至少招多少学员/排多少课才不亏',
-  badge: '免费', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('break-even-education')
 
 const form = reactive({ fixedCost: null, margin: null, avgPrice: null })
 const result = ref(null)

@@ -8,28 +8,28 @@
 
       <div class="admin-stats">
         <div class="stat-card">
-          <div class="stat-icon users">👥</div>
+          <div class="stat-icon users"><IconUsers /></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.totalUsers }}</div>
             <div class="stat-label">总用户数</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon members">⭐</div>
+          <div class="stat-icon members"><IconMembership /></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.paidUsers }}</div>
             <div class="stat-label">付费会员</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon orders">📦</div>
+          <div class="stat-icon orders"><IconBox /></div>
           <div class="stat-info">
             <div class="stat-value">{{ stats.totalOrders }}</div>
             <div class="stat-label">总订单数</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon revenue">💰</div>
+          <div class="stat-icon revenue"><IconCoin /></div>
           <div class="stat-info">
             <div class="stat-value">¥{{ stats.totalRevenue }}</div>
             <div class="stat-label">总收入</div>
@@ -153,6 +153,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
+import { IconUsers, IconMembership, IconBox, IconCoin } from '@/icons'
 
 const activeTab = ref('users')
 const userSearch = ref('')
@@ -304,7 +305,19 @@ onMounted(() => {
 }
 
 .stat-icon {
-  font-size: 32px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: var(--brand-primary);
+  background: rgba(30, 58, 138, 0.06);
+}
+
+.stat-icon :deep(svg) {
+  width: 22px;
+  height: 22px;
 }
 
 .stat-value {

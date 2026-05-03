@@ -4,6 +4,7 @@ dotenv.config()
 const API_KEY = process.env.MCAI_LLM_API_KEY || process.env.OPENAI_API_KEY
 const BASE_URL = process.env.MCAI_LLM_BASE_URL || 'https://proxy.monkeycode-ai.com/v1'
 const DEFAULT_MODEL = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
+const AI_REQUEST_TIMEOUT = parseInt(process.env.AI_REQUEST_TIMEOUT || '60000', 10)
 
 async function createChatCompletion({
   messages,
@@ -15,27 +16,40 @@ async function createChatCompletion({
     throw new Error('AI API key not configured')
   }
 
-  const response = await fetch(`${BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT)
+
+  try {
+    const response = await fetch(`${BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        max_tokens
+      }),
+      signal: controller.signal
     })
-  })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`AI API error: ${response.status} - ${errorText}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`AI API error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data.choices?.[0]?.message?.content || ''
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error(`AI 请求超时（${AI_REQUEST_TIMEOUT / 1000}秒），请稍后重试`)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
   }
-
-  const data = await response.json()
-  return data.choices?.[0]?.message?.content || ''
 }
 
 async function generateText(prompt, { temperature = 0.8, max_tokens = 2000 } = {}) {

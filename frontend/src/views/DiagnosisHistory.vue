@@ -14,8 +14,8 @@
         <p>加载中...</p>
       </div>
 
-      <div v-else-if="reports.length === 0" class="empty-state">
-        <div class="empty-icon">📋</div>
+        <div v-else-if="reports.length === 0" class="empty-state">
+          <div class="empty-icon"><IconClipboard /></div>
         <h3>暂无诊断记录</h3>
         <p>完成企业诊断后，这里将显示您的历史诊断报告</p>
         <router-link to="/diagnosis" class="btn btn-primary">
@@ -27,7 +27,7 @@
         <div v-for="report in reports" :key="report.id" class="report-card card">
           <div class="report-header">
             <div class="report-date">
-              <span class="date-icon">📅</span>
+              <span class="date-icon"><IconCalendar /></span>
               {{ formatDate(report.created_at) }}
             </div>
             <button class="btn btn-secondary btn-sm" @click="viewReport(report)">
@@ -153,6 +153,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
+import { IconCalendar, IconClipboard } from '@/icons'
 
 const loading = ref(true)
 const reports = ref([])
@@ -258,8 +259,18 @@ onMounted(() => {
 }
 
 .empty-icon {
-  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--space-4);
+  color: var(--brand-primary);
+}
+
+.empty-icon :deep(svg) {
+  width: 36px;
+  height: 36px;
 }
 
 .empty-state h3 {
@@ -298,7 +309,16 @@ onMounted(() => {
 }
 
 .date-icon {
-  font-size: var(--text-body);
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .summary-grid {

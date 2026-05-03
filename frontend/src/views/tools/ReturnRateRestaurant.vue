@@ -50,15 +50,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'return-rate-restaurant',
-  name: '回报率计算器（餐饮版）',
-  description: '帮你判断营销活动/投流到底值不值，投了5000带回2万到底赚没赚',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('return-rate-restaurant')
 
 const form = reactive({
   investment: null,

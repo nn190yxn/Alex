@@ -35,13 +35,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'venue-utilization-education',
-  name: '场地利用率计算器',
-  description: '帮你判断教室是在赚钱还是在空转，空1小时就是白白烧房租',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('venue-utilization-education')
 
 const form = reactive({ availableHours: null, scheduledHours: null })
 const result = ref(null)

@@ -50,15 +50,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'payback-restaurant',
-  name: '投资回本周期计算器（餐饮版）',
-  description: '帮你算新店/新项目多久能回本，避免"投了30万3年还没回本"的坑',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('payback-restaurant')
 
 const form = reactive({
   investment: null,

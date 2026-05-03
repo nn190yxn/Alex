@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL COMMENT '密码哈希',
   nickname VARCHAR(50) DEFAULT '' COMMENT '昵称',
   avatar_url VARCHAR(500) DEFAULT '' COMMENT '头像URL',
+  industry VARCHAR(50) DEFAULT NULL COMMENT '所属行业',
+  city VARCHAR(50) DEFAULT NULL COMMENT '所在城市',
   member_level ENUM('free', 'starter', 'pro', 'annual') DEFAULT 'free' COMMENT '会员等级',
   member_expire_at DATETIME DEFAULT NULL COMMENT '会员到期时间',
   referral_code VARCHAR(20) DEFAULT NULL UNIQUE COMMENT '推荐码',
@@ -83,6 +85,18 @@ CREATE TABLE IF NOT EXISTS referral_relationships (
   UNIQUE KEY uk_referred_id (referred_id),
   INDEX idx_referrer_id (referrer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推荐关系表';
+
+-- 事件追踪表（用于分析统计）
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL COMMENT '用户ID',
+  event_type VARCHAR(50) NOT NULL COMMENT '事件类型',
+  event_meta JSON NULL COMMENT '事件元数据',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  INDEX idx_user_event (user_id, event_type),
+  INDEX idx_event_type (event_type),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='事件追踪表';
 
 -- 初始化管理员账户（密码: admin123）
 -- INSERT INTO users (phone, password_hash, member_level) VALUES ('13800138000', '$2a$10$...', 'annual');

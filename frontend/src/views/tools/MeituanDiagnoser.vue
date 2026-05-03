@@ -70,16 +70,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 import { getToolQuota } from '@/api/tool'
 
-const toolInfo = {
-  code: 'meituan',
-  name: '美团经营自诊器',
-  description: '输入美团平台数据，诊断店铺经营状况并给出优化建议',
-  badge: '高级',
-  badgeClass: 'badge-annual',
-  requiredLevel: 'annual'
-}
+const toolInfo = getToolByCode('meituan')
 
 const quotaInfo = ref(null)
 const result = ref(null)

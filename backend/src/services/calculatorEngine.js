@@ -213,31 +213,139 @@ export const CALCULATORS = {
 
   'cashflow-restaurant': {
     name: '现金流预测计算器（餐饮版）',
-    inputs: ['initialCash', 'monthlyRevenue', 'monthlyCost', 'months'],
-    calc: ({ initialCash, monthlyRevenue, monthlyCost, months }) => {
-      const monthlyProfit = monthlyRevenue - monthlyCost
+    inputs: ['currentCash', 'monthlyRevenue', 'rent', 'baseSalary', 'utilities', 'otherFixed', 'foodCostRate', 'marketingRate', 'months', 'upcomingExpenses', 'memberPrepay'],
+    calc: ({ currentCash, monthlyRevenue, rent, baseSalary, utilities, otherFixed, foodCostRate, marketingRate, months, upcomingExpenses, memberPrepay }) => {
+      const totalFixed = (rent || 0) + (baseSalary || 0) + (utilities || 0) + (otherFixed || 0)
+      const foodCost = monthlyRevenue * (foodCostRate || 0) / 100
+      const marketing = monthlyRevenue * (marketingRate || 0) / 100
+      const totalVariable = foodCost + marketing
+      const monthlyNetFlow = monthlyRevenue - totalFixed - totalVariable
+      const safeReserve = totalFixed * 3
+
       const projections = []
-      let cash = initialCash
+      let cash = currentCash
       let breakEvenMonth = null
+      let minCash = cash
+      let minCashMonth = 0
+
       for (let i = 1; i <= months; i++) {
-        cash += monthlyProfit
-        projections.push({ month: i, cash: cash.toFixed(0) })
+        let monthRevenue = monthlyRevenue
+        let monthFixed = totalFixed
+        let monthVariable = totalVariable
+        let extraExpenses = 0
+
+        // 处理即将发生的支出
+        if (upcomingExpenses && Array.isArray(upcomingExpenses)) {
+          for (const exp of upcomingExpenses) {
+            if (exp.month === i) {
+              extraExpenses += Number(exp.amount) || 0
+            }
+          }
+        }
+
+        // 处理会员预收款（只在第1个月计入）
+        let prepayIncome = 0
+        if (i === 1 && memberPrepay) {
+          prepayIncome = Number(memberPrepay) || 0
+        }
+
+        cash += monthRevenue - monthFixed - monthVariable - extraExpenses + prepayIncome
+
+        const isDanger = cash < 0
+        const isWarning = cash >= 0 && cash < safeReserve
+
+        projections.push({
+          month: i,
+          startCash: (cash - (monthRevenue - monthFixed - monthVariable - extraExpenses + prepayIncome)).toFixed(0),
+          revenue: monthRevenue.toFixed(0),
+          fixed: monthFixed.toFixed(0),
+          variable: monthVariable.toFixed(0),
+          extra: extraExpenses.toFixed(0),
+          prepay: prepayIncome.toFixed(0),
+          netFlow: (monthRevenue - monthFixed - monthVariable - extraExpenses + prepayIncome).toFixed(0),
+          endCash: cash.toFixed(0),
+          status: isDanger ? 'danger' : isWarning ? 'warning' : 'safe'
+        })
+
         if (cash <= 0 && !breakEvenMonth) breakEvenMonth = i
+        if (cash < minCash) {
+          minCash = cash
+          minCashMonth = i
+        }
       }
+
       const finalCash = cash
-      const safe = finalCash > 0
-      return { sections: [
-        { title: '现金流预测', items: projections.map(p => `第${p.month}月：¥${Number(p.cash).toLocaleString()}`) },
-        { title: '结论', items: [
-          `初始资金：¥${initialCash.toLocaleString()}`,
-          `月净现金流：¥${monthlyProfit.toLocaleString()}`,
-          `${breakEvenMonth ? `⚠️ 预计第${breakEvenMonth}个月资金断裂！` : `✓ ${months}个月内资金安全`}`,
-          `${months}月后余额：¥${finalCash.toLocaleString()}`
-        ]},
-        { title: '建议', items: safe
-          ? ['现金流健康，可考虑扩大经营或优化菜品', '建议保留至少3个月运营成本作为安全垫']
-          : ['立即缩减非必要开支', '考虑融资或调整定价策略', '加快应收账款回收'] }
-      ], summary: `${breakEvenMonth ? `第${breakEvenMonth}个月资金断裂预警` : `${months}月后余额 ¥${finalCash.toLocaleString()}`}`, extra: { finalCash: finalCash.toLocaleString(), breakEvenMonth } }
+      const safe = finalCash > 0 && !breakEvenMonth
+
+      // 生成建议
+      const suggestions = []
+      if (breakEvenMonth) {
+        suggestions.push(`⚠️ 资金将在第 ${breakEvenMonth} 个月断裂！`)
+        suggestions.push('紧急行动：1）立即与房东协商延期付租；2）暂停非必要开支（装修、设备升级）；3）加速应收账款回收；4）寻求短期周转资金')
+      } else if (minCash < safeReserve) {
+        suggestions.push(`第 ${minCashMonth} 个月余额触底（¥${minCash.toFixed(0)}），低于安全储备线（¥${safeReserve.toFixed(0)}）`)
+        suggestions.push('建议：1）在第 ' + Math.max(1, minCashMonth - 2) + ' 个月前提前准备周转资金；2）考虑推出储值活动预收现金')
+      } else {
+        suggestions.push('现金流健康，当前余额充足')
+        suggestions.push('可适当考虑扩大经营投入或优化菜品结构')
+      }
+
+      // 行业参考
+      const foodRate = foodCostRate || 0
+      let foodComment = ''
+      if (foodRate < 30) foodComment = '食材成本率偏低，需确认是否有未计入成本'
+      else if (foodRate <= 40) foodComment = '食材成本率健康（行业基准 30-40%）'
+      else foodComment = '食材成本率偏高，考虑优化供应链或调整菜单定价'
+
+      return {
+        sections: [
+          {
+            title: '成本结构',
+            items: [
+              `固定成本：¥${totalFixed.toLocaleString()}/月（房租+底薪+水电+其他）`,
+              `变动成本：¥${totalVariable.toLocaleString()}/月（食材${foodCostRate}%+营销${marketingRate}%）`,
+              `月净现金流：¥${monthlyNetFlow.toLocaleString()}`,
+              `安全储备线：¥${safeReserve.toLocaleString()}（3个月固定成本）`
+            ]
+          },
+          {
+            title: '现金流预测',
+            items: projections.map(p =>
+              `第${p.month}月：月初 ¥${Number(p.startCash).toLocaleString()} → 收入 ¥${Number(p.revenue).toLocaleString()} - 固定 ¥${Number(p.fixed).toLocaleString()} - 变动 ¥${Number(p.variable).toLocaleString()}${Number(p.extra) > 0 ? ` - 额外支出 ¥${Number(p.extra).toLocaleString()}` : ''}${Number(p.prepay) > 0 ? ` + 预收 ¥${Number(p.prepay).toLocaleString()}` : ''} = 月末 ¥${Number(p.endCash).toLocaleString()} ${p.status === 'danger' ? '⚠️ 断裂' : p.status === 'warning' ? '⚡ 预警' : '✓'}`
+            )
+          },
+          {
+            title: '关键节点',
+            items: [
+              breakEvenMonth ? `⚠️ 预计第${breakEvenMonth}个月资金断裂！` : `${months}个月内无断裂风险`,
+              `余额最低点：第${minCashMonth}个月（¥${minCash.toFixed(0)}）`,
+              `${months}月后余额：¥${finalCash.toLocaleString()}`
+            ]
+          },
+          {
+            title: '建议',
+            items: suggestions
+          },
+          {
+            title: '行业参考',
+            items: [
+              foodComment,
+              '安全现金储备≥3个月固定支出',
+              '快餐食材成本率 30-40%，正餐 35-45%'
+            ]
+          }
+        ],
+        summary: breakEvenMonth ? `第${breakEvenMonth}个月断裂预警` : `${months}月后余额 ¥${finalCash.toLocaleString()}`,
+        extra: {
+          finalCash: finalCash.toLocaleString(),
+          breakEvenMonth,
+          minCash: minCash.toFixed(0),
+          minCashMonth,
+          monthlyNetFlow: monthlyNetFlow.toLocaleString(),
+          safeReserve: safeReserve.toLocaleString(),
+          projections
+        }
+      }
     }
   },
 

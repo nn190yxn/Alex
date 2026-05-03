@@ -44,9 +44,10 @@ export async function creditReferralBonus(referrerUserId) {
     }
     newExpireAt.setDate(newExpireAt.getDate() + BONUS_DAYS)
 
-    await query('UPDATE users SET member_expire_at = ? WHERE id = ?', [newExpireAt, referrerUserId])
+    const newLevel = user.member_level === 'free' ? 'starter' : user.member_level
+    await query('UPDATE users SET member_expire_at = ?, member_level = ? WHERE id = ?', [newExpireAt, newLevel, referrerUserId])
 
-    console.log(`[Referral] Credited ${BONUS_DAYS} days to user ${referrerUserId}, new expire: ${newExpireAt.toISOString()}`)
+    console.log(`[Referral] Credited ${BONUS_DAYS} days to user ${referrerUserId}, level: ${newLevel}, expire: ${newExpireAt.toISOString()}`)
     return true
   } catch (error) {
     console.error('Credit referral bonus error:', error)

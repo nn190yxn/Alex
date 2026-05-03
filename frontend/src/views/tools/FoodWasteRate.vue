@@ -50,15 +50,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'food-waste-rate',
-  name: '食材损耗率计算器',
-  description: '帮你算后厨到底浪费了多少钱，损耗每降1%就是省出真金白银',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('food-waste-rate')
 
 const form = reactive({
   purchaseAmount: null,

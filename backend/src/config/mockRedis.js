@@ -1,4 +1,5 @@
 const mockStore = new Map()
+const expiryTimers = new Map()
 
 export function createMockRedis() {
   return {
@@ -9,11 +10,30 @@ export function createMockRedis() {
     },
 
     async set(key, value, mode, ttl) {
+      // Clear existing timer if key already exists
+      if (expiryTimers.has(key)) {
+        clearTimeout(expiryTimers.get(key))
+      }
+
       mockStore.set(key, String(value))
+
+      // Handle EX mode with TTL (in seconds)
+      if (mode === 'EX' && ttl) {
+        const timer = setTimeout(() => {
+          mockStore.delete(key)
+          expiryTimers.delete(key)
+        }, ttl * 1000)
+        expiryTimers.set(key, timer)
+      }
+
       return 'OK'
     },
 
     async del(key) {
+      if (expiryTimers.has(key)) {
+        clearTimeout(expiryTimers.get(key))
+        expiryTimers.delete(key)
+      }
       mockStore.delete(key)
       return 1
     },
@@ -27,6 +47,10 @@ export function createMockRedis() {
       let count = 0
       for (const key of mockStore.keys()) {
         if (regex.test(key)) {
+          if (expiryTimers.has(key)) {
+            clearTimeout(expiryTimers.get(key))
+            expiryTimers.delete(key)
+          }
           mockStore.delete(key)
           count++
         }

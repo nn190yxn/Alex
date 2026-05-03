@@ -29,13 +29,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'repurchase-rate-beauty',
-  name: '复购率计算器（美业版）',
-  description: '帮你判断老客是不是真的认可你',
-  badge: 'free', badgeClass: 'badge-free', requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('repurchase-rate-beauty')
 
 const form = reactive({ totalClients: null, repeatClients: null })
 const result = ref(null)

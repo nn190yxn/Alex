@@ -87,15 +87,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'roi',
-  name: '投流保本 ROI 计算器',
-  description: '帮你算出投流至少要达到多少 ROI 才不亏，低于这个数就是烧钱送人头。',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('roi')
 
 const form = reactive({
   grossMargin: null,

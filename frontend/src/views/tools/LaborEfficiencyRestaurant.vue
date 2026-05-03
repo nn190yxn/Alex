@@ -56,15 +56,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
+import { getToolByCode } from '@/constants/toolCatalog'
 
-const toolInfo = {
-  code: 'labor-efficiency-restaurant',
-  name: '人效计算器（餐饮版）',
-  description: '帮你看清谁在养店、谁在混日子，裁掉1个闲人等于月省5000',
-  badge: '免费',
-  badgeClass: 'badge-free',
-  requiredLevel: 'free'
-}
+const toolInfo = getToolByCode('labor-efficiency-restaurant')
 
 const form = reactive({
   revenue: null,
