@@ -66,6 +66,7 @@ import ProjectStructureBeauty from './tools/ProjectStructureBeauty.vue'
 import LaborStructureBeauty from './tools/LaborStructureBeauty.vue'
 import CardDebtBeauty from './tools/CardDebtBeauty.vue'
 import FunnelLTVBeauty from './tools/FunnelLTVBeauty.vue'
+import BreakevenProfitBeauty from './tools/BreakevenProfitBeauty.vue'
 import LTVBeauty from './tools/LTVBeauty.vue'
 import RepurchaseRateBeauty from './tools/RepurchaseRateBeauty.vue'
 import PaybackBeauty from './tools/PaybackBeauty.vue'
@@ -222,6 +223,7 @@ const toolComponents = {
   'labor-structure-beauty': LaborStructureBeauty,
   'card-debt-beauty': CardDebtBeauty,
   'funnel-ltv-beauty': FunnelLTVBeauty,
+  'breakeven-profit-beauty': BreakevenProfitBeauty,
   'ltv-beauty': LTVBeauty,
   'repurchase-rate-beauty': RepurchaseRateBeauty,
   'payback-beauty': PaybackBeauty,

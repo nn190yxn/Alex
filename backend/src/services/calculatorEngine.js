@@ -1562,6 +1562,103 @@ export const CALCULATORS = {
         }
       }
     }
+  },
+
+  // ====== 美业盈亏平衡知识库 ======
+  BEAUTY_BREAK_EVEN_KB: {
+    costBenchmarks: {
+      rent: { min: 15, max: 25, label: '房租占比' },
+      labor: { min: 30, max: 40, label: '人工占比' },
+      product: { min: 5, max: 15, label: '产品耗材占比' },
+      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
+    },
+    adviceTemplates: {
+      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
+      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
+      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
+      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
+      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
+      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
+      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
+    }
+  },
+
+  'breakeven-profit-beauty': {
+    name: '美业盈亏平衡与净利预测器',
+    inputs: ['rent', 'fixedSalary', 'utilities', 'otherFixed', 'productRate', 'laborCommissionRate', 'platformRate', 'revenue', 'targetProfit'],
+    calc: ({ rent, fixedSalary, utilities, otherFixed, productRate, laborCommissionRate, platformRate, revenue = 0, targetProfit = 0 }) => {
+      const KB = CALCULATORS.BEAUTY_BREAK_EVEN_KB
+      const totalFixed = (rent || 0) + (fixedSalary || 0) + (utilities || 0) + (otherFixed || 0)
+      const totalVariableRate = (productRate || 10) + (laborCommissionRate || 15) + (platformRate || 5)
+      const contributionRate = 1 - totalVariableRate / 100
+
+      const breakevenRevenue = safeDiv(totalFixed, contributionRate)
+      const dailyBreakeven = breakevenRevenue / 30
+      const avgOrderValue = 300
+      const dailyOrders = Math.ceil(dailyBreakeven / avgOrderValue)
+
+      let actualProfit = 0, actualProfitRate = 0, actualRentRatio = 0, actualLaborRatio = 0
+      if (revenue > 0) {
+        const productCost = revenue * (productRate || 10) / 100
+        const laborCommission = revenue * (laborCommissionRate || 15) / 100
+        const platformFee = revenue * (platformRate || 5) / 100
+        actualProfit = revenue - totalFixed - productCost - laborCommission - platformFee
+        actualProfitRate = safeDiv(actualProfit, revenue) * 100
+        actualRentRatio = safeDiv(rent, revenue) * 100
+        actualLaborRatio = safeDiv(fixedSalary + laborCommission, revenue) * 100
+      }
+
+      const targetRevenue = targetProfit > 0 ? safeDiv(totalFixed + targetProfit, contributionRate) : 0
+
+      const suggestions = []
+      if (breakevenRevenue > 100000) {
+        suggestions.push({ ...KB.adviceTemplates.breakevenHigh, breakeven: breakevenRevenue.toFixed(0) })
+      } else {
+        suggestions.push({ ...KB.adviceTemplates.breakevenLow, breakeven: breakevenRevenue.toFixed(0) })
+      }
+
+      if (revenue > 0) {
+        if (actualRentRatio > KB.costBenchmarks.rent.max) {
+          suggestions.push({ ...KB.adviceTemplates.rentHigh, ratio: actualRentRatio.toFixed(1), max: KB.costBenchmarks.rent.max })
+        }
+        if (actualLaborRatio > KB.costBenchmarks.labor.max) {
+          suggestions.push({ ...KB.adviceTemplates.laborHigh, ratio: actualLaborRatio.toFixed(1) })
+        }
+        if (actualProfitRate >= 15) {
+          suggestions.push({ ...KB.adviceTemplates.marginGood })
+        } else if (revenue > 0) {
+          suggestions.push({ ...KB.adviceTemplates.marginLow, margin: actualProfitRate.toFixed(1) })
+        }
+      }
+
+      if (targetProfit > 0) {
+        suggestions.push({ ...KB.adviceTemplates.targetAdvice, target: targetProfit.toLocaleString(), required: targetRevenue.toLocaleString(), daily: (targetRevenue / 30).toFixed(0) })
+      }
+
+      return {
+        sections: [
+          { title: '盈亏平衡分析', items: [`月固定成本：¥${totalFixed.toLocaleString()}`, `变动成本率：${totalVariableRate.toFixed(0)}%（产品+提成+平台）`, `保本营业额：¥${breakevenRevenue.toFixed(0)}/月`, `日均保本：¥${dailyBreakeven.toFixed(0)}（约${dailyOrders}单/天，客单价¥${avgOrderValue}）`] },
+          { title: '目标利润预测', items: targetProfit > 0 ? [`目标利润：¥${targetProfit.toLocaleString()}`, `需达营业额：¥${targetRevenue.toLocaleString()}/月`, `日均需做：¥${(targetRevenue / 30).toFixed(0)}`] : ['请输入目标利润进行预测'] },
+          ...(revenue > 0 ? [{ title: '实际经营分析', items: [`实际营业额：¥${revenue.toLocaleString()}`, `实际净利润：¥${actualProfit.toLocaleString()}`, `净利率：${actualProfitRate.toFixed(1)}%`, `房租占比：${actualRentRatio.toFixed(1)}%`, `人工占比：${actualLaborRatio.toFixed(1)}%`] }] : []),
+          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
+        ],
+        summary: `保本业绩 ¥${breakevenRevenue.toFixed(0)}/月，日均 ¥${dailyBreakeven.toFixed(0)}`,
+        extra: {
+          breakevenRevenue: breakevenRevenue.toFixed(0),
+          dailyBreakeven: dailyBreakeven.toFixed(0),
+          dailyOrders,
+          totalFixed: totalFixed.toFixed(0),
+          totalVariableRate: totalVariableRate.toFixed(0),
+          contributionRate: (contributionRate * 100).toFixed(0),
+          targetRevenue: targetRevenue.toFixed(0),
+          actualProfit: actualProfit.toLocaleString(),
+          actualProfitRate: actualProfitRate.toFixed(1),
+          actualRentRatio: actualRentRatio.toFixed(1),
+          actualLaborRatio: actualLaborRatio.toFixed(1),
+          suggestions
+        }
+      }
+    }
   }
 }
 
