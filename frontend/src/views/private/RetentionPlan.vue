@@ -40,7 +40,7 @@
 
       <div v-if="loading" class="loading-state">
         <div class="loading-spinner"></div>
-        <p>AI 正在生成复购留存方案...</p>
+        <p>AI 正在基于知识库生成复购留存方案...</p>
       </div>
 
       <div v-else-if="result" class="result-section">
@@ -54,9 +54,18 @@
             <div class="card-value highlight">{{ result.projectedRetention }}%</div>
           </div>
           <div class="summary-card">
+            <div class="card-label">目标复购率</div>
+            <div class="card-value info">{{ result.targetRetention }}</div>
+          </div>
+          <div class="summary-card">
             <div class="card-label">预计增收</div>
             <div class="card-value success">¥{{ result.additionalRevenue.toLocaleString() }}</div>
           </div>
+        </div>
+
+        <div class="industry-info">
+          <span class="info-tag">沉睡阈值: {{ result.sleepThreshold }}</span>
+          <span class="info-tag">行业: {{ result.industry }}</span>
         </div>
 
         <div class="strategies">
@@ -65,7 +74,7 @@
             <div class="strategy-header">
               <span class="strategy-priority">P{{ strategy.priority }}</span>
               <span class="strategy-name">{{ strategy.name }}</span>
-              <span class="strategy-timeline">{{ strategy.implementation }}</span>
+              <span class="strategy-timeline">{{ strategy.timeline }}</span>
             </div>
             <p class="strategy-desc">{{ strategy.desc }}</p>
             <p class="strategy-lift">预计提升：{{ strategy.lift }}</p>
@@ -77,13 +86,27 @@
           <div v-for="(item, i) in result.retentionCalendar" :key="i" class="calendar-item">
             <div class="calendar-day">{{ item.day }}</div>
             <div class="calendar-action">{{ item.action }}</div>
+            <div class="calendar-channel">{{ item.channel }}</div>
+          </div>
+        </div>
+
+        <div v-if="result.scriptSnippets" class="script-snippets">
+          <h3>话术模板（来自知识库）</h3>
+          <div v-if="result.scriptSnippets.followup" class="script-card">
+            <span class="script-label">首单后回访</span>
+            <p class="script-text">{{ result.scriptSnippets.followup }}</p>
+          </div>
+          <div v-if="result.scriptSnippets.activation" class="script-card">
+            <span class="script-label">沉睡激活</span>
+            <p class="script-text">{{ result.scriptSnippets.activation }}</p>
           </div>
         </div>
 
         <div class="upgrade-hint">
           <p>获取详细执行方案（含话术模板、活动物料）需预约专家 1v1 定制</p>
           <div class="upgrade-actions">
-            <button class="btn-primary" @click="bookConsult">预约专家诊断</button>
+            <button class="btn-primary" @click="$router.push('/private/member-design')">设计会员体系</button>
+            <button class="btn-secondary" @click="bookConsult">预约专家诊断</button>
           </div>
         </div>
       </div>
@@ -109,9 +132,13 @@ const form = reactive({
 const generate = async () => {
   loading.value = true
   try {
+    const token = localStorage.getItem('token')
     const response = await fetch('/api/private/retention-plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         industry: form.industry,
         currentRetention: form.currentRetention || 30,
@@ -189,7 +216,7 @@ const bookConsult = () => {
 
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -214,12 +241,23 @@ const bookConsult = () => {
   color: var(--text-main);
 }
 
-.card-value.highlight {
-  color: var(--brand-primary);
+.card-value.highlight { color: var(--brand-primary); }
+.card-value.success { color: #059669; }
+.card-value.info { color: #8b5cf6; font-size: var(--text-h4); }
+
+.industry-info {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.card-value.success {
-  color: #059669;
+.info-tag {
+  padding: 4px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 20px;
+  font-size: var(--text-body-sm);
+  color: #0369a1;
 }
 
 .strategies {
@@ -298,11 +336,10 @@ const bookConsult = () => {
   gap: 16px;
   padding: 12px 0;
   border-bottom: 1px solid var(--border-light);
+  align-items: center;
 }
 
-.calendar-item:last-child {
-  border-bottom: none;
-}
+.calendar-item:last-child { border-bottom: none; }
 
 .calendar-day {
   font-weight: var(--font-weight-bold);
@@ -312,14 +349,82 @@ const bookConsult = () => {
 
 .calendar-action {
   color: var(--text-secondary);
+  flex: 1;
+}
+
+.calendar-channel {
+  padding: 2px 8px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  font-size: var(--text-body-xs);
+  color: var(--text-muted);
+}
+
+.script-snippets {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid var(--border-light);
+  margin-bottom: 24px;
+}
+
+.script-snippets h3 {
+  font-size: var(--text-h4);
+  margin-bottom: 16px;
+}
+
+.script-card {
+  padding: 16px;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.script-label {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 4px;
+  font-size: var(--text-body-xs);
+  margin-bottom: 8px;
+}
+
+.script-text {
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  margin: 0;
+}
+
+.upgrade-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.btn-primary {
+  padding: 10px 24px;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  background: white;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
 }
 
 @media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
+  .form-grid { grid-template-columns: 1fr; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

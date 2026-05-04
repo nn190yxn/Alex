@@ -107,18 +107,40 @@
         <div v-if="currentStep === 3" class="step-panel">
           <div v-if="loading" class="loading-state">
             <div class="loading-spinner"></div>
-            <p>AI 正在生成私域健康度诊断...</p>
+            <p>AI 正在基于知识库生成私域健康度诊断...</p>
           </div>
           <div v-else-if="result" class="result-state">
+            <div class="result-header">
+              <div class="industry-badge">{{ result.industry }}</div>
+              <div class="avg-score">{{ result.avgScore }}</div>
+              <span class="score-label">综合健康分</span>
+            </div>
+
             <div class="radar-container">
               <h3 class="radar-title">五维健康度雷达</h3>
               <div class="radar-chart">
-                <div v-for="dim in result.radar" :key="dim.name" class="radar-item">
+                <div v-for="dim in result.radar" :key="dim.key" class="radar-item">
                   <div class="radar-label">{{ dim.name }}</div>
-                  <div class="radar-bar">
-                    <div class="radar-fill" :style="{ width: dim.score + '%', background: dim.color }"></div>
+                  <div class="radar-bar-wrapper">
+                    <div class="radar-bar">
+                      <div class="radar-fill" :style="{ width: dim.score + '%', background: dim.color }"></div>
+                    </div>
+                    <div class="benchmark-line" :style="{ left: dim.benchmark + '%' }" title="行业基准"></div>
                   </div>
-                  <div class="radar-score" :class="dim.scoreClass">{{ dim.score }}分</div>
+                  <div class="radar-score">
+                    <span :class="dim.scoreClass">{{ dim.score }}</span>
+                    <span class="benchmark-text">基准 {{ dim.benchmark }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="result.kpis && Object.keys(result.kpis).length" class="kpis-section">
+              <h3>行业目标 KPI</h3>
+              <div class="kpis-grid">
+                <div v-for="(val, key) in result.kpis" :key="key" class="kpi-card">
+                  <span class="kpi-label">{{ key }}</span>
+                  <span class="kpi-value">{{ val }}</span>
                 </div>
               </div>
             </div>
@@ -200,37 +222,43 @@ const canProceed = computed(() => {
 
 const generate = async () => {
   loading.value = true
+  result.value = null
   try {
-    const totalPains = [...form.trafficPains, ...form.operationPains, ...form.conversionPains, ...form.retentionPains, ...form.fissionPains].length
-    const trafficScore = Math.max(20, 65 - form.trafficPains.length * 12)
-    const operationScore = Math.max(25, 55 - form.operationPains.length * 10)
-    const conversionScore = Math.max(15, 60 - form.conversionPains.length * 14)
-    const retentionScore = Math.max(30, 45 - form.retentionPains.length * 10)
-    const fissionScore = Math.max(20, 30 - form.fissionPains.length * 12)
-
-    const lowestDim = [
-      { name: '引流力', score: trafficScore },
-      { name: '运营力', score: operationScore },
-      { name: '转化力', score: conversionScore },
-      { name: '留存力', score: retentionScore },
-      { name: '裂变力', score: fissionScore }
-    ].sort((a, b) => a.score - b.score)[0]
-
-    result.value = {
-      radar: [
-        { name: '引流力', score: trafficScore, color: '#3b82f6', scoreClass: trafficScore < 40 ? 'low' : trafficScore < 70 ? 'mid' : 'high' },
-        { name: '运营力', score: operationScore, color: '#8b5cf6', scoreClass: operationScore < 40 ? 'low' : operationScore < 70 ? 'mid' : 'high' },
-        { name: '转化力', score: conversionScore, color: '#f59e0b', scoreClass: conversionScore < 40 ? 'low' : conversionScore < 70 ? 'mid' : 'high' },
-        { name: '留存力', score: retentionScore, color: '#10b981', scoreClass: retentionScore < 40 ? 'low' : retentionScore < 70 ? 'mid' : 'high' },
-        { name: '裂变力', score: fissionScore, color: '#ef4444', scoreClass: fissionScore < 40 ? 'low' : fissionScore < 70 ? 'mid' : 'high' }
-      ],
-      diagnosis: `您的私域运营中最明显的短板是「${lowestDim.name}」（${lowestDim.score}分）。共识别到 ${totalPains} 个痛点，${form.mode === 'wechat' ? '企微导流链路' : form.mode === 'community' ? '社群运营链路' : '私域转化链路'}存在明显优化空间。`,
-      suggestions: [
-        `优先解决「${lowestDim.name}」问题，预计可提升整体运营效率 25-35%`,
-        '建立企微客户标签体系，实现精细化运营',
-        '制定朋友圈内容日历，保持每日 2-3 条专业内容',
-        '设置客户生命周期管理 SOP，避免沉睡客户流失'
-      ]
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/private/diagnosis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        industry: form.industry,
+        mode: form.mode,
+        painPoints: {
+          traffic: form.trafficPains,
+          operation: form.operationPains,
+          conversion: form.conversionPains,
+          retention: form.retentionPains,
+          fission: form.fissionPains
+        },
+        currentData: {
+          wechatFriends: form.wechatFriends,
+          communityCount: form.communityCount,
+          monthlyRevenue: form.monthlyRevenue,
+          monthlyNewFriends: form.monthlyNewFriends
+        }
+      })
+    })
+    const data = await res.json()
+    if (data.status === 'success') {
+      const r = data.result
+      const lowest = r.radar[0]
+      r.radar = r.radar.map(d => ({
+        ...d,
+        color: getDimColor(d.key),
+        scoreClass: d.score < 40 ? 'low' : d.score < 70 ? 'mid' : 'high'
+      }))
+      result.value = r
     }
     currentStep.value = 3
   } catch (error) {
@@ -238,6 +266,11 @@ const generate = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const getDimColor = (key) => {
+  const colors = { traffic: '#3b82f6', operation: '#8b5cf6', conversion: '#f59e0b', retention: '#10b981', fission: '#ef4444' }
+  return colors[key] || '#6366f1'
 }
 
 const bookConsult = () => {
@@ -274,6 +307,35 @@ const bookConsult = () => {
   height: 16px;
 }
 
+.result-header {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f0f9ff, #e0e7ff);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.industry-badge {
+  display: inline-block;
+  padding: 4px 16px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 20px;
+  font-size: var(--text-body-sm);
+  margin-bottom: 8px;
+}
+
+.avg-score {
+  font-size: 48px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.score-label {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+
 .radar-container {
   margin-bottom: 24px;
 }
@@ -301,9 +363,14 @@ const bookConsult = () => {
   font-weight: var(--font-weight-semibold);
 }
 
-.radar-bar {
+.radar-bar-wrapper {
   flex: 1;
+  position: relative;
   height: 12px;
+}
+
+.radar-bar {
+  height: 100%;
   background: var(--bg-subtle);
   border-radius: 6px;
   overflow: hidden;
@@ -315,16 +382,68 @@ const bookConsult = () => {
   transition: width 0.5s;
 }
 
+.benchmark-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #dc2626;
+  opacity: 0.6;
+}
+
 .radar-score {
-  width: 50px;
+  width: 100px;
   text-align: right;
-  font-size: var(--text-body-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   font-weight: var(--font-weight-bold);
+}
+
+.benchmark-text {
+  font-size: var(--text-body-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-muted);
 }
 
 .radar-score.low { color: #dc2626; }
 .radar-score.mid { color: #d97706; }
 .radar-score.high { color: #059669; }
+
+.kpis-section {
+  margin-bottom: 24px;
+}
+
+.kpis-section h3 {
+  font-size: var(--text-h4);
+  margin-bottom: 12px;
+}
+
+.kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.kpi-card {
+  padding: 12px;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kpi-label {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+
+.kpi-value {
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
 
 .diagnosis-summary {
   padding: 16px;
