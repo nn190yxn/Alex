@@ -1,7 +1,7 @@
 // Token Monitor: track AI token usage and cost per tool call
 // Design: lightweight file-based logging, no external dependencies
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync, appendFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -60,6 +60,11 @@ function calculateCost(inputTokens, outputTokens, model = 'default') {
  * @param {string} params.model - Model name
  * @param {string} params.engineType - Engine type (calculator, rag, template, etc.)
  * @param {number} params.duration - Request duration in ms
+ * @param {string} [params.traceId] - Unique trace ID for this request
+ * @param {Array} [params.kbFilesUsed] - List of KB files used
+ * @param {string} [params.retrievalMode] - KB retrieval mode
+ * @param {number} [params.contextChars] - Total KB context chars injected
+ * @param {boolean} [params.success] - Whether request succeeded
  */
 export function recordTokenUsage({
   toolCode,
@@ -69,7 +74,12 @@ export function recordTokenUsage({
   outputTokens = 0,
   model = 'default',
   engineType = 'unknown',
-  duration = 0
+  duration = 0,
+  traceId = '',
+  kbFilesUsed = [],
+  retrievalMode = 'mapping_only',
+  contextChars = 0,
+  success = true
 }) {
   const cost = calculateCost(inputTokens, outputTokens, model)
   const timestamp = new Date().toISOString()
@@ -78,6 +88,7 @@ export function recordTokenUsage({
   // Create log entry
   const entry = {
     timestamp,
+    traceId,
     toolCode,
     userId,
     memberLevel,
@@ -87,7 +98,11 @@ export function recordTokenUsage({
     outputTokens,
     totalTokens,
     cost: Number(cost.toFixed(6)),
-    duration
+    duration,
+    success,
+    kbFilesUsed,
+    retrievalMode,
+    contextChars
   }
 
   // Write to daily log file (JSON lines format)
@@ -122,7 +137,7 @@ export function getTokenSummary(startDate, endDate) {
       return emptySummary()
     }
 
-    const files = require('fs').readdirSync(LOG_DIR).filter(f => f.endsWith('.jsonl'))
+    const files = readdirSync(LOG_DIR).filter(f => f.endsWith('.jsonl'))
 
     for (const file of files) {
       const fileDate = new Date(file.replace('.jsonl', ''))
@@ -147,58 +162,101 @@ export function getTokenSummary(startDate, endDate) {
 
   // Calculate summary
   const totalCalls = entries.length
+  const successCount = entries.filter(e => e.success !== false).length
   const totalInputTokens = entries.reduce((sum, e) => sum + (e.inputTokens || 0), 0)
   const totalOutputTokens = entries.reduce((sum, e) => sum + (e.outputTokens || 0), 0)
   const totalTokens = totalInputTokens + totalOutputTokens
   const totalCost = entries.reduce((sum, e) => sum + (e.cost || 0), 0)
   const avgCostPerCall = totalCost / totalCalls
   const avgDuration = entries.reduce((sum, e) => sum + (e.duration || 0), 0) / totalCalls
+  const avgContextChars = entries.reduce((sum, e) => sum + (e.contextChars || 0), 0) / totalCalls
 
   // By tool
   const byTool = {}
   for (const entry of entries) {
     if (!byTool[entry.toolCode]) {
-      byTool[entry.toolCode] = { calls: 0, totalTokens: 0, totalCost: 0 }
+      byTool[entry.toolCode] = { calls: 0, totalTokens: 0, totalCost: 0, successCount: 0, failCount: 0, avgDuration: 0, totalDuration: 0 }
     }
     byTool[entry.toolCode].calls++
     byTool[entry.toolCode].totalTokens += entry.totalTokens || 0
     byTool[entry.toolCode].totalCost += entry.cost || 0
+    byTool[entry.toolCode].totalDuration += entry.duration || 0
+    if (entry.success !== false) {
+      byTool[entry.toolCode].successCount++
+    } else {
+      byTool[entry.toolCode].failCount++
+    }
+  }
+  // Compute avgDuration per tool
+  for (const tool of Object.keys(byTool)) {
+    byTool[tool].avgDuration = Math.round(byTool[tool].totalDuration / byTool[tool].calls)
+    delete byTool[tool].totalDuration
   }
 
   // By member level
   const byLevel = {}
   for (const entry of entries) {
     if (!byLevel[entry.memberLevel]) {
-      byLevel[entry.memberLevel] = { calls: 0, totalTokens: 0, totalCost: 0 }
+      byLevel[entry.memberLevel] = { calls: 0, totalTokens: 0, totalCost: 0, successCount: 0, failCount: 0 }
     }
     byLevel[entry.memberLevel].calls++
     byLevel[entry.memberLevel].totalTokens += entry.totalTokens || 0
     byLevel[entry.memberLevel].totalCost += entry.cost || 0
+    if (entry.success !== false) {
+      byLevel[entry.memberLevel].successCount++
+    } else {
+      byLevel[entry.memberLevel].failCount++
+    }
   }
 
   // By engine type
   const byEngine = {}
   for (const entry of entries) {
     if (!byEngine[entry.engineType]) {
-      byEngine[entry.engineType] = { calls: 0, totalTokens: 0, totalCost: 0 }
+      byEngine[entry.engineType] = { calls: 0, totalTokens: 0, totalCost: 0, successCount: 0, failCount: 0 }
     }
     byEngine[entry.engineType].calls++
     byEngine[entry.engineType].totalTokens += entry.totalTokens || 0
     byEngine[entry.engineType].totalCost += entry.cost || 0
+    if (entry.success !== false) {
+      byEngine[entry.engineType].successCount++
+    } else {
+      byEngine[entry.engineType].failCount++
+    }
+  }
+
+  // By retrieval mode
+  const byRetrievalMode = {}
+  for (const entry of entries) {
+    const mode = entry.retrievalMode || 'mapping_only'
+    if (!byRetrievalMode[mode]) {
+      byRetrievalMode[mode] = { calls: 0, totalTokens: 0, totalCost: 0, avgContextChars: 0, totalContextChars: 0 }
+    }
+    byRetrievalMode[mode].calls++
+    byRetrievalMode[mode].totalTokens += entry.totalTokens || 0
+    byRetrievalMode[mode].totalCost += entry.cost || 0
+    byRetrievalMode[mode].totalContextChars += entry.contextChars || 0
+  }
+  for (const mode of Object.keys(byRetrievalMode)) {
+    byRetrievalMode[mode].avgContextChars = Math.round(byRetrievalMode[mode].totalContextChars / byRetrievalMode[mode].calls)
+    delete byRetrievalMode[mode].totalContextChars
   }
 
   return {
     period: { start: startDate, end: endDate },
     totalCalls,
+    successRate: Number((successCount / totalCalls * 100).toFixed(1)),
     totalInputTokens,
     totalOutputTokens,
     totalTokens,
     totalCost: Number(totalCost.toFixed(4)),
     avgCostPerCall: Number(avgCostPerCall.toFixed(6)),
     avgDuration: Number(avgDuration.toFixed(0)),
+    avgContextChars: Number(avgContextChars.toFixed(0)),
     byTool,
     byLevel,
-    byEngine
+    byEngine,
+    byRetrievalMode
   }
 }
 
@@ -206,15 +264,18 @@ function emptySummary() {
   return {
     period: { start: null, end: null },
     totalCalls: 0,
+    successRate: 0,
     totalInputTokens: 0,
     totalOutputTokens: 0,
     totalTokens: 0,
     totalCost: 0,
     avgCostPerCall: 0,
     avgDuration: 0,
+    avgContextChars: 0,
     byTool: {},
     byLevel: {},
-    byEngine: {}
+    byEngine: {},
+    byRetrievalMode: {}
   }
 }
 

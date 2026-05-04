@@ -3,6 +3,7 @@
 
 import express from 'express'
 import { getTokenSummary, getRecentEntries, getTodaySummary, MODEL_PRICING } from '../services/tokenMonitor.js'
+import { getTodayFeedbackSummary } from '../services/qualityFeedback.js'
 
 const router = express.Router()
 
@@ -86,11 +87,15 @@ router.get('/dashboard', (req, res) => {
       endDate.toISOString().split('T')[0]
     )
 
+    // Feedback summary
+    const feedback = getTodayFeedbackSummary()
+
     res.json({
       success: true,
       data: {
         today,
         last7Days: weekSummary,
+        feedback,
         pricing: MODEL_PRICING
       }
     })

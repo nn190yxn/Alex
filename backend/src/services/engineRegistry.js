@@ -15,7 +15,7 @@ import {
 } from './diagnosisEngine.js'
 import { calculatorEngine } from './calculatorEngine.js'
 import { spreadsheetEngine } from './spreadsheetEngine.js'
-import { getKBContext, getMaxTokensForLevel, getTemperatureForTool } from './kbService.js'
+import { getKBContextWithMeta, getKBContextDualChannel, getMaxTokensForLevel, getTemperatureForTool } from './kbService.js'
 
 const CUSTOMIZATION_CTA = '\n---\n如需针对您的具体场景做个性化定制方案，升级会员即可获得专属深度定制服务。'
 
@@ -36,14 +36,23 @@ export function buildUnifiedResponse(data, options = {}) {
 
 async function ragEngine(toolConfig, formData, context = {}) {
   const { knowledgeScope, systemPrompt, userPromptTemplate } = toolConfig
-  const { toolCode, memberLevel = 'free' } = context
+  const { toolCode, memberLevel = 'free', retrievalMode = 'mapping_only' } = context
 
   const ind = getIndustryData(formData.industry || 'catering')
 
   // KB-aware: use section-sliced knowledge from kbService
   let kbContext = ''
+  let kbMeta = { kbFilesUsed: [], retrievalMode, contextChars: 0, vectorResults: 0 }
   if (toolCode) {
-    kbContext = getKBContext(toolCode, memberLevel, formData)
+    if (retrievalMode === 'mapping_plus_vector') {
+      const result = await getKBContextDualChannel(toolCode, memberLevel, formData, { retrievalMode })
+      kbContext = result.context
+      kbMeta = result.meta
+    } else {
+      const result = getKBContextWithMeta(toolCode, memberLevel, formData, { retrievalMode })
+      kbContext = result.context
+      kbMeta = result.meta
+    }
   }
 
   // Fallback to legacy knowledge context if KB is empty
@@ -75,13 +84,16 @@ async function ragEngine(toolConfig, formData, context = {}) {
       summary: `${toolConfig.name}已为您生成`,
       sections: [
         { title: '生成结果', items: [rawResult] },
-        buildDecisionBasis(toolConfig, formData, 'RAG 生成（KB切片）')
+        buildDecisionBasis(toolConfig, formData, retrievalMode === 'mapping_plus_vector' ? 'RAG 生成（双通道检索）' : 'RAG 生成（KB切片）')
       ],
       actions: []
     }),
     _meta: {
       engineType: 'rag-kb',
-      kbContextLength: kbContext ? kbContext.length : 0,
+      kbFilesUsed: kbMeta.kbFilesUsed,
+      retrievalMode: kbMeta.retrievalMode,
+      contextChars: kbMeta.contextChars,
+      vectorResults: kbMeta.vectorResults || 0,
       maxTokens,
       temperature
     }

@@ -15,6 +15,12 @@ import { canAccessLevel, getRequiredMemberLevel } from '../config/toolAccess.js'
 import { recordTokenUsage } from '../services/tokenMonitor.js'
 import { getMaxTokensForLevel } from '../services/kbService.js'
 
+const DEFAULT_RETRIEVAL_MODE = process.env.KB_RETRIEVAL_MODE || 'mapping_only'
+
+function generateTraceId() {
+  return `trc_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`
+}
+
 const router = express.Router()
 
 async function trackUsage(userId, toolCode) {
@@ -2166,6 +2172,7 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
   const userId = req.user.userId
   const formData = req.body
   const startTime = Date.now()
+  const traceId = generateTraceId()
 
   try {
     const toolDef = TOOL_DEFINITIONS[toolCode]
@@ -2204,7 +2211,9 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
     const execContext = {
       toolCode,
       memberLevel,
-      userId: String(userId)
+      userId: String(userId),
+      traceId,
+      retrievalMode: DEFAULT_RETRIEVAL_MODE
     }
 
     // Wrap executeTool to inject context
@@ -2222,6 +2231,9 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
     const outputEstimate = Math.ceil(JSON.stringify(result).length / 3)
     const model = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
 
+    // Extract KB metadata from response _meta
+    const meta = result._meta || {}
+
     recordTokenUsage({
       toolCode,
       userId: String(userId),
@@ -2230,21 +2242,46 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
       outputTokens: outputEstimate,
       model,
       engineType: toolDef.engineType || 'rag',
-      duration
+      duration,
+      traceId,
+      kbFilesUsed: meta.kbFilesUsed || [],
+      retrievalMode: meta.retrievalMode || DEFAULT_RETRIEVAL_MODE,
+      contextChars: meta.contextChars || 0,
+      success: true
     })
 
     await trackUsage(userId, toolCode)
 
     // Track success
-    await trackEvent(userId, EVENT_TYPES.TOOL_SUCCESS, { toolCode })
+    await trackEvent(userId, EVENT_TYPES.TOOL_SUCCESS, { toolCode, traceId })
 
     res.json(result)
   } catch (error) {
     logger.toolFailure(userId, toolCode, error, Date.now() - startTime)
     await trackEvent(userId, EVENT_TYPES.TOOL_FAILURE, {
       toolCode,
-      error: error.message
+      error: error.message,
+      traceId
     })
+
+    // Record failed usage
+    const duration = Date.now() - startTime
+    const inputEstimate = Math.ceil(JSON.stringify(formData).length / 3)
+    const model = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
+
+    recordTokenUsage({
+      toolCode,
+      userId: String(userId),
+      memberLevel: await getUserMemberLevel(userId).catch(() => 'free'),
+      inputTokens: inputEstimate,
+      outputTokens: 0,
+      model,
+      engineType: toolDef?.engineType || 'unknown',
+      duration,
+      traceId,
+      success: false
+    })
+
     next(error)
   }
 })

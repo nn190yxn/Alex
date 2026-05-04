@@ -1,0 +1,501 @@
+{
+  "version": "1.0.0",
+  "description": "KB Tool 联通效率标准评测集 - 覆盖 3 行业 x 多工具 x 多难度",
+  "categories": {
+    "catering": {
+      "name": "餐饮行业",
+      "tests": [
+        {
+          "id": "cat-01",
+          "toolCode": "festival",
+          "formData": { "industry": "catering", "festival": "春节", "goal": "promote", "contentType": "poster" },
+          "expectedKeywords": ["年夜饭", "团圆", "优惠", "限时"],
+          "forbiddenOutput": ["其他行业案例", "无关工具推荐"],
+          "scoringDimensions": ["industry_relevance", "actionability", "kb_usage"]
+        },
+        {
+          "id": "cat-02",
+          "toolCode": "restaurant-health",
+          "formData": { "industry": "catering", "answers": { "q1": "一般", "q2": "30%", "q3": "2次" } },
+          "expectedKeywords": ["翻台率", "毛利率", "复购"],
+          "forbiddenOutput": ["美业", "教培"],
+          "scoringDimensions": ["accuracy", "diagnosis_quality", "actionability"]
+        },
+        {
+          "id": "cat-03",
+          "toolCode": "headline",
+          "formData": { "industry": "catering", "keywords": ["火锅", "冬天"], "platform": "douyin" },
+          "expectedKeywords": ["火锅", "冬天", "爆款"],
+          "forbiddenOutput": ["小红书风格", "美妆"],
+          "scoringDimensions": ["relevance", "creativity", "platform_match"]
+        },
+        {
+          "id": "cat-04",
+          "toolCode": "fission",
+          "formData": { "industry": "catering", "customerScale": "500人", "channel": "微信私域", "budget": "3000" },
+          "expectedKeywords": ["裂变", "推荐", "老带新", "获客成本"],
+          "forbiddenOutput": ["空泛理论"],
+          "scoringDimensions": ["actionability", "cost_awareness", "industry_fit"]
+        },
+        {
+          "id": "cat-05",
+          "toolCode": "salary",
+          "formData": { "industry": "catering", "storeScale": "中型", "position": "服务员" },
+          "expectedKeywords": ["底薪", "绩效", "提成", "服务员"],
+          "forbiddenOutput": ["程序员薪资", "无关行业"],
+          "scoringDimensions": ["industry_relevance", "completeness", "realistic"]
+        },
+        {
+          "id": "cat-06",
+          "toolCode": "topic",
+          "formData": { "industry": "catering", "goals": ["exposure"], "contentTypes": ["talking"], "platforms": ["douyin"] },
+          "expectedKeywords": ["餐饮", "选题", "口播"],
+          "forbiddenOutput": ["教培课程", "美业项目"],
+          "scoringDimensions": ["relevance", "creativity", "actionability"]
+        },
+        {
+          "id": "cat-07",
+          "toolCode": "business-plan",
+          "formData": { "industry": "catering", "stage": "初创期", "capital": "50", "revenue": "100" },
+          "expectedKeywords": ["餐饮", "商业模式", "营收预测"],
+          "forbiddenOutput": ["互联网", "SaaS"],
+          "scoringDimensions": ["industry_fit", "realistic", "completeness"]
+        },
+        {
+          "id": "cat-08",
+          "toolCode": "competitor",
+          "formData": { "industry": "catering", "competitor": "同商圈连锁火锅", "painPoint": "不知道怎么差异化" },
+          "expectedKeywords": ["差异化", "竞争", "火锅"],
+          "forbiddenOutput": ["空泛建议", "无关行业"],
+          "scoringDimensions": ["specificity", "actionability", "industry_relevance"]
+        },
+        {
+          "id": "cat-09",
+          "toolCode": "ip-agent",
+          "formData": { "industry": "catering", "name": "张老板", "background": "做了10年川菜", "platforms": "抖音" },
+          "expectedKeywords": ["川菜", "老板IP", "抖音"],
+          "forbiddenOutput": ["程序员", "设计师"],
+          "scoringDimensions": ["personalization", "platform_fit", "actionability"]
+        },
+        {
+          "id": "cat-10",
+          "toolCode": "membership-design",
+          "formData": { "industry": "catering", "tiers": "3", "minDeposit": "1000" },
+          "expectedKeywords": ["会员", "储值", "折扣", "权益"],
+          "forbiddenOutput": ["美业疗程卡", "教培年卡"],
+          "scoringDimensions": ["industry_fit", "completeness", "realistic"]
+        },
+        {
+          "id": "cat-11",
+          "toolCode": "marketing-plan",
+          "formData": { "industry": "catering", "goal": "提升销售额", "budget": "5000", "duration": "1周" },
+          "expectedKeywords": ["营销", "预算", "执行"],
+          "forbiddenOutput": ["空泛方案", "互联网营销"],
+          "scoringDimensions": ["actionability", "budget_awareness", "industry_fit"]
+        },
+        {
+          "id": "cat-12",
+          "toolCode": "meituan",
+          "formData": { "industry": "catering", "monthlyOrders": "300", "avgOrderValue": "60", "reviewScore": "4.2" },
+          "expectedKeywords": ["美团", "评分", "复购率", "客单价"],
+          "forbiddenOutput": ["饿了么", "无关平台"],
+          "scoringDimensions": ["platform_accuracy", "actionability", "data_driven"]
+        },
+        {
+          "id": "cat-13",
+          "toolCode": "selling-point",
+          "formData": { "industry": "catering", "product": "招牌酸菜鱼", "target": "年轻白领", "features": "现杀活鱼,秘制汤底,人均60" },
+          "expectedKeywords": ["酸菜鱼", "卖点", "活鱼"],
+          "forbiddenOutput": ["无关产品"],
+          "scoringDimensions": ["product_focus", "persuasiveness", "industry_fit"]
+        },
+        {
+          "id": "cat-14",
+          "toolCode": "sop",
+          "formData": { "industry": "catering", "processName": "后厨备餐", "targetRole": "厨师" },
+          "expectedKeywords": ["后厨", "备餐", "SOP"],
+          "forbiddenOutput": ["前台服务", "无关流程"],
+          "scoringDimensions": ["completeness", "practicality", "industry_fit"]
+        },
+        {
+          "id": "cat-15",
+          "toolCode": "team-training",
+          "formData": { "industry": "catering", "topic": "服务技巧", "teamSize": "15人" },
+          "expectedKeywords": ["培训", "服务", "餐饮"],
+          "forbiddenOutput": ["程序员培训", "无关主题"],
+          "scoringDimensions": ["relevance", "structure", "actionability"]
+        },
+        {
+          "id": "cat-16",
+          "toolCode": "schedule",
+          "formData": { "employees": [{ "name": "小王", "restDay": "1" }, { "name": "小李", "restDay": "2" }, { "name": "小张", "restDay": "3" }] },
+          "expectedKeywords": ["排班", "早班", "晚班"],
+          "forbiddenOutput": [],
+          "scoringDimensions": ["correctness", "completeness", "fairness"]
+        },
+        {
+          "id": "cat-17",
+          "toolCode": "festival",
+          "formData": { "industry": "catering", "festival": "情人节", "goal": "brand", "contentType": "video" },
+          "expectedKeywords": ["情人节", "浪漫", "视频"],
+          "forbiddenOutput": ["春节", "国庆"],
+          "scoringDimensions": ["festival_match", "industry_fit", "creativity"]
+        },
+        {
+          "id": "cat-18",
+          "toolCode": "fission",
+          "formData": { "industry": "catering", "customerScale": "2000人", "channel": "社群", "budget": "10000" },
+          "expectedKeywords": ["裂变", "社群", "老客"],
+          "forbiddenOutput": ["广告投放", "公众号"],
+          "scoringDimensions": ["channel_fit", "budget_awareness", "actionability"]
+        },
+        {
+          "id": "cat-19",
+          "toolCode": "headline",
+          "formData": { "industry": "catering", "keywords": ["新店开业", "优惠"], "platform": "xiaohongshu" },
+          "expectedKeywords": ["新店", "优惠", "小红书"],
+          "forbiddenOutput": ["抖音风格"],
+          "scoringDimensions": ["platform_match", "creativity", "relevance"]
+        },
+        {
+          "id": "cat-20",
+          "toolCode": "business-plan",
+          "formData": { "industry": "catering", "stage": "扩张期", "capital": "200", "revenue": "500" },
+          "expectedKeywords": ["扩张", "连锁", "餐饮"],
+          "forbiddenOutput": ["初创期", "互联网"],
+          "scoringDimensions": ["stage_match", "realistic", "completeness"]
+        }
+      ]
+    },
+    "beauty": {
+      "name": "美业行业",
+      "tests": [
+        {
+          "id": "beauty-01",
+          "toolCode": "beauty-health",
+          "formData": { "industry": "beauty", "answers": { "q1": "良好", "q2": "40%", "q3": "3次" } },
+          "expectedKeywords": ["美容", "复购", "客单价"],
+          "forbiddenOutput": ["餐饮", "教培"],
+          "scoringDimensions": ["industry_relevance", "diagnosis_quality", "actionability"]
+        },
+        {
+          "id": "beauty-02",
+          "toolCode": "festival",
+          "formData": { "industry": "beauty", "festival": "三八妇女节", "goal": "promote", "contentType": "article" },
+          "expectedKeywords": ["妇女节", "美容", "促销"],
+          "forbiddenOutput": ["餐饮菜品"],
+          "scoringDimensions": ["festival_match", "industry_fit", "actionability"]
+        },
+        {
+          "id": "beauty-03",
+          "toolCode": "headline",
+          "formData": { "industry": "beauty", "keywords": ["护肤", "春季"], "platform": "xiaohongshu" },
+          "expectedKeywords": ["护肤", "春季", "小红书"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["platform_match", "relevance", "creativity"]
+        },
+        {
+          "id": "beauty-04",
+          "toolCode": "ip-agent",
+          "formData": { "industry": "beauty", "name": "李院长", "background": "15年皮肤管理", "platforms": "小红书" },
+          "expectedKeywords": ["皮肤管理", "院长IP", "小红书"],
+          "forbiddenOutput": ["餐饮", "抖音"],
+          "scoringDimensions": ["personalization", "platform_fit", "industry_relevance"]
+        },
+        {
+          "id": "beauty-05",
+          "toolCode": "salary",
+          "formData": { "industry": "beauty", "storeScale": "小型", "position": "美容师" },
+          "expectedKeywords": ["美容师", "提成", "手工费"],
+          "forbiddenOutput": ["服务员", "教师"],
+          "scoringDimensions": ["industry_relevance", "realistic", "completeness"]
+        },
+        {
+          "id": "beauty-06",
+          "toolCode": "membership-design",
+          "formData": { "industry": "beauty", "tiers": "4", "minDeposit": "2000" },
+          "expectedKeywords": ["会员", "疗程", "储值"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_fit", "completeness", "realistic"]
+        },
+        {
+          "id": "beauty-07",
+          "toolCode": "topic",
+          "formData": { "industry": "beauty", "goals": ["conversion"], "contentTypes": ["tutorial"], "platforms": ["xiaohongshu"] },
+          "expectedKeywords": ["美容", "教程", "转化"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "platform_fit", "actionability"]
+        },
+        {
+          "id": "beauty-08",
+          "toolCode": "competitor",
+          "formData": { "industry": "beauty", "competitor": "同商圈连锁美容", "painPoint": "客户被低价吸引走" },
+          "expectedKeywords": ["美容", "差异化", "价值"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["specificity", "actionability", "industry_relevance"]
+        },
+        {
+          "id": "beauty-09",
+          "toolCode": "fission",
+          "formData": { "industry": "beauty", "customerScale": "800人", "channel": "微信私域", "budget": "5000" },
+          "expectedKeywords": ["裂变", "老带新", "美容"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["channel_fit", "industry_relevance", "actionability"]
+        },
+        {
+          "id": "beauty-10",
+          "toolCode": "marketing-plan",
+          "formData": { "industry": "beauty", "goal": "促进转化", "budget": "8000", "duration": "2周" },
+          "expectedKeywords": ["美容", "转化", "营销"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_fit", "actionability", "budget_awareness"]
+        },
+        {
+          "id": "beauty-11",
+          "toolCode": "selling-point",
+          "formData": { "industry": "beauty", "product": "光子嫩肤", "target": "25-35岁女性", "features": "无痛,见效快,价格透明" },
+          "expectedKeywords": ["光子嫩肤", "卖点", "见效快"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["product_focus", "persuasiveness", "target_match"]
+        },
+        {
+          "id": "beauty-12",
+          "toolCode": "sop",
+          "formData": { "industry": "beauty", "processName": "客户接待", "targetRole": "美容师" },
+          "expectedKeywords": ["接待", "美容", "SOP"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["completeness", "practicality", "industry_fit"]
+        },
+        {
+          "id": "beauty-13",
+          "toolCode": "team-training",
+          "formData": { "industry": "beauty", "topic": "销售话术", "teamSize": "8人" },
+          "expectedKeywords": ["培训", "话术", "美容"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["relevance", "structure", "actionability"]
+        },
+        {
+          "id": "beauty-14",
+          "toolCode": "business-plan",
+          "formData": { "industry": "beauty", "stage": "初创期", "capital": "30", "revenue": "80" },
+          "expectedKeywords": ["美容", "商业计划", "营收"],
+          "forbiddenOutput": ["餐饮", "互联网"],
+          "scoringDimensions": ["industry_fit", "realistic", "completeness"]
+        },
+        {
+          "id": "beauty-15",
+          "toolCode": "headline",
+          "formData": { "industry": "beauty", "keywords": ["抗老", "护肤"], "platform": "douyin" },
+          "expectedKeywords": ["抗老", "护肤", "抖音"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["platform_match", "relevance", "creativity"]
+        },
+        {
+          "id": "beauty-16",
+          "toolCode": "festival",
+          "formData": { "industry": "beauty", "festival": "母亲节", "goal": "customer", "contentType": "group" },
+          "expectedKeywords": ["母亲节", "感恩", "美容"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["festival_match", "industry_fit", "channel_match"]
+        },
+        {
+          "id": "beauty-17",
+          "toolCode": "ip-agent",
+          "formData": { "industry": "beauty", "name": "王店长", "background": "美容院管理8年", "platforms": "抖音" },
+          "expectedKeywords": ["美容院", "管理", "IP"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["personalization", "platform_fit", "industry_relevance"]
+        },
+        {
+          "id": "beauty-18",
+          "toolCode": "competitor",
+          "formData": { "industry": "beauty", "competitor": "新开业的高端美容", "painPoint": "不知道怎么守住客户" },
+          "expectedKeywords": ["客户留存", "差异化", "美容"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["specificity", "actionability", "industry_relevance"]
+        },
+        {
+          "id": "beauty-19",
+          "toolCode": "topic",
+          "formData": { "industry": "beauty", "goals": ["repurchase"], "contentTypes": ["case"], "platforms": ["video-account"] },
+          "expectedKeywords": ["复购", "案例", "视频号"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "platform_fit", "actionability"]
+        },
+        {
+          "id": "beauty-20",
+          "toolCode": "salary",
+          "formData": { "industry": "beauty", "storeScale": "中型", "position": "店长" },
+          "expectedKeywords": ["店长", "绩效", "美业"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "realistic", "completeness"]
+        }
+      ]
+    },
+    "education": {
+      "name": "教培行业",
+      "tests": [
+        {
+          "id": "edu-01",
+          "toolCode": "education-health",
+          "formData": { "industry": "education", "answers": { "q1": "一般", "q2": "25%", "q3": "1次" } },
+          "expectedKeywords": ["校区", "续费", "招生"],
+          "forbiddenOutput": ["餐饮", "美业"],
+          "scoringDimensions": ["industry_relevance", "diagnosis_quality", "actionability"]
+        },
+        {
+          "id": "edu-02",
+          "toolCode": "festival",
+          "formData": { "industry": "education", "festival": "开学季", "goal": "acquisition", "contentType": "article" },
+          "expectedKeywords": ["开学", "招生", "教培"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["festival_match", "industry_fit", "actionability"]
+        },
+        {
+          "id": "edu-03",
+          "toolCode": "headline",
+          "formData": { "industry": "education", "keywords": ["少儿编程", "兴趣班"], "platform": "xiaohongshu" },
+          "expectedKeywords": ["少儿", "编程", "教育"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["platform_match", "relevance", "creativity"]
+        },
+        {
+          "id": "edu-04",
+          "toolCode": "ip-agent",
+          "formData": { "industry": "education", "name": "陈老师", "background": "10年数学教学", "platforms": "抖音" },
+          "expectedKeywords": ["教学", "老师IP", "数学"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["personalization", "platform_fit", "industry_relevance"]
+        },
+        {
+          "id": "edu-05",
+          "toolCode": "salary",
+          "formData": { "industry": "education", "storeScale": "中型", "position": "教师" },
+          "expectedKeywords": ["教师", "课时费", "教培"],
+          "forbiddenOutput": ["服务员", "美容师"],
+          "scoringDimensions": ["industry_relevance", "realistic", "completeness"]
+        },
+        {
+          "id": "edu-06",
+          "toolCode": "membership-design",
+          "formData": { "industry": "education", "tiers": "3", "minDeposit": "3000" },
+          "expectedKeywords": ["会员", "课程包", "续费"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_fit", "completeness", "realistic"]
+        },
+        {
+          "id": "edu-07",
+          "toolCode": "topic",
+          "formData": { "industry": "education", "goals": ["acquisition"], "contentTypes": ["tutorial"], "platforms": ["douyin"] },
+          "expectedKeywords": ["教育", "招生", "抖音"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "platform_fit", "actionability"]
+        },
+        {
+          "id": "edu-08",
+          "toolCode": "competitor",
+          "formData": { "industry": "education", "competitor": "同区域大型教培", "painPoint": "品牌不如对方" },
+          "expectedKeywords": ["教培", "差异化", "品牌"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["specificity", "actionability", "industry_relevance"]
+        },
+        {
+          "id": "edu-09",
+          "toolCode": "fission",
+          "formData": { "industry": "education", "customerScale": "300人", "channel": "家长群", "budget": "2000" },
+          "expectedKeywords": ["裂变", "家长", "转介绍"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["channel_fit", "industry_relevance", "actionability"]
+        },
+        {
+          "id": "edu-10",
+          "toolCode": "marketing-plan",
+          "formData": { "industry": "education", "goal": "获取客户", "budget": "6000", "duration": "2周" },
+          "expectedKeywords": ["招生", "营销", "教培"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_fit", "actionability", "budget_awareness"]
+        },
+        {
+          "id": "edu-11",
+          "toolCode": "selling-point",
+          "formData": { "industry": "education", "product": "少儿英语课程", "target": "3-8岁家长", "features": "外教,小班,游戏化教学" },
+          "expectedKeywords": ["少儿英语", "卖点", "外教"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["product_focus", "persuasiveness", "target_match"]
+        },
+        {
+          "id": "edu-12",
+          "toolCode": "sop",
+          "formData": { "industry": "education", "processName": "试听课", "targetRole": "教师" },
+          "expectedKeywords": ["试听", "教培", "SOP"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["completeness", "practicality", "industry_fit"]
+        },
+        {
+          "id": "edu-13",
+          "toolCode": "team-training",
+          "formData": { "industry": "education", "topic": "续课话术", "teamSize": "12人" },
+          "expectedKeywords": ["培训", "续课", "教培"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["relevance", "structure", "actionability"]
+        },
+        {
+          "id": "edu-14",
+          "toolCode": "business-plan",
+          "formData": { "industry": "education", "stage": "初创期", "capital": "80", "revenue": "200" },
+          "expectedKeywords": ["教培", "商业计划", "校区"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_fit", "realistic", "completeness"]
+        },
+        {
+          "id": "edu-15",
+          "toolCode": "headline",
+          "formData": { "industry": "education", "keywords": ["中考", "提分"], "platform": "video-account" },
+          "expectedKeywords": ["中考", "提分", "视频号"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["platform_match", "relevance", "creativity"]
+        },
+        {
+          "id": "edu-16",
+          "toolCode": "festival",
+          "formData": { "industry": "education", "festival": "教师节", "goal": "brand", "contentType": "poster" },
+          "expectedKeywords": ["教师节", "教育", "感恩"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["festival_match", "industry_fit", "channel_match"]
+        },
+        {
+          "id": "edu-17",
+          "toolCode": "ip-agent",
+          "formData": { "industry": "education", "name": "赵校长", "background": "办学15年", "platforms": "视频号" },
+          "expectedKeywords": ["校长", "办学", "视频号"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["personalization", "platform_fit", "industry_relevance"]
+        },
+        {
+          "id": "edu-18",
+          "toolCode": "competitor",
+          "formData": { "industry": "education", "competitor": "在线教育平台", "painPoint": "线上冲击线下" },
+          "expectedKeywords": ["线下", "差异化", "教培"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["specificity", "actionability", "industry_relevance"]
+        },
+        {
+          "id": "edu-19",
+          "toolCode": "topic",
+          "formData": { "industry": "education", "goals": ["interaction"], "contentTypes": ["interactive"], "platforms": ["douyin"] },
+          "expectedKeywords": ["互动", "教培", "抖音"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "platform_fit", "actionability"]
+        },
+        {
+          "id": "edu-20",
+          "toolCode": "salary",
+          "formData": { "industry": "education", "storeScale": "大型", "position": "课程顾问" },
+          "expectedKeywords": ["课程顾问", "提成", "教培"],
+          "forbiddenOutput": ["餐饮"],
+          "scoringDimensions": ["industry_relevance", "realistic", "completeness"]
+        }
+      ]
+    }
+  }
+}
