@@ -1,0 +1,49 @@
+{
+  "diagnosisModel": {
+    "dimensions": [
+      { "name": "引流力", "key": "traffic", "weight": 0.25, "metrics": ["加粉率", "企微好友增长率", "社群入群率"] },
+      { "name": "运营力", "key": "operation", "weight": 0.20, "metrics": ["社群活跃度", "朋友圈打开率", "消息回复率"] },
+      { "name": "转化力", "key": "conversion", "weight": 0.25, "metrics": ["私域转化率", "首单转化周期", "客单价"] },
+      { "name": "留存力", "key": "retention", "weight": 0.20, "metrics": ["复购率", "会员续费率", "沉睡客户激活率"] },
+      { "name": "裂变力", "key": "fission", "weight": 0.10, "metrics": ["转介绍率", "K 值", "裂变活动参与率"] }
+    ],
+    "industryBenchmarks": {
+      "restaurant": { "traffic": 65, "operation": 55, "conversion": 60, "retention": 45, "fission": 30 },
+      "education": { "traffic": 50, "operation": 60, "conversion": 55, "retention": 65, "fission": 40 },
+      "beauty": { "traffic": 55, "operation": 65, "conversion": 70, "retention": 60, "fission": 35 },
+      "service": { "traffic": 45, "operation": 50, "conversion": 55, "retention": 50, "fission": 45 }
+    }
+  },
+  "retentionStrategies": {
+    "restaurant": [
+      { "name": "会员日锁定", "desc": "每周固定一天会员专享折扣，培养消费习惯", "lift": "复购率 +15-25%" },
+      { "name": "储值返利", "desc": "充 500 送 80，充 1000 送 200，锁定长期消费", "lift": "客单价 +30%" },
+      { "name": "积分兑换", "desc": "消费 1 元=1 积分，满 500 分兑换招牌菜", "lift": "月均到店 +1.2 次" },
+      { "name": "生日关怀", "desc": "生日前 3 天推送专属套餐 + 免费甜品", "lift": "到店率 +40%" }
+    ],
+    "education": [
+      { "name": "续费预警机制", "desc": "课时剩余 20% 时自动触发续费提醒", "lift": "续费率 +20%" },
+      { "name": "学员成长档案", "desc": "每月推送学习进度报告，增强价值感知", "lift": "留存率 +25%" },
+      { "name": "老带新优惠", "desc": "老学员推荐新学员，双方各获 2 课时", "lift": "转介绍率 +35%" },
+      { "name": "阶段性成果展示", "desc": "每季度举办成果汇报会，邀请家长观摩", "lift": "口碑推荐 +30%" }
+    ],
+    "beauty": [
+      { "name": "耗卡追踪提醒", "desc": "卡项剩余次数<30% 时主动邀约", "lift": "耗卡率 +40%" },
+      { "name": "项目升单路径", "desc": "基础护理→进阶项目→定制套餐", "lift": "客单价 +50%" },
+      { "name": "会员专属沙龙", "desc": "每月举办护肤沙龙/新品体验，增强粘性", "lift": "到店频次 +2 次/月" },
+      { "name": "效果对比档案", "desc": "每次护理前后拍照记录，定期推送对比", "lift": "信任度 +60%" }
+    ],
+    "service": [
+      { "name": "定期维护提醒", "desc": "根据服务周期自动发送维护提醒", "lift": "复购率 +30%" },
+      { "name": "客户分级服务", "desc": "高价值客户专属客服 + 优先排期", "lift": "满意度 +45%" },
+      { "name": "服务后回访", "desc": "服务完成 24 小时内电话回访，收集反馈", "lift": "好评率 +35%" },
+      { "name": "转介绍奖励", "desc": "推荐新客户成交，双方各获优惠券", "lift": "转介绍率 +25%" }
+    ]
+  },
+  "fissionModels": {
+    "referral": { "name": "转介绍裂变", "kValue": "0.3-0.8", "desc": "老客推荐新客，双方获利", "bestFor": ["教培", "美业"] },
+    "groupBuy": { "name": "拼团裂变", "kValue": "0.5-1.5", "desc": "3 人成团享折扣，社交传播", "bestFor": ["餐饮", "同城服务"] },
+    "distribution": { "name": "分销裂变", "kValue": "1.0-3.0", "desc": "推荐成交获佣金，KOC 驱动", "bestFor": ["美业", "教培"] },
+    "content": { "name": "内容裂变", "kValue": "0.2-0.6", "desc": "优质内容引发转发，自然增长", "bestFor": ["全行业"] }
+  }
+}

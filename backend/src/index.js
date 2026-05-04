@@ -32,6 +32,7 @@ import generateRoutes from './routes/generate.js'
 import analyticsRoutes from './routes/analytics.js'
 import douyinAgentRoutes from './routes/douyinAgents.js'
 import xhsAgentRoutes from './routes/xhsAgents.js'
+import privateAgentRoutes from './routes/privateAgents.js'
 
 app.use('/api/auth', authRoutes)
 app.use('/api/user', userRoutes)
@@ -46,6 +47,7 @@ app.use('/api/generate', generateRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/douyin', douyinAgentRoutes)
 app.use('/api/xhs', xhsAgentRoutes)
+app.use('/api/private', privateAgentRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

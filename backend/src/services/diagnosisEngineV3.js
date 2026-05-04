@@ -317,3 +317,6 @@ export function buildStage0Summary(answers) {
     recommendedFounderVersion: answers.teamSize && (answers.teamSize.includes('1-10') || answers.teamSize.includes('10-50')) ? 'direct' : 'indirect'
   }
 }
+
+// 重新导出 cityTiers 中的函数，供 diagnosis.js 路由使用
+export { getCityTierInfo } from './cityTiers.js'

@@ -293,7 +293,7 @@ export const pillarMeta = {
   system: { name: '制度优化', description: '薪酬、SOP、团队培训与员工激励', icon: IconPillarSystem, color: 'var(--pillar-system)', bg: 'var(--pillar-system-bg)', cues: ['定制度', '搭SOP', '带团队'] },
   douyin: { name: '抖音运营', description: '短视频脚本、直播、投流 ROI、团购组品', icon: IconPillarDouyin, color: 'var(--pillar-douyin)', bg: 'var(--pillar-douyin-bg)', cues: ['做短视频', '开直播', '算投流'], path: '/douyin', count: 17 },
   xiaohongshu: { name: '小红书运营', description: '笔记生成、种草、选题、搜索 SEO', icon: IconPillarXiaohongshu, color: 'var(--pillar-xiaohongshu)', bg: 'var(--pillar-xiaohongshu-bg)', cues: ['做种草', '写笔记', '抓搜索'], path: '/xhs', count: 17 },
-  private: { name: '私域运营', description: '微信社群、会员体系、客户管理、复购追踪', icon: IconPillarPrivate, color: 'var(--pillar-private)', bg: 'var(--pillar-private-bg)', cues: ['做社群', '管会员', '追复购'] },
+  private: { name: '私域运营', description: '微信社群、会员体系、客户管理、复购追踪', icon: IconPillarPrivate, color: 'var(--pillar-private)', bg: 'var(--pillar-private-bg)', cues: ['做社群', '管会员', '追复购'], path: '/private', count: 17 },
   diagnosis: { name: '增长顾问', description: '企业增长、门店健康度、竞品分析与平台经营', icon: IconPillarDiagnosis, color: 'var(--pillar-diagnosis)', bg: 'var(--pillar-diagnosis-bg)', cues: ['查问题', '看竞品', '定动作'] },
   ip: { name: '老板 IP', description: '人设定位、直播表达、内容方向、长期品牌', icon: IconPillarIP, color: 'var(--pillar-ip)', bg: 'var(--pillar-ip-bg)', cues: ['做人设', '强表达', '沉淀品牌'] }
 }
