@@ -231,8 +231,9 @@ export function errorTracker(err, req, res, next) {
   // Don't leak stack traces in production
   const isDev = process.env.NODE_ENV !== 'production'
   res.status(err.status || 500).json({
-    error: isDev ? err.message : '服务器内部错误',
-    ...(isDev && { stack: err.stack })
+    code: err.code || 'INTERNAL_ERROR',
+    message: isDev ? err.message : '服务器内部错误',
+    ...(isDev && { details: { stack: err.stack } })
   })
 }
 

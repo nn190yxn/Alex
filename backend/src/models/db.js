@@ -1,8 +1,21 @@
+import dotenv from 'dotenv'
+dotenv.config()
+
 import mysql from 'mysql2/promise'
 import { createMockQuery } from './mockDb.js'
 
 let pool = null
 let useMock = false
+const ALLOW_DB_MOCK = process.env.ALLOW_DB_MOCK === 'true'
+
+function withMockOrThrow(sql, params, err, stage) {
+  if (!ALLOW_DB_MOCK) {
+    throw new Error(`[DB] ${stage} failed: ${err.message}`)
+  }
+  console.warn(`[DB] ${stage} failed, using in-memory mock:`, err.message)
+  useMock = true
+  return createMockQuery()(sql, params)
+}
 
 export async function query(sql, params) {
   if (useMock) {
@@ -12,11 +25,11 @@ export async function query(sql, params) {
   if (!pool) {
     try {
       pool = mysql.createPool({
-        host: process.env.MYSQL_HOST || 'localhost',
-        port: process.env.MYSQL_PORT || 3306,
-        database: process.env.MYSQL_DATABASE || 'woai_ai',
-        user: process.env.MYSQL_USER || 'root',
-        password: process.env.MYSQL_PASSWORD || '',
+        host: process.env.DB_HOST || process.env.MYSQL_HOST || 'localhost',
+        port: process.env.DB_PORT || process.env.MYSQL_PORT || 3306,
+        database: process.env.DB_NAME || process.env.MYSQL_DATABASE || 'woying_ai',
+        user: process.env.DB_USER || process.env.MYSQL_USER || 'root',
+        password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || '',
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
@@ -26,9 +39,7 @@ export async function query(sql, params) {
       connection.release()
       console.log('[DB] MySQL connected')
     } catch (err) {
-      console.warn('[DB] MySQL unavailable, using in-memory mock:', err.message)
-      useMock = true
-      return createMockQuery()(sql, params)
+      return withMockOrThrow(sql, params, err, 'connect')
     }
   }
 
@@ -36,12 +47,14 @@ export async function query(sql, params) {
     const [results] = await pool.execute(sql, params)
     return results
   } catch (err) {
-    console.warn('[DB] Query failed, falling back to mock:', err.message)
-    useMock = true
-    return createMockQuery()(sql, params)
+    return withMockOrThrow(sql, params, err, 'query')
   }
 }
 
 export async function initDB() {
   console.log('[DB] initDB called (MySQL mode)')
+}
+
+export function getDBMode() {
+  return useMock ? 'mock' : 'mysql'
 }

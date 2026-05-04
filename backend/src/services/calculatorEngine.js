@@ -3328,9 +3328,23 @@ export async function calculatorEngine(toolConfig, formData) {
   }
 
   const result = calc.calc(formData)
+  const inputKeys = Object.keys(formData || {})
+  const sections = Array.isArray(result.sections) ? [...result.sections] : []
+
+  if (!sections.some(s => s && s.title === '判断依据')) {
+    sections.push({
+      title: '判断依据',
+      items: [
+        `计算口径：${calc.name}内置公式 + 行业基准阈值`,
+        `输入字段：${inputKeys.length ? inputKeys.join('、') : '无'}`,
+        '说明：本结果用于经营决策辅助，需结合门店真实账务与周期波动复核'
+      ]
+    })
+  }
+
   return {
     summary: result.summary || '',
-    sections: result.sections || [],
+    sections,
     actions: result.actions || [],
     riskNotes: result.riskNotes || [],
     benchmarks: result.benchmarks || null,

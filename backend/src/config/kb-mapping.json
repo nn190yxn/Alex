@@ -1,0 +1,1361 @@
+{
+  "_comment": "工具到知识库文件的映射表。每个工具可映射多个 KB 文件，按 section 切片注入，避免全文读取浪费 Token。",
+  "_version": "1.0",
+  "_updated": "2026-05-04",
+  "restaurant-health": {
+    "name": "餐饮门店健康度诊断",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "诊断1",
+          "诊断2",
+          "诊断3",
+          "诊断4"
+        ],
+        "purpose": "评分标准和打分规则",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/行业特征与诊断/门店诊断改善方案库.md",
+        "sections": [
+          "盈利能力改善",
+          "运营效率改善",
+          "顾客满意改善",
+          "成本控制改善"
+        ],
+        "purpose": "根据诊断结果输出具体改善动作",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "餐饮行业基准",
+          "城市级别对标"
+        ],
+        "purpose": "输出行业对标分析",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "education-health": {
+    "name": "校区健康度诊断",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "评分维度总览",
+          "财务健康度",
+          "教学质量",
+          "运营效率",
+          "客户满意度",
+          "团队稳定性"
+        ],
+        "purpose": "评分标准和打分规则",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+        "sections": [
+          "财务改善",
+          "教学改善",
+          "运营改善",
+          "满意度改善",
+          "团队改善"
+        ],
+        "purpose": "根据诊断结果输出具体改善动作",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "教培行业基准",
+          "城市级别对标"
+        ],
+        "purpose": "输出行业对标分析",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "beauty-health": {
+    "name": "美业门店健康度诊断",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "评分维度与指标体系",
+          "业绩健康度",
+          "客户健康度",
+          "运营健康度",
+          "团队健康度",
+          "财务健康度"
+        ],
+        "purpose": "评分标准和打分规则",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+        "sections": [
+          "业绩改善",
+          "客户改善",
+          "运营改善",
+          "团队改善",
+          "财务改善"
+        ],
+        "purpose": "根据诊断结果输出具体改善动作",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "美业行业基准",
+          "城市级别对标"
+        ],
+        "purpose": "输出行业对标分析",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "store-health": {
+    "name": "门店运营健康度诊断",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/账号诊断/小红书账号健康度诊断体系.md",
+        "sections": [
+          "诊断维度",
+          "评分标准"
+        ],
+        "purpose": "通用门店诊断参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "douyin-growth": {
+    "name": "抖音增长方案",
+    "knowledgeFiles": [
+      {
+        "path": "05_抖音专项库/陈雯/陈雯Momo_完整知识体系汇总.md",
+        "sections": [
+          "核心框架",
+          "增长策略"
+        ],
+        "purpose": "抖音增长核心方法论",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "05_抖音专项库/陈雯/实操场景/Q2_2-7-15-30-60-90天周期打法.md",
+        "sections": [
+          "周期打法"
+        ],
+        "purpose": "不同阶段的执行策略",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "05_抖音专项库/陈雯/标准执行/SOP_数据诊断与调优标准化流程.md",
+        "sections": [
+          "数据诊断",
+          "调优流程"
+        ],
+        "purpose": "数据诊断和调优方法",
+        "memberLevel": "annual"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "meituan": {
+    "name": "平台经营诊断器",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/美团经营基准数据库.md",
+        "sections": [
+          "美团漏斗基准",
+          "行业对标数据"
+        ],
+        "purpose": "美团平台经营基准和漏斗分析",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": [
+          "外卖运营",
+          "平台策略"
+        ],
+        "purpose": "餐饮行业外卖和平台经营知识",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "growth-diagnosis": {
+    "name": "企业增长诊断",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/微信生态全链路营销指南.md",
+        "sections": [
+          "全链路架构",
+          "各平台运营策略"
+        ],
+        "purpose": "全链路增长框架",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+        "sections": [
+          "获客期",
+          "运营转化",
+          "复购留存",
+          "裂变增长"
+        ],
+        "purpose": "私域运营方法论",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "ip-agent": {
+    "name": "IP 打造智能体",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/IP打造/餐饮_IP定位案例.md",
+        "sections": [
+          "IP定位",
+          "内容规划"
+        ],
+        "purpose": "餐饮行业 IP 定位案例",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "06_通用支撑库/IP打造/美业_IP定位案例.md",
+        "sections": [
+          "IP定位",
+          "内容规划"
+        ],
+        "purpose": "美业行业 IP 定位案例",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "06_通用支撑库/IP打造/教培_IP定位案例.md",
+        "sections": [
+          "IP定位",
+          "内容规划"
+        ],
+        "purpose": "教培行业 IP 定位案例",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md",
+        "sections": [
+          "人设定位",
+          "内容规划",
+          "4:3:3 法则"
+        ],
+        "purpose": "IP 人设打造方法论",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "competitor": {
+    "name": "竞品分析器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/06_对标与模仿原子.md",
+        "sections": [
+          "找对标标准",
+          "拆解方法论"
+        ],
+        "purpose": "竞品拆解方法论",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "03_品牌战略库/案例拆解/餐饮品牌案例拆解.md",
+        "sections": [
+          "案例分析"
+        ],
+        "purpose": "餐饮品牌竞品案例参考",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.6,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "business-plan": {
+    "name": "商业计划书生成器",
+    "knowledgeFiles": [
+      {
+        "path": "03_品牌战略库/品牌定位/品牌建设从0到1.md",
+        "sections": [
+          "品牌定位",
+          "商业模式"
+        ],
+        "purpose": "商业计划书框架参考",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": [
+          "开店筹备",
+          "预算规划"
+        ],
+        "purpose": "行业开店知识",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "fission": {
+    "name": "裂变活动方案",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+        "sections": [
+          "裂变增长",
+          "阶梯定价"
+        ],
+        "purpose": "裂变增长方法论",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/引流获客/社群运营SOP完整手册.md",
+        "sections": [
+          "引流",
+          "裂变"
+        ],
+        "purpose": "社群裂变 SOP",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "salary": {
+    "name": "薪酬方案设计器",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+        "sections": [
+          "绩效考核",
+          "薪酬结构"
+        ],
+        "purpose": "餐饮行业薪酬模板",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+        "sections": [
+          "绩效考核",
+          "薪酬结构"
+        ],
+        "purpose": "美业行业薪酬模板",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+        "sections": [
+          "绩效考核",
+          "薪酬结构"
+        ],
+        "purpose": "教培行业薪酬模板",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "friend": {
+    "name": "朋友圈文案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/05_创作原则原子.md",
+        "sections": [
+          "创作原则",
+          "AI文案红线"
+        ],
+        "purpose": "文案创作原则",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/话术转化/朋友圈营销案例大全.md",
+        "sections": [
+          "餐饮案例",
+          "美业案例",
+          "教培案例"
+        ],
+        "purpose": "行业朋友圈案例参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "00_原子知识库/文案词汇库/252个创意词汇.md",
+        "sections": [
+          "情感词汇",
+          "主题词汇"
+        ],
+        "purpose": "文案创意词汇参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.9,
+      "maxTokensFree": 800,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 1200,
+      "maxTokensAnnual": 1500
+    }
+  },
+  "hook": {
+    "name": "钩子文案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+        "sections": [
+          "爆款标题策略",
+          "3秒查找法"
+        ],
+        "purpose": "钩子/标题创作方法论",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/标题创作/小红书标题公式大全.md",
+        "sections": [
+          "标题公式"
+        ],
+        "purpose": "标题公式参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.9,
+      "maxTokensFree": 600,
+      "maxTokensStarter": 800,
+      "maxTokensPro": 1000,
+      "maxTokensAnnual": 1200
+    }
+  },
+  "script": {
+    "name": "短视频脚本生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/04_内容结构原子.md",
+        "sections": [
+          "内容四层次模型",
+          "完播率"
+        ],
+        "purpose": "短视频内容结构方法论",
+        "memberLevel": "free"
+      },
+      {
+        "path": "05_抖音专项库/陈雯/标准执行/SOP_短视频脚本模板.md",
+        "sections": [
+          "脚本模板"
+        ],
+        "purpose": "短视频脚本模板",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 800,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xiaohongshu": {
+    "name": "小红书内容生成器",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/正文创作/小红书正文结构模板.md",
+        "sections": [
+          "正文结构"
+        ],
+        "purpose": "小红书正文结构模板",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/正文创作/小红书行业笔记风格.md",
+        "sections": [
+          "行业风格"
+        ],
+        "purpose": "小红书行业笔记风格参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/正文创作/小红书标签组合策略.md",
+        "sections": [
+          "标签策略"
+        ],
+        "purpose": "小红书标签组合策略",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 800,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "headline": {
+    "name": "爆款标题生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+        "sections": [
+          "爆款标题策略"
+        ],
+        "purpose": "标题创作方法论",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+        "sections": [
+          "餐饮标题案例"
+        ],
+        "purpose": "餐饮行业标题案例",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/标题创作/美业爆款标题案例.md",
+        "sections": [
+          "美业标题案例"
+        ],
+        "purpose": "美业行业标题案例",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/标题创作/教培爆款标题案例.md",
+        "sections": [
+          "教培标题案例"
+        ],
+        "purpose": "教培行业标题案例",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.9,
+      "maxTokensFree": 800,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 1200,
+      "maxTokensAnnual": 1500
+    }
+  },
+  "topic": {
+    "name": "选题生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+        "sections": [
+          "选题定生死",
+          "选题交叉法"
+        ],
+        "purpose": "选题方法论",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/选题策划/小红书选题方法论.md",
+        "sections": [
+          "选题方法"
+        ],
+        "purpose": "小红书选题方法",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "festival": {
+    "name": "节日营销策划",
+    "knowledgeFiles": [
+      {
+        "path": "04_方案模板库/04-节日营销方案.md",
+        "sections": [
+          "节日筛选",
+          "营销策划"
+        ],
+        "purpose": "节日营销策划框架",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "sop": {
+    "name": "标准化流程生成器",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+        "sections": [
+          "获客期",
+          "运营转化"
+        ],
+        "purpose": "SOP 编写参考",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/引流获客/社群运营SOP完整手册.md",
+        "sections": [
+          "引流",
+          "承接",
+          "运营"
+        ],
+        "purpose": "SOP 编写参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "selling-point": {
+    "name": "产品卖点提炼器",
+    "knowledgeFiles": [
+      {
+        "path": "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md",
+        "sections": [
+          "产品策略"
+        ],
+        "purpose": "产品卖点提炼方法论",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 800,
+      "maxTokensPro": 1200,
+      "maxTokensAnnual": 1500
+    }
+  },
+  "marketing-plan": {
+    "name": "营销方案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "03_品牌战略库/执行模板/方案架构15大类型.md",
+        "sections": [
+          "方案架构"
+        ],
+        "purpose": "营销方案框架",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/引流获客/餐饮引流方案案例.md",
+        "sections": [
+          "餐饮引流"
+        ],
+        "purpose": "餐饮行业营销案例",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/引流获客/美业引流方案案例.md",
+        "sections": [
+          "美业引流"
+        ],
+        "purpose": "美业行业营销案例",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "team-training": {
+    "name": "团队培训方案",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+        "sections": [
+          "培训制度"
+        ],
+        "purpose": "培训方案参考",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "06_通用支撑库/制度模板/餐饮_员工手册模板.md",
+        "sections": [
+          "员工手册"
+        ],
+        "purpose": "员工管理参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "membership-design": {
+    "name": "会员储值方案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/会员储值方案.md",
+        "sections": [
+          "储值方案"
+        ],
+        "purpose": "餐饮会员储值案例",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "会员卡方案"
+        ],
+        "purpose": "美业会员卡案例",
+        "memberLevel": "annual"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.6,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "marketing-calendar": {
+    "name": "营销日历规划",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/选题策划/餐饮内容日历模板.md",
+        "sections": [
+          "内容日历"
+        ],
+        "purpose": "餐饮内容日历参考",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "01_业务场景库/选题策划/美业内容日历模板.md",
+        "sections": [
+          "内容日历"
+        ],
+        "purpose": "美业内容日历参考",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "01_业务场景库/选题策划/教培内容日历模板.md",
+        "sections": [
+          "内容日历"
+        ],
+        "purpose": "教培内容日历参考",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.6,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "employee-incentive": {
+    "name": "员工激励方案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/制度模板/餐饮_提成方案模板.md",
+        "sections": [
+          "提成方案"
+        ],
+        "purpose": "餐饮提成模板",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "06_通用支撑库/制度模板/美业_提成方案模板.md",
+        "sections": [
+          "提成方案"
+        ],
+        "purpose": "美业提成模板",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "06_通用支撑库/制度模板/教培_提成方案模板.md",
+        "sections": [
+          "提成方案"
+        ],
+        "purpose": "教培提成模板",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "store-opening": {
+    "name": "新店开业策划方案",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/新店开业方案.md",
+        "sections": [
+          "开业方案"
+        ],
+        "purpose": "餐饮新店开业案例",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": [
+          "开店筹备",
+          "预算规划"
+        ],
+        "purpose": "开店全流程知识",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1500,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "anniversary-event": {
+    "name": "周年庆活动方案",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "活动方案"
+        ],
+        "purpose": "会员日/周年庆活动参考",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "04_方案模板库/04-节日营销方案.md",
+        "sections": [
+          "活动执行"
+        ],
+        "purpose": "节点营销框架",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "offseason-traffic": {
+    "name": "淡季引流方案",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/餐饮引流方案案例.md",
+        "sections": [
+          "淡季引流"
+        ],
+        "purpose": "淡季引流案例",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "01_业务场景库/引流获客/美业引流方案案例.md",
+        "sections": [
+          "淡季引流"
+        ],
+        "purpose": "淡季引流案例",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "experience-service": {
+    "name": "体验服务方案",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/营销案例/体验课引流方案.md",
+        "sections": [
+          "体验课方案"
+        ],
+        "purpose": "教培体验课案例",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/拓客引流方案.md",
+        "sections": [
+          "体验卡拓客"
+        ],
+        "purpose": "美业体验卡案例",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "price-increase": {
+    "name": "涨价方案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md",
+        "sections": [
+          "定价策略"
+        ],
+        "purpose": "定价策略参考",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.6,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "promotion-plan": {
+    "name": "降价促销方案生成器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/节假日促销方案.md",
+        "sections": [
+          "促销方案"
+        ],
+        "purpose": "餐饮促销案例",
+        "memberLevel": "starter"
+      },
+      {
+        "path": "04_方案模板库/04-节日营销方案.md",
+        "sections": [
+          "促销设计"
+        ],
+        "purpose": "促销框架",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "complaint-handling": {
+    "name": "客户投诉处理方案",
+    "knowledgeFiles": [
+      {
+        "path": "03_品牌战略库/品牌传播/品牌口碑管理.md",
+        "sections": [
+          "口碑管理"
+        ],
+        "purpose": "口碑管理参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "competitor-strategy": {
+    "name": "竞争应对策略生成器",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/06_对标与模仿原子.md",
+        "sections": [
+          "对标分析"
+        ],
+        "purpose": "竞品分析参考",
+        "memberLevel": "pro"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.6,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xiaohongshu-growth": {
+    "name": "小红书增长方案",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/小红书搜索SEO完整指南.md",
+        "sections": [
+          "SEO策略"
+        ],
+        "purpose": "小红书 SEO 增长方法",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "01_业务场景库/投放运营/薯条投放全指南.md",
+        "sections": [
+          "薯条投放"
+        ],
+        "purpose": "小红书投放增长方法",
+        "memberLevel": "annual"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "boss-ip": {
+    "name": "老板IP打造方案",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/IP打造/餐饮_IP定位案例.md",
+        "sections": [
+          "IP定位"
+        ],
+        "purpose": "餐饮老板 IP 参考",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "06_通用支撑库/IP打造/美业_IP定位案例.md",
+        "sections": [
+          "IP定位"
+        ],
+        "purpose": "美业老板 IP 参考",
+        "memberLevel": "annual"
+      },
+      {
+        "path": "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md",
+        "sections": [
+          "人设定位",
+          "内容规划"
+        ],
+        "purpose": "IP 人设打造方法",
+        "memberLevel": "annual"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 4000
+    }
+  },
+  "close-deal": {
+    "name": "成交话术生成器",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/话术转化/教培促单话术案例.md",
+        "sections": [
+          "促单话术"
+        ],
+        "purpose": "教培成交话术参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/话术转化/美业促单话术案例.md",
+        "sections": [
+          "促单话术"
+        ],
+        "purpose": "美业成交话术参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/话术转化/餐饮促单话术案例.md",
+        "sections": [
+          "促单话术"
+        ],
+        "purpose": "餐饮成交话术参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 600,
+      "maxTokensStarter": 800,
+      "maxTokensPro": 1200,
+      "maxTokensAnnual": 1500
+    }
+  },
+  "xhs-topic": {
+    "name": "小红书选题策划助手",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/选题策划/小红书选题方法论.md",
+        "sections": [
+          "选题方法"
+        ],
+        "purpose": "小红书选题方法",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 1200,
+      "maxTokensAnnual": 1500
+    }
+  },
+  "xhs-traffic": {
+    "name": "薯条投放顾问",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/薯条投放全指南.md",
+        "sections": [
+          "投放策略"
+        ],
+        "purpose": "薯条投放方法论",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "00_原子知识库/平台规则库/薯条投放策略参考.md",
+        "sections": [
+          "投放参考"
+        ],
+        "purpose": "薯条投放规则",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xhs-diagnosis": {
+    "name": "小红书账号诊断工具",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/账号诊断/小红书账号健康度诊断体系.md",
+        "sections": [
+          "诊断维度",
+          "评分标准"
+        ],
+        "purpose": "小红书账号诊断标准",
+        "memberLevel": "pro"
+      },
+      {
+        "path": "00_原子知识库/平台规则库/小红书平台规则与算法解读.md",
+        "sections": [
+          "平台规则"
+        ],
+        "purpose": "小红书平台规则",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xhs-title": {
+    "name": "爆款标题生成器（小红书版）",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/标题创作/小红书标题公式大全.md",
+        "sections": [
+          "标题公式"
+        ],
+        "purpose": "小红书标题公式",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.9,
+      "maxTokensFree": 600,
+      "maxTokensStarter": 800,
+      "maxTokensPro": 1000,
+      "maxTokensAnnual": 1200
+    }
+  },
+  "xhs-seo": {
+    "name": "搜索 SEO 优化",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/小红书搜索SEO完整指南.md",
+        "sections": [
+          "SEO策略"
+        ],
+        "purpose": "小红书 SEO 优化方法",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1200,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xhs-review": {
+    "name": "笔记数据复盘",
+    "knowledgeFiles": [
+      {
+        "path": "00_原子知识库/DBSkill原子/07_算法逻辑原子.md",
+        "sections": [
+          "数据复盘"
+        ],
+        "purpose": "数据复盘方法论",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.5,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 2000
+    }
+  },
+  "xhs-conversion": {
+    "name": "转化引流方案",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/小红书转化引流合规指南.md",
+        "sections": [
+          "引流策略",
+          "合规要点"
+        ],
+        "purpose": "小红书转化引流方法",
+        "memberLevel": "annual"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.7,
+      "maxTokensFree": 200,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 1500,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "schedule": {
+    "name": "排班助手",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/社群运营SOP完整手册.md",
+        "sections": [
+          "运营排班"
+        ],
+        "purpose": "排班参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 800,
+      "maxTokensPro": 1000,
+      "maxTokensAnnual": 1200
+    }
+  }
+}

@@ -15,6 +15,7 @@ import {
 } from './diagnosisEngine.js'
 import { calculatorEngine } from './calculatorEngine.js'
 import { spreadsheetEngine } from './spreadsheetEngine.js'
+import { getKBContext, getMaxTokensForLevel, getTemperatureForTool } from './kbService.js'
 
 const CUSTOMIZATION_CTA = '\n---\n如需针对您的具体场景做个性化定制方案，升级会员即可获得专属深度定制服务。'
 
@@ -33,35 +34,58 @@ export function buildUnifiedResponse(data, options = {}) {
   }
 }
 
-async function ragEngine(toolConfig, formData) {
+async function ragEngine(toolConfig, formData, context = {}) {
   const { knowledgeScope, systemPrompt, userPromptTemplate } = toolConfig
+  const { toolCode, memberLevel = 'free' } = context
 
   const ind = getIndustryData(formData.industry || 'catering')
-  const knowledgeContext = buildKnowledgeContext(knowledgeScope, formData, ind)
+
+  // KB-aware: use section-sliced knowledge from kbService
+  let kbContext = ''
+  if (toolCode) {
+    kbContext = getKBContext(toolCode, memberLevel, formData)
+  }
+
+  // Fallback to legacy knowledge context if KB is empty
+  const legacyContext = buildKnowledgeContext(knowledgeScope, formData, ind)
+  const combinedKnowledge = kbContext || legacyContext
 
   const userPrompt = typeof userPromptTemplate === 'function'
-    ? userPromptTemplate(formData, ind, knowledgeContext)
+    ? userPromptTemplate(formData, ind, combinedKnowledge)
     : userPromptTemplate.replace('{用户输入}', JSON.stringify(formData))
-                       .replace('{知识库检索结果}', knowledgeContext)
+                       .replace('{知识库检索结果}', combinedKnowledge)
 
   const system = typeof systemPrompt === 'function'
     ? systemPrompt(ind)
     : systemPrompt
 
+  // Use KB-configured max_tokens and temperature if available
+  const maxTokens = toolCode ? getMaxTokensForLevel(toolCode, memberLevel) : (toolConfig.max_tokens || 3000)
+  const temperature = toolCode ? getTemperatureForTool(toolCode) : (toolConfig.temperature || 0.8)
+
   const rawResult = await generateStructured({
     systemPrompt: system,
     userPrompt,
-    temperature: toolConfig.temperature || 0.8,
-    max_tokens: toolConfig.max_tokens || 3000
+    temperature,
+    max_tokens: maxTokens
   })
 
-  return buildUnifiedResponse({
-    summary: `${toolConfig.name}已为您生成`,
-    sections: [
-      { title: '生成结果', items: [rawResult] }
-    ],
-    actions: []
-  })
+  return {
+    ...buildUnifiedResponse({
+      summary: `${toolConfig.name}已为您生成`,
+      sections: [
+        { title: '生成结果', items: [rawResult] },
+        buildDecisionBasis(toolConfig, formData, 'RAG 生成（KB切片）')
+      ],
+      actions: []
+    }),
+    _meta: {
+      engineType: 'rag-kb',
+      kbContextLength: kbContext ? kbContext.length : 0,
+      maxTokens,
+      temperature
+    }
+  }
 }
 
 function buildKnowledgeContext(scope, formData, industry) {
@@ -109,6 +133,19 @@ function buildKnowledgeContext(scope, formData, industry) {
   return parts.join('\n') || '（知识库暂无匹配内容，使用通用模板）'
 }
 
+function buildDecisionBasis(toolConfig, formData, modeLabel) {
+  const inputKeys = Object.keys(formData || {})
+  return {
+    title: '判断依据',
+    items: [
+      `执行模式：${modeLabel}`,
+      `工具类型：${toolConfig.engineType || 'rag'}`,
+      `输入字段：${inputKeys.length ? inputKeys.join('、') : '无'}`,
+      '说明：结果为策略建议，请结合真实经营数据与市场时点复核'
+    ]
+  }
+}
+
 const engineRegistry = {
   rag: ragEngine,
 
@@ -121,7 +158,8 @@ const engineRegistry = {
 
     return buildUnifiedResponse({
       summary: `${toolConfig.name}已为您生成`,
-      ...result
+      ...result,
+      sections: [...(result.sections || []), buildDecisionBasis(toolConfig, formData, '模板生成')]
     })
   },
 
@@ -146,7 +184,8 @@ const engineRegistry = {
 
     return buildUnifiedResponse({
       summary: `${toolConfig.name}诊断完成`,
-      ...result
+      ...result,
+      sections: [...(result.sections || []), buildDecisionBasis(toolConfig, formData, '诊断计算')]
     })
   },
 
@@ -163,7 +202,7 @@ export function registerEngine(type, handler) {
   engineRegistry[type] = handler
 }
 
-export async function executeTool(toolConfig, formData) {
+export async function executeTool(toolConfig, formData, context = {}) {
   const engineType = toolConfig.engineType || 'rag'
   const handler = engineRegistry[engineType]
 
@@ -171,7 +210,7 @@ export async function executeTool(toolConfig, formData) {
     throw new Error(`未知执行引擎类型: ${engineType}`)
   }
 
-  return handler(toolConfig, formData)
+  return handler(toolConfig, formData, context)
 }
 
 export { CUSTOMIZATION_CTA }

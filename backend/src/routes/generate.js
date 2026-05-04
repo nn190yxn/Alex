@@ -7,11 +7,13 @@ import { validationMiddleware, getValidationRulesForTool } from '../middleware/v
 import { logger } from '../middleware/logger.js'
 import { trackEvent, EVENT_TYPES } from '../services/analytics.js'
 import { getIndustryData, getFestival, getSalaryByIndustry, getFissionBenchmarks, getBusinessPlanByCapital, getPlatformStyle } from '../services/industryKnowledge.js'
-import { getDiagnosisTemplate, calculateDiagnosisScore, generateDiagnosisActions } from '../services/diagnosisEngine.js'
+import { getDiagnosisTemplate, calculateDiagnosisScore, generateDiagnosisReport, generateDiagnosisActions } from '../services/diagnosisEngine.js'
 import { generateStructured } from '../services/ai.js'
 import { createCalculatorTools } from './calculatorTools.js'
 import { createSpreadsheetTools } from './spreadsheetTools.js'
 import { canAccessLevel, getRequiredMemberLevel } from '../config/toolAccess.js'
+import { recordTokenUsage } from '../services/tokenMonitor.js'
+import { getMaxTokensForLevel } from '../services/kbService.js'
 
 const router = express.Router()
 
@@ -2163,6 +2165,7 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
   const { toolCode } = req.params
   const userId = req.user.userId
   const formData = req.body
+  const startTime = Date.now()
 
   try {
     const toolDef = TOOL_DEFINITIONS[toolCode]
@@ -2197,8 +2200,38 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
       return res.status(validationRes.statusCode).json(validationRes.data)
     }
 
+    // Build execution context with KB-aware parameters
+    const execContext = {
+      toolCode,
+      memberLevel,
+      userId: String(userId)
+    }
+
+    // Wrap executeTool to inject context
+    const wrappedExecute = async (config, data) => {
+      return executeTool(config, data, execContext)
+    }
+
     // Execute with failover
-    const result = await executeWithFailover(toolDef, validationReq.body, executeTool)
+    const result = await executeWithFailover(toolDef, validationReq.body, wrappedExecute)
+
+    const duration = Date.now() - startTime
+
+    // Estimate token usage (rough estimate based on request/response size)
+    const inputEstimate = Math.ceil(JSON.stringify(formData).length / 3)
+    const outputEstimate = Math.ceil(JSON.stringify(result).length / 3)
+    const model = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
+
+    recordTokenUsage({
+      toolCode,
+      userId: String(userId),
+      memberLevel,
+      inputTokens: inputEstimate,
+      outputTokens: outputEstimate,
+      model,
+      engineType: toolDef.engineType || 'rag',
+      duration
+    })
 
     await trackUsage(userId, toolCode)
 
@@ -2207,7 +2240,7 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
 
     res.json(result)
   } catch (error) {
-    logger.toolFailure(userId, toolCode, error, 0)
+    logger.toolFailure(userId, toolCode, error, Date.now() - startTime)
     await trackEvent(userId, EVENT_TYPES.TOOL_FAILURE, {
       toolCode,
       error: error.message
