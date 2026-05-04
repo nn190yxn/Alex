@@ -156,18 +156,30 @@ export const allTools = [
   createTool({ code: 'breakeven-profit-beauty', name: '美业盈亏平衡与净利预测器', description: '固定/变动成本拆分，保本业绩线计算。', tag: '核心', iconColor: 'amber', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['盈亏平衡', '净利预测'] }),
   createTool({ code: 'device-roi-beauty', name: '美容仪器投资回报计算器', description: '热玛吉/光子等设备回本周期、保本客单量。', tag: '专项', iconColor: 'cyan', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['设备投资', '回本周期'] }),
   createTool({ code: 'member-card-design-beauty', name: '会员储值卡设计计算器', description: '充送活动实际折扣率与毛利折损计算。', tag: '专项', iconColor: 'violet', requiredLevel: MEMBER_LEVEL_FREE, category: 'finance', industries: ['beauty'], freePolicy: '5/day', sceneTags: ['储值卡', '促销设计'] }),
+
+  // ====== 营销推广计算器 ======
+  createTool({ code: 'channel-cac', name: '多渠道获客成本计算器', description: '对比抖音/美团/地推/转介绍等渠道的获客成本，自动排序最优渠道。', tag: '营销', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['获客成本', '渠道对比'] }),
+  createTool({ code: 'campaign-roi', name: '活动效果追踪计算器', description: '投入/客流/成交/ROI 全链路追踪，自动生成活动复盘报告。', tag: '营销', iconColor: 'green', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['活动复盘', 'ROI追踪'] }),
+  createTool({ code: 'referral-roi', name: '转介绍效果计算器', description: '计算转介绍率/K值/转介绍CAC vs 新客CAC，评估老带新活动效果。', tag: '营销', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['转介绍', '老带新'] }),
+  createTool({ code: 'conversion-funnel', name: '营销转化漏斗计算器', description: '线索→体验→成交→复购各环节转化率分析，找出最大流失环节。', tag: '营销', iconColor: 'orange', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['转化漏斗', '流失分析'] }),
+  createTool({ code: 'retention-rate', name: '客户留存率计算器', description: '计算30/60/90天留存率，标记沉睡客户阈值，给出激活建议。', tag: '营销', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['留存率', '沉睡激活'] }),
+  createTool({ code: 'marketing-budget', name: '营销预算分配计算器', description: '输入总预算和营销目标，自动分配各渠道比例并预估效果。', tag: '营销', iconColor: 'indigo', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['预算分配', '渠道规划'] }),
+  createTool({ code: 'churn-rate', name: '客户流失率计算器', description: '计算流失率和流失成本，分析流失原因，给出挽留优先级。', tag: '营销', iconColor: 'red', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['流失率', '客户挽留'] }),
+  createTool({ code: 'ltv-restaurant', name: '客户终身价值计算器（餐饮版）', description: '客单价×月频次×留存月数=LTV，对比CAC判断投放是否值得。', tag: '营销', iconColor: 'cyan', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant'], freePolicy: '5/day', sceneTags: ['LTV', '客户价值'] }),
+  createTool({ code: 'ltv-education', name: '客户终身价值计算器（教培版）', description: '课时费×在读月数+附加费=LTV，对比CAC优化招生策略。', tag: '营销', iconColor: 'violet', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['education'], freePolicy: '5/day', sceneTags: ['LTV', '学员价值'] }),
+  createTool({ code: 'promotion-profit', name: '促销活动利润计算器', description: '折扣后毛利折损+保本增量分析，判断活动是否真正赚钱。', tag: '营销', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'marketing', industries: ['restaurant', 'education', 'beauty', 'service'], freePolicy: '5/day', sceneTags: ['促销利润', '保本分析'] }),
 ]
 
 export const standaloneCapabilities = [
   {
     code: 'diagnosis',
-    name: '企业增长诊断',
-    description: '从行业特征、经营能力和老板能力三层扫描增长瓶颈。',
+    name: '企业增长全景顾问',
+    description: '从行业画像、创始人能力和系统回路三层扫描增长瓶颈。',
     tag: '诊断',
     status: 'launched',
     capabilityType: 'advanced',
     freePolicy: 'upgrade-required',
-    sceneTags: ['增长诊断', '经营诊断', '优先动作'],
+    sceneTags: ['企业增长', '增长顾问', '优先动作'],
     icon: iconMap.diagnosis,
     iconColor: 'teal',
     requiredLevel: MEMBER_LEVEL_PRO,
@@ -176,22 +188,34 @@ export const standaloneCapabilities = [
   }
 ]
 
-export const xhsOperationTools = [
-  createStandaloneToolMeta({ code: 'xhs-note', name: '小红书笔记生成器', description: '输入产品/服务，一键生成完整笔记内容', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xiaohongshu' }),
-  createStandaloneToolMeta({ code: 'xhs-title', name: '爆款标题生成器', description: '12 种公式生成高点击率标题', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xhs-title' }),
-  createStandaloneToolMeta({ code: 'xhs-topic', name: '选题策划助手', description: '爆款因子叠加法，无限生成选题', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-topic' }),
-  createStandaloneToolMeta({ code: 'xhs-traffic', name: '薯条投放顾问', description: '根据笔记数据给出投放策略', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-traffic' }),
-  createStandaloneToolMeta({ code: 'xhs-seo', name: '搜索 SEO 优化', description: '关键词布局建议，提升搜索排名', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-seo' }),
-  createStandaloneToolMeta({ code: 'xhs-diagnosis', name: '账号诊断工具', description: '15 项指标评估账号健康度', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-diagnosis' }),
-  createStandaloneToolMeta({ code: 'xhs-review', name: '笔记数据复盘', description: '单篇笔记数据分析 + 优化建议', requiredLevel: MEMBER_LEVEL_STARTER, path: '/tools/xhs-review' }),
-  createStandaloneToolMeta({ code: 'xhs-conversion', name: '转化引流方案', description: '私域引流 + 评论互动 + 门店运营', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xhs-conversion' }),
-  createStandaloneToolMeta({ code: 'xhs-competitor', name: '竞品分析', description: '拆解竞品爆款，找到差异化角度', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xhs-competitor', disabled: true }),
-  createStandaloneToolMeta({ code: 'xhs-hotspot', name: '热点追踪', description: '实时追踪行业热点，结合建议', requiredLevel: MEMBER_LEVEL_PRO, path: '/tools/xhs-hotspot', disabled: true })
+export const strategyCapabilityTools = [
+  createStandaloneToolMeta({
+    code: 'douyin-growth',
+    name: '抖音经营增长方案',
+    description: '围绕投流、直播、团购和内容起量做经营专项。',
+    requiredLevel: MEMBER_LEVEL_ANNUAL,
+    path: '/douyin'
+  }),
+  createStandaloneToolMeta({
+    code: 'boss-ip',
+    name: '老板IP打造方案',
+    description: '围绕老板定位、内容矩阵和表达方式给出长期品牌方案。',
+    requiredLevel: MEMBER_LEVEL_ANNUAL,
+    path: '/tools/boss-ip'
+  }),
+  createStandaloneToolMeta({
+    code: 'xiaohongshu-growth',
+    name: '小红书增长方案',
+    description: '围绕种草内容、账号运营和转化链路输出增长建议。',
+    requiredLevel: MEMBER_LEVEL_ANNUAL,
+    path: '/tools/xiaohongshu-growth'
+  })
 ]
 
-export const strategyCapabilityTools = [
-  createStandaloneToolMeta({ code: 'douyin-growth', name: '抖音增长方案', description: '围绕账号定位、内容策略和投放计划输出专项增长方案。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/douyin-growth' }),
-  createStandaloneToolMeta({ code: 'xiaohongshu-growth', name: '小红书增长方案', description: '围绕种草内容、账号运营和转化链路输出增长建议。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/xiaohongshu-growth' }),
+export const xhsOperationTools = [
+  createStandaloneToolMeta({ code: 'xhs-note', name: '小红书笔记生成器', description: '输入产品/服务，一键生成完整笔记内容', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xiaohongshu' }),
+
+  createStandaloneToolMeta({ code: 'xiaohongshu-growth', name: '小红书增长方案', description: '围绕种草内容、账号运营和转化链路输出增长建议。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/xhs' }),
   createStandaloneToolMeta({ code: 'boss-ip', name: '老板IP打造方案', description: '围绕老板定位、内容矩阵和表达方式给出长期品牌方案。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/boss-ip' })
 ]
 
@@ -242,8 +266,8 @@ export const capabilityCards = [
   },
   {
     title: '找准这个坑',
-    description: '增长诊断、平台诊断、竞品对比，先看问题在哪。',
-    scenes: ['增长诊断', '平台诊断', '竞品对比'],
+    description: '增长顾问、平台诊断、竞品对比，先看问题在哪。',
+    scenes: ['增长顾问', '平台诊断', '竞品对比'],
     highlight: '诊断',
     path: '/tools?category=marketing'
   },
@@ -267,10 +291,10 @@ export const pillarMeta = {
   management: { name: '经营管理', description: '毛利、ROI、人效、回本与排班计算', icon: IconPillarManagement, color: 'var(--pillar-management)', bg: 'var(--pillar-management-bg)', cues: ['算利润', '看ROI', '做人效'] },
   marketing: { name: '营销获客', description: '活动、裂变、节日营销与朋友圈文案', icon: IconPillarMarketing, color: 'var(--pillar-marketing)', bg: 'var(--pillar-marketing-bg)', cues: ['做活动', '拉新客', '促复购'] },
   system: { name: '制度优化', description: '薪酬、SOP、团队培训与员工激励', icon: IconPillarSystem, color: 'var(--pillar-system)', bg: 'var(--pillar-system-bg)', cues: ['定制度', '搭SOP', '带团队'] },
-  douyin: { name: '抖音运营', description: '短视频脚本、直播、投流 ROI、团购组品', icon: IconPillarDouyin, color: 'var(--pillar-douyin)', bg: 'var(--pillar-douyin-bg)', cues: ['做短视频', '开直播', '算投流'] },
-  xiaohongshu: { name: '小红书运营', description: '笔记生成、种草、选题、搜索 SEO', icon: IconPillarXiaohongshu, color: 'var(--pillar-xiaohongshu)', bg: 'var(--pillar-xiaohongshu-bg)', cues: ['做种草', '写笔记', '抓搜索'] },
+  douyin: { name: '抖音运营', description: '短视频脚本、直播、投流 ROI、团购组品', icon: IconPillarDouyin, color: 'var(--pillar-douyin)', bg: 'var(--pillar-douyin-bg)', cues: ['做短视频', '开直播', '算投流'], path: '/douyin', count: 17 },
+  xiaohongshu: { name: '小红书运营', description: '笔记生成、种草、选题、搜索 SEO', icon: IconPillarXiaohongshu, color: 'var(--pillar-xiaohongshu)', bg: 'var(--pillar-xiaohongshu-bg)', cues: ['做种草', '写笔记', '抓搜索'], path: '/xhs', count: 17 },
   private: { name: '私域运营', description: '微信社群、会员体系、客户管理、复购追踪', icon: IconPillarPrivate, color: 'var(--pillar-private)', bg: 'var(--pillar-private-bg)', cues: ['做社群', '管会员', '追复购'] },
-  diagnosis: { name: '企业诊断', description: '门店健康度、竞品分析与平台经营', icon: IconPillarDiagnosis, color: 'var(--pillar-diagnosis)', bg: 'var(--pillar-diagnosis-bg)', cues: ['查问题', '看竞品', '定动作'] },
+  diagnosis: { name: '增长顾问', description: '企业增长、门店健康度、竞品分析与平台经营', icon: IconPillarDiagnosis, color: 'var(--pillar-diagnosis)', bg: 'var(--pillar-diagnosis-bg)', cues: ['查问题', '看竞品', '定动作'] },
   ip: { name: '老板 IP', description: '人设定位、直播表达、内容方向、长期品牌', icon: IconPillarIP, color: 'var(--pillar-ip)', bg: 'var(--pillar-ip-bg)', cues: ['做人设', '强表达', '沉淀品牌'] }
 }
 
@@ -415,7 +439,7 @@ export const specialModuleEntries = [
     name: '抖音经营',
     description: '围绕投流、直播、团购和内容起量做经营专项。',
     audience: '适合做抖音获客与转化增长的老板',
-    path: '/tools/douyin-growth',
+    path: '/douyin',
     badge: '专项模块',
     badgeClass: 'badge-annual'
   },
@@ -424,14 +448,14 @@ export const specialModuleEntries = [
     name: '小红书运营',
     description: '围绕笔记、种草、搜索和转化做长期内容运营。',
     audience: '适合依赖内容种草和口碑转化的老板',
-    path: '/tools/xiaohongshu-growth',
+    path: '/xhs',
     badge: '专项模块',
-    badgeClass: 'badge-annual'
+    badgeClass: 'badge-pro'
   },
   {
     code: 'diagnosis-special',
-    name: '企业诊断',
-    description: '先看清问题和增长短板，再给下一步动作。',
+    name: '企业增长',
+    description: '先看清增长卡点和系统短板，再给下一步优先动作。',
     audience: '适合不知道该先优化哪一块的老板',
     path: '/diagnosis',
     badge: '专项模块',
@@ -457,13 +481,13 @@ export const advancedCapabilityCards = [
     scenes: ['团购组品', '投流 ROI', '直播脚本'],
     badge: '高阶专项',
     badgeClass: 'badge-annual',
-    path: '/tools/douyin-growth'
+    path: '/douyin'
   },
   {
     code: 'growth-diagnosis',
-    title: '企业增长诊断',
-    description: '帮老板看清问题卡点、增长短板和下一步优先动作。',
-    tags: ['经营诊断', '创始人能力', '增长建议'],
+    title: '企业增长',
+    description: '用全景顾问方式看清问题卡点、增长短板和下一步优先动作。',
+    tags: ['增长顾问', '创始人能力', '增长建议'],
     scenes: ['行业扫描', '能力诊断', '增长路径'],
     badge: '高阶专项',
     badgeClass: 'badge-pro',
@@ -1182,6 +1206,97 @@ export const industryTemplateEntries = [
     sceneTags: ['定价', '品项组合', '利润'],
     keyFields: ['品项名称', '品项类型（单次/组合）', '单次售价', '组合包含项目', '组合总价', '折扣率', '产品成本', '人工成本', '总成本', '组合利润', '组合利润率'],
     outputs: ['组合利润率排名', '低利润组合预警', '最佳折扣建议']
+  },
+  // ====== 营销推广数据表 ======
+  {
+    code: 'marketing-activity-sheet',
+    name: '营销活动记录表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '记录每次活动的投入/客流/成交/ROI，形成活动效果对比视图。',
+    linkedTools: ['campaign-roi', 'promotion-profit'],
+    plannedTools: [],
+    sceneTags: ['活动记录', '效果对比'],
+    keyFields: ['活动名称', '日期', '投入金额', '新客流', '成交数', '总营收', 'ROI'],
+    outputs: ['活动ROI排名', '最优活动类型', '活动趋势分析']
+  },
+  {
+    code: 'channel-comparison-sheet',
+    name: '渠道对比分析表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '对比各渠道花费/线索/成交/CAC，自动排序最优渠道。',
+    linkedTools: ['channel-cac', 'marketing-budget'],
+    plannedTools: [],
+    sceneTags: ['渠道对比', 'CAC分析'],
+    keyFields: ['渠道名称', '总花费', '线索数', '成交数', 'CAC', '成交率'],
+    outputs: ['渠道CAC排名', '最优渠道推荐', '低效渠道预警']
+  },
+  {
+    code: 'customer-retention-sheet',
+    name: '客户留存追踪表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '按月记录活跃/沉睡/流失客户，计算留存率和流失率。',
+    linkedTools: ['retention-rate', 'churn-rate'],
+    plannedTools: [],
+    sceneTags: ['留存追踪', '客户分层'],
+    keyFields: ['月份', '月初客户', '新增客户', '活跃客户', '沉睡客户', '流失客户', '留存率'],
+    outputs: ['月度留存趋势', '沉睡客户预警', '流失率变化']
+  },
+  {
+    code: 'referral-tracking-sheet',
+    name: '转介绍效果追踪表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '记录转介绍活动的老客参与数/新客数/奖励成本/ROI。',
+    linkedTools: ['referral-roi', 'fission'],
+    plannedTools: [],
+    sceneTags: ['转介绍', '老带新'],
+    keyFields: ['活动名称', '老客参与', '带来新客', '转介绍率', '奖励成本', '新客营收', 'ROI'],
+    outputs: ['转介绍率趋势', 'K值变化', '转介绍vs新客CAC对比']
+  },
+  {
+    code: 'marketing-budget-sheet',
+    name: '营销预算执行表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_PRO,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '按渠道分解预算与实际花费，追踪预算执行进度和效果。',
+    linkedTools: ['marketing-budget', 'channel-cac'],
+    plannedTools: [],
+    sceneTags: ['预算执行', '花费追踪'],
+    keyFields: ['渠道', '预算金额', '已花费', '执行率', '获客数', '实际CAC', 'ROI'],
+    outputs: ['预算执行进度', '超支渠道预警', '预算使用效率']
+  },
+  {
+    code: 'promotion-profit-sheet',
+    name: '促销活动利润记录表',
+    industry: 'generic',
+    group: '营销推广',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '记录每次促销的折扣/毛利折损/增量/净利，判断活动是否赚钱。',
+    linkedTools: ['promotion-profit', 'campaign-roi'],
+    plannedTools: [],
+    sceneTags: ['促销记录', '利润分析'],
+    keyFields: ['活动名称', '折扣率', '正常日均单', '活动日均单', '增量', '活动毛利率', '净利'],
+    outputs: ['促销活动净利排名', '折扣与增量关系', '最优折扣区间']
   }
 ].map(template => ({
   ...template,
@@ -1251,7 +1366,7 @@ export const testimonials = [
   { quote: '校区续费和试听转化的话术终于有模板了，顾问执行轻松很多。', author: '李校长', city: '武汉', industry: '教培' },
   { quote: '我最常用的是发圈文案和活动方案，门店每周起码省下半天脑力。', author: '王店长', city: '杭州', industry: '美业' },
   { quote: '投流保本 ROI 算得很清楚，以前瞎投，现在知道底线在哪。', author: '赵总', city: '深圳', industry: '餐饮' },
-  { quote: '企业增长诊断帮我看清了短板，现在知道下一步该先抓哪块。', author: '刘老板', city: '北京', industry: '生活服务' },
+  { quote: '企业增长全景顾问帮我看清了短板，现在知道下一步该先抓哪块。', author: '刘老板', city: '北京', industry: '生活服务' },
   { quote: 'SOP 生成特别好用，新员工培训直接按流程走，省心太多。', author: '陈经理', city: '广州', industry: '美业' },
   { quote: '招生方案直接拿来改，不用再花一周时间想活动怎么搞。', author: '周校长', city: '南京', industry: '教培' },
   { quote: '报价话术比以前清晰多了，客户看完直接下单，不再来回扯皮。', author: '孙师傅', city: '重庆', industry: '生活服务' }
@@ -1260,8 +1375,8 @@ export const testimonials = [
 export const homeFaqs = [
   { q: '我赢AI适合谁？', a: '面向全国实体老板，尤其是餐饮、教培、美业和生活服务行业的经营者。不管你在哪个城市，这套工具都能帮上忙。' },
   { q: '免费版能用什么？', a: '可先体验通用计算、基础文案、脚本和部分经营工具，适合先验证工具是否匹配你的业务。' },
-  { q: '行业专版和工具箱有什么区别？', a: '行业专版按场景帮你缩小选择范围，工具箱适合已经知道自己要用哪类工具的用户。' },
-  { q: '企业增长诊断是独立的吗？', a: '是。它是独立能力，重点解决老板不知道问题卡在哪、下一步该做什么的场景。' },
+  { q: '行业场景和表格中心有什么区别？', a: '行业场景按业务类型帮你缩小入口范围，表格中心负责统一承接输入模板、经营记录和输出报表。' },
+  { q: '企业增长是独立的吗？', a: '是。它对应独立的企业增长全景顾问能力，重点解决老板不知道问题卡在哪、下一步该做什么的场景。' },
   { q: '会员升级后权限怎么变化？', a: '权限按免费版、初阶版、进阶版、高阶版递增，高阶版包含前面所有层级能力。' },
   { q: '价格会调整吗？', a: '当前页面展示的是建议价格，后续仍可根据运营策略微调，已开通的会员不受影响。' }
 ]

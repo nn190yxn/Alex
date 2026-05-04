@@ -156,7 +156,6 @@
       <!-- 月度运营 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('monthly')">
-          <span class="section-icon">📊</span>
           <span class="section-title">月度运营成本（用于保本推演）</span>
           <span class="section-arrow" :class="{ open: sections.monthly }">▾</span>
         </div>
@@ -197,7 +196,6 @@
       <!-- 合伙模式 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('partner')">
-          <span class="section-icon">🤝</span>
           <span class="section-title">合伙模式（可选）</span>
           <span class="section-arrow" :class="{ open: sections.partner }">▾</span>
         </div>
@@ -315,22 +313,18 @@
           <h3 class="card-title">保本推演（基于行业基准）</h3>
           <div class="breakdown-grid">
             <div class="bd-item">
-              <div class="bd-icon">🎫</div>
               <div class="bd-value">¥{{ result.benchmark.avgTicket.toFixed(0) }}</div>
               <div class="bd-label">行业平均客单价</div>
             </div>
             <div class="bd-item">
-              <div class="bd-icon">📈</div>
               <div class="bd-value">{{ result.benchmark.grossMargin }}%</div>
               <div class="bd-label">行业平均毛利率</div>
             </div>
             <div class="bd-item highlight">
-              <div class="bd-icon">💰</div>
               <div class="bd-value target">¥{{ formatNum(result.breakEvenRevenue) }}</div>
               <div class="bd-label">月保本营业额</div>
             </div>
             <div class="bd-item">
-              <div class="bd-icon">📅</div>
               <div class="bd-value">{{ formatNum(result.breakEvenDaily) }} 元/天</div>
               <div class="bd-label">日均保本营业额</div>
             </div>
@@ -353,7 +347,7 @@
 
         <!-- 风险提示 -->
         <div v-if="result.risks && result.risks.length" class="result-card risk-card">
-          <h3 class="card-title">⚠️ 风险提示</h3>
+          <h3 class="card-title">[风险] 风险提示</h3>
           <div class="risk-list">
             <div v-for="(r, i) in result.risks" :key="i" class="risk-item">
               <span class="risk-dot"></span>
@@ -545,12 +539,12 @@ function handleSubmit() {
 
   // 投资占比
   const costBreakdown = [
-    { icon: '🏠', label: '租金与押金', amount: rent + deposit, color: '#3b82f6' },
-    { icon: '🔨', label: '装修费用', amount: renovation, color: '#8b5cf6' },
-    { icon: '🍳', label: '设备采购', amount: equipment + hvac, color: '#f59e0b' },
-    { icon: '📋', label: '证照与营销', amount: license + marketing, color: '#10b981' },
-    { icon: '💻', label: '系统与其他', amount: pos + design + otherOneTime + otherStartup, color: '#6366f1' },
-    { icon: '💵', label: '流动资金储备', amount: reserveAmount, color: '#ec4899' }
+    { icon: '租金', label: '租金与押金', amount: rent + deposit, color: '#3b82f6' },
+    { icon: '装修', label: '装修费用', amount: renovation, color: '#8b5cf6' },
+    { icon: '设备', label: '设备采购', amount: equipment + hvac, color: '#f59e0b' },
+    { icon: '证照', label: '证照与营销', amount: license + marketing, color: '#10b981' },
+    { icon: '系统', label: '系统与其他', amount: pos + design + otherOneTime + otherStartup, color: '#6366f1' },
+    { icon: '储备', label: '流动资金储备', amount: reserveAmount, color: '#ec4899' }
   ].filter(c => c.amount > 0).map(c => ({ ...c, pct: (c.amount / totalInvestment * 100) }))
 
   // 费用明细
@@ -578,10 +572,10 @@ function handleSubmit() {
 
   // 行业基准对比
   const benchmarks = [
-    { icon: '📊', label: '装修单价', value: `${Math.round(renovation / area)} 元/m²`, benchmark: `${RENOVATION_PRICES[storeType]?.[cityLevel]?.[renLevel] || '—'} 元/m²`, status: '' },
-    { icon: '👥', label: '人效参考', value: `${Math.round(monthlyLabor)} 元/月`, benchmark: `${Math.round(mb.labor * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
-    { icon: '💡', label: '水电参考', value: `${monthlyUtilities} 元/月`, benchmark: `${Math.round(mb.utilities * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
-    { icon: '🎫', label: '客单价参考', value: `¥${avgTicket.toFixed(0)}`, benchmark: `${CITY_LABELS[cityLevel]} ${STORE_LABELS[storeType]} 行业均价`, status: '' }
+    { icon: '', label: '装修单价', value: `${Math.round(renovation / area)} 元/m²`, benchmark: `${RENOVATION_PRICES[storeType]?.[cityLevel]?.[renLevel] || '—'} 元/m²`, status: '' },
+    { icon: '', label: '人效参考', value: `${Math.round(monthlyLabor)} 元/月`, benchmark: `${Math.round(mb.labor * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
+    { icon: '', label: '水电参考', value: `${monthlyUtilities} 元/月`, benchmark: `${Math.round(mb.utilities * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
+    { icon: '', label: '客单价参考', value: `¥${avgTicket.toFixed(0)}`, benchmark: `${CITY_LABELS[cityLevel]} ${STORE_LABELS[storeType]} 行业均价`, status: '' }
   ]
 
   // 风险提示

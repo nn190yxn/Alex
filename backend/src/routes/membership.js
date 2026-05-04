@@ -4,10 +4,10 @@ import { query } from '../models/db.js'
 const router = express.Router()
 
 const PLANS = [
-  { code: 'free', name: '免费用户', price: 0, cycle: '永久', recommended: false },
-  { code: 'starter', name: '初阶会员', price: 29, cycle: '月', recommended: false },
-  { code: 'pro', name: '进阶会员', price: 99, cycle: '月', recommended: true },
-  { code: 'annual', name: '高阶会员', price: 499, cycle: '年', recommended: false }
+  { code: 'free', name: '免费版', price: 0, cycle: '永久', recommended: false },
+  { code: 'starter', name: '初阶会员', price: 99, cycle: '月', recommended: false },
+  { code: 'pro', name: '进阶会员', price: 149, cycle: '月', recommended: true },
+  { code: 'annual', name: '高阶会员', price: 199, cycle: '月', recommended: false }
 ]
 
 router.get('/plans', (req, res) => {

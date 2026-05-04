@@ -4,7 +4,6 @@
       <!-- 固定成本 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('fixed')">
-          <span class="section-icon">💰</span>
           <span class="section-title">固定成本（每月雷打不动）</span>
           <span class="section-arrow" :class="{ open: sections.fixed }">▾</span>
         </div>
@@ -35,7 +34,6 @@
       <!-- 堂食经营 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('dineIn')">
-          <span class="section-icon">🍽️</span>
           <span class="section-title">堂食经营（到店堂食）</span>
           <span class="section-arrow" :class="{ open: sections.dineIn }">▾</span>
         </div>
@@ -57,7 +55,6 @@
       <!-- 外卖经营 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('delivery')">
-          <span class="section-icon">🛵</span>
           <span class="section-title">外卖经营（美团/饿了么）</span>
           <span class="section-arrow" :class="{ open: sections.delivery }">▾</span>
         </div>
@@ -83,14 +80,13 @@
             </div>
           </div>
           <div class="hint">外卖到账率：在美团上卖 100 元，实际到手多少钱。比如到手 40 元，到账率就是 40%。不用管平台抽多少，只看你实际收到多少。贡献率 = 到账率 - 变动成本率。</div>
-          <div v-if="deliveryContribution < 0" class="hint warn">⚠️ 外卖每卖一单都在亏钱！需要提高到账率或降低变动成本。</div>
+          <div v-if="deliveryContribution < 0" class="hint warn">[警告] 外卖每卖一单都在亏钱！需要提高到账率或降低变动成本。</div>
         </div>
       </div>
 
       <!-- 经营参数 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('ops')">
-          <span class="section-icon">🏪</span>
           <span class="section-title">经营参数（用于拆解保本线）</span>
           <span class="section-arrow" :class="{ open: sections.ops }">▾</span>
         </div>
@@ -121,7 +117,6 @@
       <!-- 可选参数 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('optional')">
-          <span class="section-icon">🎯</span>
           <span class="section-title">实际营业额 & 目标利润（可选）</span>
           <span class="section-arrow" :class="{ open: sections.optional }">▾</span>
         </div>
@@ -182,25 +177,21 @@
         <!-- 多维度拆解 -->
         <div class="result-grid">
           <div class="metric-card">
-            <div class="metric-icon">👥</div>
             <div class="metric-value">{{ formatNum(result.dailyCustomers) }}</div>
             <div class="metric-label">每天至少要来这么多人</div>
             <div class="metric-sub">保本日客流</div>
           </div>
           <div class="metric-card">
-            <div class="metric-icon">🔄</div>
             <div class="metric-value">{{ result.turnoverRate }} 次</div>
             <div class="metric-label">每张桌子一天要转这么多次</div>
             <div class="metric-sub">保本翻台率</div>
           </div>
           <div class="metric-card">
-            <div class="metric-icon">📐</div>
             <div class="metric-value">¥{{ formatNum(result.revenuePerSqm) }}/m²/月</div>
             <div class="metric-label">每平米每月至少要产出</div>
             <div class="metric-sub">保本坪效线</div>
           </div>
           <div class="metric-card">
-            <div class="metric-icon">📈</div>
             <div class="metric-value" :class="safetyClass">{{ result.safetyMarginText }}</div>
             <div class="metric-label">营业额下滑多少才开始亏</div>
             <div class="metric-sub">安全边际率</div>
@@ -234,7 +225,7 @@
           <h3 class="card-title">经营诊断</h3>
           <div class="cost-diagnostics">
             <div v-for="d in result.diagnostics" :key="d.key" class="diag-item" :class="d.status">
-              <span class="diag-icon">{{ d.status === 'ok' ? '✓' : d.status === 'warn' ? '⚠' : '✗' }}</span>
+              <span class="diag-icon">{{ d.status === 'ok' ? '[正常]' : d.status === 'warn' ? '[注意]' : '[异常]' }}</span>
               <span class="diag-text">{{ d.label }}：{{ d.value }}（行业基准：{{ d.benchmark }}）</span>
             </div>
           </div>

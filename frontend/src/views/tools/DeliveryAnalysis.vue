@@ -3,7 +3,6 @@
     <template #inputs>
       <div class="section">
         <div class="section-header" @click="toggleSection('orders')">
-          <span class="section-icon">📦</span>
           <span class="section-title">订单与定价</span>
           <span class="section-arrow" :class="{ open: sections.orders }">▾</span>
         </div>
@@ -33,7 +32,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('costs')">
-          <span class="section-icon">💸</span>
           <span class="section-title">单件变动成本</span>
           <span class="section-arrow" :class="{ open: sections.costs }">▾</span>
         </div>
@@ -54,7 +52,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('monthly')">
-          <span class="section-icon">📊</span>
           <span class="section-title">月度固定支出</span>
           <span class="section-arrow" :class="{ open: sections.monthly }">▾</span>
         </div>
@@ -84,7 +81,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('dinein')">
-          <span class="section-icon">🍽️</span>
           <span class="section-title">堂食对比（可选）</span>
           <span class="section-arrow" :class="{ open: sections.dinein }">▾</span>
         </div>
@@ -185,22 +181,18 @@
           <h3 class="card-title">外卖保本线</h3>
           <div class="breakdown-grid">
             <div class="bd-item">
-              <div class="bd-icon">📦</div>
               <div class="bd-value">{{ result.breakEvenOrders }} 单</div>
               <div class="bd-label">月保本订单量</div>
             </div>
             <div class="bd-item">
-              <div class="bd-icon">📅</div>
               <div class="bd-value">{{ result.breakEvenDaily }} 单/天</div>
               <div class="bd-label">日均保本订单</div>
             </div>
             <div class="bd-item">
-              <div class="bd-icon">💰</div>
               <div class="bd-value">¥{{ result.contributionPerOrder }}</div>
               <div class="bd-label">每单贡献毛益</div>
             </div>
             <div class="bd-item">
-              <div class="bd-icon">{{ form.monthlyOrders >= result.breakEvenOrders ? '✅' : '⚠️' }}</div>
               <div class="bd-value">{{ form.monthlyOrders >= result.breakEvenOrders ? '已盈利' : '未达保本' }}</div>
               <div class="bd-label">当前状态</div>
             </div>
@@ -228,14 +220,14 @@
           <h3 class="card-title">堂食 vs 外卖对比</h3>
           <div class="comparison-grid">
             <div class="comp-col">
-              <div class="comp-header">🍽️ 堂食</div>
+              <div class="comp-header">堂食</div>
               <div class="comp-value">¥{{ result.dineInComparison.dineInProfit }}</div>
               <div class="comp-label">月利润</div>
               <div class="comp-sub">营收 ¥{{ result.dineInComparison.dineInRevenue }}</div>
             </div>
             <div class="comp-vs">VS</div>
             <div class="comp-col">
-              <div class="comp-header">🛵 外卖</div>
+              <div class="comp-header">外卖</div>
               <div class="comp-value">¥{{ result.monthlyNetProfit }}</div>
               <div class="comp-label">月利润</div>
               <div class="comp-sub">营收 ¥{{ result.monthlyRevenue }}</div>
@@ -369,30 +361,30 @@ function handleSubmit() {
   // 建议
   const suggestions = []
   if (profitPerOrder < 0) {
-    suggestions.push('🔴 每单外卖都在亏钱！需要立即：1）提高定价或减少满减活动力度；2）降低食材成本率；3）优化包装成本。')
+    suggestions.push('[紧急] 每单外卖都在亏钱！需要立即：1）提高定价或减少满减活动力度；2）降低食材成本率；3）优化包装成本。')
   } else if (marginPerOrder < 15) {
-    suggestions.push('⚠️ 单件利润率偏低，建议：1）推出高毛利套餐组合提高客单价；2）适当提价或减少满减；3）优化食材采购成本。')
+    suggestions.push('[建议] 单件利润率偏低，建议：1）推出高毛利套餐组合提高客单价；2）适当提价或减少满减；3）优化食材采购成本。')
   } else {
-    suggestions.push('✅ 单件利润率健康，建议持续监控平台费率变动和食材成本波动。')
+    suggestions.push('[良好] 单件利润率健康，建议持续监控平台费率变动和食材成本波动。')
   }
 
   if ((form.repeatRate || 0) < 15) {
-    suggestions.push('⚠️ 外卖复购率偏低，建议：1）优化包装体验和口味稳定性；2）设置收藏店铺优惠；3）做好评价回复和客服。')
+    suggestions.push('[建议] 外卖复购率偏低，建议：1）优化包装体验和口味稳定性；2）设置收藏店铺优惠；3）做好评价回复和客服。')
   } else if ((form.repeatRate || 0) >= 30) {
-    suggestions.push('✅ 复购率优秀，说明顾客认可口味和服务。')
+    suggestions.push('[良好] 复购率优秀，说明顾客认可口味和服务。')
   }
 
   if (monthlyMarketing > 0) {
     const mROI = (monthlyGrossProfit - monthlyNetProfit + monthlyMarketing) / monthlyMarketing
     if (mROI < 3) {
-      suggestions.push(`⚠️ 外卖营销 ROI 仅 ${mROI.toFixed(1)}，建议优化投放策略，目标 ROI 应 >= 3。`)
+      suggestions.push(`[建议] 外卖营销 ROI 仅 ${mROI.toFixed(1)}，建议优化投放策略，目标 ROI 应 >= 3。`)
     } else {
-      suggestions.push(`✅ 营销 ROI ${mROI.toFixed(1)}，投放效率不错。`)
+      suggestions.push(`[良好] 营销 ROI ${mROI.toFixed(1)}，投放效率不错。`)
     }
   }
 
   if (breakEvenOrders && monthlyOrders < breakEvenOrders) {
-    suggestions.push(`⚠️ 当前月订单 ${monthlyOrders} 单未达到保本线 ${breakEvenOrders} 单，需要提升订单量或降低成本。`)
+    suggestions.push(`[建议] 当前月订单 ${monthlyOrders} 单未达到保本线 ${breakEvenOrders} 单，需要提升订单量或降低成本。`)
   }
 
   result.value = {

@@ -1,0 +1,54 @@
+{
+  "xhsDiagnosisModel": {
+    "dimensions": [
+      { "name": "内容垂直度", "weight": 30, "key": "verticality" },
+      { "name": "互动质量", "weight": 25, "key": "interaction" },
+      { "name": "发布活跃度", "weight": 20, "key": "activity" },
+      { "name": "违规记录", "weight": 15, "key": "violation" },
+      { "name": "账号完善度", "weight": 10, "key": "completeness" }
+    ],
+    "thresholds": {
+      "interactionRate": { 
+        "图文": { "excellent": ">=5%", "good": "3-5%", "pass": "1.5-3%", "fail": "<1.5%" },
+        "视频": { "excellent": ">=8%", "good": "5-8%", "pass": "2-5%", "fail": "<2%" }
+      },
+      "saveRate": { "excellent": ">=3%", "good": "2-3%", "pass": "1-2%", "fail": "<1%" }
+    },
+    "levels": {
+      "A": { "range": "85-100", "label": "健康", "action": "保持现状，稳步增长" },
+      "B": { "range": "70-84", "label": "良好", "action": "关注短板，优化提升" },
+      "C": { "range": "50-69", "label": "预警", "action": "重点突破，系统改进" },
+      "D": { "range": "<50", "label": "危险", "action": "紧急整改，可能需换号" }
+    }
+  },
+  "shutiaoBenchmarks": {
+    "cpm": { "min": 30, "max": 50, "unit": "元/千次曝光" },
+    "screeningCriteria": {
+      "ctr": ">10%",
+      "interactionRate": ">5%",
+      "saveRate": ">3%",
+      "followRate": ">0.5%",
+      "readRate": ">40%"
+    },
+    "timing": "笔记发布后 2-6 小时最佳",
+    "budgetStrategy": {
+      "test": "50-100 元",
+      "scale": "200-500 元",
+      "hit": "1000+ 元"
+    }
+  },
+  "titleFormulas": [
+    { "id": "number", "name": "数字+结果型", "examples": { "restaurant": "开店 3 年，这 3 道菜让我亏了 20 万", "beauty": "做了 5 年美容师，这 4 个坑千万别踩", "education": "带过 300 个学生，总结出这 5 个提分技巧" } },
+    { "id": "pain", "name": "人群+痛点型", "examples": { "restaurant": "新手餐饮老板最容易犯的 3 个错", "beauty": "敏感肌千万别再乱用护肤品了", "education": "初二家长注意：这 3 个习惯不改，初三很难逆袭" } },
+    { "id": "suspense", "name": "悬念+揭秘型", "examples": { "restaurant": "为什么隔壁店排队你家没人？真相是...", "beauty": "美容院不会告诉你的 3 个内幕", "education": "学霸从不外传的错题本秘密" } },
+    { "id": "contrast", "name": "对比+反差型", "examples": { "restaurant": "成本 5 块卖 28？这道菜凭什么这么火", "beauty": "做完前 vs 做完后，同事问我是不是去整容了", "education": "报班 3 万 vs 自学，成绩差距竟然..." } },
+    { "id": "tutorial", "name": "教程+步骤型", "examples": { "restaurant": "保姆级教程：如何设计月入 10 万的菜单", "beauty": "在家就能做的 3 步美白法，建议收藏", "education": "3 个步骤，让孩子爱上写作业" } },
+    { "id": "list", "name": "清单+合集型", "examples": { "restaurant": "餐饮老板必看的 10 个降本增效小技巧", "beauty": "2026 年最值得入手的 5 款抗老精华", "education": "初中数学必背公式清单（建议打印）" } },
+    { "id": "warning", "name": "避坑+警示型", "examples": { "restaurant": "加盟餐饮店？看完这篇再决定", "beauty": "别再交智商税了！这些项目真的没用", "education": "警惕！这种兴趣班正在毁掉孩子" } },
+    { "id": "emotion", "name": "情绪共鸣型", "examples": { "restaurant": "凌晨 4 点的餐饮人，谁懂这种辛酸", "beauty": "做美业 10 年，我最大的感悟是...", "education": "致所有焦虑的家长：请放过孩子也放过自己" } },
+    { "id": "hotspot", "name": "时效+热点型", "examples": { "restaurant": "春节聚餐怎么点菜？这份攻略请收好", "beauty": "换季过敏怎么办？皮肤科医生给出建议", "education": "开学季必备：新学期学习计划表" } },
+    { "id": "benefit", "name": "利益+福利型", "examples": { "restaurant": "今天老板疯了，双人套餐只要 99！", "beauty": "粉丝专属福利：原价 1280 现只要 299", "education": "免费领取：100 套初中数学真题卷" } },
+    { "id": "identity", "name": "身份+认证型", "examples": { "restaurant": " Michelin 大厨教你做一道家常菜", "beauty": "10 年资深美容师教你正确洗脸", "education": "清华学霸分享：我是如何考上顶尖名校的" } },
+    { "id": "scenario", "name": "场景+解决方案型", "examples": { "restaurant": "约会不知道吃什么？这家餐厅绝了", "beauty": "熬夜后急救护肤指南，第二天依然光彩照人", "education": "孩子偏科怎么办？三招拯救弱势学科" } }
+  ]
+}

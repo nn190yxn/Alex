@@ -3,7 +3,6 @@
     <template #inputs>
       <div class="section">
         <div class="section-header" @click="toggleSection('inventory')">
-          <span class="section-icon">📦</span>
           <span class="section-title">库存与成本数据</span>
           <span class="section-arrow" :class="{ open: sections.inventory }">▾</span>
         </div>
@@ -52,17 +51,14 @@
           <h3 class="card-title">周转诊断</h3>
           <div class="diag-grid">
             <div class="diag-item">
-              <div class="diag-icon">{{ result.turnover >= 4 ? '✅' : result.turnover >= 2 ? '⚠️' : '❌' }}</div>
               <div class="diag-value" :class="result.statusClass">{{ result.statusText }}</div>
               <div class="diag-label">周转状况</div>
             </div>
             <div class="diag-item">
-              <div class="diag-icon">📊</div>
               <div class="diag-value">{{ result.turnover }}</div>
               <div class="diag-label">周转次数/{{ form.period }}</div>
             </div>
             <div class="diag-item">
-              <div class="diag-icon">📦</div>
               <div class="diag-value">¥{{ form.avgInventory.toLocaleString() }}</div>
               <div class="diag-label">平均库存</div>
             </div>
@@ -73,17 +69,14 @@
           <h3 class="card-title">行业基准对比</h3>
           <div class="benchmark-grid">
             <div class="bm-item" :class="{ active: result.turnover >= 6 && result.turnover <= 8 }">
-              <div class="bm-icon">🍔</div>
               <div class="bm-label">快餐</div>
               <div class="bm-range">6-8 次/月</div>
             </div>
             <div class="bm-item" :class="{ active: result.turnover >= 4 && result.turnover <= 6 }">
-              <div class="bm-icon">🍽️</div>
               <div class="bm-label">正餐</div>
               <div class="bm-range">4-6 次/月</div>
             </div>
             <div class="bm-item" :class="{ active: result.turnover >= 5 && result.turnover <= 7 }">
-              <div class="bm-icon">🍲</div>
               <div class="bm-label">火锅</div>
               <div class="bm-range">5-7 次/月</div>
             </div>

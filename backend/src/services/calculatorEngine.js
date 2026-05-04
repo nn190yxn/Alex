@@ -787,6 +787,35 @@ export const CALCULATORS = {
     }
   },
 
+  // ====== 餐饮人工成本知识库 ======
+  KNOWLEDGE_BASE: {
+    restaurantTypes: {
+      fast: {
+        label: '快餐/简餐',
+        laborRatioTarget: { min: 18, max: 25 },
+        efficiencyTarget: { front: 70000, back: 90000 }
+      },
+      normal: {
+        label: '中档正餐',
+        laborRatioTarget: { min: 22, max: 30 },
+        efficiencyTarget: { front: 60000, back: 80000 }
+      },
+      premium: {
+        label: '高端餐厅',
+        laborRatioTarget: { min: 28, max: 35 },
+        efficiencyTarget: { front: 50000, back: 70000 }
+      }
+    },
+    adviceTemplates: {
+      ratioHigh: { icon: '🔴', text: '人工占比过高（{{ratio}}% > {{max}}%）。建议优化排班、控制固定人力并提升高峰时段产出。' },
+      ratioLow: { icon: '✅', text: '人工占比处于合理区间，当前人员成本结构整体可控。' },
+      frontEffLow: { icon: '⚠️', text: '前厅人效偏低（¥{{value}} < ¥{{target}}），建议优化迎宾与收银分工，减少闲时冗余。' },
+      backEffLow: { icon: '⚠️', text: '后厨人效偏低（¥{{value}} < ¥{{target}}），建议优化备料流程并提升出餐效率。' },
+      mgmtHigh: { icon: '⚠️', text: '管理层成本占比偏高，建议复核管理岗位职责与人力配置。' },
+      structureUnbalanced: { icon: '⚠️', text: '前后场人数结构失衡，建议按客流与出餐节奏重排班次。' }
+    }
+  },
+
   'salary-cost-ratio-restaurant': {
     name: '人工成本占比计算器（餐饮版）',
     inputs: ['storeType', 'revenue', 'front', 'back', 'mgmt'],
@@ -2823,139 +2852,6 @@ export const CALCULATORS = {
     }
   },
 
-  'funnel-ltv-beauty': {
-    name: '美业拓客转化与 LTV 计算器',
-    inputs: ['newVisitors', 'experienceCount', 'retainedCount', 'repurchasedCount', 'totalMarketingCost', 'avgOrderValue', 'purchaseFrequency', 'customerLifespan'],
-    calc: ({ newVisitors, experienceCount, retainedCount, repurchasedCount, totalMarketingCost, avgOrderValue, purchaseFrequency, customerLifespan }) => {
-      const KB = CALCULATORS.BEAUTY_FUNNEL_KB
-
-      const visitToExperience = safeDiv(experienceCount, newVisitors) * 100
-      const experienceToRetain = safeDiv(retainedCount, experienceCount) * 100
-      const retainToRepurchase = safeDiv(repurchasedCount, retainedCount) * 100
-      const cac = safeDiv(totalMarketingCost, newVisitors)
-      const ltv = avgOrderValue * purchaseFrequency * customerLifespan
-      const ltvCacRatio = safeDiv(ltv, cac)
-
-      const suggestions = []
-      if (visitToExperience < KB.conversionBenchmarks.visitToExperience.min) {
-        suggestions.push({ ...KB.adviceTemplates.visitLow, rate: visitToExperience.toFixed(0), target: KB.conversionBenchmarks.visitToExperience.min })
-      }
-      if (experienceToRetain < KB.conversionBenchmarks.experienceToRetain.min) {
-        suggestions.push({ ...KB.adviceTemplates.experienceLow, rate: experienceToRetain.toFixed(0) })
-      }
-      if (retainToRepurchase < KB.conversionBenchmarks.retainToRepurchase.min) {
-        suggestions.push({ ...KB.adviceTemplates.repurchaseLow, rate: retainToRepurchase.toFixed(0), target: KB.conversionBenchmarks.retainToRepurchase.min })
-      }
-      if (cac > 500) {
-        suggestions.push({ ...KB.adviceTemplates.cacHigh, cac: cac.toFixed(0), target: 500 })
-      }
-      if (ltvCacRatio >= 5) {
-        suggestions.push({ ...KB.adviceTemplates.ltvHigh, ltv: ltv.toFixed(0), ratio: ltvCacRatio.toFixed(1) })
-      } else if (ltvCacRatio >= 3) {
-        suggestions.push({ ...KB.adviceTemplates.ltvGood, ltv: ltv.toFixed(0) })
-      } else if (cac > 0) {
-        suggestions.push({ ...KB.adviceTemplates.ltvLow, ratio: ltvCacRatio.toFixed(1) })
-      }
-
-      return {
-        sections: [
-          { title: '转化漏斗', items: [`进店→体验：${visitToExperience.toFixed(1)}%（${newVisitors}人→${experienceCount}人）`, `体验→留客：${experienceToRetain.toFixed(1)}%（${experienceCount}人→${retainedCount}人）`, `留客→复购：${retainToRepurchase.toFixed(1)}%（${retainedCount}人→${repurchasedCount}人）`] },
-          { title: '获客与 LTV', items: [`单人获客成本（CAC）：¥${cac.toFixed(0)}`, `客户终身价值（LTV）：¥${ltv.toFixed(0)}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`] },
-          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
-        ],
-        summary: `LTV ¥${ltv.toFixed(0)}，CAC ¥${cac.toFixed(0)}，比值 ${ltvCacRatio.toFixed(1)}`,
-        extra: {
-          visitToExperience: visitToExperience.toFixed(1),
-          experienceToRetain: experienceToRetain.toFixed(1),
-          retainToRepurchase: retainToRepurchase.toFixed(1),
-          cac: cac.toFixed(0),
-          ltv: ltv.toFixed(0),
-          ltvCacRatio: ltvCacRatio.toFixed(1),
-          suggestions
-        }
-      }
-    }
-  },
-
-  // ====== 美业盈亏平衡知识库 ======
-  BEAUTY_BREAK_EVEN_KB: {
-    costBenchmarks: {
-      rent: { min: 15, max: 25, label: '房租占比' },
-      labor: { min: 30, max: 40, label: '人工占比' },
-      product: { min: 5, max: 15, label: '产品耗材占比' },
-      platform: { min: 3, max: 8, label: '平台抽成/营销占比' }
-    },
-    adviceTemplates: {
-      breakevenHigh: { icon: '⚠️', text: '保本业绩线偏高（¥{{breakeven}}），固定成本压力大。建议：1）协商降租或分租工位；2）减少固定底薪，增加提成比例。' },
-      breakevenLow: { icon: '✅', text: '保本业绩线合理（¥{{breakeven}}），门店抗风险能力强。' },
-      rentHigh: { icon: '🔴', text: '房租占比过高（{{ratio}}% > {{max}}%），超过行业警戒线。建议：1）与房东协商降租；2）考虑搬至租金更低的商圈；3）增加线上获客减少对黄金地段的依赖。' },
-      laborHigh: { icon: '⚠️', text: '人工占比偏高（{{ratio}}%），建议优化薪酬结构：底薪降低 + 阶梯提成，让固定成本转化为变动成本。' },
-      marginGood: { icon: '✅', text: '毛利率健康，品项定价合理。继续保持当前产品结构。' },
-      marginLow: { icon: '🔴', text: '综合毛利率偏低（{{margin}}%），产品/手工成本过高。建议：1）优化耗材采购渠道；2）简化服务流程降低工时；3）提高客单价。' },
-      targetAdvice: { icon: '💡', text: '要实现目标利润 ¥{{target}}，需将月营业额提升至 ¥{{required}}，即日均 ¥{{daily}}。' }
-    }
-  },
-
-  // ====== 美业仪器投资知识库 ======
-  BEAUTY_DEVICE_KB: {
-    adviceTemplates: {
-      paybackFast: { icon: '✅', text: '回本周期 {{months}} 个月，属于快速回本项目！建议重点推广。' },
-      paybackNormal: { icon: '⚠️', text: '回本周期 {{months}} 个月，属于正常区间。需保证每月稳定客源。' },
-      paybackSlow: { icon: '🔴', text: '回本周期 {{months}} 个月过长！设备可能闲置率高或定价偏低。建议：1）增加营销推广；2）推出体验价引流；3）考虑二手设备降低投入。' },
-      breakEven: { icon: '💡', text: '每月至少需要 {{count}} 个客人使用该设备才能保本。请评估当前客源是否足够。' },
-      profitPerSession: { icon: '💰', text: '单次服务净利 ¥{{profit}}，毛利率 {{margin}}%。' }
-    }
-  },
-
-  'device-roi-beauty': {
-    name: '美容仪器投资回报计算器',
-    inputs: ['deviceCost', 'deviceLifespan', 'costPerSession', 'operatorCommissionRate', 'pricePerSession', 'sessionsPerMonth'],
-    calc: ({ deviceCost, deviceLifespan, costPerSession, operatorCommissionRate, pricePerSession, sessionsPerMonth }) => {
-      const KB = CALCULATORS.BEAUTY_DEVICE_KB
-      const monthlyDepreciation = safeDiv(deviceCost, deviceLifespan * 12)
-      const commissionPerSession = pricePerSession * operatorCommissionRate / 100
-      const profitPerSession = pricePerSession - costPerSession - commissionPerSession
-      const monthlyProfit = profitPerSession * sessionsPerMonth - monthlyDepreciation
-
-      const totalInvestment = deviceCost
-      const paybackMonths = monthlyProfit > 0 ? safeDiv(totalInvestment, monthlyProfit) : Infinity
-      const breakEvenSessions = profitPerSession > 0 ? Math.ceil(safeDiv(monthlyDepreciation, profitPerSession)) : 0
-      const annualROI = monthlyProfit > 0 ? safeDiv(monthlyProfit * 12, totalInvestment) * 100 : 0
-      const margin = safeDiv(profitPerSession, pricePerSession) * 100
-
-      const suggestions = []
-      if (paybackMonths <= 6) {
-        suggestions.push({ ...KB.adviceTemplates.paybackFast, months: paybackMonths.toFixed(1) })
-      } else if (paybackMonths <= 12) {
-        suggestions.push({ ...KB.adviceTemplates.paybackNormal, months: paybackMonths.toFixed(1) })
-      } else if (paybackMonths !== Infinity) {
-        suggestions.push({ ...KB.adviceTemplates.paybackSlow, months: paybackMonths.toFixed(1) })
-      }
-      suggestions.push({ ...KB.adviceTemplates.breakEven, count: breakEvenSessions })
-      suggestions.push({ ...KB.adviceTemplates.profitPerSession, profit: profitPerSession.toFixed(0), margin: margin.toFixed(0) })
-
-      return {
-        sections: [
-          { title: '投资分析', items: [`设备投入：¥${deviceCost.toLocaleString()}`, `使用年限：${deviceLifespan}年`, `月折旧：¥${monthlyDepreciation.toFixed(0)}`] },
-          { title: '单次利润拆解', items: [`服务收费：¥${pricePerSession}`, `耗材成本：¥${costPerSession}`, `操作提成：¥${commissionPerSession.toFixed(0)} (${operatorCommissionRate}%)`, `单次净利：¥${profitPerSession.toFixed(0)}`] },
-          { title: '回报预测', items: [`月净利：¥${monthlyProfit.toFixed(0)}（按${sessionsPerMonth}单/月）`, `回本周期：${paybackMonths === Infinity ? '∞（亏损）' : paybackMonths.toFixed(1) + ' 个月'}`, `年化收益率：${annualROI.toFixed(0)}%`] },
-          { title: '运营建议', items: suggestions.map(s => `${s.icon} ${s.text}`) }
-        ],
-        summary: `回本周期 ${paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1) + '个月'}，月净利 ¥${monthlyProfit.toFixed(0)}`,
-        extra: {
-          monthlyDepreciation: monthlyDepreciation.toFixed(0),
-          profitPerSession: profitPerSession.toFixed(0),
-          monthlyProfit: monthlyProfit.toFixed(0),
-          paybackMonths: paybackMonths === Infinity ? '∞' : paybackMonths.toFixed(1),
-          breakEvenSessions,
-          annualROI: annualROI.toFixed(0),
-          margin: margin.toFixed(0),
-          suggestions
-        }
-      }
-    }
-  },
-
   // ====== 美业会员卡知识库 ======
   BEAUTY_MEMBER_CARD_KB: {
     discountRules: [
@@ -3001,6 +2897,417 @@ export const CALCULATORS = {
         ],
         summary: `充${rechargeAmount}送${ga}，实际${discountRate.toFixed(1)}折`,
         extra: { discountRate: discountRate.toFixed(1), totalBalance: totalBalance.toLocaleString(), afterDiscountMargin: afterDiscountMargin.toFixed(1), marginLoss: marginLoss.toFixed(1), giftRatio: giftRatio.toFixed(0), extraRevenue: extraRevenue.toLocaleString(), profitStatus, suggestions }
+      }
+    }
+  },
+
+  // ====== 营销推广计算器 ======
+
+  'channel-cac': {
+    name: '多渠道获客成本计算器',
+    inputs: ['channels'],
+    calc: ({ channels }) => {
+      if (!channels || channels.length < 2) {
+        return { sections: [{ title: '错误', items: ['至少需要填写 2 个渠道数据'] }], summary: '数据不足' }
+      }
+      const processed = channels.filter(ch => ch.name && (ch.cost || 0) > 0 && (ch.leads || 0) > 0).map(ch => {
+        const cost = ch.cost || 0
+        const leads = ch.leads || 0
+        const converted = ch.converted || 0
+        const cac = cost / (converted > 0 ? converted : leads)
+        const conversionRate = converted > 0 ? (converted / leads) * 100 : 0
+        return { ...ch, cac: cac.toFixed(0), conversionRate: conversionRate.toFixed(1), rawCac: cac, converted }
+      })
+
+      if (processed.length < 2) {
+        return { sections: [{ title: '错误', items: ['至少 2 个渠道需包含名称、花费、线索数'] }], summary: '有效数据不足' }
+      }
+
+      processed.sort((a, b) => a.rawCac - b.rawCac)
+
+      const bestChannel = processed[0]
+      const worstChannel = processed[processed.length - 1]
+      const totalCost = processed.reduce((s, c) => s + c.cost, 0)
+      const totalConverted = processed.reduce((s, c) => s + c.converted, 0)
+      const avgCac = totalConverted > 0 ? totalCost / totalConverted : 0
+
+      const suggestions = []
+      suggestions.push(`最优渠道：${bestChannel.name}，获客成本仅 ¥${bestChannel.cac}，建议加大投入`)
+      if (worstChannel.rawCac > avgCac * 1.5) {
+        suggestions.push(`${worstChannel.name} 获客成本过高（¥${worstChannel.cac}），是最优渠道的 ${(worstChannel.rawCac / bestChannel.rawCac).toFixed(1)} 倍，建议优化或暂停`)
+      }
+      suggestions.push('行业参考：餐饮 CAC 30-80 元，教培 CAC 100-300 元，美业 CAC 80-200 元')
+
+      return {
+        sections: [
+          { title: '渠道 CAC 排名', items: processed.map((c, i) => `#${i + 1} ${c.name}：投入 ¥${c.cost.toLocaleString()}，线索 ${c.leads} 个，成交 ${c.converted} 单，CAC ¥${c.cac}，成交率 ${c.conversionRate}%`) },
+          { title: '综合数据', items: [`总投入：¥${totalCost.toLocaleString()}`, `总成交：${totalConverted} 单`, `平均获客成本：¥${avgCac.toFixed(0)}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `平均 CAC ¥${avgCac.toFixed(0)} — 最优渠道 ${bestChannel.name}`,
+        extra: { channels: processed, avgCac: avgCac.toFixed(0), totalCost, totalConverted }
+      }
+    }
+  },
+
+  'campaign-roi': {
+    name: '活动效果追踪计算器',
+    inputs: ['campaignName', 'totalCost', 'days', 'newVisitors', 'orders', 'revenue', 'grossMargin'],
+    calc: ({ campaignName, totalCost, days, newVisitors, orders, revenue, grossMargin }) => {
+      const grossProfit = revenue * (grossMargin / 100)
+      const netProfit = grossProfit - totalCost
+      const roi = (revenue / totalCost).toFixed(2)
+      const roiPct = (netProfit / totalCost) * 100
+      const cac = safeDiv(totalCost, newVisitors)
+      const conversionRate = safeDiv(orders, newVisitors) * 100
+      const avgOrderValue = safeDiv(revenue, orders)
+      const dailyVisitors = Math.round(newVisitors / days)
+
+      let status, statusText
+      if (roiPct >= 100) { status = 'success'; statusText = '活动优秀' }
+      else if (roiPct >= 0) { status = 'warning'; statusText = '有盈利' }
+      else { status = 'danger'; statusText = '亏损' }
+
+      const suggestions = []
+      if (netProfit < 0) {
+        suggestions.push('活动亏损！建议复盘：1）投入是否过高；2）转化率是否过低；3）是否应该调整活动形式')
+      } else if (roiPct < 50) {
+        suggestions.push('活动盈利偏低，建议优化投入产出比，下次活动可尝试降低投入或提高客单价')
+      } else {
+        suggestions.push('活动效果良好，建议总结成功经验，形成可复用的活动模板')
+      }
+      if (conversionRate < 20) suggestions.push('成交转化率偏低（' + conversionRate.toFixed(1) + '%），建议优化活动机制，降低参与门槛')
+      if (totalCost / days > revenue / days * 0.3) suggestions.push('控制成本：降低无效投入，聚焦高ROI渠道')
+
+      return {
+        sections: [
+          { title: '活动概览', items: [`活动名称：${campaignName || '未命名'}`, `活动天数：${days} 天`, `总投入：¥${Number(totalCost).toLocaleString()}`, `总营收：¥${Number(revenue).toLocaleString()}`, `毛利率：${grossMargin}%`, `活动毛利：¥${grossProfit.toLocaleString()}`] },
+          { title: 'ROI 计算', items: [`营收/投入比：${roi}`, `净利润：¥${netProfit.toLocaleString()}`, `净利率：${roiPct.toFixed(1)}%`, `状态：${statusText}`] },
+          { title: '数据总览', items: [`日均客流：${dailyVisitors} 人`, `转化率：${conversionRate.toFixed(1)}%`, `客单价：¥${avgOrderValue.toFixed(0)}`, `获客成本：¥${cac.toFixed(0)}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `${campaignName || '活动'} — ROI ${roi} — ${statusText}`,
+        extra: { roi, roiPct: roiPct.toFixed(1), netProfit: netProfit.toLocaleString(), cac: cac.toFixed(0), status, statusText }
+      }
+    }
+  },
+
+  'referral-roi': {
+    name: '转介绍效果计算器',
+    inputs: ['oldCustomers', 'newCustomers', 'rewardCost', 'newRevenue', 'otherCAC'],
+    calc: ({ oldCustomers, newCustomers, rewardCost, newRevenue, otherCAC }) => {
+      const referralRate = safeDiv(newCustomers, oldCustomers) * 100
+      const referralCAC = safeDiv(rewardCost, newCustomers)
+      const kValue = safeDiv(newCustomers, oldCustomers)
+      const totalNewRevenue = newCustomers * newRevenue
+      const netGain = totalNewRevenue - rewardCost
+      const roi = safeDiv(totalNewRevenue, rewardCost)
+      const savingPct = otherCAC > 0 ? ((otherCAC - referralCAC) / otherCAC) * 100 : 0
+
+      let status, statusText
+      if (referralRate >= 30) { status = 'success'; statusText = '转介绍率优秀' }
+      else if (referralRate >= 15) { status = 'warning'; statusText = '转介绍率良好' }
+      else { status = 'danger'; statusText = '转介绍率偏低' }
+
+      const suggestions = []
+      if (referralRate < 15) suggestions.push('提升奖励吸引力：加大返利力度或升级赠品')
+      if (kValue < 0.3) suggestions.push('降低参与门槛：简化推荐流程，一键分享')
+      if (savingPct < 20 && savingPct > 0) suggestions.push('对比其他渠道成本，转介绍优势不明显，需优化活动设计')
+      if (savingPct > 0) suggestions.push(`转介绍 CAC ¥${referralCAC.toFixed(0)}，比新客 CAC ¥${otherCAC} 节省 ${savingPct.toFixed(0)}%`)
+      if (suggestions.length === 0) suggestions.push('活动效果优秀，建议：1）持续运营转介绍体系；2）设置阶梯奖励刺激复推')
+
+      return {
+        sections: [
+          { title: '转介绍数据', items: [`老客参与：${oldCustomers} 人`, `带来新客：${newCustomers} 人`, `转介绍率：${referralRate.toFixed(1)}%`, `K 值：${kValue.toFixed(2)}`] },
+          { title: '成本对比', items: [`转介绍 CAC：¥${referralCAC.toFixed(0)}`, `新客 CAC：¥${Number(otherCAC).toLocaleString()}`, `节省比例：${savingPct > 0 ? savingPct.toFixed(0) + '%' : '无'}`, `活动净收益：¥${netGain.toLocaleString()}`] },
+          { title: '判断', items: [`转介绍状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `转介绍率 ${referralRate.toFixed(1)}% — K 值 ${kValue.toFixed(2)} — ${statusText}`,
+        extra: { referralRate: referralRate.toFixed(1), referralCAC: referralCAC.toFixed(0), kValue: kValue.toFixed(2), netGain: netGain.toLocaleString(), status, statusText }
+      }
+    }
+  },
+
+  'conversion-funnel': {
+    name: '营销转化漏斗计算器',
+    inputs: ['stages'],
+    calc: ({ stages }) => {
+      if (!stages || stages.length < 2) {
+        return { sections: [{ title: '错误', items: ['至少需要 2 个漏斗环节'] }], summary: '数据不足' }
+      }
+      const validStages = stages.filter(s => s.name && (s.count || 0) > 0)
+      if (validStages.length < 2) {
+        return { sections: [{ title: '错误', items: ['至少 2 个环节需包含名称和人数'] }], summary: '有效数据不足' }
+      }
+
+      const rates = []
+      for (let i = 1; i < validStages.length; i++) {
+        rates.push(safeDiv(validStages[i].count, validStages[i - 1].count) * 100)
+      }
+      const overallRate = safeDiv(validStages[validStages.length - 1].count, validStages[0].count) * 100
+      const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length
+
+      const drops = []
+      for (let i = 1; i < validStages.length; i++) {
+        drops.push({ name: `${validStages[i - 1].name}→${validStages[i].name}`, drop: validStages[i - 1].count - validStages[i].count, rate: rates[i - 1] })
+      }
+      const biggestDrop = drops.reduce((max, d) => d.drop > max.drop ? d : max, drops[0])
+
+      const issues = []
+      rates.forEach((r, i) => {
+        if (r < avgRate) issues.push(`${validStages[i].name}→${validStages[i + 1].name} 转化率 ${r.toFixed(1)}% 低于平均 ${avgRate.toFixed(1)}%，需重点优化`)
+      })
+      if (issues.length === 0) issues.push('各环节转化率健康，保持当前运营节奏')
+      issues.push(`最大流失环节：${biggestDrop.name}（流失 ${biggestDrop.drop} 人）`)
+
+      return {
+        sections: [
+          { title: '转化漏斗', items: validStages.map((s, i) => i === 0 ? `${s.name}：${s.count} 人` : `→ ${s.name}：${s.count} 人（转化率 ${rates[i - 1].toFixed(1)}%，流失 ${validStages[i - 1].count - s.count} 人）`) },
+          { title: '核心指标', items: [`总体转化率：${overallRate.toFixed(1)}%`, `平均环节转化率：${avgRate.toFixed(1)}%`, `最大流失环节：${biggestDrop.name}（流失 ${biggestDrop.drop} 人）`] },
+          { title: '优化建议', items: issues }
+        ],
+        summary: `整体转化率 ${overallRate.toFixed(1)}% — 最大流失环节 ${biggestDrop.name}`,
+        extra: { stages: validStages, rates: rates.map(r => r.toFixed(1)), overallRate: overallRate.toFixed(1), avgRate: avgRate.toFixed(1), biggestDrop: biggestDrop.name }
+      }
+    }
+  },
+
+  'retention-rate': {
+    name: '客户留存率计算器',
+    inputs: ['period', 'startCustomers', 'newCustomers', 'endActive', 'dormantDays'],
+    calc: ({ period, startCustomers, newCustomers, endActive, dormantDays }) => {
+      const retentionRate = safeDiv(endActive, startCustomers) * 100
+      const totalCustomers = startCustomers + (newCustomers || 0)
+      const nonActive = totalCustomers - endActive
+      const churnedCount = Math.max(0, startCustomers - endActive)
+      const dormantCount = nonActive - churnedCount
+
+      let status, statusText
+      if (retentionRate >= 60) { status = 'success'; statusText = '留存率优秀' }
+      else if (retentionRate >= 40) { status = 'warning'; statusText = '留存率一般' }
+      else { status = 'danger'; statusText = '留存率偏低' }
+
+      const suggestions = []
+      if (retentionRate < 40) suggestions.push('推出沉睡客户唤醒活动：发放限时优惠券/体验券')
+      if (churnedCount > startCustomers * 0.3) suggestions.push('流失率过高，需分析流失原因（服务/价格/竞品）')
+      suggestions.push('建立客户分层管理：高价值客户一对一维护，普通客户社群运营')
+      suggestions.push(`设置 ${dormantDays || 30} 天未消费自动提醒，及时跟进`)
+
+      return {
+        sections: [
+          { title: '留存数据', items: [`统计周期：${period || 30} 天`, `期初客户：${startCustomers} 人`, `新增客户：${newCustomers || 0} 人`, `活跃客户：${endActive} 人`, `留存率：${retentionRate.toFixed(1)}%`] },
+          { title: '客户状态分布', items: [`活跃：${endActive} 人`, `沉睡：${dormantCount > 0 ? dormantCount : 0} 人`, `流失：${churnedCount} 人`] },
+          { title: '判断', items: [`留存状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `${period || 30} 天留存率 ${retentionRate.toFixed(1)}% — ${statusText}`,
+        extra: { retentionRate: retentionRate.toFixed(1), active: endActive, dormant: dormantCount > 0 ? dormantCount : 0, churned: churnedCount, status, statusText }
+      }
+    }
+  },
+
+  'marketing-budget': {
+    name: '营销预算分配计算器',
+    inputs: ['totalBudget', 'goal', 'channels'],
+    calc: ({ totalBudget, goal, channels }) => {
+      const goalWeights = {
+        'acquisition': { douyin: 35, meituan: 25, referral: 15, community: 10, offline: 10, collab: 5 },
+        'retention': { douyin: 10, meituan: 10, referral: 35, community: 30, offline: 5, collab: 10 },
+        'brand': { douyin: 40, meituan: 10, referral: 10, community: 20, offline: 10, collab: 10 },
+        'balanced': { douyin: 25, meituan: 25, referral: 20, community: 15, offline: 10, collab: 5 }
+      }
+      const weights = goalWeights[goal] || goalWeights.balanced
+      const channelLabels = { douyin: '抖音投流', meituan: '美团推广', referral: '转介绍奖励', community: '社群运营', offline: '地推/传单', collab: '异业合作' }
+
+      const enabledChannels = (channels || []).filter(ch => ch.enabled && ch.cac > 0)
+      if (enabledChannels.length === 0) {
+        return { sections: [{ title: '错误', items: ['至少启用一个渠道并填入预估CAC'] }], summary: '无有效渠道' }
+      }
+
+      let totalWeight = 0
+      const items = enabledChannels.map(ch => {
+        const w = weights[ch.key] || 10
+        totalWeight += w
+        return { ...ch, weight: w }
+      })
+
+      items.forEach(item => {
+        item.pct = ((item.weight / totalWeight) * 100).toFixed(0)
+        item.amount = Math.round(totalBudget * item.pct / 100)
+        item.estCustomers = Math.floor(item.amount / item.cac)
+      })
+
+      const totalEst = items.reduce((s, i) => s + i.estCustomers, 0)
+      const blendedCAC = totalEst > 0 ? totalBudget / totalEst : 0
+      const top = items.reduce((best, i) => i.estCustomers > best.estCustomers ? i : best, items[0])
+
+      return {
+        sections: [
+          { title: '预算分配', items: items.map(i => `${channelLabels[i.key] || i.name}：¥${i.amount.toLocaleString()}（${i.pct}%），预估获客 ${i.estCustomers} 人`) },
+          { title: '效果汇总', items: [`总预算：¥${Number(totalBudget).toLocaleString()}`, `预估总获客：${totalEst} 人`, `综合 CAC：¥${blendedCAC.toFixed(0)}`, `推荐重点渠道：${channelLabels[top.key] || top.name}`] },
+          { title: '执行建议', items: ['预算执行期间每周复盘实际效果', '效果好的渠道可适当增加投入（不超过原预算 20%）', '效果差的渠道及时止损，调整到其他渠道'] }
+        ],
+        summary: `总预算 ¥${Number(totalBudget).toLocaleString()} — 预估获客 ${totalEst} 人`,
+        extra: { allocations: items, totalEstCustomers: totalEst, blendedCAC: blendedCAC.toFixed(0), topChannel: channelLabels[top.key] || top.name }
+      }
+    }
+  },
+
+  'churn-rate': {
+    name: '客户流失率计算器',
+    inputs: ['startCustomers', 'churned', 'avgOrder', 'freq'],
+    calc: ({ startCustomers, churned, avgOrder, freq }) => {
+      if (churned > startCustomers) {
+        return { sections: [{ title: '错误', items: ['流失客户数不能超过总客户数'] }], summary: '数据有误' }
+      }
+      const churnRate = safeDiv(churned, startCustomers) * 100
+      const monthlyLossValue = churned * avgOrder * freq
+      const annualLoss = monthlyLossValue * 12
+      const retainCostPerCustomer = avgOrder * freq * 0.3
+      const newCustomerCost = avgOrder * 3
+
+      let status, statusText
+      if (churnRate <= 5) { status = 'success'; statusText = '流失率健康' }
+      else if (churnRate <= 15) { status = 'warning'; statusText = '流失率偏高' }
+      else { status = 'danger'; statusText = '流失率严重' }
+
+      const suggestions = []
+      if (churnRate > 15) {
+        suggestions.push('流失率超过 15%，客户大量流失！建议：1）回访流失客户找出原因；2）优化服务体验；3）建立客户关怀体系')
+      }
+      suggestions.push(`挽留单个客户建议投入 ¥${retainCostPerCustomer.toFixed(0)}，远低于获取新客成本 ¥${newCustomerCost.toFixed(0)}`)
+      suggestions.push('建立客户健康度评分，提前识别即将流失的客户')
+
+      return {
+        sections: [
+          { title: '流失数据', items: [`期初客户：${startCustomers} 人`, `流失客户：${churned} 人`, `流失率：${churnRate.toFixed(1)}%`, `月均消费频次：${freq} 次`] },
+          { title: '流失成本', items: [`每月流失损失：¥${monthlyLossValue.toLocaleString()}`, `年化流失损失：¥${annualLoss.toLocaleString()}`, `客单价：¥${avgOrder}`] },
+          { title: '挽留优先级', items: [`立即联系流失的前 ${Math.ceil(churned * 0.3)} 位高价值客户`, `每月投入约 ¥${retainCostPerCustomer.toFixed(0)} 用于客户挽留`, `挽留 vs 获新成本比：1:${(newCustomerCost / retainCostPerCustomer).toFixed(1)}`] },
+          { title: '判断', items: [`流失状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `流失率 ${churnRate.toFixed(1)}% — ${statusText}`,
+        extra: { churnRate: churnRate.toFixed(1), monthlyLoss: monthlyLossValue.toFixed(0), annualLoss: annualLoss.toFixed(0), status, statusText }
+      }
+    }
+  },
+
+  'ltv-restaurant': {
+    name: '客户终身价值计算器（餐饮版）',
+    inputs: ['avgOrder', 'frequency', 'retentionMonths', 'grossMargin', 'cac'],
+    calc: ({ avgOrder, frequency, retentionMonths, grossMargin, cac }) => {
+      const monthlyValue = avgOrder * frequency
+      const ltv = Math.round(monthlyValue * retentionMonths * (grossMargin / 100))
+      const ltvCacRatio = safeDiv(ltv, cac)
+
+      let status, statusText
+      if (ltvCacRatio >= 3) { status = 'success'; statusText = 'LTV/CAC 健康' }
+      else if (ltvCacRatio >= 1) { status = 'warning'; statusText = 'LTV/CAC 偏低' }
+      else { status = 'danger'; statusText = '获客成本高于客户价值' }
+
+      const suggestions = []
+      if (ltvCacRatio < 3) {
+        suggestions.push('LTV/CAC 比值偏低，建议：1）提高客单价（推套餐/加菜）；2）提高消费频次（会员日/储值优惠）；3）延长留存时间（会员体系/社群运营）')
+      } else {
+        suggestions.push('获客投入健康，建议：1）加大投放力度扩大规模；2）建立会员体系延长留存月数')
+      }
+      suggestions.push('行业参考：餐饮 LTV/CAC >= 3 为健康，>= 5 为优秀')
+
+      return {
+        sections: [
+          { title: 'LTV 计算', items: [`客单价：¥${Number(avgOrder).toLocaleString()}`, `月均消费频次：${frequency} 次`, `月贡献：¥${monthlyValue.toLocaleString()}`, `毛利率：${grossMargin}%`, `平均留存：${retentionMonths} 个月`, `客户终身价值（毛利）：¥${ltv.toLocaleString()}`] },
+          { title: 'LTV vs CAC', items: [`获客成本：¥${Number(cac).toLocaleString()}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`, `建议最高 CAC：¥${Math.round(ltv * 0.3).toLocaleString()}（LTV 的 30%）`] },
+          { title: '判断', items: [`状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `LTV ¥${ltv.toLocaleString()}，CAC ¥${cac}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: { ltv: ltv.toLocaleString(), monthlyValue: monthlyValue.toFixed(0), ltvCacRatio: ltvCacRatio.toFixed(1), status, statusText }
+      }
+    }
+  },
+
+  'ltv-education': {
+    name: '客户终身价值计算器（教培版）',
+    inputs: ['hourlyFee', 'monthlyHours', 'retentionMonths', 'extraIncomePct', 'cac'],
+    calc: ({ hourlyFee, monthlyHours, retentionMonths, extraIncomePct, cac }) => {
+      const monthlyFee = hourlyFee * monthlyHours
+      const monthlyExtra = Math.round(monthlyFee * (extraIncomePct / 100))
+      const monthlyTotal = monthlyFee + monthlyExtra
+      const ltv = monthlyTotal * retentionMonths
+      const ltvCacRatio = safeDiv(ltv, cac)
+
+      let status, statusText
+      if (ltvCacRatio >= 3) { status = 'success'; statusText = 'LTV/CAC 健康' }
+      else if (ltvCacRatio >= 1) { status = 'warning'; statusText = 'LTV/CAC 偏低' }
+      else { status = 'danger'; statusText = '获客成本过高' }
+
+      const suggestions = []
+      if (ltvCacRatio < 3) {
+        suggestions.push('LTV/CAC 比值偏低，建议：1）提高续费率（教学质量/成果展示）；2）延长在读周期（多期连报优惠）；3）增加附加收入（教材/考级/夏令营）')
+      } else {
+        suggestions.push('获客投入健康，建议：1）加大招生投入扩大规模；2）提高满班率摊薄成本')
+      }
+      suggestions.push('行业参考：教培 LTV/CAC >= 3 为健康，>= 5 为优秀')
+
+      return {
+        sections: [
+          { title: 'LTV 计算', items: [`课时费：¥${Number(hourlyFee).toLocaleString()}/课时`, `月均课时：${monthlyHours}`, `月课时费收入：¥${monthlyFee.toLocaleString()}`, `月附加收入（${extraIncomePct}%）：¥${monthlyExtra.toLocaleString()}`, `学员平均在读：${retentionMonths} 个月`, `学员终身价值：¥${ltv.toLocaleString()}`] },
+          { title: 'LTV vs CAC', items: [`获客成本：¥${Number(cac).toLocaleString()}`, `LTV/CAC 比值：${ltvCacRatio.toFixed(1)}`, `建议最高 CAC：¥${Math.round(ltv * 0.25).toLocaleString()}（LTV 的 25%）`] },
+          { title: '判断', items: [`状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `LTV ¥${ltv.toLocaleString()}，CAC ¥${cac}，比值 ${ltvCacRatio.toFixed(1)}`,
+        extra: { ltv: ltv.toLocaleString(), monthlyFee: monthlyFee.toFixed(0), monthlyExtra: monthlyExtra.toFixed(0), ltvCacRatio: ltvCacRatio.toFixed(1), status, statusText }
+      }
+    }
+  },
+
+  'promotion-profit': {
+    name: '促销活动利润计算器',
+    inputs: ['normalPrice', 'normalMargin', 'discount', 'promoOrders', 'normalOrders', 'days'],
+    calc: ({ normalPrice, normalMargin, discount, promoOrders, normalOrders, days }) => {
+      const promoPrice = normalPrice * (discount / 100)
+      const costPerOrder = normalPrice * (1 - normalMargin / 100)
+      const promoMargin = normalMargin - (100 - discount)
+      const promoMarginAmount = promoPrice - costPerOrder
+      const dailyIncrease = promoOrders - normalOrders
+      const increasePct = safeDiv(dailyIncrease, normalOrders) * 100
+      const totalRevenue = promoPrice * promoOrders * days
+      const totalGrossProfit = promoMarginAmount * promoOrders * days
+      const normalProfit = (normalPrice * normalMargin / 100) * normalOrders * days
+      const opportunityLoss = Math.max(0, normalProfit - totalGrossProfit)
+
+      const denominator = discount - (100 - normalMargin)
+      const breakEvenIncrease = denominator !== 0 ? Math.ceil(normalOrders * (100 - discount) / denominator) : 0
+      const isProfitable = promoMarginAmount > 0 && dailyIncrease >= (breakEvenIncrease > 0 ? breakEvenIncrease : 0)
+
+      let status, statusText
+      if (promoMarginAmount <= 0) { status = 'danger'; statusText = '单件亏损' }
+      else if (isProfitable) { status = 'success'; statusText = '活动盈利' }
+      else { status = 'warning'; statusText = '增量不足' }
+
+      const suggestions = []
+      if (promoMarginAmount <= 0) {
+        suggestions.push('折扣后每单亏损！建议：1）提高折扣（减少让利）；2）降低产品成本；3）搭售高毛利产品')
+      }
+      if (!isProfitable && promoMarginAmount > 0) {
+        suggestions.push(`日均增量 ${dailyIncrease} 单未达保本增量 ${breakEvenIncrease} 单。建议：1）加大引流力度；2）减小折扣幅度；3）搭售高毛利产品`)
+      }
+      if (isProfitable) {
+        suggestions.push('活动实现盈利，建议总结成功经验，优化后复用')
+      }
+
+      return {
+        sections: [
+          { title: '利润对比', items: [`正常客单价：¥${Number(normalPrice).toLocaleString()}，毛利率 ${normalMargin}%`, `促销价：¥${promoPrice.toFixed(0)}（${discount}折），折后毛利率 ${promoMargin.toFixed(1)}%`, `正常单件毛利：¥${(normalPrice * normalMargin / 100).toFixed(1)}`, `促销单件毛利：¥${promoMarginAmount.toFixed(1)}`] },
+          { title: '增量分析', items: [`正常日均：${normalOrders} 单 → 促销日均：${promoOrders} 单`, `日均增量：${dailyIncrease > 0 ? '+' : ''}${dailyIncrease} 单（${increasePct > 0 ? '+' : ''}${increasePct.toFixed(0)}%）`, `保本需增量：${breakEvenIncrease} 单`, `活动期总营收：¥${totalRevenue.toFixed(0)}`, `活动期总毛利：¥${totalGrossProfit.toFixed(0)}`] },
+          { title: '机会成本', items: [`相比正常经营少赚：¥${opportunityLoss.toFixed(0)}`] },
+          { title: '判断', items: [`活动状况：${statusText}`] },
+          { title: '优化建议', items: suggestions }
+        ],
+        summary: `折后毛利率 ${promoMargin.toFixed(1)}% — ${statusText}`,
+        extra: { promoMargin: promoMargin.toFixed(1), promoMarginAmount: promoMarginAmount.toFixed(1), netProfit: totalGrossProfit.toFixed(0), totalRevenue: totalRevenue.toFixed(0), opportunityLoss: opportunityLoss.toFixed(0), breakEvenIncrease, dailyIncrease, status, statusText }
       }
     }
   }

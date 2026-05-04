@@ -52,9 +52,7 @@ export function normalizeMemberLevel(level) {
 }
 
 export function canAccessLevel(memberLevel, requiredLevel = 'free') {
-  // 开发阶段临时放开所有权限，方便测试高阶功能
-  return true
-  // return MEMBER_LEVEL_ORDER[normalizeMemberLevel(memberLevel)] >= MEMBER_LEVEL_ORDER[normalizeMemberLevel(requiredLevel)]
+  return MEMBER_LEVEL_ORDER[normalizeMemberLevel(memberLevel)] >= MEMBER_LEVEL_ORDER[normalizeMemberLevel(requiredLevel)]
 }
 
 export function getRequiredMemberLevel(toolCode) {

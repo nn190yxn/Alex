@@ -8,17 +8,16 @@
             <span class="brand-slogan">让每个老板都用上AI</span>
           </div>
           <p class="footer-desc">
-            实体老板的AI生意军师，围绕行业专版、经营诊断和会员能力，帮老板更快把 AI 用进日常生意。
+            实体老板的AI生意军师，围绕经营表格、增长顾问和会员能力，帮老板更快把 AI 用进日常生意。
           </p>
         </div>
 
         <div class="footer-links">
           <div class="link-group">
             <h4>产品</h4>
-            <router-link to="/industries/restaurant">行业专版</router-link>
-            <router-link to="/tools">AI工具箱</router-link>
-            <router-link to="/diagnosis">企业诊断</router-link>
-            <router-link to="/membership">会员服务</router-link>
+            <router-link to="/tools">表格中心</router-link>
+            <router-link to="/diagnosis">企业增长</router-link>
+            <router-link to="/membership">会员中心</router-link>
           </div>
 
           <div class="link-group">

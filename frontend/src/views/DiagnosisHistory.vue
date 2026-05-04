@@ -3,10 +3,10 @@
     <div class="container">
       <div class="page-header">
         <router-link to="/diagnosis" class="back-link">
-          <span class="back-icon">←</span> 返回诊断
+          <span class="back-icon">←</span> 返回诊断中心
         </router-link>
         <h1>历史诊断记录</h1>
-        <p>查看您过往的企业诊断报告</p>
+        <p>查看您过往的企业增长全景顾问报告</p>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -14,10 +14,10 @@
         <p>加载中...</p>
       </div>
 
-        <div v-else-if="reports.length === 0" class="empty-state">
-          <div class="empty-icon"><IconClipboard /></div>
+      <div v-else-if="reports.length === 0" class="empty-state">
+        <div class="empty-icon"><IconClipboard /></div>
         <h3>暂无诊断记录</h3>
-        <p>完成企业诊断后，这里将显示您的历史诊断报告</p>
+        <p>完成企业增长全景顾问后，这里将显示您的历史诊断报告</p>
         <router-link to="/diagnosis" class="btn btn-primary">
           去做诊断
         </router-link>
@@ -30,31 +30,32 @@
               <span class="date-icon"><IconCalendar /></span>
               {{ formatDate(report.created_at) }}
             </div>
-            <button class="btn btn-secondary btn-sm" @click="viewReport(report)">
-              查看详情
-            </button>
+            <div class="report-actions">
+              <span v-if="report.analysis_json?._aiGenerated" class="ai-tag">AI</span>
+              <button class="btn btn-secondary btn-sm" @click="viewReport(report)">
+                查看详情
+              </button>
+            </div>
           </div>
 
           <div class="report-summary">
-            <div v-if="report.analysis_json" class="summary-grid">
+            <div class="summary-grid">
               <div class="summary-item">
-                <span class="summary-label">最强能力</span>
-                <span class="summary-value text-success">
-                  {{ report.analysis_json.founderAnalysis?.strongest || '-' }}
-                </span>
+                <span class="summary-label">城市</span>
+                <span class="summary-value">{{ getCity(report) }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">最短板</span>
-                <span class="summary-value text-danger">
-                  {{ report.analysis_json.founderAnalysis?.weakest || '-' }}
-                </span>
+                <span class="summary-label">行业</span>
+                <span class="summary-value">{{ getIndustry(report) }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">核心瓶颈</span>
-                <span class="summary-value">
-                  {{ report.analysis_json.scanAnalysis?.worstBottleneck?.dimension || '-' }}
-                </span>
+                <span class="summary-label">团队规模</span>
+                <span class="summary-value">{{ getTeamSize(report) }}</span>
               </div>
+            </div>
+            <div v-if="getPainPoint(report)" class="pain-point-summary">
+              <span class="pain-label">核心痛点：</span>
+              <span class="pain-value">{{ getPainPoint(report) }}</span>
             </div>
           </div>
         </div>
@@ -79,6 +80,7 @@
       </div>
     </div>
 
+    <!-- 详情弹窗 -->
     <div v-if="selectedReport" class="modal-overlay" @click.self="selectedReport = null">
       <div class="modal-content">
         <div class="modal-header">
@@ -87,60 +89,58 @@
         </div>
         <div class="modal-body">
           <section class="report-section">
-            <h3>一、行业画像</h3>
+            <h3>一、基本信息</h3>
             <div class="info-grid">
-              <template v-for="(label, i) in stage0Labels" :key="label">
-                <div class="info-item">
-                  <span class="info-label">{{ label }}</span>
-                  <span class="info-value">{{ selectedReport.answers_json?.stage0?.[i] || '-' }}</span>
-                </div>
-              </template>
-            </div>
-          </section>
-
-          <section class="report-section">
-            <h3>二、创始人能力画像</h3>
-            <div class="ability-summary">
-              <div class="summary-item">
-                <span class="summary-label">最强能力</span>
-                <span class="summary-value text-success">
-                  {{ selectedReport.analysis_json?.founderAnalysis?.strongest || '-' }}
-                </span>
+              <div class="info-item">
+                <span class="info-label">城市</span>
+                <span class="info-value">{{ getCity(selectedReport) }}</span>
               </div>
-              <div class="summary-item">
-                <span class="summary-label">最短板</span>
-                <span class="summary-value text-danger">
-                  {{ selectedReport.analysis_json?.founderAnalysis?.weakest || '-' }}
-                </span>
+              <div class="info-item">
+                <span class="info-label">行业</span>
+                <span class="info-value">{{ getIndustry(selectedReport) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">团队规模</span>
+                <span class="info-value">{{ getTeamSize(selectedReport) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">核心痛点</span>
+                <span class="info-value pain">{{ getPainPoint(selectedReport) }}</span>
               </div>
             </div>
           </section>
 
-          <section class="report-section">
-            <h3>三、快速扫描结果</h3>
+          <section class="report-section" v-if="getFounderStage(selectedReport)">
+            <h3>二、创始人阶段</h3>
+            <div class="founder-stage-summary">
+              <span>阶段{{ getFounderStage(selectedReport).stage }}：{{ getFounderStage(selectedReport).name }}</span>
+            </div>
+          </section>
+
+          <section class="report-section" v-if="getScanScores(selectedReport)">
+            <h3>三、快速扫描</h3>
             <div class="scan-list">
               <div
-                v-for="(dim, i) in selectedReport.analysis_json?.scanAnalysis?.sorted || []"
-                :key="i"
+                v-for="(score, key) in getScanScores(selectedReport)"
+                :key="key"
                 class="scan-item"
               >
-                <span class="scan-name">{{ dim.dimension }}</span>
-                <span class="scan-score" :class="getScoreClass(dim.score)">{{ dim.score }}分</span>
+                <span class="scan-name">{{ score.label || key }}</span>
+                <span class="scan-score" :class="getScoreClass(score.score, 5)">{{ score.score }}/5</span>
               </div>
             </div>
           </section>
 
-          <section class="report-section" v-if="selectedReport.analysis_json?.aiInsights?.length > 0">
-            <h3>四、AI智能分析</h3>
-            <div class="insights-list">
+          <section class="report-section" v-if="getNextSteps(selectedReport)">
+            <h3>四、推荐行动</h3>
+            <div class="next-steps-list">
               <div
-                v-for="(insight, i) in selectedReport.analysis_json.aiInsights"
+                v-for="(step, i) in getNextSteps(selectedReport)"
                 :key="i"
-                class="insight-item"
-                :class="'type-' + insight.type"
+                class="next-step-item"
               >
-                <h4>{{ insight.title }}</h4>
-                <p>{{ insight.content }}</p>
+                <h4>{{ step.title }}</h4>
+                <p>{{ step.description }}</p>
               </div>
             </div>
           </section>
@@ -160,11 +160,6 @@ const reports = ref([])
 const selectedReport = ref(null)
 const page = ref(1)
 const pageSize = 10
-
-const stage0Labels = [
-  '客户类型', '客单价区间', '决策周期', '线上化程度',
-  '竞争格局', '客户复购属性', '地域覆盖', '核心痛点'
-]
 
 async function loadReports(pageNum = 1) {
   loading.value = true
@@ -188,10 +183,59 @@ function formatDate(date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
-function getScoreClass(score) {
-  if (score >= 4) return 'score-high'
-  if (score >= 3) return 'score-mid'
+function getScoreClass(score, maxScore) {
+  const pct = maxScore ? score / maxScore : 0
+  if (pct >= 0.7) return 'score-high'
+  if (pct >= 0.5) return 'score-mid'
   return 'score-low'
+}
+
+// 辅助函数：从 analysis_json 或 fallbackReport 获取数据
+function getAnalysis(report) {
+  return report.analysis_json || {}
+}
+
+function getStage0(analysis) {
+  return analysis.stage0 || analysis._stage0 || {}
+}
+
+function getCity(report) {
+  const analysis = getAnalysis(report)
+  const stage0 = getStage0(analysis)
+  return stage0.city?.name || '-'
+}
+
+function getIndustry(report) {
+  const analysis = getAnalysis(report)
+  const stage0 = getStage0(analysis)
+  return stage0.industry || '-'
+}
+
+function getTeamSize(report) {
+  const analysis = getAnalysis(report)
+  const stage0 = getStage0(analysis)
+  return stage0.teamSize || '-'
+}
+
+function getPainPoint(report) {
+  const analysis = getAnalysis(report)
+  const stage0 = getStage0(analysis)
+  return stage0.painPoint || ''
+}
+
+function getFounderStage(report) {
+  const analysis = getAnalysis(report)
+  return analysis.founder?.stage || null
+}
+
+function getScanScores(report) {
+  const analysis = getAnalysis(report)
+  return analysis.scan?.scores || null
+}
+
+function getNextSteps(report) {
+  const analysis = getAnalysis(report)
+  return analysis.nextSteps || analysis.fallbackReport?.nextSteps || null
 }
 
 function viewReport(report) {
@@ -300,6 +344,21 @@ onMounted(() => {
   margin-bottom: var(--space-4);
 }
 
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
+  color: var(--brand-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
 .report-date {
   display: flex;
   align-items: center;
@@ -343,8 +402,23 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.text-success { color: var(--state-success); }
-.text-danger { color: var(--state-danger); }
+.pain-point-summary {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line-default);
+  text-align: center;
+}
+
+.pain-label {
+  font-size: var(--text-caption);
+  color: var(--text-muted);
+}
+
+.pain-value {
+  font-size: var(--text-body-sm);
+  color: var(--state-danger);
+  font-weight: var(--font-weight-semibold);
+}
 
 .pagination {
   display: flex;
@@ -359,6 +433,7 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
+/* 弹窗 */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -440,9 +515,17 @@ onMounted(() => {
   font-size: var(--text-body-sm);
 }
 
-.ability-summary {
-  display: flex;
-  gap: var(--space-6);
+.info-value.pain {
+  color: var(--state-danger);
+  font-weight: var(--font-weight-semibold);
+}
+
+.founder-stage-summary {
+  padding: var(--space-3);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .scan-list {
@@ -473,34 +556,29 @@ onMounted(() => {
 .score-mid { color: var(--state-warning); }
 .score-low { color: var(--state-danger); }
 
-.insights-list {
+.next-steps-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.insight-item {
+.next-step-item {
   padding: var(--space-3);
+  background: var(--bg-subtle);
   border-radius: var(--radius-md);
-  border-left: 3px solid;
+  border-left: 3px solid var(--brand-primary);
 }
 
-.insight-item h4 {
+.next-step-item h4 {
   font-size: var(--text-body-sm);
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px;
 }
 
-.insight-item p {
-  font-size: var(--text-caption);
+.next-step-item p {
+  font-size: var(--text-body-sm);
   color: var(--text-secondary);
   margin: 0;
 }
-
-.type-bottleneck { background: rgba(239, 68, 68, 0.08); border-color: var(--state-danger); }
-.type-market { background: rgba(59, 130, 246, 0.08); border-color: var(--brand-primary); }
-.type-opportunity { background: rgba(34, 197, 94, 0.08); border-color: var(--state-success); }
-.type-founder { background: rgba(245, 158, 11, 0.08); border-color: var(--state-warning); }
-.type-urgent { background: rgba(239, 68, 68, 0.08); border-color: var(--state-danger); }
 
 @media (max-width: 640px) {
   .summary-grid {
@@ -509,11 +587,6 @@ onMounted(() => {
 
   .info-grid {
     grid-template-columns: 1fr;
-  }
-
-  .ability-summary {
-    flex-direction: column;
-    gap: var(--space-3);
   }
 }
 </style>

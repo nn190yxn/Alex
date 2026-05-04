@@ -1,5 +1,5 @@
 <template>
-  <div class="growth-diagnosis">
+  <div class="diagnosis-questionnaire">
     <div class="container">
       <button class="back-btn" @click="$router.push('/diagnosis')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -8,22 +8,33 @@
         返回诊断中心
       </button>
 
+      <!-- 加载状态 -->
       <div v-if="loading" class="loading-card card">
         <div class="spinner"></div>
-        <p>正在分析诊断数据...</p>
+        <p>{{ loadingText }}</p>
       </div>
 
+      <!-- 错误状态 -->
       <div v-else-if="error" class="error-card card">
         <p class="error-text">{{ error }}</p>
         <button class="btn btn-primary" @click="handleRetry">重试</button>
       </div>
 
+      <!-- 正常流程 -->
       <template v-else>
         <!-- 阶段标题 -->
         <div class="diagnosis-header">
           <div class="stage-badge" :class="currentStageClass">{{ currentStageLabel }}</div>
           <h1>{{ currentTitle }}</h1>
           <p class="stage-desc">{{ currentStageDesc }}</p>
+        </div>
+
+        <!-- 城市线级预判提示 -->
+        <div v-if="cityTierPreview" class="city-tier-preview card">
+          <div class="tier-badge" :class="cityTierPreview.tier">
+            {{ cityTierPreview.label }}
+          </div>
+          <p class="tier-desc">{{ cityTierPreview.marketFeatures?.socialNetwork || cityTierPreview.marketFeatures?.consumption || '' }}</p>
         </div>
 
         <!-- 进度条 -->
@@ -40,8 +51,19 @@
           <p class="question-text">{{ currentQuestion.text }}</p>
           <p v-if="currentQuestion.hint" class="question-hint">{{ currentQuestion.hint }}</p>
 
-          <!-- 选项类型 -->
-          <div v-if="currentQuestion.type === 'options'" class="options-list">
+          <!-- 文本输入 -->
+          <div v-if="currentQuestion.type === 'text'" class="text-input-wrap">
+            <input
+              v-model="textAnswer"
+              type="text"
+              class="text-input"
+              :placeholder="currentQuestion.placeholder || '请输入...'"
+              @keyup.enter="submitAnswer"
+            />
+          </div>
+
+          <!-- 选项 -->
+          <div v-else-if="currentQuestion.type === 'options'" class="options-list">
             <button
               v-for="opt in currentQuestion.options"
               :key="opt"
@@ -53,38 +75,7 @@
             </button>
           </div>
 
-          <div v-else-if="isTemplateDiagnosis && currentQuestion.options" class="options-list">
-            <button
-              v-for="opt in currentQuestion.options"
-              :key="opt.label"
-              class="option-btn option-multi"
-              :class="{ selected: currentAnswer === opt.value }"
-              @click="selectAnswer(opt.value, opt.advice)"
-            >
-              <span class="symptom-label">{{ opt.label }}</span>
-              <span v-if="opt.advice" class="symptom-desc">{{ opt.advice }}</span>
-            </button>
-          </div>
-
-          <!-- 评分类型（阶段1快速扫描） -->
-          <div v-else-if="currentQuestion.type === 'rating'" class="rating-options">
-            <button
-              v-for="score in [1, 2, 3, 4, 5]"
-              :key="score"
-              class="rating-btn"
-              :class="{ selected: currentAnswer === score }"
-              @click="selectAnswer(score)"
-            >
-              {{ score }}
-            </button>
-          </div>
-          <div v-if="currentQuestion.type === 'rating'" class="rating-labels">
-            <span>{{ currentQuestion.lowLabel || '1分' }}</span>
-            <span>{{ currentQuestion.midLabel || '3分' }}</span>
-            <span>{{ currentQuestion.highLabel || '5分' }}</span>
-          </div>
-
-          <!-- 创始人能力直接版：3问评分 -->
+          <!-- 创始人直接版：3子问评分 -->
           <div v-else-if="currentQuestion.type === 'founder-direct'" class="founder-direct">
             <div v-for="sub in currentQuestion.subQuestions" :key="sub.key" class="founder-sub-q">
               <p class="sub-q-text">{{ sub.text }}</p>
@@ -92,17 +83,22 @@
                 <button
                   v-for="score in [1, 3, 5]"
                   :key="score"
-                  class="rating-btn rating-sm"
+                  class="rating-btn"
                   :class="{ selected: founderAnswers[currentQuestion.key]?.[sub.key] === score }"
                   @click="selectFounderAnswer(currentQuestion.key, sub.key, score)"
                 >
                   {{ score }}
                 </button>
               </div>
+              <div class="rating-labels">
+                <span>1分</span>
+                <span>3分</span>
+                <span>5分</span>
+              </div>
             </div>
           </div>
 
-          <!-- 创始人能力间接版：症状选择 -->
+          <!-- 创始人间接版：多选症状 -->
           <div v-else-if="currentQuestion.type === 'founder-indirect'" class="options-list">
             <button
               v-for="symptom in currentQuestion.symptoms"
@@ -114,6 +110,59 @@
               <span class="symptom-label">{{ symptom.label }}</span>
               <span class="symptom-desc">{{ symptom.desc }}</span>
             </button>
+          </div>
+
+          <!-- 租评估：选项 -->
+          <div v-else-if="currentQuestion.type === 'rent'" class="options-list">
+            <button
+              v-for="opt in currentQuestion.options"
+              :key="opt"
+              class="option-btn"
+              :class="{ selected: currentAnswer === opt }"
+              @click="selectAnswer(opt)"
+            >
+              {{ opt }}
+            </button>
+          </div>
+
+          <!-- 快速扫描：1-5分 -->
+          <div v-else-if="currentQuestion.type === 'scan'" class="scan-options">
+            <div class="scan-level-labels">
+              <span>{{ currentQuestion.lowLabel }}</span>
+              <span>{{ currentQuestion.midLabel }}</span>
+              <span>{{ currentQuestion.highLabel }}</span>
+            </div>
+            <div class="rating-options">
+              <button
+                v-for="score in [1, 2, 3, 4, 5]"
+                :key="score"
+                class="rating-btn"
+                :class="{ selected: currentAnswer === score }"
+                @click="selectAnswer(score)"
+              >
+                {{ score }}
+              </button>
+            </div>
+          </div>
+
+          <!-- IP诊断：1-5分 -->
+          <div v-else-if="currentQuestion.type === 'ip'" class="ip-options">
+            <div class="scan-level-labels">
+              <span>{{ currentQuestion.lowLabel }}</span>
+              <span>{{ currentQuestion.midLabel }}</span>
+              <span>{{ currentQuestion.highLabel }}</span>
+            </div>
+            <div class="rating-options">
+              <button
+                v-for="score in [1, 2, 3, 4, 5]"
+                :key="score"
+                class="rating-btn"
+                :class="{ selected: currentAnswer === score }"
+                @click="selectAnswer(score)"
+              >
+                {{ score }}
+              </button>
+            </div>
           </div>
 
           <!-- 导航按钮 -->
@@ -135,11 +184,12 @@
             </button>
             <button
               v-else
-              class="btn btn-primary"
-              :disabled="!allAnswered"
+              class="btn btn-primary btn-generate"
+              :disabled="!allAnswered || generating"
               @click="submit"
             >
-              生成诊断报告
+              <span v-if="generating" class="btn-loading">生成中...</span>
+              <span v-else>生成诊断报告</span>
             </button>
           </div>
         </div>
@@ -147,6 +197,14 @@
         <!-- 即时反馈 -->
         <div v-if="currentFeedback" class="feedback-card card">
           <p>{{ currentFeedback }}</p>
+        </div>
+
+        <!-- 阶段完成提示 -->
+        <div v-if="stageCompleteMessage" class="stage-complete card">
+          <div class="complete-icon">✓</div>
+          <h3>{{ stageCompleteMessage.title }}</h3>
+          <p>{{ stageCompleteMessage.desc }}</p>
+          <button class="btn btn-primary" @click="continueToNext">继续下一步</button>
         </div>
       </template>
     </div>
@@ -161,182 +219,76 @@ const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadingText = ref('加载诊断问题...')
 const error = ref(null)
-const diagnosisTemplate = ref(null)
-const currentStage = ref('stage0') // stage0 | founder | scan
-const currentQuestionIndex = ref(0)
-const answers = ref({})
+const generating = ref(false)
+
+// 诊断数据
+const stage0Answers = ref({})
 const founderAnswers = ref({})
 const founderIndirectAnswers = ref([])
-const founderVersion = ref('direct') // 'direct' | 'indirect'
+const founderVersion = ref('direct')
+const rentAnswers = ref({})
+const scanAnswers = ref({})
+const ipAnswers = ref({})
+
 const currentFeedback = ref('')
-const diagnosisCode = computed(() => route.params.code || 'growth-diagnosis')
-const isGrowthDiagnosis = computed(() => diagnosisCode.value === 'growth-diagnosis')
-const isTemplateDiagnosis = computed(() => !isGrowthDiagnosis.value)
+const cityTierPreview = ref(null)
+const stageCompleteMessage = ref(null)
 
-// ===== 阶段0：行业诊断（8问） =====
-const stage0Questions = [
-  {
-    key: 'customerType',
-    text: '您做的生意，客户是个人消费者、企业客户，还是渠道经销商？',
-    type: 'options',
-    options: ['个人消费者', '企业客户', '渠道经销商'],
-    feedback: {
-      '个人消费者': '个人消费者模式，关键是获客成本和口碑传播。',
-      '企业客户': '企业客户模式，决策链条长但客单价高，关系维护很重要。',
-      '渠道经销商': '渠道模式，核心是渠道管理和利润分配。'
-    }
-  },
-  {
-    key: 'priceRange',
-    text: '您的平均客单价在什么区间？',
-    type: 'options',
-    options: ['100元以下', '100-1000元', '1000-1万元', '1万元以上'],
-    feedback: {
-      '100元以下': '低客单价，需要靠规模和复购来支撑利润。',
-      '100-1000元': '这个区间的关键是转化率提升和复购激活。',
-      '1000-1万元': '中等客单价，客户决策需要一定信任背书。',
-      '1万元以上': '高客单价，销售流程和客户信任建设是核心。'
-    }
-  },
-  {
-    key: 'decisionCycle',
-    text: '客户从了解到付费，一般需要多久？',
-    type: 'options',
-    options: ['当场决策', '短期（1-7天）', '中期（1-4周）', '长期（1个月以上）'],
-    feedback: {
-      '当场决策': '当场决策，说明体验或产品展示是你的核心转化场景。',
-      '短期（1-7天）': '短期决策，需要高效的跟进流程和促单机制。',
-      '中期（1-4周）': '中期决策，信任建设和案例展示是关键。',
-      '长期（1个月以上）': '长期决策，需要系统化的培育流程和客户关系管理。'
-    }
-  },
-  {
-    key: 'onlineLevel',
-    text: '您的业务线上化程度（线上营收占总营收的比例）？',
-    type: 'options',
-    options: ['10%以下', '10-30%', '30-70%', '70%以上'],
-    feedback: {
-      '10%以下': '线上化程度低，线上渠道有巨大增长空间。',
-      '10-30%': '线上起步阶段，需要加强内容输出和转化链路。',
-      '30-70%': '线上线下并重，关注渠道协同和效率优化。',
-      '70%以上': '高度线上化，重点在流量成本和转化效率。'
-    }
-  },
-  {
-    key: 'competition',
-    text: '您所在行业的竞争格局如何？',
-    type: 'options',
-    options: ['蓝海（竞争少）', '轻度竞争', '中度竞争', '红海（竞争激烈）'],
-    feedback: {
-      '蓝海（竞争少）': '蓝海市场，优先抢占市场份额和建立品牌认知。',
-      '轻度竞争': '竞争不算激烈，差异化定位能让你快速脱颖而出。',
-      '中度竞争': '中度竞争，需要找到自己的差异化位置。',
-      '红海（竞争激烈）': '红海市场，必须找到差异化或成本优势才能突围。'
-    }
-  },
-  {
-    key: 'repurchase',
-    text: '客户的复购频率如何？',
-    type: 'options',
-    options: ['一次性消费', '低频（半年以上）', '中频（1-6个月）', '高频（每月或更频繁）'],
-    feedback: {
-      '一次性消费': '一次性消费，获客成本高，需要靠转介绍和口碑。',
-      '低频（半年以上）': '低频消费，客户生命周期价值管理很重要。',
-      '中频（1-6个月）': '中频消费，复购激活和会员运营是增长关键。',
-      '高频（每月或更频繁）': '高频消费，客户体验和留存是核心。'
-    }
-  },
-  {
-    key: 'region',
-    text: '您的业务覆盖范围？',
-    type: 'options',
-    options: ['单店/单点', '同城多点', '区域连锁', '全国覆盖'],
-    feedback: {
-      '单店/单点': '单店模式，先把单点模型跑通再考虑复制。',
-      '同城多点': '同城多点，标准化和人才培养是扩张前提。',
-      '区域连锁': '区域连锁，管理体系和供应链是关键。',
-      '全国覆盖': '全国覆盖，组织能力和品牌建设是持续增长的基础。'
-    }
-  },
-  {
-    key: 'painPoint',
-    text: '您目前最核心的困惑或痛点是什么？',
-    type: 'options',
-    options: ['获客难', '不赚钱', '复制不了', '团队跟不上', '不知道往哪走'],
-    feedback: {
-      '获客难': '获客问题，我们会重点诊断您的获客渠道和转化效率。',
-      '不赚钱': '盈利问题，需要深入分析收入结构和成本控制。',
-      '复制不了': '复制问题，标准化能力和SOP建设是关键。',
-      '团队跟不上': '团队问题，组织架构和人才体系需要优化。',
-      '不知道往哪走': '战略问题，需要理清方向和优先级。'
-    }
-  }
-]
+// 流程控制
+const currentStage = ref('stage0') // stage0 | founder | rent | scan | ip
+const currentQuestionIndex = ref(0)
+const textAnswer = ref('')
 
-// ===== 模块F：创始人能力诊断 =====
-const founderDirectQuestions = [
-  {
-    key: 'insight',
-    name: '商业洞察',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您能否判断行业未来1-2年的趋势变化？' },
-      { key: 'practice', text: '您能否识别出客户需求的变化并提前布局？' },
-      { key: 'result', text: '过去一年，您有因为洞察力抓到过新机会吗？' }
-    ]
-  },
-  {
-    key: 'acquisition',
-    name: '获客能力',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您理解各获客渠道的底层逻辑吗？' },
-      { key: 'practice', text: '您能独立设计并执行一个获客方案吗？' },
-      { key: 'result', text: '目前最好的获客渠道是您搭建的吗？' }
-    ]
-  },
-  {
-    key: 'leadership',
-    name: '团队领导',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您能吸引到优秀的人才加入吗？' },
-      { key: 'practice', text: '您能激励并留住核心员工吗？' },
-      { key: 'result', text: '团队是追随您的愿景，还是只为工资工作？' }
-    ]
-  },
-  {
-    key: 'finance',
-    name: '财务意识',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您清楚公司真实的盈利状况吗？' },
-      { key: 'practice', text: '您能做正确的投资和商业决策吗？' },
-      { key: 'result', text: '有因为财务判断失误吃过亏吗？' }
-    ]
-  },
-  {
-    key: 'learning',
-    name: '学习进化',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您保持学习和自我提升的习惯吗？' },
-      { key: 'practice', text: '您能快速掌握新工具和新方法吗？' },
-      { key: 'result', text: '过去一年，您有明显的能力升级吗？' }
-    ]
-  },
-  {
-    key: 'role',
-    name: '角色定位',
-    type: 'founder-direct',
-    subQuestions: [
-      { key: 'cognitive', text: '您清楚自己最强的能力是什么吗？' },
-      { key: 'practice', text: '您现在的角色是否发挥了核心优势？' },
-      { key: 'result', text: '有因为角色错位导致过问题吗？' }
-    ]
-  }
-]
+// ===== 阶段0问题 =====
+const stage0Questions = ref([
+  { key: 'city', text: '你的生意在哪个城市？', type: 'text', placeholder: '例如：贵阳', required: true },
+  { key: 'industry', text: '你做什么行业/生意？简单描述一下。', type: 'text', placeholder: '例如：儿童体适能培训', required: true },
+  { key: 'customerType', text: '你的客户主要是？', type: 'options', options: ['个人消费者', '企业客户', '渠道经销商'] },
+  { key: 'priceRange', text: '平均客单价区间？', type: 'options', options: ['100元以下', '100-1000元', '1000-1万元', '1万元以上'] },
+  { key: 'decisionCycle', text: '客户从了解到付费，一般需要多久？', type: 'options', options: ['当场决策', '短期（1-7天）', '中期（1-4周）', '长期（1个月以上）'] },
+  { key: 'onlineLevel', text: '线上业务占比大概多少？', type: 'options', options: ['<10%', '10-30%', '30-70%', '>70%'] },
+  { key: 'competition', text: '你们当地的竞争情况？', type: 'options', options: ['蓝海（竞争少）', '轻度竞争', '中度竞争', '红海（竞争激烈）'] },
+  { key: 'repurchase', text: '客户复购频率？', type: 'options', options: ['一次性消费', '低频（半年以上）', '中频（1-6个月）', '高频（每月或更频繁）'] },
+  { key: 'region', text: '目前业务范围？', type: 'options', options: ['单店/单点', '同城多点', '区域连锁', '全国覆盖'] },
+  { key: 'painPoint', text: '目前最头疼的问题是？', type: 'options', options: ['获客难', '不赚钱', '复制不了', '团队跟不上', '不知道往哪走'] },
+  { key: 'teamSize', text: '现在团队（含你自己）大概多少人？', type: 'options', options: ['1-10人', '10-50人', '50-200人', '200人以上'] }
+])
+
+// ===== 模块F问题 =====
+const founderDirectQuestions = ref([
+  { key: 'insight', name: '商业洞察', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您能否判断行业未来1-2年的趋势变化？' },
+    { key: 'practice', text: '您能否识别出客户需求的变化并提前布局？' },
+    { key: 'result', text: '过去一年，您有因为洞察力抓到过新机会吗？' }
+  ]},
+  { key: 'acquisition', name: '获客能力', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您理解各获客渠道的底层逻辑吗？' },
+    { key: 'practice', text: '您能独立设计并执行一个获客方案吗？' },
+    { key: 'result', text: '目前最好的获客渠道是您搭建的吗？' }
+  ]},
+  { key: 'leadership', name: '团队领导', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您能吸引到优秀的人才加入吗？' },
+    { key: 'practice', text: '您能激励并留住核心员工吗？' },
+    { key: 'result', text: '团队是追随您的愿景，还是只为工资工作？' }
+  ]},
+  { key: 'finance', name: '财务意识', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您清楚公司真实的盈利状况吗？' },
+    { key: 'practice', text: '您能做正确的投资和商业决策吗？' },
+    { key: 'result', text: '有因为财务判断失误吃过亏吗？' }
+  ]},
+  { key: 'learning', name: '学习进化', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您保持学习和自我提升的习惯吗？' },
+    { key: 'practice', text: '您能快速掌握新工具和新方法吗？' },
+    { key: 'result', text: '过去一年，您有明显的能力升级吗？' }
+  ]},
+  { key: 'rolePosition', name: '角色定位', type: 'founder-direct', subQuestions: [
+    { key: 'cognitive', text: '您清楚自己最强的能力是什么吗？' },
+    { key: 'practice', text: '您现在的角色是否发挥了核心优势？' },
+    { key: 'result', text: '有因为角色错位导致过问题吗？' }
+  ]}
+])
 
 const founderIndirectQuestions = {
   key: 'indirect',
@@ -352,147 +304,83 @@ const founderIndirectQuestions = {
   ]
 }
 
-// ===== 阶段1：快速扫描（6维度） =====
-const scanQuestions = [
-  {
-    key: 'acquisition',
-    text: '获客能力：您目前的获客状态更接近以下哪种？',
-    type: 'rating',
-    lowLabel: '靠随机，不可控',
-    midLabel: '有稳定渠道，成本偏高',
-    highLabel: '自增长机制，成本可控'
-  },
-  {
-    key: 'profit',
-    text: '盈利效率：您的盈利状况更接近以下哪种？',
-    type: 'rating',
-    lowLabel: '亏钱或持平',
-    midLabel: '能赚钱但利润率不高',
-    highLabel: '利润率健康（3倍获客成本以上）'
-  },
-  {
-    key: 'repurchase',
-    text: '复购与推荐：客户的复购和转介绍情况？',
-    type: 'rating',
-    lowLabel: '很少复购和推荐',
-    midLabel: '偶尔有复购和推荐',
-    highLabel: '经常推荐，获客重要来源'
-  },
-  {
-    key: 'replication',
-    text: '复制能力：您的业务可复制程度？',
-    type: 'rating',
-    lowLabel: '完全依赖创始人',
-    midLabel: '部分可复制',
-    highLabel: '标准流程，可快速复制'
-  },
-  {
-    key: 'organization',
-    text: '组织能力：团队和管理体系的状态？',
-    type: 'rating',
-    lowLabel: '创始人干所有事',
-    midLabel: '有人但能力不足',
-    highLabel: '体系完善，梯队健全'
-  },
-  {
-    key: 'strategy',
-    text: '战略清晰：您对发展方向的清晰度？',
-    type: 'rating',
-    lowLabel: '完全迷茫',
-    midLabel: '有方向但不聚焦',
-    highLabel: '目标清晰，路径明确'
-  }
-]
+// ===== 模块I问题 =====
+const rentQuestions = ref([
+  { key: 'customerRelation', text: '客户是认你个人还是认公司品牌？', type: 'rent', options: ['认创始人个人', '认公司品牌', '各占一半'] },
+  { key: 'incomeStructure', text: '创始人突然住院3个月，哪些收入会停？', type: 'rent', options: ['大部分会停', '一半左右会停', '基本不受影响'] },
+  { key: 'knowledgeAsset', text: '核心流程和标准在你脑子里还是文档里？', type: 'rent', options: ['都在脑子里', '部分有文档', '大部分已文档化'] },
+  { key: 'decisionDependency', text: '哪些事你不做就没人能做？', type: 'rent', options: ['很多事', '一些关键事', '几乎没有'] },
+  { key: 'brandDependency', text: '没有你出面，客户还信不信？', type: 'rent', options: ['不信，只认你', '看情况', '信，认品牌'] }
+])
 
-// ===== 阶段流程 =====
-const stages = {
-  stage0: {
-    label: '阶段0',
-    title: '行业诊断',
-    desc: '通过8个关键问题，快速定位您企业所处行业的基本特征和核心痛点',
-    questions: stage0Questions,
-    nextStage: 'founder'
-  },
-  founder: {
-    label: '模块F',
-    title: '创始人能力诊断',
-    desc: '评估您作为创始人的6项核心能力，找到能力短板',
-    questions: [], // 动态设置
-    nextStage: 'scan'
-  },
-  scan: {
-    label: '阶段1',
-    title: '快速扫描',
-    desc: '6维度评分，快速定位企业最严重的问题',
-    questions: scanQuestions,
-    nextStage: null
-  }
-}
+// ===== 阶段1问题 =====
+const scanQuestions = ref([
+  { key: 'acquisition', label: '获客能力', type: 'scan', lowLabel: '靠随机，不可控', midLabel: '有稳定渠道，成本偏高', highLabel: '自增长机制，成本可控' },
+  { key: 'profit', label: '盈利效率', type: 'scan', lowLabel: '亏钱或持平', midLabel: '能赚钱但不到3倍CAC', highLabel: '利润率健康（3倍CAC以上）' },
+  { key: 'repurchase', label: '复购与推荐', type: 'scan', lowLabel: '很少复购和推荐', midLabel: '偶尔有复购和推荐', highLabel: '经常推荐，获客重要来源' },
+  { key: 'replication', label: '复制能力', type: 'scan', lowLabel: '完全依赖创始人', midLabel: '部分可复制', highLabel: '标准流程，可快速复制' },
+  { key: 'organization', label: '组织能力', type: 'scan', lowLabel: '创始人干所有事', midLabel: '有人但能力不足', highLabel: '体系完善，梯队健全' },
+  { key: 'strategy', label: '战略清晰', type: 'scan', lowLabel: '完全迷茫', midLabel: '有方向但不聚焦', highLabel: '目标清晰，路径明确' }
+])
 
-const templateQuestionEntries = computed(() => {
-  if (!diagnosisTemplate.value?.dimensions) return []
-  return Object.entries(diagnosisTemplate.value.dimensions).flatMap(([dimensionKey, dimension]) =>
-    (dimension.questions || []).map((question) => ({
-      ...question,
-      dimensionKey,
-      dimensionLabel: dimension.label
-    }))
-  )
+// ===== 计算属性 =====
+const isGrowthDiagnosis = computed(() => true)
+
+const currentStageData = computed(() => {
+  switch (currentStage.value) {
+    case 'stage0': return { label: '阶段0', title: '行业与城市画像', desc: '2问开场（城市+行业）自动识别城市线级，预判市场环境' }
+    case 'founder': return { label: '模块F', title: '创始人能力诊断', desc: founderVersion.value === 'direct' ? '评估6项核心能力（1-5分）' : '通过企业症状反推能力缺口' }
+    case 'rent': return { label: '模块I', title: '企业租评估', desc: '评估"劳动"vs"租"的比例，识别系统性风险' }
+    case 'scan': return { label: '阶段1', title: '快速扫描', desc: '6维度评分，区分增强回路与调节回路' }
+    case 'ip': return { label: '模块G', title: '创始人IP诊断', desc: '5维度评估，推荐最适合的IP形式' }
+    default: return { label: '', title: '', desc: '' }
+  }
 })
 
-const currentStageData = computed(() => stages[currentStage.value])
 const currentQuestions = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return templateQuestionEntries.value
+  switch (currentStage.value) {
+    case 'stage0': return stage0Questions.value
+    case 'founder': return founderVersion.value === 'direct' ? founderDirectQuestions.value : [founderIndirectQuestions]
+    case 'rent': return rentQuestions.value
+    case 'scan': return scanQuestions.value
+    case 'ip': return [] // IP 问题需要从后端获取
+    default: return []
   }
-  if (currentStage.value === 'founder') {
-    return founderVersion.value === 'direct' ? founderDirectQuestions : [founderIndirectQuestions]
-  }
-  return currentStageData.value.questions
 })
+
 const currentQuestion = computed(() => currentQuestions.value[currentQuestionIndex.value] || {})
-const currentAnswer = computed(() => answers.value[currentQuestion.value.key])
+const currentAnswer = computed(() => {
+  switch (currentStage.value) {
+    case 'stage0': return stage0Answers.value[currentQuestion.value.key]
+    case 'rent': return rentAnswers.value[currentQuestion.value.key]
+    case 'scan': return scanAnswers.value[currentQuestion.value.key]
+    case 'ip': return ipAnswers.value[currentQuestion.value.key]
+    default: return null
+  }
+})
 
 const isLastQuestion = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return currentQuestionIndex.value >= currentQuestions.value.length - 1
-  }
-  if (currentStage.value === 'scan') {
-    return currentQuestionIndex.value >= scanQuestions.length - 1
-  }
-  if (currentStage.value === 'founder') {
-    if (founderVersion.value === 'direct') {
-      return currentQuestionIndex.value >= founderDirectQuestions.length - 1
-    }
-    return currentQuestionIndex.value >= 1
-  }
-  return currentQuestionIndex.value >= stage0Questions.length - 1
+  return currentQuestionIndex.value >= currentQuestions.value.length - 1
 })
 
-// Global question index for progress
 const globalQuestionIndex = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return currentQuestionIndex.value
-  }
   let offset = 0
-  if (currentStage.value === 'founder') {
-    offset = stage0Questions.length
-  } else if (currentStage.value === 'scan') {
-    offset = stage0Questions.length + (founderVersion.value === 'direct' ? founderDirectQuestions.length : 1)
-  }
+  if (currentStage.value === 'founder') offset = stage0Questions.value.length
+  else if (currentStage.value === 'rent') offset = stage0Questions.value.length + (founderVersion.value === 'direct' ? founderDirectQuestions.value.length : 1)
+  else if (currentStage.value === 'scan') offset = stage0Questions.value.length + (founderVersion.value === 'direct' ? founderDirectQuestions.value.length : 1) + rentQuestions.value.length
+  else if (currentStage.value === 'ip') offset = stage0Questions.value.length + (founderVersion.value === 'direct' ? founderDirectQuestions.value.length : 1) + rentQuestions.value.length + scanQuestions.value.length
   return offset + currentQuestionIndex.value
 })
 
 const totalQuestions = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return currentQuestions.value.length
-  }
-  return stage0Questions.length + (founderVersion.value === 'direct' ? founderDirectQuestions.length : 1) + scanQuestions.length
+  return stage0Questions.value.length +
+    (founderVersion.value === 'direct' ? founderDirectQuestions.value.length : 1) +
+    rentQuestions.value.length +
+    scanQuestions.value.length
 })
 
 const stageProgressText = computed(() => {
-  const stageQuestions = currentQuestions.value
-  return `${currentQuestionIndex.value + 1} / ${stageQuestions.length}`
+  return `${currentQuestionIndex.value + 1} / ${currentQuestions.value.length}`
 })
 
 const overallProgress = computed(() => {
@@ -500,277 +388,287 @@ const overallProgress = computed(() => {
   return ((globalQuestionIndex.value + 1) / totalQuestions.value) * 100
 })
 
-const allAnswered = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return currentQuestions.value.length > 0 && currentQuestions.value.every(q => answers.value[q.key] != null)
+const hasAnswer = computed(() => {
+  const q = currentQuestion.value
+  if (!q.key) return false
+
+  switch (currentStage.value) {
+    case 'stage0':
+      if (q.type === 'text') return textAnswer.value.trim().length > 0
+      return stage0Answers.value[q.key] != null
+    case 'founder':
+      if (founderVersion.value === 'direct') {
+        const a = founderAnswers.value[q.key]
+        return a && a.cognitive && a.practice && a.result
+      }
+      return founderIndirectAnswers.value.length > 0
+    case 'rent':
+      return rentAnswers.value[q.key] != null
+    case 'scan':
+      return scanAnswers.value[q.key] != null
+    case 'ip':
+      return ipAnswers.value[q.key] != null
+    default:
+      return false
   }
-  // Check all stages have answers
-  const s0Answered = stage0Questions.every(q => answers.value[q.key] != null)
+})
+
+const allAnswered = computed(() => {
+  // 检查阶段0必填
+  const s0Required = stage0Questions.value.filter(q => q.required)
+  const s0Answered = s0Required.every(q => {
+    if (q.type === 'text') return stage0Answers.value[q.key]?.trim()
+    return stage0Answers.value[q.key] != null
+  })
+  if (!s0Answered) return false
+
+  // 检查模块F
   let fAnswered = false
   if (founderVersion.value === 'direct') {
-    fAnswered = founderDirectQuestions.every(q => {
+    fAnswered = founderDirectQuestions.value.every(q => {
       const a = founderAnswers.value[q.key]
       return a && a.cognitive && a.practice && a.result
     })
-  } else if (founderVersion.value === 'indirect') {
+  } else {
     fAnswered = founderIndirectAnswers.value.length > 0
   }
-  const scanAnswered = scanQuestions.every(q => answers.value[q.key] != null)
-  return s0Answered && fAnswered && scanAnswered
+  if (!fAnswered) return false
+
+  // 检查阶段1
+  const scanAnswered = scanQuestions.value.every(q => scanAnswers.value[q.key] != null)
+  if (!scanAnswered) return false
+
+  return true
 })
 
-const hasAnswer = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return currentAnswer.value != null
-  }
-  if (currentStage.value === 'stage0') {
-    return currentAnswer.value != null
-  }
-  if (currentStage.value === 'founder') {
-    if (founderVersion.value === 'direct') {
-      const q = currentQuestion.value
-      const a = founderAnswers.value[q.key]
-      return a && a.cognitive && a.practice && a.result
-    }
-    return founderIndirectAnswers.value.length > 0
-  }
-  return currentAnswer.value != null
-})
+const currentStageLabel = computed(() => currentStageData.value.label)
+const currentTitle = computed(() => currentStageData.value.title)
+const currentStageDesc = computed(() => currentStageData.value.desc)
+const currentStageClass = computed(() => `badge-${currentStage.value}`)
 
-const currentTitle = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return diagnosisTemplate.value?.name || '行业专属诊断'
+// ===== 方法 =====
+function selectAnswer(val) {
+  switch (currentStage.value) {
+    case 'stage0':
+      stage0Answers.value[currentQuestion.value.key] = val
+      textAnswer.value = ''
+      break
+    case 'rent':
+      rentAnswers.value[currentQuestion.value.key] = val
+      break
+    case 'scan':
+      scanAnswers.value[currentQuestion.value.key] = val
+      break
+    case 'ip':
+      ipAnswers.value[currentQuestion.value.key] = val
+      break
   }
-  return currentStageData.value.title
-})
-const currentStageLabel = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return diagnosisTemplate.value?.industry === 'restaurant' ? '行业专版' : '专项诊断'
-  }
-  return currentStageData.value.label
-})
-const currentStageDesc = computed(() => {
-  if (isTemplateDiagnosis.value) {
-    return diagnosisTemplate.value?.description || '按模板完成问卷并生成结构化诊断报告'
-  }
-  return currentStageData.value.desc
-})
-const currentStageClass = computed(() => isTemplateDiagnosis.value ? 'badge-template' : `badge-${currentStage.value}`)
 
-// ===== Methods =====
-function selectAnswer(val, feedback = '') {
-  answers.value[currentQuestion.value.key] = val
-  if (isTemplateDiagnosis.value) {
-    currentFeedback.value = feedback || ''
-    return
-  }
-  // 即时反馈
-  const q = currentQuestion.value
-  if (q.feedback && q.feedback[val]) {
-    currentFeedback.value = q.feedback[val]
-  } else {
-    currentFeedback.value = ''
+  // 城市输入后查询线级
+  if (currentStage.value === 'stage0' && currentQuestion.value.key === 'city') {
+    fetchCityTier(val)
   }
 }
 
 function selectFounderAnswer(key, subKey, score) {
-  if (!founderAnswers.value[key]) {
-    founderAnswers.value[key] = {}
-  }
+  if (!founderAnswers.value[key]) founderAnswers.value[key] = {}
   founderAnswers.value[key][subKey] = score
 }
 
 function toggleFounderIndirect(label) {
   const idx = founderIndirectAnswers.value.indexOf(label)
-  if (idx >= 0) {
-    founderIndirectAnswers.value.splice(idx, 1)
-  } else {
-    founderIndirectAnswers.value.push(label)
+  if (idx >= 0) founderIndirectAnswers.value.splice(idx, 1)
+  else founderIndirectAnswers.value.push(label)
+}
+
+async function fetchCityTier(cityName) {
+  if (!cityName || cityName.trim().length < 2) return
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`/api/diagnosis/v3/city-tier?city=${encodeURIComponent(cityName)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      cityTierPreview.value = await res.json()
+    }
+  } catch (e) {
+    // 忽略错误
+  }
+}
+
+function submitAnswer() {
+  if (currentQuestion.value.type === 'text' && textAnswer.value.trim()) {
+    stage0Answers.value[currentQuestion.value.key] = textAnswer.value.trim()
+    textAnswer.value = ''
+    if (currentQuestion.value.key === 'city') {
+      fetchCityTier(stage0Answers.value.city)
+    }
+  }
+  if (hasAnswer.value) {
+    next()
   }
 }
 
 function next() {
   if (!hasAnswer.value) return
 
-  if (isTemplateDiagnosis.value) {
-    if (currentQuestionIndex.value < currentQuestions.value.length - 1) {
-      currentQuestionIndex.value++
-    }
-    currentFeedback.value = ''
-    return
-  }
-
-  // 如果是阶段0第一题后，询问创始人诊断版本
-  if (currentStage.value === 'stage0' && currentQuestionIndex.value === 0) {
-    // 阶段0继续
-  }
-
-  if (currentStage.value === 'stage0' && currentQuestionIndex.value < stage0Questions.length - 1) {
+  if (currentQuestionIndex.value < currentQuestions.value.length - 1) {
     currentQuestionIndex.value++
-  } else if (currentStage.value === 'stage0') {
-    // 阶段0完成，进入创始人诊断
-    currentStage.value = 'founder'
-    currentQuestionIndex.value = 0
-    currentFeedback.value = '行业诊断完成！接下来评估创始人能力。'
-  } else if (currentStage.value === 'founder') {
-    if (!founderVersion.value) {
-      // 用户还没选择版本，但这里不应该走到
-    }
-    const maxIdx = founderVersion.value === 'direct' ? founderDirectQuestions.length - 1 : 0
-    if (currentQuestionIndex.value < maxIdx) {
-      currentQuestionIndex.value++
-    } else {
-      // 创始人诊断完成，进入快速扫描
-      currentStage.value = 'scan'
-      currentQuestionIndex.value = 0
-      currentFeedback.value = '创始人能力评估完成！接下来做6维度快速扫描。'
-    }
-  } else if (currentStage.value === 'scan' && currentQuestionIndex.value < scanQuestions.length - 1) {
-    currentQuestionIndex.value++
+  } else {
+    // 当前阶段完成
+    completeStage()
   }
   currentFeedback.value = ''
+  stageCompleteMessage.value = null
 }
 
 function prev() {
   if (globalQuestionIndex.value === 0) return
 
-  if (isTemplateDiagnosis.value) {
-    currentQuestionIndex.value--
-    currentFeedback.value = ''
-    return
-  }
-
   if (currentQuestionIndex.value > 0) {
     currentQuestionIndex.value--
   } else {
     // 回退到上一阶段
-    if (currentStage.value === 'scan') {
-      currentStage.value = 'founder'
-      currentQuestionIndex.value = founderVersion.value === 'direct' ? founderDirectQuestions.length - 1 : 0
-    } else if (currentStage.value === 'founder') {
-      currentStage.value = 'stage0'
-      currentQuestionIndex.value = stage0Questions.length - 1
+    switch (currentStage.value) {
+      case 'founder':
+        currentStage.value = 'stage0'
+        currentQuestionIndex.value = stage0Questions.value.length - 1
+        break
+      case 'rent':
+        currentStage.value = 'founder'
+        currentQuestionIndex.value = founderVersion.value === 'direct' ? founderDirectQuestions.value.length - 1 : 0
+        break
+      case 'scan':
+        currentStage.value = 'rent'
+        currentQuestionIndex.value = rentQuestions.value.length - 1
+        break
+      case 'ip':
+        currentStage.value = 'scan'
+        currentQuestionIndex.value = scanQuestions.value.length - 1
+        break
     }
   }
   currentFeedback.value = ''
+  stageCompleteMessage.value = null
+}
+
+function completeStage() {
+  switch (currentStage.value) {
+    case 'stage0':
+      // 阶段0完成，询问创始人诊断版本
+      currentStage.value = 'founder'
+      currentQuestionIndex.value = 0
+      stageCompleteMessage.value = {
+        title: '行业画像完成！',
+        desc: '接下来评估创始人能力。选择直接版（6项能力评分）或间接版（症状反推）。'
+      }
+      break
+    case 'founder':
+      currentStage.value = 'rent'
+      currentQuestionIndex.value = 0
+      break
+    case 'rent':
+      currentStage.value = 'scan'
+      currentQuestionIndex.value = 0
+      break
+    case 'scan':
+      // 快速扫描完成，检查是否触发 IP 诊断
+      const acquisitionScore = scanAnswers.value.acquisition || 3
+      const replicationScore = scanAnswers.value.replication || 3
+      if (acquisitionScore <= 2 && replicationScore <= 2) {
+        // 触发 IP 诊断
+        currentStage.value = 'ip'
+        currentQuestionIndex.value = 0
+        stageCompleteMessage.value = {
+          title: '快速扫描完成！',
+          desc: '检测到获客和复制能力较弱，建议进行创始人IP诊断。'
+        }
+      } else {
+        // 直接进入报告生成
+        stageCompleteMessage.value = {
+          title: '诊断数据收集完成！',
+          desc: '点击生成诊断报告按钮，AI 将为您生成专属诊断报告。'
+        }
+      }
+      break
+    case 'ip':
+      stageCompleteMessage.value = {
+        title: '所有诊断完成！',
+        desc: '点击生成诊断报告按钮，AI 将为您生成专属诊断报告。'
+      }
+      break
+  }
+}
+
+function continueToNext() {
+  stageCompleteMessage.value = null
+  if (currentStage.value === 'founder' && currentQuestionIndex.value === 0 && stage0Answers.value.city) {
+    // 如果是刚进入模块F，询问版本
+    // 默认直接版，用户可以在界面选择
+  }
 }
 
 async function submit() {
-  if (!allAnswered.value) return
-  loading.value = true
-  error.value = null
+  if (!allAnswered.value || generating.value) return
+  generating.value = true
+  loadingText.value = 'AI 正在生成诊断报告...'
+
   try {
     const token = localStorage.getItem('token')
 
-    if (isTemplateDiagnosis.value) {
-      const res = await fetch('/api/diagnosis/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          templateCode: diagnosisCode.value,
-          answers: answers.value
-        })
-      })
-      if (!res.ok) throw new Error('生成失败')
-      const data = await res.json()
-      router.push({
-        name: 'DiagnosisReport',
-        state: { result: data.analysis, title: diagnosisTemplate.value?.name || '诊断报告' }
-      })
-      return
+    const diagnosisData = {
+      stage0: { ...stage0Answers.value },
+      founder: {
+        version: founderVersion.value,
+        abilities: founderVersion.value === 'direct' ? founderAnswers.value : {},
+        symptoms: founderVersion.value === 'indirect' ? founderIndirectAnswers.value : []
+      },
+      rent: { ...rentAnswers.value },
+      scan: { scores: { ...scanAnswers.value } },
+      ip: ipAnswers.value && Object.keys(ipAnswers.value).length > 0 ? { scores: { ...ipAnswers.value } } : null
     }
 
-    const payload = {
-      stage0: {},
-      founder: { version: founderVersion.value },
-      scan: {}
-    }
-
-    // 阶段0答案
-    stage0Questions.forEach(q => {
-      payload.stage0[q.key] = answers.value[q.key]
-    })
-
-    // 创始人能力答案
-    if (founderVersion.value === 'direct') {
-      payload.founder.abilities = {}
-      founderDirectQuestions.forEach(q => {
-        payload.founder.abilities[q.key] = founderAnswers.value[q.key] || {}
-      })
-    } else {
-      payload.founder.symptoms = founderIndirectAnswers.value
-    }
-
-    // 快速扫描答案
-    scanQuestions.forEach(q => {
-      payload.scan[q.key] = answers.value[q.key]
-    })
-
-    const res = await fetch('/api/generate/growth-diagnosis', {
+    const res = await fetch('/api/diagnosis/v3/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(diagnosisData)
     })
-    if (!res.ok) throw new Error('生成失败')
-    const result = await res.json()
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      throw new Error(errData.message || '诊断报告生成失败')
+    }
+
+    const data = await res.json()
     router.push({
       name: 'DiagnosisReport',
-      state: { result, title: '企业增长综合诊断报告' }
+      state: { result: data.analysis, title: '企业增长全景顾问报告', aiUsed: data.aiUsed }
     })
   } catch (e) {
-    error.value = e.message || '诊断失败，请稍后重试'
+    error.value = e.message || '诊断报告生成失败，请稍后重试'
   } finally {
+    generating.value = false
     loading.value = false
   }
 }
 
-async function loadDiagnosisTemplate() {
-  loading.value = true
+function handleRetry() {
   error.value = null
-  try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`/api/diagnosis/template/${diagnosisCode.value}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    if (!res.ok) throw new Error('获取诊断模板失败')
-    diagnosisTemplate.value = await res.json()
-    answers.value = {}
-    currentQuestionIndex.value = 0
-  } catch (e) {
-    error.value = e.message || '加载问卷失败，请稍后重试'
-  } finally {
-    loading.value = false
-  }
+  loading.value = false
 }
 
-async function handleRetry() {
-  if (isTemplateDiagnosis.value) {
-    await loadDiagnosisTemplate()
-    return
-  }
-  await submit()
-}
-
-onMounted(async () => {
-  if (isTemplateDiagnosis.value) {
-    await loadDiagnosisTemplate()
-    return
-  }
+onMounted(() => {
+  // 初始化
   currentStage.value = 'stage0'
   currentQuestionIndex.value = 0
 })
 </script>
 
 <style scoped>
-.growth-diagnosis {
+.diagnosis-questionnaire {
   padding: var(--space-6) 0 var(--space-9);
 }
 
@@ -791,7 +689,7 @@ onMounted(async () => {
 }
 
 .diagnosis-header {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .stage-badge {
@@ -803,25 +701,11 @@ onMounted(async () => {
   margin-bottom: var(--space-2);
 }
 
-.badge-stage0 {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--brand-primary);
-}
-
-.badge-founder {
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
-}
-
-.badge-scan {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-}
-
-.badge-template {
-  background: rgba(30, 58, 138, 0.1);
-  color: var(--brand-primary);
-}
+.badge-stage0 { background: rgba(59, 130, 246, 0.1); color: var(--brand-primary); }
+.badge-founder { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+.badge-rent { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.badge-scan { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.badge-ip { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
 
 .diagnosis-header h1 {
   font-size: var(--text-h3);
@@ -833,6 +717,38 @@ onMounted(async () => {
   font-size: var(--text-body-sm);
 }
 
+/* 城市线级预判 */
+.city-tier-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: rgba(59, 130, 246, 0.04);
+  border-left: 3px solid var(--brand-primary);
+}
+
+.tier-badge {
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  padding: 2px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.tier-badge.tier1 { background: #fee2e2; color: #dc2626; }
+.tier-badge.newTier1 { background: #fef3c7; color: #d97706; }
+.tier-badge.tier2 { background: #dbeafe; color: #2563eb; }
+.tier-badge.tier3 { background: #dcfce7; color: #16a34a; }
+.tier-badge.tier4 { background: #f3f4f6; color: #4b5563; }
+.tier-badge.tier5 { background: #f9fafb; color: #6b7280; }
+
+.tier-desc {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+
+/* 进度条 */
 .progress-bar {
   height: 6px;
   background-color: var(--bg-subtle);
@@ -855,6 +771,7 @@ onMounted(async () => {
   margin-bottom: var(--space-4);
 }
 
+/* 问题卡片 */
 .question-card {
   padding: var(--space-6);
   max-width: 640px;
@@ -865,16 +782,35 @@ onMounted(async () => {
   font-size: var(--text-h4);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-h4);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .question-hint {
   font-size: var(--text-body-sm);
   color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+/* 文本输入 */
+.text-input-wrap {
   margin-bottom: var(--space-5);
 }
 
-/* 选项列表 */
+.text-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--line-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+}
+
+/* 选项 */
 .options-list {
   display: flex;
   flex-direction: column;
@@ -920,50 +856,6 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-/* 评分 */
-.rating-options {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--space-2);
-}
-
-.rating-btn {
-  width: 48px;
-  height: 48px;
-  border: 2px solid var(--line-default);
-  border-radius: 50%;
-  font-size: var(--text-body-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.rating-btn:hover {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-}
-
-.rating-btn.selected {
-  border-color: var(--brand-primary);
-  background-color: var(--brand-primary);
-  color: #fff;
-}
-
-.rating-btn.rating-sm {
-  width: 36px;
-  height: 36px;
-  font-size: var(--text-body);
-}
-
-.rating-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-  margin-bottom: var(--space-5);
-}
-
 /* 创始人直接版 */
 .founder-direct {
   display: flex;
@@ -983,9 +875,54 @@ onMounted(async () => {
   margin-bottom: var(--space-2);
 }
 
-.founder-sub-q .rating-options {
-  justify-content: flex-start;
-  gap: var(--space-3);
+/* 评分 */
+.scan-options, .ip-options {
+  margin-bottom: var(--space-5);
+}
+
+.scan-level-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-caption);
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.rating-options {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.rating-btn {
+  flex: 1;
+  height: 48px;
+  border: 2px solid var(--line-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.rating-btn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.rating-btn.selected {
+  border-color: var(--brand-primary);
+  background-color: var(--brand-primary);
+  color: #fff;
+}
+
+.rating-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-caption);
+  color: var(--text-muted);
 }
 
 /* 导航按钮 */
@@ -1001,6 +938,16 @@ onMounted(async () => {
   min-width: 100px;
 }
 
+.btn-generate {
+  background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
+}
+
+.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* 即时反馈 */
 .feedback-card {
   max-width: 640px;
@@ -1012,6 +959,39 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
+/* 阶段完成 */
+.stage-complete {
+  max-width: 480px;
+  margin: var(--space-6) auto 0;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.complete-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--state-success);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+}
+
+.stage-complete h3 {
+  font-size: var(--text-h4);
+  margin-bottom: var(--space-2);
+}
+
+.stage-complete p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+/* 加载/错误 */
 .loading-card, .error-card {
   max-width: 400px;
   margin: var(--space-9) auto;
@@ -1036,5 +1016,20 @@ onMounted(async () => {
 .error-text {
   color: #dc2626;
   margin-bottom: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .question-card {
+    padding: var(--space-4);
+  }
+
+  .rating-options {
+    gap: 4px;
+  }
+
+  .rating-btn {
+    height: 42px;
+    font-size: var(--text-body);
+  }
 }
 </style>

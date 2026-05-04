@@ -2,7 +2,7 @@
   <component :is="toolComponent" v-if="toolComponent" />
   <div v-else class="tool-not-found">
     <p>未找到该工具</p>
-    <router-link to="/tools" class="btn btn-primary">返回工具箱</router-link>
+    <router-link to="/tools" class="btn btn-primary">返回表格中心</router-link>
   </div>
 </template>
 
@@ -101,6 +101,18 @@ import XhsDiagnosis from './tools/XhsDiagnosis.vue'
 import XhsReview from './tools/XhsReview.vue'
 import XhsConversion from './tools/XhsConversion.vue'
 
+// 营销推广新增计算器
+import ChannelCAC from './tools/ChannelCAC.vue'
+import CampaignROI from './tools/CampaignROI.vue'
+import ReferralROI from './tools/ReferralROI.vue'
+import ConversionFunnel from './tools/ConversionFunnel.vue'
+import RetentionRate from './tools/RetentionRate.vue'
+import MarketingBudget from './tools/MarketingBudget.vue'
+import ChurnRate from './tools/ChurnRate.vue'
+import LTVRestaurant from './tools/LTVRestaurant.vue'
+import LTVEducation from './tools/LTVEducation.vue'
+import PromotionProfit from './tools/PromotionProfit.vue'
+
 // 通用表格
 import DailyRevenueSheet from './sheets/DailyRevenueSheet.vue'
 import EmployeeAttendanceSheet from './sheets/EmployeeAttendanceSheet.vue'
@@ -148,6 +160,14 @@ import ProjectConsumptionSheet from './sheets/ProjectConsumptionSheet.vue'
 import BeautyAcquisitionSheet from './sheets/BeautyAcquisitionSheet.vue'
 import BeauticianPerformanceSheet from './sheets/BeauticianPerformanceSheet.vue'
 import PackagePricingSheet from './sheets/PackagePricingSheet.vue'
+
+// 营销推广新增表格
+import MarketingActivitySheet from './sheets/MarketingActivitySheet.vue'
+import ChannelComparisonSheet from './sheets/ChannelComparisonSheet.vue'
+import CustomerRetentionSheet from './sheets/CustomerRetentionSheet.vue'
+import ReferralTrackingSheet from './sheets/ReferralTrackingSheet.vue'
+import MarketingBudgetSheet from './sheets/MarketingBudgetSheet.vue'
+import PromotionProfitSheet from './sheets/PromotionProfitSheet.vue'
 
 const route = useRoute()
 
@@ -253,6 +273,17 @@ const toolComponents = {
   'cashflow-beauty': CashflowBeauty,
   'profit-rate-beauty': ProfitRateBeauty,
   'return-rate-beauty': ReturnRateBeauty,
+  // 营销推广新增
+  'channel-cac': ChannelCAC,
+  'campaign-roi': CampaignROI,
+  'referral-roi': ReferralROI,
+  'conversion-funnel': ConversionFunnel,
+  'retention-rate': RetentionRate,
+  'marketing-budget': MarketingBudget,
+  'churn-rate': ChurnRate,
+  'ltv-restaurant': LTVRestaurant,
+  'ltv-education': LTVEducation,
+  'promotion-profit': PromotionProfit,
   // 通用表格
   'daily-revenue-sheet': DailyRevenueSheet,
   'employee-attendance-sheet': EmployeeAttendanceSheet,
@@ -296,7 +327,14 @@ const toolComponents = {
   'project-consumption-sheet': ProjectConsumptionSheet,
   'beauty-acquisition-sheet': BeautyAcquisitionSheet,
   'beautician-performance-sheet': BeauticianPerformanceSheet,
-  'package-pricing-sheet': PackagePricingSheet
+  'package-pricing-sheet': PackagePricingSheet,
+  // 营销推广新增
+  'marketing-activity-sheet': MarketingActivitySheet,
+  'channel-comparison-sheet': ChannelComparisonSheet,
+  'customer-retention-sheet': CustomerRetentionSheet,
+  'referral-tracking-sheet': ReferralTrackingSheet,
+  'marketing-budget-sheet': MarketingBudgetSheet,
+  'promotion-profit-sheet': PromotionProfitSheet
 }
 
 const toolComponent = computed(() => {

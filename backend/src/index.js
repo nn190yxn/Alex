@@ -30,6 +30,8 @@ import adminRoutes from './routes/admin.js'
 import cronRoutes from './routes/cron.js'
 import generateRoutes from './routes/generate.js'
 import analyticsRoutes from './routes/analytics.js'
+import douyinAgentRoutes from './routes/douyinAgents.js'
+import xhsAgentRoutes from './routes/xhsAgents.js'
 
 app.use('/api/auth', authRoutes)
 app.use('/api/user', userRoutes)
@@ -42,6 +44,8 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/cron', cronRoutes)
 app.use('/api/generate', generateRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/douyin', douyinAgentRoutes)
+app.use('/api/xhs', xhsAgentRoutes)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

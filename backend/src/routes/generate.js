@@ -1053,7 +1053,7 @@ ${knowledge}
   },
 
   'growth-diagnosis': {
-    name: '企业增长诊断',
+    name: '企业增长全景顾问',
     engineType: 'template',
     templateBuilder: async (formData) => {
       const stage0 = formData.stage0 || {}
@@ -1234,7 +1234,7 @@ ${knowledge}
       if (longProblems.length) problemSection.push('🟢 保持：' + longProblems.join('、'))
 
       return {
-        summary: `企业增长综合诊断报告 — 核心瓶颈：「${worstDimension}」`,
+        summary: `企业增长全景顾问报告 — 核心瓶颈：「${worstDimension}」`,
         sections,
         actions,
         riskNotes: problemSection,

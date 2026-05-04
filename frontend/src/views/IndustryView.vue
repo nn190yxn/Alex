@@ -135,12 +135,12 @@
   </div>
   <div v-else class="industry-empty">
     <div class="container">
-      <div class="empty-card card">
-        <h1>未找到对应行业专版</h1>
-        <router-link to="/tools" class="btn btn-primary">返回工具箱</router-link>
+        <div class="empty-card card">
+          <h1>未找到对应行业专版</h1>
+          <router-link to="/tools" class="btn btn-primary">返回表格中心</router-link>
+        </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>

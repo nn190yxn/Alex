@@ -208,10 +208,10 @@ function getMarginHint(role) {
 }
 
 function getTypeIcon(type) {
-  if (type === 'good') return '✅'
-  if (type === 'warn') return '⚠️'
-  if (type === 'alert') return '🔴'
-  return '💡'
+  if (type === 'good') return '优秀'
+  if (type === 'warn') return '注意'
+  if (type === 'alert') return '警告'
+  return '提示'
 }
 
 async function handleSubmit() {

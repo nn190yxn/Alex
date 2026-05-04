@@ -69,17 +69,14 @@
           <h3 class="card-title">出杯效率诊断</h3>
           <div class="diag-grid">
             <div class="diag-item">
-              <div class="diag-icon">☕</div>
               <div class="diag-value">{{ result.cupsPerHour }}</div>
               <div class="diag-label">平均出杯/小时</div>
             </div>
             <div class="diag-item">
-              <div class="diag-icon">👤</div>
               <div class="diag-value">{{ result.cupsPerStaff }}</div>
               <div class="diag-label">人均出杯/天</div>
             </div>
             <div class="diag-item">
-              <div class="diag-icon">📈</div>
               <div class="diag-value">{{ result.peakRatio }}:1</div>
               <div class="diag-label">峰谷比</div>
             </div>
@@ -90,17 +87,14 @@
           <h3 class="card-title">行业基准对比</h3>
           <div class="benchmark-grid">
             <div class="bm-item" :class="{ active: result.cupsPerHour >= 25 && result.cupsPerHour < 40 }">
-              <div class="bm-icon">☕</div>
               <div class="bm-label">一般门店</div>
               <div class="bm-range">25-40 杯/小时</div>
             </div>
             <div class="bm-item" :class="{ active: result.cupsPerHour >= 40 }">
-              <div class="bm-icon">🔥</div>
               <div class="bm-label">高效门店</div>
               <div class="bm-range">40-60 杯/小时</div>
             </div>
             <div class="bm-item" :class="{ active: result.cupsPerHour >= 60 }">
-              <div class="bm-icon">👑</div>
               <div class="bm-label">爆单门店</div>
               <div class="bm-range">60+ 杯/小时</div>
             </div>

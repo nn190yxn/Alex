@@ -2,7 +2,7 @@
   <component :is="toolComponent" v-if="toolComponent" />
   <div v-else class="tool-not-found">
     <p>未找到该工具</p>
-    <router-link to="/tools" class="btn btn-primary">返回工具箱</router-link>
+    <router-link to="/tools" class="btn btn-primary">返回表格中心</router-link>
   </div>
 </template>
 

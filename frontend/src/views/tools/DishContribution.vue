@@ -3,7 +3,6 @@
     <template #inputs>
       <div class="section">
         <div class="section-header" @click="toggleSection('dish')">
-          <span class="section-icon">🍽️</span>
           <span class="section-title">菜品信息</span>
           <span class="section-arrow" :class="{ open: sections.dish }">▾</span>
         </div>
@@ -33,7 +32,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('menu')">
-          <span class="section-icon">📋</span>
           <span class="section-title">菜单总览（用于对比）</span>
           <span class="section-arrow" :class="{ open: sections.menu }">▾</span>
         </div>
@@ -72,19 +70,19 @@
           <h3 class="card-title">四象限矩阵</h3>
           <div class="matrix">
             <div class="matrix-cell star" :class="{ active: result.quadrant === 'star' }">
-              <div class="cell-label">⭐ 明星菜品</div>
+              <div class="cell-label">明星菜品</div>
               <div class="cell-desc">高人气 + 高毛利</div>
             </div>
             <div class="matrix-cell cashcow" :class="{ active: result.quadrant === 'cashcow' }">
-              <div class="cell-label">💰 现金流菜品</div>
+              <div class="cell-label">现金流菜品</div>
               <div class="cell-desc">高人气 + 低毛利</div>
             </div>
             <div class="matrix-cell problem" :class="{ active: result.quadrant === 'problem' }">
-              <div class="cell-label">🌱 潜力菜品</div>
+              <div class="cell-label">潜力菜品</div>
               <div class="cell-desc">低人气 + 高毛利</div>
             </div>
             <div class="matrix-cell dog" :class="{ active: result.quadrant === 'dog' }">
-              <div class="cell-label">🗑️ 淘汰候选</div>
+              <div class="cell-label">淘汰候选</div>
               <div class="cell-desc">低人气 + 低毛利</div>
             </div>
           </div>
@@ -156,16 +154,16 @@ function handleSubmit() {
 
   let quadrant, quadrantLabel, quadrantColor, strategy
   if (popularity === 'high' && profitability === 'high') {
-    quadrant = 'star'; quadrantLabel = '⭐ 明星菜品'; quadrantColor = '#22c55e'
+    quadrant = 'star'; quadrantLabel = '明星菜品'; quadrantColor = '#22c55e'
     strategy = '这是你的招牌菜！保持品质稳定，可作为门店招牌推广，适当提价测试市场反应。'
   } else if (popularity === 'high' && profitability !== 'high') {
-    quadrant = 'cashcow'; quadrantLabel = '💰 现金流菜品'; quadrantColor = '#3b82f6'
+    quadrant = 'cashcow'; quadrantLabel = '现金流菜品'; quadrantColor = '#3b82f6'
     strategy = '高销量但利润薄。建议：1）优化食材采购降低成本；2）搭配高毛利配菜/饮品提升综合利润；3）逐步微调定价。'
   } else if (popularity === 'low' && profitability === 'high') {
-    quadrant = 'problem'; quadrantLabel = '🌱 潜力菜品'; quadrantColor = '#f59e0b'
+    quadrant = 'problem'; quadrantLabel = '潜力菜品'; quadrantColor = '#f59e0b'
     strategy = '高毛利但卖不动。建议：1）让服务员重点推荐；2）放在菜单显眼位置；3）拍精美菜品图；4）考虑是否定价偏高。'
   } else {
-    quadrant = 'dog'; quadrantLabel = '🗑️ 淘汰候选'; quadrantColor = '#dc2626'
+    quadrant = 'dog'; quadrantLabel = '淘汰候选'; quadrantColor = '#dc2626'
     strategy = '低销量低毛利，占用备料和出餐资源。建议：1）下架或替换为新菜；2）如果保留，必须优化成本或提价。'
   }
 

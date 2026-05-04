@@ -104,8 +104,9 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 - Context: Agent 在执行“继续补抖音经营专题工作台”时发现
 - Category: 代码结构
 - Instructions:
-  - `frontend/src/views/tools/DouyinOperations.vue` 是抖音专题聚合页，适合承接专题工具导航；`frontend/src/views/tools/DouyinGrowth.vue` 是 `douyin-growth` 的真实独立执行页。
-  - 首页、工具箱和专项能力卡片中的 `抖音经营` 主入口现在统一跳到 `/tools/douyin-growth`，专题补充导航继续保留在 `/tools/douyin-ops`。
+  - `frontend/src/views/DouyinAgentHub.vue` 是当前抖音升级后的主矩阵页；`frontend/src/views/tools/DouyinOperations.vue` 是较早的专题聚合页；`frontend/src/views/tools/DouyinGrowth.vue` 是早期单表单执行页。
+  - 首页、表格中心和专项能力卡片中的 `抖音经营` 主入口应统一跳到 `/douyin`，不要再把主入口挂到 `/tools/douyin-growth`。
+  - 首页 `8 大模块入口` 中的 `抖音运营` 模块也应直接进入 `/douyin`，模块数量按矩阵真实数量展示，而不是继续按 `allTools` 中的 3 个基础内容工具统计。
   - 不要再把抖音相关入口散落回 `?pillar=douyin` 或 `?category=douyin` 这类旧筛选页。
 
 [模板工具页与后台权限对齐规则]
@@ -170,11 +171,29 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 视觉方案需结合“我赢AI”定位做本地化改造，不直接照搬单一品牌。
 
 [任务推进默认策略]
-- Date: 2026-04-30
-- Context: 用户在当前会话中要求“有下一步就继续执行，不确定时再澄清”
+- Date: 2026-05-03
+- Context: 用户在当前会话再次要求“有下一步就继续执行，不确定时再澄清”
 - Instructions:
   - 当任务存在明确下一步时，直接继续执行，不做无意义停顿。
   - 仅在存在关键不确定且会影响结果时，暂停并提出澄清问题。
+
+[前台主结构收口为首页/表格中心/会员中心]
+- Date: 2026-05-03
+- Context: 用户在继续收口企业增长与前台入口结构时再次明确要求
+- Instructions:
+  - 顶部主导航收口为 `首页 / 表格中心 / 会员中心`，不再把 `行业专版` 和 `企业增长` 作为主导航项。
+  - 原 `/tools` 页面应收口为 `表格中心`，重点承接各行业经营表格模板，而不是继续作为复杂工具工作台。
+  - `企业增长全景顾问` 继续作为首页主推的独立能力展示，但不单独占据主导航入口。
+  - `行业专版` 不再作为首页主入口重点保留，可降级为次级场景入口。
+
+[首页保持简约并弱化重复入口]
+- Date: 2026-05-03
+- Context: 用户在要求保守清理旧代码并继续收口首页时再次明确要求
+- Instructions:
+  - 首页结构优先收口为 `功能分类 / 行业入口 / 会员介绍` 三段，不再并列展示和这些结构高度重叠的 `专项能力` 大区块。
+  - `企业增长全景顾问` 作为首页特色能力时应做得更小，不占据大段主版面。
+  - 首页不要堆说明性文字，尽量只保留标题、数字、入口和必要标签。
+  - Hero slogan 允许换行排版，优先让标题整齐、简洁，不要出现拥挤和不齐的长句。
 
 [我赢AI项目基础验证方式]
 - Date: 2026-04-30
@@ -288,6 +307,24 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 - Instructions:
   - 不能只展示工具入口，必须认真开发每一个功能，避免点击后报错或无法使用。
   - 如果某个工具暂时未完成，优先修复真实可用性，而不是继续扩充展示入口。
+
+[toolCatalog 高阶专项元数据必须先定义]
+- Date: 2026-05-03
+- Context: Agent 在执行“排查前端白屏问题”时发现
+- Category: 代码模式
+- Instructions:
+  - `frontend/src/constants/toolCatalog.js` 中，`strategyCapabilityTools` 必须在所有顶层派生值之前定义，不能只在 `getToolByCode()` 里引用却漏掉声明。
+  - `capabilityCount`、`toolCountsByLevel`、`douyinOperationTools` 都会在模块初始化时直接读取该集合；一旦缺失，会让首页导入 `toolCatalog.js` 时直接白屏。
+  - `boss-ip`、`douyin-growth`、`xiaohongshu-growth` 这类 `/tools/:code` 高阶专项，应保留在独立的 `strategyCapabilityTools` 集合里供目录、配额和详情页复用。
+
+[企业增长模块命名口径]
+- Date: 2026-05-03
+- Context: 用户明确收口独立企业诊断 skill 的产品命名
+- Instructions:
+  - 独立企业诊断 skill 的分类名统一为 `增长顾问`。
+  - 首页、工具箱、导航等入口名统一为 `企业增长`。
+  - 模块完整正式名统一为 `企业增长全景顾问`。
+  - 旧的 `门店健康度诊断`、`餐饮门店健康度诊断`、`校区健康度诊断`、`美业门店健康度诊断` 保持原名，不和 `企业增长全景顾问` 混用。
 
 [工具可用性排障工作逻辑]
 - Date: 2026-05-01

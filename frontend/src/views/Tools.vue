@@ -3,8 +3,9 @@
     <div class="container">
       <div class="page-header">
         <div>
-          <p class="page-eyebrow">AI工具箱</p>
-          <h1>模块化工作台</h1>
+          <p class="page-eyebrow">表格中心</p>
+          <h1>经营表格统一收口</h1>
+          <p class="page-desc">把输入模板、经营记录和输出报表放到同一入口，按行业快速找到能直接落地的数据表。</p>
         </div>
         <div v-if="userStore.isLoggedIn && quotaStore.globalRemain !== null" class="quota-card card">
           <span>今日剩余</span>
@@ -13,22 +14,94 @@
         </div>
       </div>
 
+      <section v-if="standaloneCapabilities[0]" class="hero-card card">
+        <div>
+          <h2>{{ standaloneCapabilities[0].name }}</h2>
+          <p>{{ standaloneCapabilities[0].description }}</p>
+        </div>
+        <router-link :to="standaloneCapabilities[0].path" class="btn btn-secondary">查看企业增长</router-link>
+      </section>
+
       <section class="panel card">
         <div class="section-head compact">
           <div>
-            <h2>行业专版</h2>
+            <h2>行业场景</h2>
           </div>
         </div>
-        <div class="entry-grid industry-grid">
-          <router-link
-            v-for="industry in visibleIndustryEntries"
+        <div class="industry-grid">
+          <button
+            v-for="industry in industryFilters"
             :key="industry.slug"
-            :to="`/industries/${industry.slug}`"
-            class="entry-card"
+            class="industry-chip"
+            :class="{ active: activeIndustry === industry.slug }"
+            @click="setIndustry(industry.slug)"
           >
-            <span class="entry-dot" :style="{ backgroundColor: industry.accent }"></span>
+            <span v-if="industry.slug !== 'all'" class="entry-dot" :style="{ backgroundColor: industry.accent }"></span>
             <strong>{{ industry.shortName }}</strong>
-            <p>{{ industry.summary }}</p>
+            <span>{{ industry.count }} 张</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel card">
+        <div class="section-head compact">
+          <div>
+            <h2>模板类型</h2>
+          </div>
+        </div>
+        <div class="filter-tabs">
+          <button v-for="tab in typeTabs" :key="tab.value" class="tab-btn" :class="{ active: activeType === tab.value }" @click="setType(tab.value)">
+            {{ tab.label }}
+            <span class="tab-count">{{ tab.count }}</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="templates-section">
+        <div class="section-head">
+          <div>
+            <h2>{{ sectionTitle }}</h2>
+            <p>{{ filteredTemplates.length }} 张表格可直接进入使用</p>
+          </div>
+          <router-link to="/membership" class="section-link">查看会员权限</router-link>
+        </div>
+
+        <div class="templates-grid">
+          <router-link
+            v-for="template in filteredTemplates"
+            :key="template.code"
+            :to="`/tools/${template.code}`"
+            class="template-card card"
+          >
+            <div class="template-top">
+              <div>
+                <h3>{{ template.name }}</h3>
+                <p class="template-subtitle">{{ getIndustryLabel(template.industry) }} · {{ template.group }} · {{ template.templateLabel }}</p>
+              </div>
+              <div class="template-badges">
+                <span class="badge" :class="template.badgeClass">{{ template.badge }}</span>
+                <span class="priority-badge" :class="template.priority === 'P0' ? 'hot' : 'steady'">{{ template.priority }}</span>
+              </div>
+            </div>
+
+            <p class="template-summary">{{ template.summary }}</p>
+
+            <div class="template-fields">
+              <span v-for="field in template.keyFields.slice(0, 4)" :key="field" class="field-tag">{{ field }}</span>
+              <span v-if="template.keyFields.length > 4" class="field-tag more">+{{ template.keyFields.length - 4 }}</span>
+            </div>
+
+            <div v-if="template.linkedTools.length" class="template-links">
+              <span class="links-label">可联动</span>
+              <span v-for="toolCode in template.linkedTools.slice(0, 3)" :key="toolCode" class="link-tool">{{ getToolName(toolCode) }}</span>
+            </div>
+
+            <div class="template-foot">
+              <span class="template-access" :class="canAccessTemplate(template) ? 'ready' : 'locked'">
+                {{ canAccessTemplate(template) ? '当前可用' : '升级后可用' }}
+              </span>
+              <span class="template-enter">进入表格</span>
+            </div>
           </router-link>
         </div>
       </section>
@@ -36,10 +109,10 @@
       <section class="panel card">
         <div class="section-head compact">
           <div>
-            <h2>专项模块</h2>
+            <h2>专项能力</h2>
           </div>
         </div>
-        <div class="entry-grid special-grid">
+        <div class="special-grid">
           <router-link
             v-for="entry in specialModuleEntries"
             :key="entry.code"
@@ -55,73 +128,6 @@
           </router-link>
         </div>
       </section>
-
-      <div class="filter-tabs">
-        <button v-for="tab in tabs" :key="tab.value" class="tab-btn" :class="{ active: activeTab === tab.value }" @click="activeTab = tab.value">
-          {{ tab.label }}
-          <span class="tab-count">{{ tab.count }}</span>
-        </button>
-      </div>
-
-      <section class="module-workbench">
-        <div class="section-head compact">
-          <div>
-            <h2>8 大模块</h2>
-          </div>
-        </div>
-
-        <div class="module-grid">
-          <button
-            v-for="pillar in filteredPillars"
-            :key="pillar.key"
-            class="module-tab"
-            :class="{ active: activePillar === pillar.key }"
-            @click="setActivePillar(pillar.key)"
-          >
-            <div class="module-tab-top">
-              <span class="module-tab-icon" :style="{ color: pillar.color, backgroundColor: pillar.bg }">
-                <component :is="pillar.icon" />
-              </span>
-              <small>{{ pillar.tools.length }} 个能力</small>
-            </div>
-            <span class="module-tab-copy">
-              <strong>{{ pillar.name }}</strong>
-            </span>
-          </button>
-        </div>
-
-        <section v-if="activePillarData" class="module-main card">
-          <div class="module-main-head">
-            <div class="module-main-title">
-              <span class="module-main-icon" :style="{ color: activePillarData.color, backgroundColor: activePillarData.bg }">
-                <component :is="activePillarData.icon" />
-              </span>
-              <div>
-                <h2>{{ activePillarData.name }}</h2>
-                <p>{{ activePillarData.description }}</p>
-              </div>
-            </div>
-            <div class="module-main-meta">
-              <span class="module-count">{{ activePillarData.tools.length }} 个能力</span>
-              <div class="module-cues">
-                <span v-for="cue in activePillarData.cues" :key="cue" class="module-cue">{{ cue }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="tools-grid">
-            <ToolCard v-for="tool in activePillarData.tools" :key="tool.code" :tool="tool" :is-locked="!canAccessTool(tool)" />
-          </div>
-        </section>
-      </section>
-
-      <section v-if="standaloneCapabilities[0]" class="diagnosis-panel card">
-        <div>
-          <h2>{{ standaloneCapabilities[0].name }}</h2>
-          <p>{{ standaloneCapabilities[0].description }}</p>
-        </div>
-        <router-link :to="standaloneCapabilities[0].path" class="btn btn-secondary">查看诊断能力</router-link>
-      </section>
     </div>
   </div>
 </template>
@@ -129,19 +135,14 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ToolCard from '@/components/ToolCard.vue'
 import { useQuotaStore } from '@/stores/quota'
 import { useUserStore } from '@/stores/user'
 import { canAccessLevel } from '@/constants/membership'
 import {
-  allTools,
-  mapToolToPillar,
-  pillarMeta,
+  getToolByCode,
+  industryTemplateEntries,
   specialModuleEntries,
   standaloneCapabilities,
-  toolCount,
-  toolCountsByLevel,
-  toolTabs,
   visibleIndustryEntries
 } from '@/constants/toolCatalog'
 
@@ -149,74 +150,97 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const quotaStore = useQuotaStore()
-const activeTab = ref('all')
-const activePillar = ref(route.query.pillar || '')
+
+const activeIndustry = ref(typeof route.query.industry === 'string' ? route.query.industry : 'all')
+const activeType = ref(typeof route.query.type === 'string' ? route.query.type : 'all')
 
 onMounted(() => {
   if (userStore.isLoggedIn) quotaStore.fetchGlobalQuota()
 })
 
-const tabs = toolTabs.map(tab => ({
-  ...tab,
-  count: tab.value === 'all' ? toolCount : toolCountsByLevel[tab.value] || 0
-}))
-
-function canAccessTool(tool) {
-  return canAccessLevel(userStore.memberLevel, tool.requiredLevel)
+function matchesIndustry(template, industry) {
+  if (industry === 'all') return true
+  return template.industry === industry
 }
 
-const filteredTools = computed(() => {
-  if (activeTab.value === 'all') return allTools
-  return allTools.filter(tool => tool.requiredLevel === activeTab.value)
-})
-
-const filteredPillars = computed(() => {
-  const grouped = new Map()
-  for (const tool of filteredTools.value) {
-    const pillarKey = mapToolToPillar(tool)
-    if (!grouped.has(pillarKey)) grouped.set(pillarKey, [])
-    grouped.get(pillarKey).push(tool)
-  }
-
-  return Object.entries(pillarMeta)
-    .map(([key, meta]) => ({
-      key,
-      ...meta,
-      tools: grouped.get(key) || []
-    }))
-    .filter(pillar => pillar.tools.length > 0)
-})
-
-const activePillarData = computed(() => {
-  return filteredPillars.value.find(pillar => pillar.key === activePillar.value) || filteredPillars.value[0] || null
-})
-
-watch(
-  () => route.query.pillar,
-  pillar => {
-    if (typeof pillar === 'string') activePillar.value = pillar
-  }
-)
-
-watch(filteredPillars, pillars => {
-  if (!pillars.length) {
-    activePillar.value = ''
-    return
-  }
-  if (!pillars.some(item => item.key === activePillar.value)) {
-    activePillar.value = pillars[0].key
-  }
-}, { immediate: true })
-
-watch(activePillar, pillar => {
-  if (!pillar) return
-  if (route.query.pillar === pillar) return
-  router.replace({ query: { ...route.query, pillar } })
-})
-
-function setActivePillar(pillar) {
-  activePillar.value = pillar
+function matchesType(template, type) {
+  if (type === 'all') return true
+  return template.templateType === type
 }
+
+const industryFilters = computed(() => {
+  const base = visibleIndustryEntries.map(industry => ({
+    ...industry,
+    count: industryTemplateEntries.filter(template => template.industry === industry.slug).length
+  }))
+
+  const genericCount = industryTemplateEntries.filter(template => template.industry === 'generic').length
+
+  return [
+    { slug: 'all', shortName: '全部', accent: '#1d4ed8', count: industryTemplateEntries.length },
+    ...base,
+    { slug: 'generic', shortName: '通用', accent: '#64748b', count: genericCount }
+  ]
+})
+
+const typeTabs = computed(() => {
+  const definitions = [
+    { value: 'all', label: '全部类型' },
+    { value: 'input', label: '输入模板' },
+    { value: 'record', label: '经营记录' },
+    { value: 'report', label: '输出报表' }
+  ]
+
+  return definitions.map(tab => ({
+    ...tab,
+    count: industryTemplateEntries.filter(template => matchesIndustry(template, activeIndustry.value) && matchesType(template, tab.value)).length
+  }))
+})
+
+const filteredTemplates = computed(() => {
+  return industryTemplateEntries.filter(template => matchesIndustry(template, activeIndustry.value) && matchesType(template, activeType.value))
+})
+
+const sectionTitle = computed(() => {
+  const industry = industryFilters.value.find(item => item.slug === activeIndustry.value)
+  const type = typeTabs.value.find(item => item.value === activeType.value)
+  if (!industry || !type) return '全部表格'
+  if (industry.slug === 'all' && type.value === 'all') return '全部表格'
+  if (industry.slug === 'all') return type.label
+  if (type.value === 'all') return `${industry.shortName}表格`
+  return `${industry.shortName} · ${type.label}`
+})
+
+function setIndustry(industry) {
+  activeIndustry.value = industry
+}
+
+function setType(type) {
+  activeType.value = type
+}
+
+function canAccessTemplate(template) {
+  return canAccessLevel(userStore.memberLevel, template.requiredLevel)
+}
+
+function getToolName(code) {
+  return getToolByCode(code)?.name || code
+}
+
+function getIndustryLabel(industry) {
+  const labels = {
+    generic: '通用',
+    restaurant: '餐饮',
+    education: '教培',
+    beauty: '美业',
+    service: '生活服务'
+  }
+  return labels[industry] || industry
+}
+
+watch([activeIndustry, activeType], ([industry, type]) => {
+  router.replace({ query: { ...route.query, industry, type } })
+})
 </script>
 
 <style scoped>
@@ -226,9 +250,10 @@ function setActivePillar(pillar) {
 
 .page-header,
 .section-head,
-.diagnosis-panel,
-.module-main-head,
-.special-top {
+.hero-card,
+.special-top,
+.template-top,
+.template-foot {
   display: flex;
   justify-content: space-between;
   gap: var(--space-4);
@@ -248,30 +273,27 @@ function setActivePillar(pillar) {
 
 .page-header h1,
 .section-head h2,
-.module-main-title h2,
-.diagnosis-panel h2 {
+.hero-card h2 {
   margin-bottom: var(--space-2);
 }
 
 .page-desc,
 .section-head p,
-.entry-card p,
-.special-card p,
-.special-audience,
-.module-main-title p,
-.diagnosis-panel p,
+.hero-card p,
 .quota-card span,
 .quota-card small,
-.module-tab-copy small,
-.module-count {
+.special-card p,
+.special-audience,
+.template-summary,
+.template-subtitle,
+.template-access {
   color: var(--text-secondary);
 }
 
 .quota-card,
 .panel,
-.module-sidebar,
-.module-main,
-.entry-card,
+.hero-card,
+.template-card,
 .special-card {
   padding: var(--space-5);
 }
@@ -292,74 +314,83 @@ function setActivePillar(pillar) {
   color: var(--brand-accent);
 }
 
+.hero-card,
 .panel,
-.module-workbench,
-.diagnosis-panel {
+.templates-section {
   margin-bottom: var(--space-5);
 }
 
-.section-head.compact {
+.hero-card {
+  align-items: center;
+}
+
+.section-head {
+  align-items: flex-end;
   margin-bottom: var(--space-4);
 }
 
-.entry-grid,
-.tools-grid {
+.section-head.compact {
+  margin-bottom: var(--space-3);
+}
+
+.section-link {
+  font-weight: var(--font-weight-semibold);
+  color: var(--brand-primary);
+}
+
+.industry-grid,
+.special-grid,
+.templates-grid {
   display: grid;
   gap: var(--space-4);
 }
 
 .industry-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
-.special-grid,
-.tools-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.entry-card,
-.special-card {
-  display: block;
-  text-decoration: none;
-  color: inherit;
+.industry-chip,
+.special-card,
+.template-card {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 16px;
+  background: #fff;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.entry-card:hover,
+.industry-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px;
+  text-align: left;
+}
+
+.industry-chip span {
+  color: var(--text-muted);
+  font-size: var(--text-caption);
+}
+
+.industry-chip.active,
+.industry-chip:hover,
 .special-card:hover,
-.module-tab:hover {
+.template-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: rgba(30, 58, 138, 0.12);
 }
 
 .entry-dot {
-  display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  margin-bottom: var(--space-3);
-}
-
-.entry-card strong,
-.special-card strong {
-  display: block;
-  margin-bottom: var(--space-2);
-}
-
-.special-audience {
-  display: block;
-  margin-top: var(--space-3);
-  font-size: var(--text-caption);
 }
 
 .filter-tabs {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
-  margin-bottom: var(--space-5);
   padding-bottom: var(--space-1);
 }
 
@@ -390,146 +421,122 @@ function setActivePillar(pillar) {
   background: rgba(255, 255, 255, 0.18);
 }
 
-.module-workbench {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.templates-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.module-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
+.template-card,
+.special-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
-.module-tab {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-3);
-  padding: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 14px;
-  background: #fff;
-  text-align: left;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.module-tab.active {
-  border-color: rgba(30, 58, 138, 0.18);
-  box-shadow: 0 14px 32px rgba(30, 58, 138, 0.08);
-}
-
-.module-tab-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.module-tab-top small {
-  color: var(--text-secondary);
-}
-
-.module-tab-icon,
-.module-main-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.module-tab-icon :deep(svg),
-.module-main-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.module-tab-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.module-main {
-  min-width: 0;
-}
-
-.module-main-head {
-  align-items: flex-start;
-  margin-bottom: var(--space-4);
-}
-
-.module-main-title {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.module-main-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  align-items: flex-end;
-}
-
-.module-cues {
+.template-badges,
+.template-fields,
+.template-links {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  justify-content: flex-end;
 }
 
-.module-cue {
+.template-subtitle {
+  margin-top: 4px;
+}
+
+.template-summary {
+  margin: var(--space-3) 0;
+  line-height: 1.6;
+}
+
+.field-tag,
+.link-tool,
+.priority-badge {
   padding: 4px 8px;
   border-radius: 9999px;
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
   font-size: var(--text-caption);
 }
 
-.diagnosis-panel {
+.field-tag,
+.link-tool {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+}
+
+.priority-badge.hot {
+  background: rgba(30, 58, 138, 0.1);
+  color: var(--brand-primary);
+}
+
+.priority-badge.steady {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+}
+
+.template-links {
+  margin-top: var(--space-3);
+}
+
+.links-label {
+  color: var(--text-muted);
+  font-size: var(--text-caption);
+  align-self: center;
+}
+
+.template-foot {
   align-items: center;
+  margin-top: var(--space-4);
+}
+
+.template-access.ready {
+  color: #0f766e;
+}
+
+.template-access.locked {
+  color: #b45309;
+}
+
+.template-enter {
+  font-weight: var(--font-weight-semibold);
+  color: var(--brand-primary);
+}
+
+.special-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.special-card strong {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.special-audience {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: var(--text-caption);
 }
 
 @media (max-width: 1023px) {
   .industry-grid,
-  .special-grid,
-  .tools-grid,
-  .module-grid {
+  .templates-grid,
+  .special-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tools-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .module-main-head {
-    flex-direction: column;
-  }
-
-  .module-main-meta,
-  .module-cues {
-    align-items: flex-start;
-    justify-content: flex-start;
   }
 }
 
 @media (max-width: 639px) {
   .page-header,
   .section-head,
-  .diagnosis-panel,
-  .special-top {
+  .hero-card,
+  .special-top,
+  .template-top,
+  .template-foot {
     flex-direction: column;
   }
 
   .industry-grid,
-  .special-grid,
-  .module-grid,
-  .tools-grid {
+  .templates-grid,
+  .special-grid {
     grid-template-columns: 1fr;
   }
 

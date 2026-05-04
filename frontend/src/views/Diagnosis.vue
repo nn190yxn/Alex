@@ -2,21 +2,30 @@
   <div class="diagnosis-center">
     <div class="container">
       <div class="diagnosis-header">
-        <h1>企业诊断中心</h1>
-        <p>选择适合您的诊断类型，精准识别增长瓶颈，输出可落地方案</p>
+        <h1>企业增长全景顾问</h1>
+        <p>通过行业画像 → 创始人能力 → 快速扫描 → 深度诊断的完整流程，精准识别增长瓶颈，输出可落地方案</p>
       </div>
 
-      <!-- 核心诊断：企业增长诊断（新框架） -->
+      <!-- 核心模块：企业增长全景顾问 -->
       <div class="primary-diagnosis card" @click="startGrowthDiagnosis">
         <div class="primary-icon"><IconPillarDiagnosis /></div>
         <div class="primary-body">
-          <div class="primary-badge">核心诊断</div>
-          <h3>企业增长诊断</h3>
-          <p class="primary-desc">通过行业诊断 → 创始人能力评估 → 快速扫描的完整流程，识别中小企业增长瓶颈，输出结构化诊断报告。</p>
+          <div class="primary-badge">增长顾问</div>
+          <h3>企业增长全景顾问</h3>
+          <p class="primary-desc">通过阶段0行业与城市画像、模块F创始人能力诊断、阶段1快速扫描、模块G IP诊断等完整流程，识别增长瓶颈，输出结构化诊断报告。</p>
           <div class="primary-meta">
             <span class="badge badge-free">免费版</span>
-            <span>~15分钟</span>
-            <span>3个阶段</span>
+            <span>~15-30分钟</span>
+            <span>多模块组合</span>
+          </div>
+          <div class="flow-preview">
+            <span class="flow-step">阶段0: 行业与城市画像</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">模块F: 创始人能力</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">阶段1: 快速扫描</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-step">阶段3: 综合报告</span>
           </div>
         </div>
         <div class="card-arrow">
@@ -27,44 +36,133 @@
       </div>
 
       <div class="section-divider">
-        <span>行业专属诊断</span>
+        <span>诊断模块说明</span>
       </div>
 
+      <!-- 诊断流程卡片 -->
       <div class="diagnosis-grid">
-        <div
-          v-for="t in diagnosisTypes"
-          :key="t.code"
-          class="diagnosis-card card"
-          :class="{ locked: isLocked(t), 'coming-soon': !t.enabled }"
-          @click="t.enabled ? startDiagnosis(t) : null"
-        >
-          <div class="card-icon"><component :is="t.icon" /></div>
-          <div class="card-body">
-            <h3>{{ t.name }}</h3>
-            <p class="card-desc">{{ t.description }}</p>
-            <div class="card-meta">
-              <span class="badge" :class="levelBadge(t.memberLevel)">{{ t.memberLevelLabel }}</span>
-              <span class="question-count">{{ t.questionCount }} 题</span>
-              <span class="dimension-count">{{ t.dimensionCount }} 个维度</span>
+        <div class="module-card card">
+          <div class="module-icon stage0"><span>0</span></div>
+          <div class="module-body">
+            <h3>阶段0：行业与城市画像</h3>
+            <p class="module-desc">2问开场（城市+行业）自动识别城市线级，结合市场环境预判，快速定位企业基本盘。</p>
+            <div class="module-tags">
+              <span class="tag">城市线级</span>
+              <span class="tag">市场环境</span>
+              <span class="tag">行业特征</span>
             </div>
           </div>
-          <div class="card-arrow" v-if="t.enabled && !isLocked(t)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
+        </div>
+
+        <div class="module-card card">
+          <div class="module-icon founder"><span>F</span></div>
+          <div class="module-body">
+            <h3>模块F：创始人能力诊断</h3>
+            <p class="module-desc">评估6项核心能力（商业洞察/获客/领导/财务/学习/角色定位），判断创始人角色进化阶段。</p>
+            <div class="module-tags">
+              <span class="tag">角色进化</span>
+              <span class="tag">能力雷达</span>
+              <span class="tag">直接/间接版</span>
+            </div>
           </div>
-          <div v-else class="lock-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-              <path d="M12 1a5 5 0 00-5 5v4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V12a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 9H9V6a3 3 0 116 0v4z"/>
-            </svg>
+        </div>
+
+        <div class="module-card card">
+          <div class="module-icon rent"><span>I</span></div>
+          <div class="module-body">
+            <h3>模块I：企业租评估</h3>
+            <p class="module-desc">评估企业有多少是"租"（离开创始人还能转）vs"劳动"（创始人在才能转），识别系统性风险。</p>
+            <div class="module-tags">
+              <span class="tag">劳动占比</span>
+              <span class="tag">租占比</span>
+              <span class="tag">风险识别</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="module-card card">
+          <div class="module-icon scan"><span>1</span></div>
+          <div class="module-body">
+            <h3>阶段1：快速扫描</h3>
+            <p class="module-desc">6维度评分（获客/盈利/复购/复制/组织/战略），区分增强回路与调节回路，找到飞轮卡点和天花板瓶颈。</p>
+            <div class="module-tags">
+              <span class="tag">增强回路</span>
+              <span class="tag">调节回路</span>
+              <span class="tag">飞轮分析</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="module-card card optional">
+          <div class="module-icon ip"><span>G</span></div>
+          <div class="module-body">
+            <div class="optional-badge">按需触发</div>
+            <h3>模块G：创始人IP诊断</h3>
+            <p class="module-desc">5维度评估（表达意愿/能力/出镜/专业/时间），推荐最适合的IP形式和落地方案。</p>
+            <div class="module-tags">
+              <span class="tag">IP适配</span>
+              <span class="tag">形式推荐</span>
+              <span class="tag">避坑指南</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="module-card card optional">
+          <div class="module-icon sop"><span>H</span></div>
+          <div class="module-body">
+            <div class="optional-badge">按需触发</div>
+            <h3>模块H：SOP建设诊断</h3>
+            <p class="module-desc">评估企业标准化运营成熟度（4阶段），输出最紧迫的 SOP 建设清单。</p>
+            <div class="module-tags">
+              <span class="tag">成熟度</span>
+              <span class="tag">覆盖率</span>
+              <span class="tag">执行力</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 诊断输出说明 -->
+      <div class="output-section card">
+        <h2>诊断输出包含</h2>
+        <div class="output-grid">
+          <div class="output-item">
+            <span class="output-icon">📊</span>
+            <h4>行业画像摘要</h4>
+            <p>城市线级+市场环境预判+行业特征</p>
+          </div>
+          <div class="output-item">
+            <span class="output-icon">👤</span>
+            <h4>创始人能力画像</h4>
+            <p>能力雷达+角色进化评估+企业租占比</p>
+          </div>
+          <div class="output-item">
+            <span class="output-icon">🔄</span>
+            <h4>系统回路图</h4>
+            <p>飞轮卡点+天花板瓶颈+因果闭环分析</p>
+          </div>
+          <div class="output-item">
+            <span class="output-icon">⏰</span>
+            <h4>滞后预警</h4>
+            <p>每个改进建议标注效果显现时间，管理预期</p>
+          </div>
+          <div class="output-item">
+            <span class="output-icon">🚀</span>
+            <h4>增长杠杆</h4>
+            <p>短/中/长期改进路径，按优先级排序</p>
+          </div>
+          <div class="output-item">
+            <span class="output-icon">📋</span>
+            <h4>问题清单</h4>
+            <p>紧急/重要/长期分类，直击要害</p>
           </div>
         </div>
       </div>
 
       <div v-if="!isAuthenticated" class="upgrade-card card">
-        <h3>解锁更多诊断能力</h3>
-        <p>升级会员即可使用行业专属诊断，获取更精准的经营建议</p>
-        <router-link to="/membership" class="btn btn-primary">查看会员权益</router-link>
+        <h3>解锁完整诊断能力</h3>
+        <p>登录后即可使用企业增长全景顾问，获取 AI 驱动的专属诊断报告</p>
+        <router-link to="/login?redirect=/diagnosis" class="btn btn-primary">立即登录</router-link>
       </div>
     </div>
   </div>
@@ -74,72 +172,11 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { canAccessLevel } from '@/constants/membership'
-import { IconPillarDiagnosis, IconStore, IconRestaurantHealth, IconEducationHealth, IconBeautyHealth } from '@/icons'
+import { IconPillarDiagnosis } from '@/icons'
 
 const router = useRouter()
 const userStore = useUserStore()
 const isAuthenticated = computed(() => userStore.isLoggedIn)
-
-const diagnosisTypes = [
-  {
-    code: 'store-health',
-    name: '门店运营健康度诊断',
-    description: '从获客、转化、留存、复购四个维度全面评估门店运营健康状况，找出最薄弱环节。',
-    icon: IconStore,
-    memberLevel: 'free',
-    memberLevelLabel: '免费版',
-    questionCount: 20,
-    dimensionCount: 4,
-    requiresAuth: false,
-    enabled: true
-  },
-  {
-    code: 'restaurant-health',
-    name: '餐饮门店健康度诊断',
-    description: '专为餐饮行业设计，覆盖翻台、客流、成本、利润、服务、卫生六大维度。',
-    icon: IconRestaurantHealth,
-    memberLevel: 'starter',
-    memberLevelLabel: '基础版',
-    questionCount: 18,
-    dimensionCount: 6,
-    requiresAuth: true,
-    enabled: true
-  },
-  {
-    code: 'education-health',
-    name: '校区健康度诊断',
-    description: '面向教育培训机构，涵盖招生、转化、续费、人效、服务、管理核心维度。',
-    icon: IconEducationHealth,
-    memberLevel: 'starter',
-    memberLevelLabel: '基础版',
-    questionCount: 18,
-    dimensionCount: 6,
-    requiresAuth: true,
-    enabled: true
-  },
-  {
-    code: 'beauty-health',
-    name: '美业门店健康度诊断',
-    description: '针对美容美发行业，聚焦拓客、转化、耗卡、人效、服务、管理全链路。',
-    icon: IconBeautyHealth,
-    memberLevel: 'starter',
-    memberLevelLabel: '基础版',
-    questionCount: 18,
-    dimensionCount: 6,
-    requiresAuth: true,
-    enabled: true
-  }
-]
-
-function levelBadge(level) {
-  return `badge-${level}`
-}
-
-function isLocked(type) {
-  if (!isAuthenticated.value) return true
-  return !canAccessLevel(userStore.memberLevel, type.memberLevel)
-}
 
 function startGrowthDiagnosis() {
   if (!isAuthenticated.value) {
@@ -147,18 +184,6 @@ function startGrowthDiagnosis() {
     return
   }
   router.push('/diagnosis/questionnaire/growth-diagnosis')
-}
-
-function startDiagnosis(type) {
-  if (!isAuthenticated.value) {
-    router.push(`/login?redirect=/diagnosis/questionnaire/${type.code}`)
-    return
-  }
-  if (!canAccessLevel(userStore.memberLevel, type.memberLevel)) {
-    router.push('/membership')
-    return
-  }
-  router.push(`/diagnosis/questionnaire/${type.code}`)
 }
 </script>
 
@@ -251,6 +276,26 @@ function startDiagnosis(type) {
   gap: var(--space-3);
   font-size: var(--text-caption);
   color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.flow-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-caption);
+  color: var(--brand-primary);
+}
+
+.flow-step {
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 4px;
+}
+
+.flow-arrow {
+  color: var(--text-muted);
 }
 
 /* 分割线 */
@@ -275,78 +320,129 @@ function startDiagnosis(type) {
   white-space: nowrap;
 }
 
+/* 诊断流程卡片 */
 .diagnosis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
-.diagnosis-card {
+.module-card {
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
   padding: var(--space-5);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
   position: relative;
 }
 
-.diagnosis-card:hover:not(.locked):not(.coming-soon) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+.module-card.optional {
+  border-left: 3px solid var(--state-warning);
 }
 
-.diagnosis-card.locked {
-  opacity: 0.5;
-  cursor: not-allowed;
+.optional-badge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--state-warning);
+  color: white;
 }
 
-.diagnosis-card.coming-soon {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.card-icon {
-  width: 48px;
-  height: 48px;
+.module-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--brand-primary);
-  background: rgba(30, 58, 138, 0.06);
-  border-radius: 14px;
+  font-weight: 700;
+  font-size: var(--text-body-lg);
+  color: white;
 }
 
-.card-icon :deep(svg) {
-  width: 24px;
-  height: 24px;
-}
+.module-icon.stage0 { background: var(--brand-primary); }
+.module-icon.founder { background: #a855f7; }
+.module-icon.rent { background: #f59e0b; }
+.module-icon.scan { background: #22c55e; }
+.module-icon.ip { background: #ec4899; }
+.module-icon.sop { background: #6366f1; }
 
-.card-body {
+.module-body {
   flex: 1;
   min-width: 0;
 }
 
-.card-body h3 {
-  font-size: var(--text-body-lg);
+.module-body h3 {
+  font-size: var(--text-body-md);
   font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.module-desc {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  line-height: var(--leading-body-sm);
+}
+
+.module-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+/* 诊断输出说明 */
+.output-section {
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.output-section h2 {
+  font-size: var(--text-h4);
+  margin-bottom: var(--space-4);
+}
+
+.output-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.output-item {
+  text-align: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+
+.output-icon {
+  font-size: 28px;
+  display: block;
   margin-bottom: var(--space-2);
 }
 
-.card-desc {
+.output-item h4 {
   font-size: var(--text-body-sm);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-3);
-  line-height: var(--leading-body-md);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 4px;
 }
 
-.card-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+.output-item p {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 .badge {
@@ -371,24 +467,14 @@ function startDiagnosis(type) {
   color: #1e40af;
 }
 
-.question-count, .dimension-count {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-}
-
 .card-arrow {
   color: var(--text-muted);
   flex-shrink: 0;
   transition: color var(--duration-fast) var(--ease-out);
 }
 
-.diagnosis-card:hover:not(.locked):not(.coming-soon) .card-arrow {
+.primary-diagnosis:hover .card-arrow {
   color: var(--brand-primary);
-}
-
-.lock-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
 }
 
 .upgrade-card {
@@ -407,5 +493,23 @@ function startDiagnosis(type) {
   color: var(--text-secondary);
   margin-bottom: var(--space-4);
   font-size: var(--text-body-sm);
+}
+
+@media (max-width: 640px) {
+  .diagnosis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .output-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .primary-diagnosis {
+    flex-direction: column;
+  }
+
+  .flow-preview {
+    font-size: 11px;
+  }
 }
 </style>

@@ -3,7 +3,6 @@
     <template #inputs>
       <div class="section">
         <div class="section-header" @click="toggleSection('basic')">
-          <span class="section-icon">👥</span>
           <span class="section-title">复购数据</span>
           <span class="section-arrow" :class="{ open: sections.basic }">▾</span>
         </div>
@@ -29,7 +28,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('ltv')">
-          <span class="section-icon">💎</span>
           <span class="section-title">LTV 估算（可选）</span>
           <span class="section-arrow" :class="{ open: sections.ltv }">▾</span>
         </div>
@@ -89,17 +87,14 @@
           <h3 class="card-title">行业基准</h3>
           <div class="benchmark-grid">
             <div class="bm-item" :class="{ active: result.rate >= 25 && result.rate <= 40 }">
-              <div class="bm-icon">🍔</div>
               <div class="bm-label">快餐</div>
               <div class="bm-range">25-40%</div>
             </div>
             <div class="bm-item" :class="{ active: result.rate >= 20 && result.rate <= 35 }">
-              <div class="bm-icon">🍽️</div>
               <div class="bm-label">正餐</div>
               <div class="bm-range">20-35%</div>
             </div>
             <div class="bm-item" :class="{ active: result.rate >= 30 && result.rate <= 45 }">
-              <div class="bm-icon">🍲</div>
               <div class="bm-label">火锅</div>
               <div class="bm-range">30-45%</div>
             </div>
@@ -175,11 +170,11 @@ function handleSubmit() {
 
   const suggestions = []
   if (rate < 20) {
-    suggestions.push('🔴 复购率低于 20%，顾客来了就走！建议：1）建立会员积分体系；2）做好口味一致性；3）增加消费后触达（短信/微信）。')
+    suggestions.push('[紧急] 复购率低于 20%，顾客来了就走！建议：1）建立会员积分体系；2）做好口味一致性；3）增加消费后触达（短信/微信）。')
   } else if (rate < 40) {
-    suggestions.push('⚠️ 复购率有提升空间，建议推出储值优惠、会员日活动，增加顾客粘性。')
+    suggestions.push('[建议] 复购率有提升空间，建议推出储值优惠、会员日活动，增加顾客粘性。')
   } else {
-    suggestions.push('✅ 复购率优秀，说明顾客认可你的产品和服务。')
+    suggestions.push('[良好] 复购率优秀，说明顾客认可你的产品和服务。')
   }
 
   let ltvData = null

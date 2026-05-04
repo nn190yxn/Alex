@@ -10,17 +10,11 @@
         <router-link to="/" class="nav-link" @click="menuOpen = false">
           首页
         </router-link>
-        <router-link to="/industries/restaurant" class="nav-link" @click="menuOpen = false">
-          行业专版
-        </router-link>
         <router-link to="/tools" class="nav-link" @click="menuOpen = false">
-          工具箱
-        </router-link>
-        <router-link to="/diagnosis" class="nav-link" @click="menuOpen = false">
-          企业诊断
+          表格中心
         </router-link>
         <router-link to="/membership" class="nav-link" @click="menuOpen = false">
-          会员
+          会员中心
         </router-link>
       </div>
 

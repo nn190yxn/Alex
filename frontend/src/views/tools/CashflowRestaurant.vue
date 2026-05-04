@@ -110,7 +110,7 @@
         <div class="result-card alerts">
           <h3>关键节点</h3>
           <div v-if="result.breakMonth" class="alert danger">
-            ⚠️ 预计第 {{ result.breakMonth }} 个月资金断裂！
+            [紧急] 预计第 {{ result.breakMonth }} 个月资金断裂！
           </div>
           <div class="alert-row">
             <span>余额最低点：第 {{ result.minCashMonth }} 个月（<span class="numeral">¥{{ result.minCash }}</span>）</span>
@@ -148,7 +148,7 @@
                   <td class="numeral bold" :class="row.balanceClass">¥{{ Number(row.endCash).toLocaleString() }}</td>
                   <td>
                     <span class="status-badge" :class="row.status">
-                      {{ row.status === 'danger' ? '⚠️ 断裂' : row.status === 'warning' ? '⚡ 预警' : '✓ 安全' }}
+                      {{ row.status === 'danger' ? '[断裂]' : row.status === 'warning' ? '[预警]' : '[安全]' }}
                     </span>
                   </td>
                 </tr>

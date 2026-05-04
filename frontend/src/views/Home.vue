@@ -4,19 +4,18 @@
       <div class="container hero-grid">
         <div class="hero-copy">
           <p class="hero-eyebrow">我赢AI</p>
-          <h1>100+知识库，让老板多赚三倍钱的AI助理</h1>
-          <p class="hero-desc">本站已有会员 <strong class="hero-member-inline">{{ displayMemberCount }}</strong>，给实体老板的经营工具、行业专版和专项能力，直接拿来解决获客、运营、利润和内容问题。</p>
+          <h1>
+            <span>100+知识库</span>
+            <span>让老板多赚三倍钱的 AI 助理</span>
+          </h1>
+          <p class="hero-desc">本站已有会员 <strong class="hero-member-inline">{{ displayMemberCount }}</strong></p>
           <div class="hero-actions">
-            <router-link to="/tools" class="btn btn-primary btn-lg">进入工具箱</router-link>
-            <router-link to="/industries/restaurant" class="btn btn-secondary btn-lg">查看行业专版</router-link>
+            <router-link to="/tools" class="btn btn-primary btn-lg">功能分类</router-link>
+            <router-link to="/membership" class="btn btn-secondary btn-lg">会员介绍</router-link>
           </div>
         </div>
 
         <div class="hero-panel card">
-          <div class="hero-panel-head">
-            <strong>本站会员统计</strong>
-            <span class="member-live-dot"></span>
-          </div>
           <div class="member-total">
             <strong class="member-total-number">{{ displayMemberCount }}</strong>
             <span class="member-total-label">本站会员统计</span>
@@ -31,20 +30,14 @@
               <span>模块入口</span>
             </div>
             <div class="metric-card">
-              <strong class="numeral">{{ visibleIndustryEntries.length }}</strong>
-              <span>行业专版</span>
+              <strong class="numeral">{{ industryTemplateEntries.length }}</strong>
+              <span>表格模板</span>
             </div>
           </div>
-          <div class="hero-rails">
-            <div class="rail-item">
-              <span class="rail-label">行业专版</span>
-              <p>餐饮 / 教培 / 美业 / 生活服务</p>
-            </div>
-            <div class="rail-item">
-              <span class="rail-label">专项能力</span>
-              <p>抖音经营 / 小红书运营 / 企业诊断 / 老板IP</p>
-            </div>
-          </div>
+          <router-link to="/diagnosis" class="growth-spotlight">
+            <span class="growth-spotlight-label">特色能力</span>
+            <strong>企业增长全景顾问</strong>
+          </router-link>
         </div>
       </div>
     </section>
@@ -52,17 +45,14 @@
     <section class="section">
       <div class="container">
         <div class="section-head">
-          <div>
-            <h2>8 大模块入口</h2>
-          </div>
-          <router-link to="/tools" class="section-link">进入模块工作台</router-link>
+          <h2>功能分类</h2>
         </div>
 
         <div class="module-grid">
           <router-link
             v-for="pillar in pillars"
             :key="pillar.key"
-            :to="`/tools?pillar=${pillar.key}`"
+            :to="pillar.path || `/modules/${pillar.key}`"
             class="module-card card"
           >
             <div class="module-top">
@@ -72,7 +62,6 @@
               <span class="module-count">{{ pillar.count }} 个能力</span>
             </div>
             <h3>{{ pillar.name }}</h3>
-            <p>{{ pillar.description }}</p>
             <div class="module-cues">
               <span v-for="cue in pillar.cues" :key="cue" class="module-cue">{{ cue }}</span>
             </div>
@@ -82,50 +71,23 @@
     </section>
 
     <section class="section section-subtle">
-      <div class="container overview-grid">
-        <div class="overview-card card">
-          <div class="section-head compact">
-            <div>
-              <h2>行业专版</h2>
-            </div>
-          </div>
-          <div class="mini-grid">
-            <router-link
-              v-for="industry in visibleIndustryEntries"
-              :key="industry.slug"
-              :to="`/industries/${industry.slug}`"
-              class="mini-entry"
-            >
-              <span class="mini-dot" :style="{ backgroundColor: industry.accent }"></span>
-              <div>
-                <strong>{{ industry.shortName }}</strong>
-                <p>{{ industry.summary }}</p>
-              </div>
-            </router-link>
-          </div>
+      <div class="container">
+        <div class="section-head">
+          <h2>行业入口</h2>
         </div>
-
-        <div class="overview-card card">
-          <div class="section-head compact">
-            <div>
-              <h2>专项能力</h2>
+        <div class="mini-grid industry-entry-grid">
+          <router-link
+            v-for="industry in industryEntries"
+            :key="industry.slug"
+            :to="`/industries/${industry.slug}`"
+            class="industry-entry"
+          >
+            <div class="industry-entry-top">
+              <span class="mini-dot" :style="{ backgroundColor: industry.accent }"></span>
+              <strong>{{ industry.shortName }}</strong>
             </div>
-          </div>
-          <div class="mini-grid special-grid">
-            <router-link
-              v-for="entry in specialModuleEntries"
-              :key="entry.code"
-              :to="entry.path"
-              class="special-entry"
-            >
-              <div class="special-top">
-                <strong>{{ entry.name }}</strong>
-                <span class="badge" :class="entry.badgeClass">{{ entry.badge }}</span>
-              </div>
-              <p>{{ entry.description }}</p>
-              <span class="special-audience">{{ entry.audience }}</span>
-            </router-link>
-          </div>
+            <span class="industry-entry-count">{{ getIndustryTemplateCount(industry.slug) }} 张表格</span>
+          </router-link>
         </div>
       </div>
     </section>
@@ -133,10 +95,7 @@
     <section class="section membership-section">
       <div class="container">
         <div class="section-head">
-          <div>
-            <h2>会员方案</h2>
-          </div>
-          <router-link to="/membership" class="section-link">查看完整权限</router-link>
+          <h2>会员介绍</h2>
         </div>
 
         <div class="membership-grid">
@@ -150,9 +109,6 @@
             </div>
             <p class="price">{{ plan.price }}</p>
             <p class="coverage">覆盖 {{ plan.pillarCoverage }} 大模块</p>
-            <ul class="feature-list">
-              <li v-for="feature in plan.features.slice(0, 3)" :key="feature">{{ feature }}</li>
-            </ul>
             <router-link to="/membership" class="btn btn-block" :class="plan.recommended || plan.featured ? 'btn-primary' : 'btn-secondary'">{{ plan.cta }}</router-link>
           </div>
         </div>
@@ -166,11 +122,11 @@ import { onMounted, ref } from 'vue'
 import {
   allTools,
   capabilityCount,
+  industryTemplateEntries,
+  visibleIndustryEntries as industryEntries,
   mapToolToPillar,
   pricingPlans,
-  pillarMeta,
-  visibleIndustryEntries,
-  specialModuleEntries
+  pillarMeta
 } from '@/constants/toolCatalog'
 
 const targetMemberCount = 867
@@ -190,6 +146,7 @@ onMounted(() => {
 })
 
 function getToolCountByPillar(pillarKey) {
+  if (pillarMeta[pillarKey]?.count) return pillarMeta[pillarKey].count
   return allTools.filter(tool => mapToolToPillar(tool) === pillarKey).length
 }
 
@@ -206,6 +163,10 @@ const membershipPlans = pricingPlans.map(plan => {
     pillarCoverage: coverageMap[plan.code] || '4/8'
   }
 })
+
+function getIndustryTemplateCount(slug) {
+  return industryTemplateEntries.filter(template => template.industry === slug).length
+}
 </script>
 
 <style scoped>
@@ -222,8 +183,7 @@ const membershipPlans = pricingPlans.map(plan => {
   background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
 
-.hero-grid,
-.overview-grid {
+.hero-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: var(--space-5);
@@ -246,14 +206,14 @@ const membershipPlans = pricingPlans.map(plan => {
   margin-bottom: var(--space-3);
 }
 
+.hero-copy h1 span {
+  display: block;
+}
+
 .hero-desc,
-.section-head p,
-.rail-item p,
-.mini-entry p,
-.special-entry p,
 .sub-price,
 .coverage,
-.special-audience {
+.industry-entry-count {
   color: var(--text-secondary);
 }
 
@@ -272,30 +232,6 @@ const membershipPlans = pricingPlans.map(plan => {
   padding: var(--space-5);
   border: 1px solid rgba(15, 23, 42, 0.06);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
-}
-
-.hero-panel-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-
-.hero-panel-head strong {
-  font-size: var(--text-body-lg);
-}
-
-.hero-panel-head span {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-}
-
-.member-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: #22c55e;
-  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
 }
 
 .member-total {
@@ -325,8 +261,7 @@ const membershipPlans = pricingPlans.map(plan => {
   margin-bottom: var(--space-4);
 }
 
-.metric-card,
-.rail-item {
+.metric-card {
   padding: var(--space-3);
   border-radius: 12px;
   background: var(--bg-subtle);
@@ -339,20 +274,27 @@ const membershipPlans = pricingPlans.map(plan => {
   color: var(--brand-primary);
 }
 
-.metric-card span,
-.rail-label {
+.metric-card span {
   font-size: var(--text-caption);
   color: var(--text-muted);
 }
 
-.hero-rails {
-  display: grid;
-  gap: var(--space-3);
+.growth-spotlight {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-4);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(30, 58, 138, 0.1);
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.04), rgba(13, 148, 136, 0.06));
+  color: inherit;
+  text-decoration: none;
 }
 
-.rail-item p {
-  margin-top: 4px;
-  line-height: 1.5;
+.growth-spotlight-label {
+  font-size: var(--text-caption);
+  color: var(--text-muted);
 }
 
 .section-head {
@@ -365,15 +307,6 @@ const membershipPlans = pricingPlans.map(plan => {
 
 .section-head.compact {
   margin-bottom: var(--space-3);
-}
-
-.section-head h2 {
-  margin-bottom: 4px;
-}
-
-.section-link {
-  font-weight: var(--font-weight-semibold);
-  color: var(--brand-primary);
 }
 
 .module-grid {
@@ -391,15 +324,14 @@ const membershipPlans = pricingPlans.map(plan => {
 }
 
 .module-card:hover,
-.mini-entry:hover,
-.special-entry:hover {
+.industry-entry:hover,
+.growth-spotlight:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: rgba(30, 58, 138, 0.12);
 }
 
 .module-top,
-.special-top,
 .membership-top {
   display: flex;
   align-items: center;
@@ -432,11 +364,6 @@ const membershipPlans = pricingPlans.map(plan => {
   font-size: var(--text-h4);
 }
 
-.module-card p,
-.special-entry p {
-  line-height: 1.5;
-}
-
 .module-cues {
   display: flex;
   flex-wrap: wrap;
@@ -446,7 +373,7 @@ const membershipPlans = pricingPlans.map(plan => {
 
 .module-cue,
 .mini-dot,
-.special-audience {
+.industry-entry-count {
   font-size: var(--text-caption);
 }
 
@@ -457,19 +384,16 @@ const membershipPlans = pricingPlans.map(plan => {
   color: var(--text-secondary);
 }
 
-.overview-card {
-  padding: var(--space-5);
-}
-
 .mini-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
 }
 
-.mini-entry,
-.special-entry {
-  display: block;
+.industry-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 16px;
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.06);
@@ -479,9 +403,9 @@ const membershipPlans = pricingPlans.map(plan => {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.mini-entry {
+.industry-entry-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-3);
 }
 
@@ -489,23 +413,11 @@ const membershipPlans = pricingPlans.map(plan => {
   width: 10px;
   height: 10px;
   border-radius: 9999px;
-  margin-top: 7px;
   flex-shrink: 0;
 }
 
-.mini-entry strong,
-.special-entry strong {
+.industry-entry strong {
   display: block;
-  margin-bottom: 4px;
-}
-
-.special-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.special-audience {
-  display: block;
-  margin-top: var(--space-3);
 }
 
 .membership-grid {
@@ -535,21 +447,6 @@ const membershipPlans = pricingPlans.map(plan => {
   margin-bottom: var(--space-3);
 }
 
-.feature-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-height: 92px;
-}
-
-.feature-list li {
-  color: var(--text-secondary);
-  font-size: var(--text-body-sm);
-}
-
 .btn-block {
   width: 100%;
   margin-top: var(--space-3);
@@ -557,16 +454,13 @@ const membershipPlans = pricingPlans.map(plan => {
 
 @media (max-width: 1023px) {
   .hero-grid,
-  .overview-grid,
   .membership-grid,
   .module-grid,
-  .mini-grid,
-  .special-grid {
+  .mini-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-grid,
-  .overview-grid {
+  .hero-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -584,7 +478,6 @@ const membershipPlans = pricingPlans.map(plan => {
   .hero-metrics,
   .module-grid,
   .mini-grid,
-  .special-grid,
   .membership-grid {
     grid-template-columns: 1fr;
   }

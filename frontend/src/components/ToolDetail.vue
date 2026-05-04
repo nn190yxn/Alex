@@ -19,7 +19,7 @@
           <svg viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
           </svg>
-          返回工具箱
+          返回表格中心
         </router-link>
          <h1>{{ resolvedToolInfo.name }}</h1>
          <p class="tool-desc">{{ resolvedToolInfo.description }}</p>
@@ -49,6 +49,9 @@
             今日额度已用完，
             <router-link to="/membership">升级会员</router-link>
             解锁无限次
+          </p>
+          <p v-else-if="!quotaStore.isUnlimited && quotaStore.globalRemain === null && quotaStore.remain === null" class="quota-tip">
+            正在加载额度信息，请稍后再试
           </p>
         </div>
 
@@ -166,7 +169,7 @@
 
         <div v-if="hasResult" class="premium-cta">
           <div class="premium-cta-content">
-            <div class="premium-icon">💎</div>
+            <div class="premium-icon">PRO</div>
             <div class="premium-text">
               <h4>高阶会员专享</h4>
               <p>高阶会员可获得行业专家知识库的针对性经营建议</p>
@@ -181,7 +184,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuotaStore } from '@/stores/quota'
 import { useUserStore } from '@/stores/user'
 import { getToolByCode } from '@/constants/toolCatalog'
@@ -229,16 +232,31 @@ onMounted(async () => {
   await quotaStore.fetchGlobalQuota()
 })
 
+watch(
+  () => resolvedToolInfo.value.code,
+  (code) => {
+    if (code) quotaStore.setTool(code)
+  },
+  { immediate: true }
+)
+
 const canSubmit = computed(() => {
-  const isUnlimited = quotaStore.isUnlimited
-  const gRemain = quotaStore.globalRemain
-  console.log('[ToolDetail] canSubmit check:', { isUnlimited, gRemain, loading: loading.value })
-  if (isUnlimited) return true
-  if (gRemain === null) return true
-  return true
+  if (!hasAccess.value) return false
+  return quotaStore.canUse()
 })
 
 const displayQuota = computed(() => {
+  const current = quotaStore.currentToolQuota
+  if (current && current.unlimited) {
+    return { remain: '∞', total: '∞', unlimited: true }
+  }
+  if (current && current.remain !== null && current.total !== null) {
+    return {
+      remain: current.remain,
+      total: current.total,
+      unlimited: false
+    }
+  }
   if (quotaStore.isUnlimited) {
     return { remain: '∞', total: '∞', unlimited: true }
   }

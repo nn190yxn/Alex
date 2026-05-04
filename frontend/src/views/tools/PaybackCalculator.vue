@@ -140,7 +140,7 @@
 
         <!-- 建议 -->
         <div v-if="result.cannotPayback" class="result-card warning">
-          <h3>⚠️ 无法回本</h3>
+          <h3>[警告] 无法回本</h3>
           <p>{{ result.warning }}</p>
         </div>
         <div v-else class="result-card">

@@ -3,7 +3,6 @@
     <template #inputs>
       <div class="section">
         <div class="section-header" @click="toggleSection('weight')">
-          <span class="section-icon">⚖️</span>
           <span class="section-title">重量数据</span>
           <span class="section-arrow" :class="{ open: sections.weight }">▾</span>
         </div>
@@ -24,7 +23,6 @@
 
       <div class="section">
         <div class="section-header" @click="toggleSection('price')">
-          <span class="section-icon">💰</span>
           <span class="section-title">价格与损耗回收</span>
           <span class="section-arrow" :class="{ open: sections.price }">▾</span>
         </div>
@@ -127,22 +125,18 @@
           <h3 class="card-title">行业出成率基准</h3>
           <div class="benchmark-grid">
             <div class="bm-item">
-              <div class="bm-icon">🥩</div>
               <div class="bm-label">肉类</div>
               <div class="bm-range">70-85%</div>
             </div>
             <div class="bm-item">
-              <div class="bm-icon">🐟</div>
               <div class="bm-label">鱼类</div>
               <div class="bm-range">50-65%</div>
             </div>
             <div class="bm-item">
-              <div class="bm-icon">🥬</div>
               <div class="bm-label">蔬菜</div>
               <div class="bm-range">75-90%</div>
             </div>
             <div class="bm-item">
-              <div class="bm-icon">🧊</div>
               <div class="bm-label">冻品</div>
               <div class="bm-range">80-95%</div>
             </div>
