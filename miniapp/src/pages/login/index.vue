@@ -68,12 +68,13 @@ async function handleLogin() {
     return
   }
   try {
-    // 尝试登录，失败则自动注册
+    // 尝试登录，失败则自动注册（生成随机密码）
     let res
+    const randomPwd = Math.random().toString(36).slice(-8) + 'A1!'
     try {
       res = await login(form)
     } catch {
-      res = await register({ ...form, nickname: `用户${form.phone.slice(-4)}` })
+      res = await register({ ...form, nickname: `用户${form.phone.slice(-4)}`, password: randomPwd })
     }
     userStore.setToken(res.token)
     userStore.setUserInfo(res.user)

@@ -47,18 +47,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { sendCode, register } from '@/api/auth'
 
 const form = reactive({ nickname: '', phone: '', code: '' })
 const countdown = ref(0)
+const refCode = ref('')
 
-// 优先使用 URL 参数，其次全局存储
-const refCode = computed(() => {
-  // 在 setup 中读取页面参数
-  const pages = getCurrentPages()
-  const page = pages[pages.length - 1]
-  return page?.$page?.options?.ref || uni.getStorageSync('ref_code') || ''
+// 在 onLoad 中读取分享参数，确保时机正确
+onLoad((options) => {
+  refCode.value = options?.ref || uni.getStorageSync('ref_code') || ''
 })
 
 async function handleSendCode() {
@@ -84,7 +83,9 @@ async function handleRegister() {
   }
   try {
     uni.showLoading({ title: '注册中' })
-    const res = await register({ ...form, referralCode: refCode.value })
+    // 小程序端无密码输入框，自动生成随机密码
+    const randomPwd = Math.random().toString(36).slice(-8) + 'A1!'
+    const res = await register({ ...form, password: randomPwd, referralCode: refCode.value })
     uni.hideLoading()
     uni.setStorageSync('token', res.token)
     uni.setStorageSync('user', res.user)
