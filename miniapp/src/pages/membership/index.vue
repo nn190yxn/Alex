@@ -22,17 +22,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { createOrder } from '@/api/payment'
+import { useUserStore } from '@/store/user'
 
-const userInfo = ref(uni.getStorageSync('user'))
+const userStore = useUserStore()
+const userInfo = computed(() => userStore.state.userInfo)
+
+const currentLevel = computed(() => {
+  const map = { starter: '初阶版', pro: '进阶版', annual: '高阶版' }
+  return map[userInfo.value?.memberLevel] || '免费版'
+})
+
 const plans = ref([
   { code: 'starter', name: '初阶版', price: '¥99/月' },
   { code: 'pro', name: '进阶版', price: '¥149/月' },
   { code: 'annual', name: '高阶版', price: '¥1910/年' }
 ])
-
-const currentLevel = ref({ starter: '初阶', pro: '进阶', annual: '高阶' }[userInfo.value?.memberLevel] || '免费版')
 
 async function handleBuy(plan) {
   if (plan.code === userInfo.value?.memberLevel) return
@@ -40,13 +47,17 @@ async function handleBuy(plan) {
     uni.showLoading({ title: '创建订单中' })
     const res = await createOrder(plan.code)
     uni.hideLoading()
-    // 小程序支付需调用 wx.requestPayment，此处先模拟跳转提示
+    // 提示用户在 Web 端支付（小程序支付需额外配置商户号）
     uni.showModal({
-      title: '待接入微信支付',
-      content: `订单号：${res.orderId}，金额：${res.amount}元。请在 Web 端完成支付。`,
-      showCancel: false
+      title: '订单创建成功',
+      content: `订单号：${res.orderId}\n金额：¥${res.amount}\n\n请在电脑端完成支付。`,
+      showCancel: false,
+      success: () => {
+        // 支付页关闭后刷新用户信息
+        userStore.setUserInfo({ ...userInfo.value })
+      }
     })
-  } catch {
+  } catch (e) {
     uni.hideLoading()
   }
 }

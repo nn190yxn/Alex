@@ -40,9 +40,11 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { sendCode, login, register } from '@/api/auth'
+import { useUserStore } from '@/store/user'
 
 const form = reactive({ phone: '', code: '' })
 const countdown = ref(0)
+const userStore = useUserStore()
 
 async function handleSendCode() {
   if (!/^1\d{10}$/.test(form.phone)) {
@@ -73,8 +75,8 @@ async function handleLogin() {
     } catch {
       res = await register({ ...form, nickname: `用户${form.phone.slice(-4)}` })
     }
-    uni.setStorageSync('token', res.token)
-    uni.setStorageSync('user', res.user)
+    userStore.setToken(res.token)
+    userStore.setUserInfo(res.user)
     uni.showToast({ title: '登录成功', icon: 'success' })
     setTimeout(() => uni.switchTab({ url: '/pages/home/index' }), 1500)
   } catch (e) {}

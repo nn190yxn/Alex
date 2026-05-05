@@ -23,27 +23,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { useUserStore } from '@/store/user'
 
-const userInfo = ref(null)
+const userStore = useUserStore()
 
+// 每次页面显示时同步状态
 onShow(() => {
-  userInfo.value = uni.getStorageSync('user')
+  // 触发重新计算（如果 store 是响应式的，这里会自动更新）
+  // 在 uni-app + Vue3 中，直接引用 reactive store state 即可响应
 })
 
+const userInfo = computed(() => userStore.state.userInfo)
 const userInitial = computed(() => userInfo.value?.nickname?.[0] || '?')
+
 const memberText = computed(() => {
   const map = { free: '免费版', starter: '初阶版', pro: '进阶版', annual: '高阶版' }
   return map[userInfo.value?.memberLevel] || '未登录'
 })
 
-function goLogin() { if (!userInfo.value) uni.navigateTo({ url: '/pages/login/index' }) }
+function goLogin() { if (!userStore.isLoggedIn()) uni.navigateTo({ url: '/pages/login/index' }) }
 function goPage(url) { uni.navigateTo({ url }) }
+
 function handleLogout() {
-  uni.removeStorageSync('token')
-  uni.removeStorageSync('user')
-  userInfo.value = null
+  userStore.logout()
   uni.showToast({ title: '已退出' })
 }
 </script>

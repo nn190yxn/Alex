@@ -31,7 +31,7 @@
       </view>
     </view>
 
-    <button class="btn-share" @click="handleShare">邀请好友</button>
+    <button class="btn-share" open-type="share">邀请好友</button>
   </view>
 </template>
 
@@ -66,13 +66,6 @@ function copyCode() {
 
 function statusText(s) {
   return { pending: '冻结中', paid: '已发放', cancelled: '已取消' }[s] || s
-}
-
-function handleShare() {
-  const code = stats.value.referralCode
-  if (!code) return
-  uni.showShareMenu({ withShareTicket: true })
-  uni.showToast({ title: '请点右上角分享', icon: 'none' })
 }
 
 // 小程序分享钩子

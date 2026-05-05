@@ -8,8 +8,16 @@
   "mp-weixin": {
     "appid": "",
     "setting": {
-      "urlCheck": false
+      "urlCheck": true
     },
-    "usingComponents": true
+    "usingComponents": true,
+    "permission": {},
+    "requiredPrivateInfos": []
+  },
+  "networkTimeout": {
+    "request": 10000,
+    "connectSocket": 5000,
+    "uploadFile": 60000,
+    "downloadFile": 60000
   }
 }

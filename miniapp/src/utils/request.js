@@ -5,6 +5,7 @@ const BASE_URL = 'https://woyingai.com/api'
 // 通用请求方法
 export function request(options) {
   return new Promise((resolve, reject) => {
+    // 优先从内存读取 token，保持一致性
     const token = uni.getStorageSync('token')
     const url = `${BASE_URL}${options.url}`
     
