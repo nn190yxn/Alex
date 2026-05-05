@@ -5,7 +5,6 @@ const BASE_URL = 'https://woyingai.com/api'
 // 通用请求方法
 export function request(options) {
   return new Promise((resolve, reject) => {
-    // 优先从内存读取 token，保持一致性
     const token = uni.getStorageSync('token')
     const url = `${BASE_URL}${options.url}`
     
@@ -19,7 +18,6 @@ export function request(options) {
       },
       success: (res) => {
         if (res.statusCode === 401) {
-          // Token 失效，清除并跳转登录
           uni.removeStorageSync('token')
           uni.removeStorageSync('user')
           uni.reLaunch({ url: '/pages/login/index' })

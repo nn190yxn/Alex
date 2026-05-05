@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { getMyReferralCode, getReferralStats, getReferralCommissions } from '@/api/referral'
 
 const stats = ref({})
@@ -46,6 +46,12 @@ const commissions = ref([])
 const totalCommission = computed(() => stats.value.commissionSummary?.totalCommission || 0)
 
 onShow(loadData)
+
+// 小程序分享配置
+onShareAppMessage(() => ({
+  title: `推荐码：${stats.value.referralCode || ''}，注册得会员`,
+  path: `/pages/register/index?ref=${stats.value.referralCode || ''}`
+}))
 
 async function loadData() {
   try {
@@ -67,14 +73,6 @@ function copyCode() {
 function statusText(s) {
   return { pending: '冻结中', paid: '已发放', cancelled: '已取消' }[s] || s
 }
-
-// 小程序分享钩子
-onShow(() => {
-  uni.onShareAppMessage(() => ({
-    title: `推荐码：${stats.value.referralCode}，注册得会员`,
-    path: `/pages/register/index?ref=${stats.value.referralCode}`
-  }))
-})
 </script>
 
 <style scoped>

@@ -18,6 +18,15 @@
     <view class="referral-tip">
       <text class="tip-text">💡 邀请好友付费，得 20% 返利（不设上限）</text>
     </view>
+
+    <!-- 支付中弹窗 -->
+    <view class="modal" v-if="polling">
+      <view class="modal-content">
+        <text class="modal-title">等待支付完成</text>
+        <text class="modal-desc">请在电脑端完成支付，系统将自动更新会员状态</text>
+        <button class="btn-cancel" @click="cancelPoll">我知道了</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -25,10 +34,13 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { createOrder } from '@/api/payment'
+import { getUserInfo } from '@/api/auth'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.state.userInfo)
+const polling = ref(false)
+let pollTimer = null
 
 const currentLevel = computed(() => {
   const map = { starter: '初阶版', pro: '进阶版', annual: '高阶版' }
@@ -47,19 +59,46 @@ async function handleBuy(plan) {
     uni.showLoading({ title: '创建订单中' })
     const res = await createOrder(plan.code)
     uni.hideLoading()
-    // 提示用户在 Web 端支付（小程序支付需额外配置商户号）
+    
+    // 显示支付提示
     uni.showModal({
       title: '订单创建成功',
       content: `订单号：${res.orderId}\n金额：¥${res.amount}\n\n请在电脑端完成支付。`,
-      showCancel: false,
-      success: () => {
-        // 支付页关闭后刷新用户信息
-        userStore.setUserInfo({ ...userInfo.value })
-      }
+      showCancel: false
     })
+
+    // 开始轮询检查支付状态
+    polling.value = true
+    startPolling(res.orderId)
   } catch (e) {
     uni.hideLoading()
   }
+}
+
+function startPolling(orderId) {
+  // 每 5 秒检查一次用户状态，最多检查 2 分钟
+  let count = 0
+  pollTimer = setInterval(async () => {
+    count++
+    if (count > 24) { // 2分钟超时
+      clearInterval(pollTimer)
+      polling.value = false
+      return
+    }
+    try {
+      const res = await getUserInfo()
+      userStore.setUserInfo(res)
+      if (res.memberLevel !== userInfo.value?.memberLevel) {
+        clearInterval(pollTimer)
+        polling.value = false
+        uni.showToast({ title: '会员状态已更新', icon: 'success' })
+      }
+    } catch {}
+  }, 5000)
+}
+
+function cancelPoll() {
+  polling.value = false
 }
 </script>
 
@@ -76,4 +115,9 @@ async function handleBuy(plan) {
 .btn-plan { background: #0e7490; color: #fff; margin: 0; font-size: 28rpx; }
 .referral-tip { background: #fff; padding: 20rpx; border-radius: 12rpx; margin-top: 30rpx; text-align: center; }
 .tip-text { color: #0e7490; font-size: 26rpx; }
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+.modal-content { background: #fff; padding: 40rpx; border-radius: 16rpx; width: 80%; text-align: center; }
+.modal-title { font-size: 32rpx; font-weight: bold; display: block; margin-bottom: 16rpx; }
+.modal-desc { color: #666; font-size: 26rpx; display: block; margin-bottom: 30rpx; }
+.btn-cancel { background: #0e7490; color: #fff; margin: 0; }
 </style>
