@@ -518,22 +518,21 @@ router.get('/tools', async (req, res) => {
       ORDER BY total_usage DESC
     `)
 
-    // 获取所有已注册的工具（从配置文件）
-    const { allTools } = await import('../config/toolAccess.js')
+    // 从工具配置构建列表
+    const { TOOL_REQUIRED_LEVELS, getToolAccessMeta } = await import('../config/toolAccess.js')
 
-    const toolMap = {}
-    for (const tool of allTools) {
-      toolMap[tool.code] = {
-        code: tool.code,
-        name: tool.name,
-        requiredLevel: tool.requiredLevel || 'free',
-        category: tool.category || '其他',
-        description: tool.description || ''
+    const toolMeta = {}
+    for (const [code, level] of Object.entries(TOOL_REQUIRED_LEVELS)) {
+      const meta = getToolAccessMeta(code)
+      toolMeta[code] = {
+        code,
+        requiredLevel: level,
+        ...meta
       }
     }
 
     const result = toolUsage.map(u => ({
-      ...toolMap[u.tool_code],
+      ...toolMeta[u.tool_code],
       totalUsage: u.total_usage,
       todayUsage: u.today_usage,
       weekUsage: u.week_usage,
@@ -542,7 +541,7 @@ router.get('/tools', async (req, res) => {
     }))
 
     // 补充未使用的工具
-    for (const [code, info] of Object.entries(toolMap)) {
+    for (const [code, info] of Object.entries(toolMeta)) {
       if (!result.find(r => r.code === code)) {
         result.push({ ...info, totalUsage: 0, todayUsage: 0, weekUsage: 0, uniqueUsers: 0, lastUsed: null })
       }
