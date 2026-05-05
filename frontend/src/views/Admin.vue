@@ -134,25 +134,50 @@
             </div>
           </div>
 
-          <!-- 工具统计 -->
+          <!-- 工具管理 -->
           <div v-if="activeTab === 'tools'" class="tools-panel">
             <div class="panel-header">
-              <h3>工具使用统计</h3>
+              <h3>工具列表</h3>
+              <div class="filter-group">
+                <select v-model="toolCategoryFilter" @change="filterToolsByCategory" class="form-select">
+                  <option value="">全部分类</option>
+                  <option value="经营测算">经营测算</option>
+                  <option value="行业诊断">行业诊断</option>
+                  <option value="内容生成">内容生成</option>
+                  <option value="抖音运营">抖音运营</option>
+                  <option value="小红书">小红书</option>
+                  <option value="老板IP">老板IP</option>
+                  <option value="其他">其他</option>
+                </select>
+              </div>
             </div>
             <div class="table-wrapper">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>工具代码</th>
-                    <th>使用次数</th>
-                    <th>今日使用</th>
+                    <th>工具名称</th>
+                    <th>分类</th>
+                    <th>所需等级</th>
+                    <th>总使用</th>
+                    <th>今日</th>
+                    <th>近7天</th>
+                    <th>独立用户</th>
+                    <th>最后使用</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="[code, count] in toolUsage" :key="code">
-                    <td>{{ code }}</td>
-                    <td>{{ count.total }}</td>
-                    <td>{{ count.today }}</td>
+                  <tr v-for="tool in filteredTools" :key="tool.code">
+                    <td class="tool-name-cell">
+                      <span class="tool-icon">{{ getToolIcon(tool.code) }}</span>
+                      {{ tool.name || tool.code }}
+                    </td>
+                    <td>{{ tool.category || '-' }}</td>
+                    <td><span :class="['member-badge', `badge-${tool.requiredLevel}`]">{{ getMemberLabel(tool.requiredLevel) }}</span></td>
+                    <td>{{ tool.totalUsage || 0 }}</td>
+                    <td>{{ tool.todayUsage || 0 }}</td>
+                    <td>{{ tool.weekUsage || 0 }}</td>
+                    <td>{{ tool.uniqueUsers || 0 }}</td>
+                    <td>{{ tool.lastUsed ? formatDateTime(tool.lastUsed) : '从未' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -281,6 +306,124 @@
               </div>
             </div>
           </div>
+
+          <!-- 系统配置 -->
+          <div v-if="activeTab === 'config'" class="config-panel">
+            <div class="panel-header">
+              <h3>系统配置</h3>
+              <button class="btn-sm" @click="loadConfig">刷新</button>
+            </div>
+            <div class="config-grid">
+              <div class="config-card">
+                <h4>⚙️ 裂变返利</h4>
+                <div class="config-item">
+                  <label>推荐奖励天数</label>
+                  <span class="config-value">{{ config.referral?.bonusDays || '-' }} 天</span>
+                </div>
+                <div class="config-item">
+                  <label>返利比例</label>
+                  <span class="config-value">{{ config.referral?.commissionRate ? (Number(config.referral.commissionRate) * 100).toFixed(0) + '%' : '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>返利冻结期</label>
+                  <span class="config-value">{{ config.referral?.cooldownDays || '-' }} 天</span>
+                </div>
+              </div>
+
+              <div class="config-card">
+                <h4>💳 支付配置</h4>
+                <div class="config-item">
+                  <label>回调密钥</label>
+                  <span class="config-value">{{ config.payment?.callbackSecret || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>前端地址</label>
+                  <span class="config-value">{{ config.payment?.frontendBaseUrl || '-' }}</span>
+                </div>
+              </div>
+
+              <div class="config-card">
+                <h4>🤖 AI 模型</h4>
+                <div class="config-item">
+                  <label>API 地址</label>
+                  <span class="config-value">{{ config.llm?.baseUrl || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>模型</label>
+                  <span class="config-value">{{ config.llm?.model || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>API Key</label>
+                  <span class="config-value">{{ config.llm?.apiKey || '-' }}</span>
+                </div>
+              </div>
+
+              <div class="config-card">
+                <h4>🗄️ 数据库</h4>
+                <div class="config-item">
+                  <label>主机</label>
+                  <span class="config-value">{{ config.database?.host || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>数据库名</label>
+                  <span class="config-value">{{ config.database?.name || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>用户</label>
+                  <span class="config-value">{{ config.database?.user || '-' }}</span>
+                </div>
+              </div>
+
+              <div class="config-card">
+                <h4>🖥️ 系统环境</h4>
+                <div class="config-item">
+                  <label>运行环境</label>
+                  <span class="config-value" :class="config.system?.nodeEnv === 'production' ? 'text-success' : 'text-warning'">{{ config.system?.nodeEnv || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>端口</label>
+                  <span class="config-value">{{ config.system?.port || '-' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>Redis</label>
+                  <span class="config-value" :class="config.system?.useRealRedis === 'true' ? 'text-success' : 'text-warning'">{{ config.system?.useRealRedis === 'true' ? '已连接' : 'Mock 模式' }}</span>
+                </div>
+                <div class="config-item">
+                  <label>日志目录</label>
+                  <span class="config-value">{{ config.system?.logDir || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 数据导出 -->
+          <div v-if="activeTab === 'export'" class="export-panel">
+            <div class="panel-header">
+              <h3>数据导出</h3>
+            </div>
+            <div class="export-grid">
+              <div class="export-card" @click="exportData('users')">
+                <div class="export-icon">👥</div>
+                <h4>用户数据</h4>
+                <p>导出全部用户信息，包含手机号、会员等级、推荐码等</p>
+              </div>
+              <div class="export-card" @click="exportData('orders')">
+                <div class="export-icon">📦</div>
+                <h4>订单数据</h4>
+                <p>导出全部订单记录，包含套餐、金额、支付状态等</p>
+              </div>
+              <div class="export-card" @click="exportData('commissions')">
+                <div class="export-icon">💰</div>
+                <h4>返利数据</h4>
+                <p>导出返利明细，包含推荐人、被推荐人、返利金额等</p>
+              </div>
+              <div class="export-card" @click="exportData('feedbacks')">
+                <div class="export-icon">💬</div>
+                <h4>反馈数据</h4>
+                <p>导出用户反馈记录，包含需求建议和 Bug 报错</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -318,13 +461,33 @@ const feedbacks = ref([])
 const feedbackFilter = ref('')
 const feedbackStatusFilter = ref('')
 
+// 工具
+const tools = ref([])
+const toolCategoryFilter = ref('')
+const filteredTools = computed(() => {
+  if (!toolCategoryFilter.value) return tools.value
+  return tools.value.filter(t => t.category === toolCategoryFilter.value)
+})
+
+// 配置
+const config = ref({})
+
+// 导出
+function exportData(type) {
+  const token = localStorage.getItem('token')
+  const url = `/api/admin/export/${type}`
+  window.open(url, '_blank')
+}
+
 const tabs = [
   { key: 'users', label: '用户管理' },
   { key: 'orders', label: '订单管理' },
-  { key: 'tools', label: '工具统计' },
+  { key: 'tools', label: '工具管理' },
   { key: 'commissions', label: '返利管理' },
+  { key: 'feedbacks', label: '用户反馈' },
   { key: 'logs', label: '错误日志' },
-  { key: 'feedbacks', label: '用户反馈' }
+  { key: 'config', label: '系统配置' },
+  { key: 'export', label: '数据导出' }
 ]
 
 const memberLabels = {
@@ -400,10 +563,29 @@ async function loadOrders() {
   } catch (e) { console.error('Failed to load orders:', e) }
 }
 
-async function loadToolUsage() {
+async function loadTools() {
   try {
-    toolUsage.value = await apiFetch('/tool-usage')
-  } catch (e) { console.error('Failed to load tool usage:', e) }
+    tools.value = await apiFetch('/tools')
+  } catch (e) { console.error('Failed to load tools:', e) }
+}
+
+function filterToolsByCategory() {
+  // filteredTools computed property handles this
+}
+
+function getToolIcon(code) {
+  const icons = {
+    '经营测算': '📊', '行业诊断': '🔍', '内容生成': '📝',
+    '抖音运营': '🎵', '小红书': '📕', '老板IP': '🎥'
+  }
+  const tool = tools.value.find(t => t.code === code)
+  return icons[tool?.category] || '🛠️'
+}
+
+async function loadConfig() {
+  try {
+    config.value = await apiFetch('/config')
+  } catch (e) { console.error('Failed to load config:', e) }
 }
 
 async function loadCommissions() {
@@ -513,10 +695,11 @@ onMounted(() => {
   loadStats()
   loadUsers()
   loadOrders()
-  loadToolUsage()
+  loadTools()
   loadCommissions()
   loadErrorLogs()
   loadFeedbacks()
+  loadConfig()
 })
 </script>
 
@@ -833,6 +1016,96 @@ onMounted(() => {
 .pagination {
   margin-top: var(--space-4);
   text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+}
+
+/* 工具管理 */
+.tool-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tool-icon {
+  font-size: var(--text-h4);
+}
+
+/* 系统配置 */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.config-card {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.config-card h4 {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-body);
+}
+
+.config-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line-default);
+  font-size: var(--text-body-sm);
+}
+
+.config-item:last-child {
+  border-bottom: none;
+}
+
+.config-item label {
+  color: var(--text-secondary);
+}
+
+.config-value {
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.text-success { color: #065f46; }
+.text-warning { color: #92400e; }
+
+/* 数据导出 */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.export-card {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.export-card:hover {
+  border-color: var(--brand-primary);
+  background: var(--bg-card);
+}
+
+.export-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-3);
+}
+
+.export-card h4 {
+  margin-bottom: var(--space-2);
+}
+
+.export-card p {
   color: var(--text-secondary);
   font-size: var(--text-body-sm);
 }
