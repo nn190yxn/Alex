@@ -1,6 +1,6 @@
 export const MEMBER_LEVEL_ORDER = { free: 0, trial: 0, starter: 1, pro: 2, annual: 3 }
 
-const TOOL_REQUIRED_LEVELS = {
+export const TOOL_REQUIRED_LEVELS = {
   salary: 'starter',
   sop: 'starter',
   'marketing-plan': 'starter',
