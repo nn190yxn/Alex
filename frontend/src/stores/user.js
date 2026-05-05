@@ -15,14 +15,14 @@ export const useUserStore = defineStore('user', () => {
     const name = nickname.value || '用户'
     return name.slice(0, 1).toUpperCase()
   })
-  const memberLevel = computed(() => normalizeMemberLevel(userInfo.value?.memberLevel || 'annual'))
-  const isAdmin = computed(() => true)
-  const memberLabel = computed(() => getMemberLevelLabel(userInfo.value?.memberLevel || 'annual'))
+  const memberLevel = computed(() => normalizeMemberLevel(userInfo.value?.memberLevel || 'free'))
+  const isAdmin = computed(() => canAccessLevel(memberLevel.value, 'annual'))
+  const memberLabel = computed(() => getMemberLevelLabel(userInfo.value?.memberLevel || 'free'))
   const memberExpireAt = computed(() => userInfo.value?.memberExpireAt || null)
   const phone = computed(() => userInfo.value?.phone || '')
 
   function syncMemberLevelStorage(level) {
-    localStorage.setItem('memberLevel', normalizeMemberLevel(level || 'annual'))
+    localStorage.setItem('memberLevel', normalizeMemberLevel(level || 'free'))
   }
 
   async function login(phone, code) {

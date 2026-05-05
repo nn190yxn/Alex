@@ -23,14 +23,6 @@ request.interceptors.response.use(
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
-    const data = error.response?.data || {}
-    const normalizedMessage = data.message || data.error || error.message || '请求失败'
-    error.normalized = {
-      code: data.code || `HTTP_${error.response?.status || 'UNKNOWN'}`,
-      message: normalizedMessage,
-      details: data.details || null
-    }
-    error.message = normalizedMessage
     return Promise.reject(error)
   }
 )

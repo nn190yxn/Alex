@@ -243,28 +243,7 @@ const routes = [
   { path: '/xhs/shutiao-calculator', name: 'XhsShutiaoCalculator', component: () => import('@/views/xhs/ShutiaoCalculatorAgent.vue'), meta: { title: '薯条投放计算器' } },
   { path: '/xhs/juguang-strategy', name: 'XhsJuguangStrategy', component: () => import('@/views/xhs/JuguangStrategyAgent.vue'), meta: { title: '聚光投放策略' } },
   { path: '/xhs/ip-positioning', name: 'XhsIPPositioning', component: () => import('@/views/xhs/IPPositioningAgent.vue'), meta: { title: '博主 IP 定位' } },
-  { path: '/xhs/ip-consistency', name: 'XhsIPConsistency', component: () => import('@/views/xhs/IPConsistencyAgent.vue'), meta: { title: '人设一致性检查' } },
-
-  // 私域运营智能体
-  { path: '/private', name: 'PrivateAgentHub', component: () => import('@/views/PrivateAgentHub.vue'), meta: { title: '私域运营智能体矩阵' } },
-  { path: '/private/diagnosis', name: 'PrivateDiagnosis', component: () => import('@/views/private/PrivateDiagnosis.vue'), meta: { title: '私域体检表' } },
-  { path: '/private/member-design', name: 'PrivateMemberDesign', component: () => import('@/views/private/MemberDesign.vue'), meta: { title: '会员体系设计器' } },
-  { path: '/private/retention-plan', name: 'PrivateRetentionPlan', component: () => import('@/views/private/RetentionPlan.vue'), meta: { title: '复购留存方案' } },
-  { path: '/private/fission-plan', name: 'PrivateFissionPlan', component: () => import('@/views/private/FissionPlan.vue'), meta: { title: '裂变增长方案' } },
-  { path: '/private/community-sop', name: 'PrivateCommunitySop', component: () => import('@/views/private/CommunitySop.vue'), meta: { title: '社群运营 SOP' } },
-  { path: '/private/cac-ltv', name: 'PrivateCACLTV', component: () => import('@/views/private/CACvsLTV.vue'), meta: { title: 'CAC vs LTV 分析' } },
-  { path: '/private/full-strategy', name: 'PrivateFullStrategy', component: () => import('@/views/private/FullStrategy.vue'), meta: { title: '90 天私域战略' } },
-  { path: '/private/activity-planner', name: 'PrivateActivityPlanner', component: () => import('@/views/private/ActivityPlanner.vue'), meta: { title: '社群活动策划' } },
-  { path: '/private/engagement-boost', name: 'PrivateEngagementBoost', component: () => import('@/views/private/EngagementBoost.vue'), meta: { title: '社群活跃度提升' } },
-  { path: '/private/tier-pricing', name: 'PrivateTierPricing', component: () => import('@/views/private/TierPricing.vue'), meta: { title: '会员等级定价' } },
-  { path: '/private/loyalty-program', name: 'PrivateLoyaltyProgram', component: () => import('@/views/private/LoyaltyProgram.vue'), meta: { title: '忠诚度计划设计' } },
-  { path: '/private/recharge-design', name: 'PrivateRechargeDesign', component: () => import('@/views/private/RechargeDesign.vue'), meta: { title: '储值方案设计' } },
-  { path: '/private/churn-prevention', name: 'PrivateChurnPrevention', component: () => import('@/views/private/ChurnPrevention.vue'), meta: { title: '客户流失预警' } },
-  { path: '/private/reactivation', name: 'PrivateReactivation', component: () => import('@/views/private/Reactivation.vue'), meta: { title: '沉睡客户激活' } },
-  { path: '/private/fission-design', name: 'PrivateFissionDesign', component: () => import('@/views/private/FissionDesign.vue'), meta: { title: '裂变方案设计' } },
-  { path: '/private/referral-system', name: 'PrivateReferralSystem', component: () => import('@/views/private/ReferralSystem.vue'), meta: { title: '转介绍系统' } },
-  { path: '/private/viral-campaign', name: 'PrivateViralCampaign', component: () => import('@/views/private/ViralCampaign.vue'), meta: { title: '病毒式活动策划' } },
-  { path: '/private/private-dashboard', name: 'PrivateDashboard', component: () => import('@/views/private/PrivateDashboard.vue'), meta: { title: '私域数据看板' } }
+  { path: '/xhs/ip-consistency', name: 'XhsIPConsistency', component: () => import('@/views/xhs/IPConsistencyAgent.vue'), meta: { title: '人设一致性检查' } }
 ]
 
 const router = createRouter({
