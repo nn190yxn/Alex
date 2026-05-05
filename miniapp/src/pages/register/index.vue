@@ -4,7 +4,7 @@
       <text class="title">注册</text>
       <text class="desc">加入我赢AI，开启智能经营</text>
       <view class="ref-banner" v-if="refCode">
-        <text class="ref-text">🎉 推荐人：{{ refCode }}</text>
+        <text class="ref-text">推荐人：{{ refCode }}</text>
       </view>
     </view>
 
@@ -47,15 +47,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { sendCode, register } from '@/api/auth'
 
 const form = reactive({ nickname: '', phone: '', code: '' })
 const countdown = ref(0)
 const refCode = ref('')
+let countdownTimer = null
 
-// 在 onLoad 中读取分享参数，确保时机正确
 onLoad((options) => {
   refCode.value = options?.ref || uni.getStorageSync('ref_code') || ''
 })
@@ -68,12 +68,18 @@ async function handleSendCode() {
   try {
     await sendCode(form.phone)
     countdown.value = 60
-    const timer = setInterval(() => {
+    if (countdownTimer) clearInterval(countdownTimer)
+    countdownTimer = setInterval(() => {
       countdown.value--
-      if (countdown.value <= 0) clearInterval(timer)
+      if (countdown.value <= 0) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+      }
     }, 1000)
     uni.showToast({ title: '验证码已发送', icon: 'success' })
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: e.message || '发送验证码失败', icon: 'none' })
+  }
 }
 
 async function handleRegister() {
@@ -83,20 +89,22 @@ async function handleRegister() {
   }
   try {
     uni.showLoading({ title: '注册中' })
-    // 小程序端无密码输入框，自动生成随机密码
-    const randomPwd = Math.random().toString(36).slice(-8) + 'A1!'
-    const res = await register({ ...form, password: randomPwd, referralCode: refCode.value })
+    const res = await register({ ...form, referralCode: refCode.value })
     uni.hideLoading()
     uni.setStorageSync('token', res.token)
     uni.setStorageSync('user', res.user)
     uni.showToast({ title: '注册成功', icon: 'success' })
-    // 清除 ref 缓存
     uni.removeStorageSync('ref_code')
     setTimeout(() => uni.switchTab({ url: '/pages/home/index' }), 1500)
   } catch (e) {
     uni.hideLoading()
+    uni.showToast({ title: e.message || '注册失败，请重试', icon: 'none' })
   }
 }
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
 </script>
 
 <style scoped>

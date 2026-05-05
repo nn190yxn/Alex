@@ -112,10 +112,14 @@ router.get('/tool-usage', async (req, res) => {
       GROUP BY tool_code
     `)
 
-    const result = usage.map(u => [u.tool_code, {
-      total: u.total,
-      today: u.today
-    }])
+    // 统一返回对象格式，而非数组格式
+    const result = {}
+    for (const u of usage) {
+      result[u.tool_code] = {
+        total: u.total,
+        today: u.today
+      }
+    }
 
     res.json(result)
   } catch (error) {
@@ -150,8 +154,8 @@ router.get('/commissions', async (req, res) => {
       LEFT JOIN users u2 ON rc.referred_id = u2.id
       ${where}
       ORDER BY rc.created_at DESC
-      LIMIT ${limitNum} OFFSET ${offset}
-    `, params)
+      LIMIT ? OFFSET ?
+    `, [...params, limitNum, offset])
 
     const countResult = await query(`SELECT COUNT(*) as total FROM referral_commissions ${where}`, params)
 
@@ -240,21 +244,32 @@ router.post('/users/:id/extend-expire', async (req, res) => {
 // === 错误日志 ===
 router.get('/error-logs', async (req, res) => {
   const { level = 'error', lines = 100 } = req.query
+  const maxLines = Math.min(500, Math.max(1, parseInt(lines) || 100))
 
   try {
     const logDir = process.env.LOG_DIR || './logs'
     const fs = await import('fs')
     const path = await import('path')
+    const readline = await import('readline')
     const errorLogFile = path.resolve(logDir, 'backend-error.log')
 
     if (!fs.existsSync(errorLogFile)) {
       return res.json({ logs: [] })
     }
 
-    const content = fs.readFileSync(errorLogFile, 'utf-8')
-    const allLines = content.split('\n').filter(l => l.trim())
+    // 使用流式读取最后 N 行，避免大文件 OOM
+    const fileStream = fs.createReadStream(errorLogFile)
+    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity })
 
-    // 解析 JSON 格式日志
+    const allLines = []
+    for await (const line of rl) {
+      if (line.trim()) allLines.push(line)
+      // 只保留最后 maxLines 行，防止内存溢出
+      if (allLines.length > maxLines * 2) {
+        allLines.splice(0, allLines.length - maxLines)
+      }
+    }
+
     const logs = []
     for (const line of allLines) {
       try {
@@ -263,14 +278,13 @@ router.get('/error-logs', async (req, res) => {
           logs.push(entry)
         }
       } catch {
-        // 非 JSON 行也保留
         if (!level || level === 'all') {
           logs.push({ raw: line, timestamp: new Date().toISOString() })
         }
       }
     }
 
-    res.json({ logs: logs.slice(-parseInt(lines)) })
+    res.json({ logs: logs.slice(-maxLines) })
   } catch (error) {
     logger.error('admin', `Read error logs failed: ${error.message}`)
     res.status(500).json({ message: '读取日志失败' })
@@ -307,8 +321,8 @@ router.get('/user-feedbacks', async (req, res) => {
       LEFT JOIN users u ON f.user_id = u.id
       ${where}
       ORDER BY f.created_at DESC
-      LIMIT ${limitNum} OFFSET ${offset}
-    `, params)
+      LIMIT ? OFFSET ?
+    `, [...params, limitNum, offset])
 
     const countResult = await query(`SELECT COUNT(*) as total FROM user_feedbacks ${where}`, params)
 
@@ -356,7 +370,6 @@ router.put('/user-feedbacks/:id', async (req, res) => {
 // === 系统配置 ===
 router.get('/config', async (req, res) => {
   try {
-    // 读取关键环境变量和配置
     const config = {
       referral: {
         bonusDays: process.env.REFERRAL_BONUS_DAYS_PER_REFERRAL || '1',
@@ -380,7 +393,6 @@ router.get('/config', async (req, res) => {
       system: {
         nodeEnv: process.env.NODE_ENV || 'development',
         port: process.env.PORT || '3000',
-        logDir: process.env.LOG_DIR || './logs',
         useRealRedis: process.env.USE_REAL_REDIS || 'false'
       }
     }
@@ -391,11 +403,23 @@ router.get('/config', async (req, res) => {
   }
 })
 
+// CSV 字段转义函数
+function escapeCSV(value) {
+  if (value === null || value === undefined) return ''
+  const str = String(value)
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"'
+  }
+  return str
+}
+
 // === 数据导出 ===
 router.get('/export/users', async (req, res) => {
   try {
+    const MAX_EXPORT = 10000
     const users = await query(
-      'SELECT id, phone, nickname, member_level, member_expire_at, referral_code, referred_by, referral_bonus_days, created_at FROM users ORDER BY id DESC'
+      'SELECT id, phone, nickname, member_level, member_expire_at, referral_code, referred_by, referral_bonus_days, created_at FROM users ORDER BY id DESC LIMIT ?',
+      [MAX_EXPORT]
     )
 
     const headers = ['ID', '手机号', '昵称', '会员等级', '到期时间', '推荐码', '推荐人ID', '返利天数', '注册时间']
@@ -403,12 +427,11 @@ router.get('/export/users', async (req, res) => {
       u.id, u.phone, u.nickname || '', u.member_level,
       u.member_expire_at || '', u.referral_code || '', u.referred_by || '',
       u.referral_bonus_days || 0, u.created_at
-    ])
+    ].map(escapeCSV))
 
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename=users_export.csv')
-    // BOM for Excel UTF-8
     res.send('\uFEFF' + csv)
   } catch (error) {
     logger.error('admin', `Export users error: ${error.message}`)
@@ -418,21 +441,23 @@ router.get('/export/users', async (req, res) => {
 
 router.get('/export/orders', async (req, res) => {
   try {
+    const MAX_EXPORT = 10000
     const orders = await query(`
       SELECT o.id, o.user_id, o.plan_code, o.plan_name, o.amount, o.status,
              o.paid_at, o.created_at, u.phone, u.nickname
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       ORDER BY o.id DESC
-    `)
+      LIMIT ?
+    `, [MAX_EXPORT])
 
     const headers = ['订单号', '用户ID', '手机号', '昵称', '套餐代码', '套餐名称', '金额', '状态', '支付时间', '创建时间']
     const rows = orders.map(o => [
       o.id, o.user_id, o.phone || '', o.nickname || '', o.plan_code, o.plan_name || '',
       o.amount, o.status, o.paid_at || '', o.created_at
-    ])
+    ].map(escapeCSV))
 
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename=orders_export.csv')
     res.send('\uFEFF' + csv)
@@ -444,6 +469,7 @@ router.get('/export/orders', async (req, res) => {
 
 router.get('/export/commissions', async (req, res) => {
   try {
+    const MAX_EXPORT = 10000
     const commissions = await query(`
       SELECT rc.id, rc.referrer_id, rc.referred_id, rc.order_id, rc.order_amount,
              rc.commission_rate, rc.commission_amount, rc.status, rc.pending_until,
@@ -454,7 +480,8 @@ router.get('/export/commissions', async (req, res) => {
       LEFT JOIN users u1 ON rc.referrer_id = u1.id
       LEFT JOIN users u2 ON rc.referred_id = u2.id
       ORDER BY rc.created_at DESC
-    `)
+      LIMIT ?
+    `, [MAX_EXPORT])
 
     const headers = ['返利ID', '推荐人ID', '推荐人手机', '推荐人昵称', '被推荐人ID', '被推荐人手机', '被推荐人昵称',
                      '订单号', '订单金额', '返利比例', '返利金额', '状态', '冻结至', '发放时间', '创建时间']
@@ -463,9 +490,9 @@ router.get('/export/commissions', async (req, res) => {
       c.referred_id, c.referred_phone || '', c.referred_nickname || '',
       c.order_id, c.order_amount, c.commission_rate, c.commission_amount,
       c.status, c.pending_until || '', c.paid_at || '', c.created_at
-    ])
+    ].map(escapeCSV))
 
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename=commissions_export.csv')
     res.send('\uFEFF' + csv)
@@ -477,6 +504,7 @@ router.get('/export/commissions', async (req, res) => {
 
 router.get('/export/feedbacks', async (req, res) => {
   try {
+    const MAX_EXPORT = 10000
     const feedbacks = await query(`
       SELECT f.id, f.user_id, f.type, f.title, f.description, f.status,
              f.admin_note, f.created_at, f.updated_at,
@@ -484,7 +512,8 @@ router.get('/export/feedbacks', async (req, res) => {
       FROM user_feedbacks f
       LEFT JOIN users u ON f.user_id = u.id
       ORDER BY f.created_at DESC
-    `)
+      LIMIT ?
+    `, [MAX_EXPORT])
 
     const headers = ['反馈ID', '用户ID', '手机号', '昵称', '类型', '标题', '描述', '状态', '管理员备注', '创建时间', '更新时间']
     const rows = feedbacks.map(f => [
@@ -492,9 +521,9 @@ router.get('/export/feedbacks', async (req, res) => {
       f.type === 'feature' ? '需求建议' : 'Bug报错',
       f.title, f.description || '', f.status, f.admin_note || '',
       f.created_at, f.updated_at
-    ])
+    ].map(escapeCSV))
 
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename=feedbacks_export.csv')
     res.send('\uFEFF' + csv)

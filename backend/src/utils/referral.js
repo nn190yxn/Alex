@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { query } from '../models/db.js'
 
 export const REFERRAL_CONFIG = {
@@ -10,7 +11,7 @@ export const REFERRAL_CONFIG = {
 
 export function generateReferralCode(userId) {
   const idStr = String(userId).padStart(4, '0')
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase().padEnd(4, 'X')
+  const random = crypto.randomBytes(2).toString('hex').toUpperCase().slice(0, 4)
   return `${REFERRAL_CONFIG.CODE_PREFIX}${idStr}${random}`
 }
 
@@ -86,8 +87,10 @@ export async function applyReferralCommissionForPaidOrder(orderId) {
   const existing = await query('SELECT id FROM referral_commissions WHERE order_id = ?', [order.id])
   if (existing.length > 0) return { applied: false, reason: 'commission_exists' }
 
-  const rawCommission = Number(order.amount || 0) * REFERRAL_CONFIG.COMMISSION_RATE
-  const commissionAmount = Math.max(0, Number(rawCommission.toFixed(2)))
+  // 使用整数计算避免浮点精度问题（金额先转为分）
+  const amountInCents = Math.round(Number(order.amount || 0) * 100)
+  const commissionInCents = Math.floor(amountInCents * REFERRAL_CONFIG.COMMISSION_RATE)
+  const commissionAmount = commissionInCents / 100
   if (commissionAmount <= 0) return { applied: false, reason: 'zero_commission' }
 
   await query(

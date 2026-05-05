@@ -60,8 +60,8 @@
         <h2>我要反馈</h2>
         <p class="feedback-desc">有任何需求建议或 Bug 报错，请告诉我们，我们会及时处理</p>
         <div class="feedback-actions">
-          <button class="btn btn-primary" @click="openFeedback('feature')">💡 提交需求建议</button>
-          <button class="btn btn-secondary" @click="openFeedback('bug')">🐛 提交 Bug 报错</button>
+          <button class="btn btn-primary" @click="openFeedback('feature')">提交需求建议</button>
+          <button class="btn btn-secondary" @click="openFeedback('bug')">提交 Bug 报错</button>
         </div>
       </div>
 
@@ -81,7 +81,7 @@
     <!-- 反馈弹窗 -->
     <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
       <div class="modal">
-        <h3>{{ feedbackForm.type === 'feature' ? '💡 提交需求建议' : '🐛 提交 Bug 报错' }}</h3>
+        <h3>{{ feedbackForm.type === 'feature' ? '提交需求建议' : '提交 Bug 报错' }}</h3>
         <div class="form-group">
           <label>标题 *</label>
           <input v-model="feedbackForm.title" class="form-input" placeholder="简要描述你的反馈" maxlength="200" />

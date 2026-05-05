@@ -15,6 +15,15 @@ router.post('/', authMiddleware, async (req, res) => {
   if (!title || title.trim().length === 0) {
     return res.status(400).json({ message: '请填写反馈标题' })
   }
+  if (title.length > 200) {
+    return res.status(400).json({ message: '标题不能超过 200 字符' })
+  }
+  if (description && description.length > 2000) {
+    return res.status(400).json({ message: '描述不能超过 2000 字符' })
+  }
+  if (image_url && !/^https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+$/.test(image_url)) {
+    return res.status(400).json({ message: '截图 URL 格式无效' })
+  }
 
   try {
     const result = await query(

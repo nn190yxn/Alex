@@ -16,7 +16,7 @@
     </view>
 
     <view class="referral-tip">
-      <text class="tip-text">💡 邀请好友付费，得 20% 返利（不设上限）</text>
+      <text class="tip-text">邀请好友付费，得 20% 返利（不设上限）</text>
     </view>
 
     <!-- 支付中弹窗 -->
@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { createOrder } from '@/api/payment'
 import { getUserInfo } from '@/api/auth'
@@ -59,29 +59,28 @@ async function handleBuy(plan) {
     uni.showLoading({ title: '创建订单中' })
     const res = await createOrder(plan.code)
     uni.hideLoading()
-    
-    // 显示支付提示
+
     uni.showModal({
       title: '订单创建成功',
       content: `订单号：${res.orderId}\n金额：¥${res.amount}\n\n请在电脑端完成支付。`,
       showCancel: false
     })
 
-    // 开始轮询检查支付状态
     polling.value = true
     startPolling(res.orderId)
   } catch (e) {
     uni.hideLoading()
+    uni.showToast({ title: e.message || '创建订单失败', icon: 'none' })
   }
 }
 
 function startPolling(orderId) {
-  // 每 5 秒检查一次用户状态，最多检查 2 分钟
   let count = 0
   pollTimer = setInterval(async () => {
     count++
-    if (count > 24) { // 2分钟超时
+    if (count > 24) {
       clearInterval(pollTimer)
+      pollTimer = null
       polling.value = false
       return
     }
@@ -90,6 +89,7 @@ function startPolling(orderId) {
       userStore.setUserInfo(res)
       if (res.memberLevel !== userInfo.value?.memberLevel) {
         clearInterval(pollTimer)
+        pollTimer = null
         polling.value = false
         uni.showToast({ title: '会员状态已更新', icon: 'success' })
       }
@@ -99,7 +99,18 @@ function startPolling(orderId) {
 
 function cancelPoll() {
   polling.value = false
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 }
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+})
 </script>
 
 <style scoped>

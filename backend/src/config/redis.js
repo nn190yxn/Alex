@@ -14,11 +14,13 @@ if (USE_REAL_REDIS) {
         connectTimeout: 3000
       })
 
-      let errorLogged = false
+      let lastErrorTime = 0
+      const ERROR_THROTTLE_MS = 60 * 1000 // 每分钟最多记录一次
       instance.on('error', (err) => {
-        if (!errorLogged) {
+        const now = Date.now()
+        if (now - lastErrorTime > ERROR_THROTTLE_MS) {
           console.warn('[Redis] Connection error:', err.message)
-          errorLogged = true
+          lastErrorTime = now
         }
       })
 

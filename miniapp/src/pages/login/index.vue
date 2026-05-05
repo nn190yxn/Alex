@@ -38,13 +38,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { sendCode, login, register } from '@/api/auth'
 import { useUserStore } from '@/store/user'
 
 const form = reactive({ phone: '', code: '' })
 const countdown = ref(0)
 const userStore = useUserStore()
+let countdownTimer = null
 
 async function handleSendCode() {
   if (!/^1\d{10}$/.test(form.phone)) {
@@ -54,12 +55,18 @@ async function handleSendCode() {
   try {
     await sendCode(form.phone)
     countdown.value = 60
-    const timer = setInterval(() => {
+    if (countdownTimer) clearInterval(countdownTimer)
+    countdownTimer = setInterval(() => {
       countdown.value--
-      if (countdown.value <= 0) clearInterval(timer)
+      if (countdown.value <= 0) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+      }
     }, 1000)
     uni.showToast({ title: '验证码已发送', icon: 'success' })
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: e.message || '发送验证码失败', icon: 'none' })
+  }
 }
 
 async function handleLogin() {
@@ -68,20 +75,24 @@ async function handleLogin() {
     return
   }
   try {
-    // 尝试登录，失败则自动注册（生成随机密码）
     let res
-    const randomPwd = Math.random().toString(36).slice(-8) + 'A1!'
     try {
       res = await login(form)
     } catch {
-      res = await register({ ...form, nickname: `用户${form.phone.slice(-4)}`, password: randomPwd })
+      res = await register({ ...form, nickname: `用户${form.phone.slice(-4)}` })
     }
     userStore.setToken(res.token)
     userStore.setUserInfo(res.user)
     uni.showToast({ title: '登录成功', icon: 'success' })
     setTimeout(() => uni.switchTab({ url: '/pages/home/index' }), 1500)
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: e.message || '登录失败，请重试', icon: 'none' })
+  }
 }
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
 </script>
 
 <style scoped>

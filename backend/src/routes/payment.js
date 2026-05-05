@@ -1,6 +1,6 @@
 import express from 'express'
 import crypto from 'crypto'
-import { query } from '../models/db.js'
+import { query, getConnection } from '../models/db.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { logger } from '../middleware/logger.js'
 import { PLAN_PRICES, PLAN_CYCLES, PLAN_NAMES } from '../config/plans.js'
@@ -52,7 +52,7 @@ router.post('/create-order', authMiddleware, async (req, res) => {
 })
 
 router.post('/callback', async (req, res) => {
-  const { orderId, status, sign } = req.body
+  const { orderId, status, sign, timestamp } = req.body
 
   if (!PAYMENT_CALLBACK_SECRET) {
     return res.status(500).json({ message: '支付回调配置缺失' })
@@ -66,36 +66,69 @@ router.post('/callback', async (req, res) => {
     return res.status(400).json({ message: '状态无效' })
   }
 
+  // 防重放攻击：时间戳必须在 5 分钟内
+  if (timestamp) {
+    const now = Date.now()
+    const diff = Math.abs(now - parseInt(timestamp))
+    if (diff > 5 * 60 * 1000) {
+      return res.status(400).json({ message: '回调已过期' })
+    }
+  }
+
   if (!verifyCallbackSign(orderId, status, sign)) {
     return res.status(401).json({ message: '签名校验失败' })
   }
 
   try {
     if (status === 'paid') {
-      const orders = await query('SELECT * FROM orders WHERE id = ?', [orderId])
-      if (orders.length === 0) {
-        return res.status(404).json({ message: '订单不存在' })
-      }
-
-      const order = orders[0]
-      if (order.status === 'paid') {
-        return res.json({ message: '已处理' })
-      }
-
-      await query('UPDATE orders SET status = ?, paid_at = NOW() WHERE id = ? AND status != ?', ['paid', orderId, 'paid'])
-
-      await query(
-        'UPDATE users SET member_level = ?, member_expire_at = DATE_ADD(NOW(), INTERVAL ? MONTH) WHERE id = ?',
-        [order.plan_code, PLAN_CYCLES[order.plan_code] || 1, order.user_id]
-      )
-
+      // 使用事务和行锁保证幂等性
+      const connection = await getConnection()
       try {
-        await applyReferralCommissionForPaidOrder(orderId)
-      } catch (commissionError) {
-        logger.error('payment', `Apply referral commission error: ${commissionError.message}`)
-      }
+        await connection.beginTransaction()
 
-      res.json({ message: '支付成功' })
+        const [orders] = await connection.execute(
+          'SELECT * FROM orders WHERE id = ? FOR UPDATE',
+          [orderId]
+        )
+        if (orders.length === 0) {
+          await connection.rollback()
+          return res.status(404).json({ message: '订单不存在' })
+        }
+
+        const order = orders[0]
+        if (order.status === 'paid') {
+          await connection.commit()
+          return res.json({ message: '已处理' })
+        }
+
+        // 更新订单状态
+        await connection.execute(
+          'UPDATE orders SET status = ?, paid_at = NOW() WHERE id = ? AND status != ?',
+          ['paid', orderId, 'paid']
+        )
+
+        // 累加会员有效期（而非覆盖）
+        await connection.execute(
+          'UPDATE users SET member_level = ?, member_expire_at = DATE_ADD(COALESCE(member_expire_at, NOW()), INTERVAL ? MONTH) WHERE id = ?',
+          [order.plan_code, PLAN_CYCLES[order.plan_code] || 1, order.user_id]
+        )
+
+        await connection.commit()
+
+        // 返利计算放在事务外，避免影响主流程
+        try {
+          await applyReferralCommissionForPaidOrder(orderId)
+        } catch (commissionError) {
+          logger.error('payment', `Apply referral commission error: ${commissionError.message}`)
+        }
+
+        res.json({ message: '支付成功' })
+      } catch (error) {
+        await connection.rollback()
+        throw error
+      } finally {
+        connection.release()
+      }
     } else {
       await query('UPDATE orders SET status = ? WHERE id = ? AND status != ?', [status, orderId, 'paid'])
       res.json({ message: '状态更新' })

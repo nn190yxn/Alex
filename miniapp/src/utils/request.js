@@ -1,5 +1,5 @@
-// 基础配置
-const BASE_URL = 'https://woyingai.com/api'
+// 基础配置 - 可通过环境变量覆盖
+const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'https://woyingai.com/api'
 // const BASE_URL = 'http://localhost:3001/api' // 本地调试用
 
 // 通用请求方法

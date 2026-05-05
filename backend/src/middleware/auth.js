@@ -13,14 +13,6 @@ function ensureJwtSecret(res) {
 }
 
 export function authMiddleware(req, res, next) {
-  if (process.env.NODE_ENV === 'development') {
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      req.user = { userId: 0, memberLevel: 'annual' }
-      return next()
-    }
-  }
-
   if (!ensureJwtSecret(res)) return
   const jwtSecret = getJwtSecret()
 
@@ -28,6 +20,26 @@ export function authMiddleware(req, res, next) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: '未授权' })
   }
+
+  const token = authHeader.split(' ')[1]
+  try {
+    const decoded = jwt.verify(token, jwtSecret)
+    req.user = decoded
+    next()
+  } catch (error) {
+    return res.status(401).json({ message: 'Token无效或已过期' })
+  }
+}
+
+  const token = authHeader.split(' ')[1]
+  try {
+    const decoded = jwt.verify(token, jwtSecret)
+    req.user = decoded
+    next()
+  } catch (error) {
+    return res.status(401).json({ message: 'Token无效或已过期' })
+  }
+}
 
   const token = authHeader.split(' ')[1]
   try {

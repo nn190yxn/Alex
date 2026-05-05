@@ -50,7 +50,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     const referralCount = referredUsers.length
     const totalBonusDays = user.referral_bonus_days || 0
-    const pendingBonusDays = referralCount * REFERRAL_CONFIG.BONUS_DAYS_PER_REFERRAL - totalBonusDays
+    const expectedBonusDays = referralCount * REFERRAL_CONFIG.BONUS_DAYS_PER_REFERRAL
+    const pendingBonusDays = Math.max(0, expectedBonusDays - totalBonusDays)
 
     const commissionRows = await query(
       `SELECT status, commission_amount FROM referral_commissions WHERE referrer_id = ?`,
