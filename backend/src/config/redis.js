@@ -1,10 +1,6 @@
-import dotenv from 'dotenv'
-dotenv.config()
-
 import { createMockRedis } from './mockRedis.js'
 
 const USE_REAL_REDIS = process.env.USE_REAL_REDIS === 'true'
-let redisMode = 'mock'
 
 let redisInstance = createMockRedis()
 console.log('[Redis] Using in-memory mock')
@@ -32,16 +28,11 @@ if (USE_REAL_REDIS) {
 
       await instance.ping()
       redisInstance = instance
-      redisMode = 'real'
       console.log('[Redis] Ready')
     } catch (err) {
       console.warn('[Redis] Real Redis unavailable:', err.message)
-      redisMode = 'mock'
     }
   })()
 }
 
 export { redisInstance as redis }
-export function getRedisMode() {
-  return redisMode
-}

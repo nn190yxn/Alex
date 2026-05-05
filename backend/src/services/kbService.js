@@ -2,22 +2,36 @@
 // Design principle: read only what's needed, never inject full files to save tokens
 
 import { readFileSync, existsSync } from 'fs'
-import { join, dirname } from 'path'
+import { join, dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// KB root path - adjust for deployment environment
-const KB_ROOT = process.env.NODE_ENV === 'production'
-  ? '/home/ubuntu/woying-ai/knowledge-base'
-  : join(__dirname, '../../../knowledge-base')
+// KB root path - adjustable via environment variable
+const KB_ROOT = process.env.KB_ROOT_PATH || (
+  process.env.NODE_ENV === 'production'
+    ? '/home/ubuntu/woying-ai/knowledge-base'
+    : join(__dirname, '../../../knowledge-base')
+)
 
 // File cache to avoid repeated disk reads (TTL: 5 minutes)
 const fileCache = new Map()
 const CACHE_TTL = 5 * 60 * 1000
 const MAX_CONTEXT_CHARS = parseInt(process.env.KB_MAX_CONTEXT_CHARS || '4500', 10)
 const MAX_FILE_CHARS = parseInt(process.env.KB_MAX_FILE_CHARS || '1800', 10)
+
+/**
+ * Validate that a requested KB path doesn't escape the KB_ROOT directory.
+ * Returns the resolved path if valid, or null if it's a traversal attack.
+ */
+function validateKBPath(requestedPath) {
+  const resolved = resolve(KB_ROOT, requestedPath)
+  if (!resolved.startsWith(resolve(KB_ROOT))) {
+    return null
+  }
+  return resolved
+}
 
 // Tool complexity classification for dynamic budget allocation
 const TOOL_COMPLEXITY = {
@@ -74,7 +88,17 @@ function loadMapping() {
   if (!kbMapping) {
     const mappingPath = join(__dirname, '../config/kb-mapping.json')
     if (existsSync(mappingPath)) {
-      kbMapping = JSON.parse(readFileSync(mappingPath, 'utf-8'))
+      try {
+        const raw = readFileSync(mappingPath, 'utf-8')
+        kbMapping = JSON.parse(raw)
+        if (typeof kbMapping !== 'object' || kbMapping === null) {
+          console.error('[KB] Invalid mapping format, expected object')
+          kbMapping = {}
+        }
+      } catch (err) {
+        console.error(`[KB] Failed to load mapping: ${err.message}`)
+        kbMapping = {}
+      }
     } else {
       kbMapping = {}
     }
@@ -84,6 +108,9 @@ function loadMapping() {
 
 /**
  * Read a file with caching. Returns file content or empty string if not found.
+ *
+ * @param {string} filePath - Absolute path to the file
+ * @returns {string} File content or empty string if not found/error
  */
 function readFileWithCache(filePath) {
   const now = Date.now()
@@ -93,14 +120,25 @@ function readFileWithCache(filePath) {
     return cached.content
   }
 
+  // Lazy cleanup of expired entries (1% chance per call)
+  if (Math.random() < 0.01) {
+    for (const [key, val] of fileCache.entries()) {
+      if (now - val.timestamp >= CACHE_TTL) {
+        fileCache.delete(key)
+      }
+    }
+  }
+
   try {
     if (!existsSync(filePath)) {
+      fileCache.set(filePath, { content: '', timestamp: now })
       return ''
     }
     const content = readFileSync(filePath, 'utf-8')
     fileCache.set(filePath, { content, timestamp: now })
     return content
   } catch {
+    fileCache.set(filePath, { content: '', timestamp: now })
     return ''
   }
 }
@@ -147,13 +185,61 @@ function extractSection(content, sectionKeyword) {
 }
 
 /**
+ * Filter sections based on formData type hints.
+ * Supports both string[] (legacy) and object[] (new) section formats.
+ *
+ * Object format: { keyword: string, types: string[] }
+ * - types can include specific tool types (e.g., 'festival', 'product')
+ * - types can include '_common' for sections that should always be included
+ *
+ * @param {Array|string[]} sections - Section configuration from kb-mapping.json
+ * @param {object} formData - User input data containing type hints
+ * @returns {string[]} - Filtered section keywords
+ */
+function filterSectionsByType(sections, formData) {
+  if (!sections || sections.length === 0) return []
+
+  // Legacy format: string array
+  if (typeof sections[0] === 'string') {
+    return sections
+  }
+
+  // New format: object array with keyword and types
+  const result = []
+  for (const section of sections) {
+    if (typeof section === 'string') {
+      // Mixed format: include string entries always
+      result.push(section)
+    } else if (section && typeof section === 'object') {
+      const { keyword, types } = section
+      if (!keyword) continue
+
+      // Include if:
+      // 1. Section is marked as _common (always include)
+      // 2. formData.posterType matches one of the section's types
+      // 3. formData.type matches one of the section's types
+      const isCommon = types && types.includes('_common')
+      const posterType = formData.posterType || formData.type
+
+      if (isCommon || (posterType && types && types.includes(posterType))) {
+        result.push(keyword)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
  * Extract multiple sections from content.
  * If no sections specified, return first 500 characters as fallback.
  */
 function extractSections(content, sectionKeywords) {
   if (!content) return ''
 
-  if (!sectionKeywords || sectionKeywords.length === 0) return ''
+  if (!sectionKeywords || sectionKeywords.length === 0) {
+    return trimByChars(content, 500)
+  }
 
   const parts = []
   for (const keyword of sectionKeywords) {
@@ -171,7 +257,21 @@ function extractSections(content, sectionKeywords) {
 function trimByChars(text, maxChars) {
   if (!text) return ''
   if (text.length <= maxChars) return text
-  return text.substring(0, maxChars) + '\n\n[内容已截断]'
+
+  const lines = text.split('\n')
+  const result = []
+  let charCount = 0
+
+  for (const line of lines) {
+    const lineLen = line.length + 1
+    if (charCount + lineLen > maxChars) {
+      break
+    }
+    result.push(line)
+    charCount += lineLen
+  }
+
+  return result.join('\n') + '\n\n[...内容已截断，超出部分未显示]'
 }
 
 /**
@@ -212,16 +312,21 @@ export function getKBContextWithMeta(toolCode, memberLevel = 'free', formData = 
       continue
     }
 
-    // Read the file
-    const filePath = join(KB_ROOT, kbFile.path)
+    // Read the file with path validation
+    const filePath = validateKBPath(kbFile.path)
+    if (!filePath) {
+      console.warn(`[KB] Path traversal attempt blocked: ${kbFile.path}`)
+      continue
+    }
     const content = readFileWithCache(filePath)
 
     if (!content) {
       continue
     }
 
-    // Extract relevant sections
-    const sectionContent = extractSections(content, kbFile.sections)
+    // Extract relevant sections (supports both string[] and object[] formats)
+    const filteredSections = filterSectionsByType(kbFile.sections, formData)
+    const sectionContent = extractSections(content, filteredSections)
 
     if (sectionContent) {
       const limitedSection = trimByChars(sectionContent, MAX_FILE_CHARS)
@@ -290,31 +395,50 @@ export async function getKBContextDualChannel(toolCode, memberLevel = 'free', fo
 
   // Build search query from formData
   const queryParts = []
-  if (formData.industry) queryParts.push(formData.industry)
-  if (formData.keywords) queryParts.push(Array.isArray(formData.keywords) ? formData.keywords.join(' ') : formData.keywords)
-  if (formData.goal) queryParts.push(formData.goal)
-  if (formData.painPoints) queryParts.push(Array.isArray(formData.painPoints) ? formData.painPoints.join(' ') : formData.painPoints)
-  // Add section keywords from mapping as query hints
+  if (formData.industry && typeof formData.industry === 'string') {
+    queryParts.push(formData.industry.trim())
+  }
+  if (formData.keywords) {
+    const kw = Array.isArray(formData.keywords)
+      ? formData.keywords.filter(Boolean).join(' ')
+      : formData.keywords
+    if (kw) queryParts.push(kw.trim())
+  }
+  if (formData.goal && typeof formData.goal === 'string') {
+    queryParts.push(formData.goal.trim())
+  }
+  if (formData.painPoints) {
+    const pp = Array.isArray(formData.painPoints)
+      ? formData.painPoints.filter(Boolean).join(' ')
+      : formData.painPoints
+    if (pp) queryParts.push(pp.trim())
+  }
+  if (formData.posterType || formData.type) {
+    queryParts.push((formData.posterType || formData.type).trim())
+  }
+  // Add filtered section keywords from mapping as query hints
   for (const kbFile of kbFiles) {
     if (kbFile.sections && kbFile.sections.length > 0) {
-      queryParts.push(...kbFile.sections)
+      const filteredSections = filterSectionsByType(kbFile.sections, formData)
+      queryParts.push(...filteredSections)
     }
   }
 
-  const query = queryParts.join(' ') || toolConfig.name || toolCode
+  const query = queryParts.filter(Boolean).join(' ') || toolConfig.name || toolCode
 
   // Vector search with path filtering
   let results = []
   try {
     const vsModule = await import('./vectorSearch.js')
-    results = vsModule.vectorSearch(query, { topK, pathFilter: allowedPaths })
-  } catch {
-    // Fallback to mapping-only if vector search fails
+    results = await vsModule.vectorSearch(query, { topK, pathFilter: allowedPaths })
+  } catch (err) {
+    console.error(`[KB] Vector search failed, falling back to mapping-only: ${err.message}`)
     return getKBContextWithMeta(toolCode, memberLevel, formData, { retrievalMode: 'mapping_only' })
   }
 
   if (results.length === 0) {
-    return emptyResult
+    // Vector search returned no results, fallback to mapping-only
+    return getKBContextWithMeta(toolCode, memberLevel, formData, { retrievalMode: 'mapping_only' })
   }
 
   // Build context from top vector results

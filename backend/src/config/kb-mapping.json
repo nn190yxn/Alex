@@ -1357,5 +1357,467 @@
       "maxTokensPro": 1000,
       "maxTokensAnnual": 1200
     }
+  },
+  "poster": {
+    "name": "海报生成器",
+    "knowledgeFiles": [
+      {
+        "path": "04_方案模板库/08-海报生成知识库.md",
+        "sections": [
+          { "keyword": "节日促销海报", "types": ["festival"] },
+          { "keyword": "产品/服务推广海报", "types": ["product"] },
+          { "keyword": "活动招募海报", "types": ["event"] },
+          { "keyword": "开业/周年庆海报", "types": ["anniversary"] },
+          { "keyword": "会员储值海报", "types": ["membership"] },
+          { "keyword": "招聘海报", "types": ["recruitment"] },
+          { "keyword": "品牌宣传海报", "types": ["brand"] },
+          { "keyword": "优惠/折扣海报", "types": ["discount"] },
+          { "keyword": "色彩搭配", "types": ["_common"] },
+          { "keyword": "字体层级", "types": ["_common"] },
+          { "keyword": "排版黄金法则", "types": ["_common"] }
+        ],
+        "purpose": "按场景类型注入设计规范、文案结构和配色建议",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.8,
+      "maxTokensFree": 500,
+      "maxTokensStarter": 1000,
+      "maxTokensPro": 2000,
+      "maxTokensAnnual": 3000
+    }
+  },
+  "gross-margin-restaurant": {
+    "name": "餐饮毛利率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["成本结构", "定价策略"],
+        "purpose": "餐饮成本核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "break-even-restaurant": {
+    "name": "餐饮盈亏平衡计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["成本结构", "盈亏平衡"],
+        "purpose": "盈亏平衡分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "investment-budget": {
+    "name": "餐饮投资预算计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["开店筹备", "预算规划"],
+        "purpose": "开店预算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "food-yield-rate": {
+    "name": "食材出成率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["食材管理", "成本控制"],
+        "purpose": "食材出成核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "turnover-rate-restaurant": {
+    "name": "餐饮翻台率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["运营效率", "翻台管理"],
+        "purpose": "翻台率分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "cup-efficiency": {
+    "name": "杯效计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["饮品运营", "效率分析"],
+        "purpose": "饮品杯效分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "drink-cost": {
+    "name": "饮品成本计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["成本结构", "饮品定价"],
+        "purpose": "饮品成本核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "dish-pricing": {
+    "name": "菜品定价计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["定价策略", "成本核算"],
+        "purpose": "菜品定价参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "food-waste-rate": {
+    "name": "食材损耗率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["食材管理", "损耗控制"],
+        "purpose": "食材损耗分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "labor-efficiency-restaurant": {
+    "name": "餐饮人效计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["人力成本", "效率分析"],
+        "purpose": "人效分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "delivery-profit": {
+    "name": "外卖利润计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["外卖运营", "利润分析"],
+        "purpose": "外卖利润核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "delivery-analysis": {
+    "name": "外卖经营分析计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["外卖运营", "平台策略"],
+        "purpose": "外卖经营分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "payback-restaurant": {
+    "name": "餐饮回本周期计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["预算规划", "投资回报"],
+        "purpose": "回本周期分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "cashflow-restaurant": {
+    "name": "餐饮现金流计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["财务管理", "现金流"],
+        "purpose": "现金流分析参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "profit-rate-restaurant": {
+    "name": "餐饮利润率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["利润分析", "成本结构"],
+        "purpose": "利润率核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "return-rate-restaurant": {
+    "name": "餐饮回报率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["投资回报", "利润分析"],
+        "purpose": "投资回报分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "inventory-turnover": {
+    "name": "库存周转率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["库存管理", "运营效率"],
+        "purpose": "库存周转分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "dish-contribution": {
+    "name": "菜品贡献度计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["菜品分析", "利润结构"],
+        "purpose": "菜品贡献度分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "repurchase-rate": {
+    "name": "复购率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["客户分析", "复购策略"],
+        "purpose": "复购率分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "ltv-restaurant": {
+    "name": "餐饮客户终身价值计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": ["客户价值", "生命周期"],
+        "purpose": "LTV 分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "break-even-education": {
+    "name": "教培盈亏平衡计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["成本结构", "盈亏平衡"],
+        "purpose": "盈亏平衡分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "course-structure-education": {
+    "name": "教培课程结构计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["课程设计", "课时规划"],
+        "purpose": "课程结构分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "renewal-rate-education": {
+    "name": "教培续费率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["续费管理", "客户留存"],
+        "purpose": "续费率分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "class-consumption-rate-education": {
+    "name": "教培消课率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["消课管理", "课时消耗"],
+        "purpose": "消课率分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "gross-margin-education": {
+    "name": "教培毛利率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["成本结构", "毛利分析"],
+        "purpose": "毛利率核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "salary-cost-ratio-education": {
+    "name": "教培薪酬占比计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["人力成本", "薪酬结构"],
+        "purpose": "薪酬占比分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "labor-efficiency-education": {
+    "name": "教培人效计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["人力效率", "师资管理"],
+        "purpose": "人效分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "venue-utilization-education": {
+    "name": "教培场地利用率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["场地管理", "利用率分析"],
+        "purpose": "场地利用率参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "cac-education": {
+    "name": "教培获客成本计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["获客策略", "成本分析"],
+        "purpose": "获客成本分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "payback-education": {
+    "name": "教培回本周期计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["投资回报", "回本分析"],
+        "purpose": "回本周期参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "cashflow-education": {
+    "name": "教培现金流计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["财务管理", "现金流"],
+        "purpose": "现金流分析参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "profit-rate-education": {
+    "name": "教培利润率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["利润分析", "成本结构"],
+        "purpose": "利润率核算参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "return-rate-education": {
+    "name": "教培回报率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["投资回报", "利润分析"],
+        "purpose": "投资回报分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "class-rate-education": {
+    "name": "教培满班率计算器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
+        "sections": ["班级管理", "满班率"],
+        "purpose": "满班率分析参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "cashflow": {
+    "name": "通用现金流计算器",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/财务管理/现金流管理指南.md",
+        "sections": ["现金流分析", "资金规划"],
+        "purpose": "通用现金流分析参考",
+        "memberLevel": "starter"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+  },
+  "roi": {
+    "name": "投流 ROI 计算器",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/投放ROI分析指南.md",
+        "sections": ["ROI基准", "投放优化"],
+        "purpose": "ROI 计算与优化参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
   }
 }

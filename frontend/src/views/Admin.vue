@@ -3,7 +3,7 @@
     <div class="container">
       <div class="page-header">
         <h1>运营后台</h1>
-        <p>管理用户、订单和数据概览</p>
+        <p>管理用户、订单、返利和反馈数据</p>
       </div>
 
       <div class="admin-stats">
@@ -50,6 +50,7 @@
         </div>
 
         <div class="tab-content">
+          <!-- 用户管理 -->
           <div v-if="activeTab === 'users'" class="users-panel">
             <div class="panel-header">
               <h3>用户列表</h3>
@@ -67,6 +68,7 @@
                     <th>会员等级</th>
                     <th>到期时间</th>
                     <th>注册时间</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -79,14 +81,25 @@
                         {{ getMemberLabel(user.member_level) }}
                       </span>
                     </td>
-                    <td>{{ user.member_expire_at ? formatDate(user.member_expire_at) : '永久' }}</td>
+                    <td>{{ user.member_expire_at ? formatDate(user.member_expire_at) : '-' }}</td>
                     <td>{{ formatDate(user.created_at) }}</td>
+                    <td>
+                      <select v-model="user._newLevel" @change="changeUserLevel(user)" class="level-select">
+                        <option value="">修改等级</option>
+                        <option value="free">免费</option>
+                        <option value="starter">初阶</option>
+                        <option value="pro">进阶</option>
+                        <option value="annual">高阶</option>
+                      </select>
+                      <button class="btn-sm" @click="extendUserExpire(user)">+延期</button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
+          <!-- 订单管理 -->
           <div v-if="activeTab === 'orders'" class="orders-panel">
             <div class="panel-header">
               <h3>订单列表</h3>
@@ -121,6 +134,7 @@
             </div>
           </div>
 
+          <!-- 工具统计 -->
           <div v-if="activeTab === 'tools'" class="tools-panel">
             <div class="panel-header">
               <h3>工具使用统计</h3>
@@ -142,6 +156,129 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- 返利管理 -->
+          <div v-if="activeTab === 'commissions'" class="commissions-panel">
+            <div class="panel-header">
+              <h3>返利记录</h3>
+              <div class="filter-group">
+                <select v-model="commissionFilter" @change="loadCommissions" class="form-select">
+                  <option value="">全部状态</option>
+                  <option value="pending">冻结中</option>
+                  <option value="paid">已发放</option>
+                  <option value="cancelled">已取消</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>推荐人</th>
+                    <th>被推荐人</th>
+                    <th>订单金额</th>
+                    <th>返利金额</th>
+                    <th>状态</th>
+                    <th>冻结至</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="c in commissions" :key="c.id">
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.referrer_nickname || c.referrer_phone }}</td>
+                    <td>{{ c.referred_nickname || c.referred_phone }}</td>
+                    <td>¥{{ Number(c.order_amount).toFixed(2) }}</td>
+                    <td class="commission-amount">¥{{ Number(c.commission_amount).toFixed(2) }}</td>
+                    <td>
+                      <span :class="['status-badge', `status-${c.status}`]">
+                        {{ getCommissionStatus(c.status) }}
+                      </span>
+                    </td>
+                    <td>{{ c.pending_until ? formatDate(c.pending_until) : '-' }}</td>
+                    <td>
+                      <button v-if="c.status === 'pending'" class="btn-sm btn-pay" @click="markCommissionPaid(c.id)">标记已发放</button>
+                      <button v-if="c.status === 'pending'" class="btn-sm btn-cancel" @click="markCommissionCancelled(c.id)">取消</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination" v-if="commissionTotal > 0">
+              <span>共 {{ commissionTotal }} 条</span>
+            </div>
+          </div>
+
+          <!-- 错误日志 -->
+          <div v-if="activeTab === 'logs'" class="logs-panel">
+            <div class="panel-header">
+              <h3>错误日志</h3>
+              <div class="filter-group">
+                <select v-model="logLevel" @change="loadErrorLogs" class="form-select">
+                  <option value="error">仅错误</option>
+                  <option value="warn">警告 + 错误</option>
+                  <option value="all">全部</option>
+                </select>
+                <button class="btn-sm" @click="loadErrorLogs">刷新</button>
+              </div>
+            </div>
+            <div class="log-list">
+              <div v-for="(log, i) in errorLogs" :key="i" class="log-entry" :class="log.level || 'raw'">
+                <span class="log-time">{{ formatDateTime(log.timestamp || log.time) }}</span>
+                <span class="log-level" :class="log.level">{{ log.level || 'raw' }}</span>
+                <span class="log-msg">{{ log.message || log.msg || log.raw || JSON.stringify(log) }}</span>
+              </div>
+              <div v-if="!errorLogs.length" class="log-empty">暂无日志</div>
+            </div>
+          </div>
+
+          <!-- 用户反馈 -->
+          <div v-if="activeTab === 'feedbacks'" class="feedbacks-panel">
+            <div class="panel-header">
+              <h3>用户反馈</h3>
+              <div class="filter-group">
+                <select v-model="feedbackFilter" @change="loadFeedbacks" class="form-select">
+                  <option value="">全部类型</option>
+                  <option value="feature">需求建议</option>
+                  <option value="bug">Bug 报错</option>
+                </select>
+                <select v-model="feedbackStatusFilter" @change="loadFeedbacks" class="form-select">
+                  <option value="">全部状态</option>
+                  <option value="pending">待处理</option>
+                  <option value="processing">处理中</option>
+                  <option value="resolved">已解决</option>
+                  <option value="closed">已关闭</option>
+                </select>
+              </div>
+            </div>
+            <div class="feedback-list">
+              <div v-for="fb in feedbacks" :key="fb.id" class="feedback-card">
+                <div class="feedback-header">
+                  <span class="fb-type" :class="fb.type">{{ fb.type === 'feature' ? '💡 需求' : '🐛 Bug' }}</span>
+                  <span class="fb-user">{{ fb.nickname || fb.phone || '用户' + fb.user_id }}</span>
+                  <span class="fb-status" :class="fb.status">{{ getFeedbackStatus(fb.status) }}</span>
+                  <span class="fb-date">{{ formatDateTime(fb.created_at) }}</span>
+                </div>
+                <h4 class="fb-title">{{ fb.title }}</h4>
+                <p class="fb-desc" v-if="fb.description">{{ fb.description }}</p>
+                <img v-if="fb.image_url" :src="fb.image_url" class="fb-image" alt="反馈截图" />
+                <div class="fb-actions" v-if="fb.status !== 'closed'">
+                  <select v-model="fb._newStatus" class="form-select form-select-sm">
+                    <option value="">更新状态</option>
+                    <option value="processing">处理中</option>
+                    <option value="resolved">已解决</option>
+                    <option value="closed">已关闭</option>
+                  </select>
+                  <input v-model="fb._adminNote" class="form-input form-input-sm" placeholder="处理备注" />
+                  <button class="btn-sm" @click="updateFeedback(fb)">更新</button>
+                </div>
+                <div v-if="fb.admin_note" class="fb-admin-note">
+                  <strong>管理员备注：</strong>{{ fb.admin_note }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -167,10 +304,27 @@ const users = ref([])
 const orders = ref([])
 const toolUsage = ref([])
 
+// 返利
+const commissions = ref([])
+const commissionFilter = ref('')
+const commissionTotal = ref(0)
+
+// 日志
+const errorLogs = ref([])
+const logLevel = ref('error')
+
+// 反馈
+const feedbacks = ref([])
+const feedbackFilter = ref('')
+const feedbackStatusFilter = ref('')
+
 const tabs = [
   { key: 'users', label: '用户管理' },
   { key: 'orders', label: '订单管理' },
-  { key: 'tools', label: '工具统计' }
+  { key: 'tools', label: '工具统计' },
+  { key: 'commissions', label: '返利管理' },
+  { key: 'logs', label: '错误日志' },
+  { key: 'feedbacks', label: '用户反馈' }
 ]
 
 const memberLabels = {
@@ -197,6 +351,16 @@ function getOrderStatus(status) {
   return map[status] || status
 }
 
+function getCommissionStatus(status) {
+  const map = { pending: '冻结中', paid: '已发放', cancelled: '已取消' }
+  return map[status] || status
+}
+
+function getFeedbackStatus(status) {
+  const map = { pending: '待处理', processing: '处理中', resolved: '已解决', closed: '已关闭' }
+  return map[status] || status
+}
+
 function formatDate(date) {
   return dayjs(date).format('YYYY-MM-DD')
 }
@@ -205,60 +369,144 @@ function formatDateTime(date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
+function getAuthHeaders() {
+  return { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+}
+
+async function apiFetch(url, options = {}) {
+  const res = await fetch(`/api/admin${url}`, {
+    ...options,
+    headers: { ...getAuthHeaders(), ...(options.headers || {}) }
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
 async function loadStats() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/admin/stats', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (res.ok) {
-      stats.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Failed to load stats:', e)
-  }
+    stats.value = await apiFetch('/stats')
+  } catch (e) { console.error('Failed to load stats:', e) }
 }
 
 async function loadUsers() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/admin/users', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (res.ok) {
-      users.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Failed to load users:', e)
-  }
+    users.value = await apiFetch('/users')
+  } catch (e) { console.error('Failed to load users:', e) }
 }
 
 async function loadOrders() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/admin/orders', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (res.ok) {
-      orders.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Failed to load orders:', e)
-  }
+    orders.value = await apiFetch('/orders')
+  } catch (e) { console.error('Failed to load orders:', e) }
 }
 
 async function loadToolUsage() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/admin/tool-usage', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    toolUsage.value = await apiFetch('/tool-usage')
+  } catch (e) { console.error('Failed to load tool usage:', e) }
+}
+
+async function loadCommissions() {
+  try {
+    const params = new URLSearchParams()
+    if (commissionFilter.value) params.set('status', commissionFilter.value)
+    const data = await apiFetch(`/commissions?${params}`)
+    commissions.value = data.rows
+    commissionTotal.value = data.total
+  } catch (e) { console.error('Failed to load commissions:', e) }
+}
+
+async function loadErrorLogs() {
+  try {
+    const params = new URLSearchParams()
+    params.set('level', logLevel.value === 'warn' ? 'all' : logLevel.value)
+    params.set('lines', '200')
+    const data = await apiFetch(`/error-logs?${params}`)
+    errorLogs.value = data.logs || []
+  } catch (e) { console.error('Failed to load error logs:', e) }
+}
+
+async function loadFeedbacks() {
+  try {
+    const params = new URLSearchParams()
+    if (feedbackFilter.value) params.set('type', feedbackFilter.value)
+    if (feedbackStatusFilter.value) params.set('status', feedbackStatusFilter.value)
+    const data = await apiFetch(`/user-feedbacks?${params}`)
+    feedbacks.value = data.rows
+  } catch (e) { console.error('Failed to load feedbacks:', e) }
+}
+
+// 用户操作
+async function changeUserLevel(user) {
+  if (!user._newLevel) return
+  if (!confirm(`确定将 ${user.nickname || user.phone} 的会员等级改为 ${getMemberLabel(user._newLevel)} 吗？`)) return
+  try {
+    await apiFetch(`/users/${user.id}/member-level`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ member_level: user._newLevel })
     })
-    if (res.ok) {
-      toolUsage.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Failed to load tool usage:', e)
-  }
+    alert('修改成功')
+    user.member_level = user._newLevel
+    user._newLevel = ''
+  } catch (e) { alert('修改失败: ' + e.message) }
+}
+
+async function extendUserExpire(user) {
+  const days = prompt('请输入延长天数:', '30')
+  if (!days || isNaN(days) || days <= 0) return
+  try {
+    await apiFetch(`/users/${user.id}/extend-expire`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: parseInt(days) })
+    })
+    alert('延长成功')
+    loadUsers()
+  } catch (e) { alert('延长失败: ' + e.message) }
+}
+
+// 返利操作
+async function markCommissionPaid(id) {
+  if (!confirm('确定标记为已发放？')) return
+  try {
+    await apiFetch(`/commissions/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'paid' })
+    })
+    loadCommissions()
+  } catch (e) { alert('操作失败') }
+}
+
+async function markCommissionCancelled(id) {
+  if (!confirm('确定取消该返利？')) return
+  try {
+    await apiFetch(`/commissions/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' })
+    })
+    loadCommissions()
+  } catch (e) { alert('操作失败') }
+}
+
+// 反馈操作
+async function updateFeedback(fb) {
+  if (!fb._newStatus && !fb._adminNote) return
+  try {
+    const body = {}
+    if (fb._newStatus) body.status = fb._newStatus
+    if (fb._adminNote !== undefined) body.admin_note = fb._adminNote
+    await apiFetch(`/user-feedbacks/${fb.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    if (fb._newStatus) fb.status = fb._newStatus
+    fb._newStatus = ''
+    loadFeedbacks()
+  } catch (e) { alert('更新失败') }
 }
 
 onMounted(() => {
@@ -266,6 +514,9 @@ onMounted(() => {
   loadUsers()
   loadOrders()
   loadToolUsage()
+  loadCommissions()
+  loadErrorLogs()
+  loadFeedbacks()
 })
 </script>
 
@@ -341,6 +592,7 @@ onMounted(() => {
   display: flex;
   border-bottom: 1px solid var(--line-default);
   padding: 0 var(--space-4);
+  overflow-x: auto;
 }
 
 .tab-btn {
@@ -352,6 +604,7 @@ onMounted(() => {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
@@ -380,6 +633,24 @@ onMounted(() => {
 
 .search-box {
   width: 280px;
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.form-select, .form-input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body-sm);
+}
+
+.form-select-sm, .form-input-sm {
+  padding: 4px 8px;
+  font-size: var(--text-caption);
 }
 
 .table-wrapper {
@@ -416,25 +687,10 @@ onMounted(() => {
   font-size: var(--text-caption);
 }
 
-.badge-free {
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-}
-
-.badge-starter {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.badge-pro {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.badge-annual {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
-}
+.badge-free { background: var(--bg-subtle); color: var(--text-secondary); }
+.badge-starter { background: #dbeafe; color: #1e40af; }
+.badge-pro { background: #fef3c7; color: #92400e; }
+.badge-annual { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
 
 .status-badge {
   display: inline-block;
@@ -443,29 +699,142 @@ onMounted(() => {
   font-size: var(--text-caption);
 }
 
-.status-pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.status-paid {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-expired {
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-}
-
-.status-refunded {
-  background: #fee2e2;
-  color: #991b1b;
-}
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-paid { background: #d1fae5; color: #065f46; }
+.status-expired { background: var(--bg-subtle); color: var(--text-secondary); }
+.status-refunded { background: #fee2e2; color: #991b1b; }
+.status-cancelled { background: var(--bg-subtle); color: var(--text-secondary); }
 
 .order-id {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+}
+
+.commission-amount {
+  color: #065f46;
+  font-weight: 600;
+}
+
+.level-select {
+  padding: 4px 8px;
+  font-size: var(--text-caption);
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-sm);
+  margin-right: 4px;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: var(--text-caption);
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.btn-sm:hover { background: var(--bg-subtle); }
+.btn-pay { color: #065f46; border-color: #d1fae5; }
+.btn-cancel { color: #991b1b; border-color: #fee2e2; }
+
+/* 日志 */
+.log-list {
+  max-height: 600px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.log-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.log-time { color: #888; white-space: nowrap; }
+.log-level { font-weight: 600; white-space: nowrap; }
+.log-level.error { color: #f44; }
+.log-level.warn { color: #fa0; }
+.log-level.info { color: #4af; }
+.log-msg { flex: 1; word-break: break-all; }
+.log-empty { text-align: center; color: #888; padding: var(--space-4); }
+
+/* 反馈 */
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feedback-card {
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+}
+
+.feedback-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-body-sm);
+}
+
+.fb-type {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.fb-type.feature { background: #dbeafe; color: #1e40af; }
+.fb-type.bug { background: #fee2e2; color: #991b1b; }
+
+.fb-user { color: var(--text-secondary); }
+.fb-date { margin-left: auto; color: var(--text-secondary); }
+
+.fb-status {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+}
+
+.fb-status.pending { background: #fef3c7; color: #92400e; }
+.fb-status.processing { background: #dbeafe; color: #1e40af; }
+.fb-status.resolved { background: #d1fae5; color: #065f46; }
+.fb-status.closed { background: var(--bg-subtle); color: var(--text-secondary); }
+
+.fb-title { font-size: var(--text-body); margin-bottom: var(--space-2); }
+.fb-desc { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-3); white-space: pre-wrap; }
+.fb-image { max-width: 100%; max-height: 300px; border-radius: var(--radius-sm); margin-bottom: var(--space-3); }
+
+.fb-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line-default);
+}
+
+.fb-admin-note {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body-sm);
+}
+
+.pagination {
+  margin-top: var(--space-4);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
 }
 
 @media (max-width: 1024px) {

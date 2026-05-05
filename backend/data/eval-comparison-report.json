@@ -1,0 +1,2183 @@
+{
+  "timestamp": "2026-05-04T07:13:04.560Z",
+  "mappingOnly": {
+    "timestamp": "2026-05-04T07:13:03.672Z",
+    "mode": "mapping_only",
+    "memberLevel": "pro",
+    "totalTests": 60,
+    "overallAvg": 0.6567,
+    "keywordCoverageAvg": 0.3389,
+    "avgContextChars": 1494,
+    "kbUtilizationRate": 83.3,
+    "byCategory": {
+      "catering": {
+        "name": "餐饮行业",
+        "testCount": 20,
+        "avgScore": 0.7028,
+        "keywordCoverageAvg": 0.4333,
+        "contextCharsAvg": 1445
+      },
+      "beauty": {
+        "name": "美业行业",
+        "testCount": 20,
+        "avgScore": 0.6326,
+        "keywordCoverageAvg": 0.2833,
+        "contextCharsAvg": 1519
+      },
+      "education": {
+        "name": "教培行业",
+        "testCount": 20,
+        "avgScore": 0.6347,
+        "keywordCoverageAvg": 0.3,
+        "contextCharsAvg": 1519
+      }
+    },
+    "details": [
+      {
+        "testId": "cat-01",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-02",
+        "toolCode": "restaurant-health",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/行业特征与诊断/门店健康度评分.md",
+          "02_行业知识库/餐饮行业/行业特征与诊断/门店诊断改善方案库.md",
+          "02_行业知识库/餐饮行业/行业特征与诊断/行业对标数据库.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "cat-04",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0.5,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.825
+        },
+        "contextChars": 949,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.5,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.825
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-06",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.614,
+          "kbUtilization": 1,
+          "overall": 0.6894666666666667
+        },
+        "contextChars": 307,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-07",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 2004,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md",
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.246,
+          "kbUtilization": 1,
+          "overall": 0.49920000000000003
+        },
+        "contextChars": 123,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-09",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 1848,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-10",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-11",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 1842,
+        "kbFilesUsed": [
+          "03_品牌战略库/执行模板/方案架构15大类型.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-12",
+        "toolCode": "meituan",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 1842,
+        "kbFilesUsed": [
+          "01_业务场景库/投放运营/美团经营基准数据库.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-13",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1844,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-14",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1951,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-15",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3688,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-16",
+        "toolCode": "schedule",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-17",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 0.4,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8499999999999999
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-18",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 949,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-19",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "cat-20",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 2004,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md",
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-01",
+        "toolCode": "beauty-health",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+          "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+          "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-02",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "beauty-04",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1848,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.4,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6166666666666667
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-06",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-07",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.614,
+          "kbUtilization": 1,
+          "overall": 0.5728
+        },
+        "contextChars": 307,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.246,
+          "kbUtilization": 1,
+          "overall": 0.49920000000000003
+        },
+        "contextChars": 123,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-09",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 949,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-10",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 1842,
+        "kbFilesUsed": [
+          "03_品牌战略库/执行模板/方案架构15大类型.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-11",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1844,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-12",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 1951,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-13",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 3688,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-14",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 2004,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md",
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-15",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "beauty-16",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-17",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 1848,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-18",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.246,
+          "kbUtilization": 1,
+          "overall": 0.49920000000000003
+        },
+        "contextChars": 123,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-19",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.614,
+          "kbUtilization": 1,
+          "overall": 0.5728
+        },
+        "contextChars": 307,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-20",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-01",
+        "toolCode": "education-health",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+          "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+          "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-02",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "edu-04",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 1848,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.4,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7333333333333334
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-06",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-07",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.614,
+          "kbUtilization": 1,
+          "overall": 0.5728
+        },
+        "contextChars": 307,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.246,
+          "kbUtilization": 1,
+          "overall": 0.49920000000000003
+        },
+        "contextChars": 123,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-09",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 949,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-10",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1842,
+        "kbFilesUsed": [
+          "03_品牌战略库/执行模板/方案架构15大类型.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-11",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1844,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-12",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 1951,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-13",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 3688,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-14",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 2004,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md",
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-15",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "edu-16",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1261,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-17",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1848,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-18",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.246,
+          "kbUtilization": 1,
+          "overall": 0.49920000000000003
+        },
+        "contextChars": 123,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-19",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.614,
+          "kbUtilization": 1,
+          "overall": 0.5728
+        },
+        "contextChars": 307,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-20",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md",
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_only",
+        "dynamicBudget": 4000
+      }
+    ]
+  },
+  "mappingPlusVector": {
+    "timestamp": "2026-05-04T07:13:04.560Z",
+    "mode": "mapping_plus_vector",
+    "memberLevel": "pro",
+    "totalTests": 60,
+    "overallAvg": 0.7155,
+    "keywordCoverageAvg": 0.3389,
+    "avgContextChars": 2008,
+    "kbUtilizationRate": 95,
+    "byCategory": {
+      "catering": {
+        "name": "餐饮行业",
+        "testCount": 20,
+        "avgScore": 0.7532,
+        "keywordCoverageAvg": 0.4,
+        "contextCharsAvg": 2081
+      },
+      "beauty": {
+        "name": "美业行业",
+        "testCount": 20,
+        "avgScore": 0.7054,
+        "keywordCoverageAvg": 0.3333,
+        "contextCharsAvg": 1972
+      },
+      "education": {
+        "name": "教培行业",
+        "testCount": 20,
+        "avgScore": 0.6879,
+        "keywordCoverageAvg": 0.2833,
+        "contextCharsAvg": 1972
+      }
+    },
+    "details": [
+      {
+        "testId": "cat-01",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-02",
+        "toolCode": "restaurant-health",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/行业特征与诊断/门店健康度评分.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "cat-04",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 1054,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.25,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7375
+        },
+        "contextChars": 3472,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-06",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 1223,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+          "01_业务场景库/选题策划/小红书选题方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-07",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 3938,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 644,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-09",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 833,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-10",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 0
+      },
+      {
+        "testId": "cat-11",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3566,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/餐饮引流方案案例.md",
+          "03_品牌战略库/执行模板/方案架构15大类型.md",
+          "01_业务场景库/引流获客/美业引流方案案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-12",
+        "toolCode": "meituan",
+        "scores": {
+          "keywordCoverage": 0.75,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8374999999999999
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "01_业务场景库/投放运营/美团经营基准数据库.md",
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-13",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-14",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1826,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-15",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 2804,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-16",
+        "toolCode": "schedule",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0.818,
+          "kbUtilization": 1,
+          "overall": 0.6135999999999999
+        },
+        "contextChars": 409,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-17",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.4,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6166666666666667
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "cat-18",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1054,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "cat-19",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "cat-20",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 3938,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-01",
+        "toolCode": "beauty-health",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+          "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+          "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-02",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "beauty-04",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 833,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 3472,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-06",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 0
+      },
+      {
+        "testId": "beauty-07",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1223,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+          "01_业务场景库/选题策划/小红书选题方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 644,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-09",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 1054,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-10",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 3566,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/餐饮引流方案案例.md",
+          "03_品牌战略库/执行模板/方案架构15大类型.md",
+          "01_业务场景库/引流获客/美业引流方案案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-11",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-12",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 1826,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-13",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 2804,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-14",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "beauty-15",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "beauty-16",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-17",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 833,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-18",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 644,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-19",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 1223,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+          "01_业务场景库/选题策划/小红书选题方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "beauty-20",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 3472,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-01",
+        "toolCode": "education-health",
+        "scores": {
+          "keywordCoverage": 1,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 1
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+          "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+          "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-02",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-03",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "edu-04",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 833,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-05",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8833333333333333
+        },
+        "contextChars": 3472,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-06",
+        "toolCode": "membership-design",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 0,
+          "kbUtilization": 0,
+          "overall": 0.25
+        },
+        "contextChars": 0,
+        "kbFilesUsed": [],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 0
+      },
+      {
+        "testId": "edu-07",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 1223,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+          "01_业务场景库/选题策划/小红书选题方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-08",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 644,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-09",
+        "toolCode": "fission",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 1054,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/10_变现路径原子.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-10",
+        "toolCode": "marketing-plan",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 3566,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/餐饮引流方案案例.md",
+          "03_品牌战略库/执行模板/方案架构15大类型.md",
+          "01_业务场景库/引流获客/美业引流方案案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-11",
+        "toolCode": "selling-point",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 3009,
+        "kbFilesUsed": [
+          "03_品牌战略库/品牌定位/产品策略与营销底层逻辑.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-12",
+        "toolCode": "sop",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.7666666666666666
+        },
+        "contextChars": 1826,
+        "kbFilesUsed": [
+          "01_业务场景库/引流获客/企业微信私域运营SOP完整指南.md",
+          "01_业务场景库/引流获客/社群运营SOP完整手册.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-13",
+        "toolCode": "team-training",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 2804,
+        "kbFilesUsed": [
+          "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+          "06_通用支撑库/制度模板/餐饮_员工手册模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-14",
+        "toolCode": "business-plan",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.575
+        },
+        "contextChars": 4009,
+        "kbFilesUsed": [
+          "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+          "03_品牌战略库/品牌定位/品牌建设从0到1.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      },
+      {
+        "testId": "edu-15",
+        "toolCode": "headline",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 2509,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/02_标题策略原子.md",
+          "01_业务场景库/标题创作/教培爆款标题案例.md",
+          "01_业务场景库/标题创作/餐饮爆款标题案例.md",
+          "01_业务场景库/标题创作/美业爆款标题案例.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 2500
+      },
+      {
+        "testId": "edu-16",
+        "toolCode": "festival",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1403,
+        "kbFilesUsed": [
+          "04_方案模板库/04-节日营销方案.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-17",
+        "toolCode": "ip-agent",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 833,
+        "kbFilesUsed": [
+          "01_业务场景库/账号诊断/朋友圈人设打造与内容规划方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-18",
+        "toolCode": "competitor",
+        "scores": {
+          "keywordCoverage": 0,
+          "forbiddenCheck": 1,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.65
+        },
+        "contextChars": 644,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/06_对标与模仿原子.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-19",
+        "toolCode": "topic",
+        "scores": {
+          "keywordCoverage": 0.3333333333333333,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.6916666666666667
+        },
+        "contextChars": 1223,
+        "kbFilesUsed": [
+          "00_原子知识库/DBSkill原子/01_选题策略原子.md",
+          "01_业务场景库/选题策划/小红书选题方法论.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 3000
+      },
+      {
+        "testId": "edu-20",
+        "toolCode": "salary",
+        "scores": {
+          "keywordCoverage": 0.6666666666666666,
+          "forbiddenCheck": 0.7,
+          "contextAdequacy": 1,
+          "kbUtilization": 1,
+          "overall": 0.8083333333333333
+        },
+        "contextChars": 3472,
+        "kbFilesUsed": [
+          "06_通用支撑库/人事管理/教培_绩效考核模板.md",
+          "06_通用支撑库/人事管理/餐饮_绩效考核模板.md",
+          "06_通用支撑库/人事管理/美业_绩效考核模板.md"
+        ],
+        "retrievalMode": "mapping_plus_vector",
+        "dynamicBudget": 4000
+      }
+    ]
+  },
+  "comparison": {
+    "overallDiff": 0.0588,
+    "keywordDiff": 0,
+    "contextCharsDiff": 514,
+    "costIncreasePercent": 34.4,
+    "doDOverallImprovement": false,
+    "doDCostUnder10": false
+  }
+}

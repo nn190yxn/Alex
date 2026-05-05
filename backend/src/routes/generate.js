@@ -7,19 +7,11 @@ import { validationMiddleware, getValidationRulesForTool } from '../middleware/v
 import { logger } from '../middleware/logger.js'
 import { trackEvent, EVENT_TYPES } from '../services/analytics.js'
 import { getIndustryData, getFestival, getSalaryByIndustry, getFissionBenchmarks, getBusinessPlanByCapital, getPlatformStyle } from '../services/industryKnowledge.js'
-import { getDiagnosisTemplate, calculateDiagnosisScore, generateDiagnosisReport, generateDiagnosisActions } from '../services/diagnosisEngine.js'
+import { getDiagnosisTemplate, calculateDiagnosisScore, generateDiagnosisActions } from '../services/diagnosisEngine.js'
 import { generateStructured } from '../services/ai.js'
 import { createCalculatorTools } from './calculatorTools.js'
 import { createSpreadsheetTools } from './spreadsheetTools.js'
 import { canAccessLevel, getRequiredMemberLevel } from '../config/toolAccess.js'
-import { recordTokenUsage } from '../services/tokenMonitor.js'
-import { getMaxTokensForLevel } from '../services/kbService.js'
-
-const DEFAULT_RETRIEVAL_MODE = process.env.KB_RETRIEVAL_MODE || 'mapping_only'
-
-function generateTraceId() {
-  return `trc_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`
-}
 
 const router = express.Router()
 
@@ -2171,8 +2163,6 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
   const { toolCode } = req.params
   const userId = req.user.userId
   const formData = req.body
-  const startTime = Date.now()
-  const traceId = generateTraceId()
 
   try {
     const toolDef = TOOL_DEFINITIONS[toolCode]
@@ -2207,81 +2197,21 @@ router.post('/:toolCode', authMiddleware, async (req, res, next) => {
       return res.status(validationRes.statusCode).json(validationRes.data)
     }
 
-    // Build execution context with KB-aware parameters
-    const execContext = {
-      toolCode,
-      memberLevel,
-      userId: String(userId),
-      traceId,
-      retrievalMode: DEFAULT_RETRIEVAL_MODE
-    }
-
-    // Wrap executeTool to inject context
-    const wrappedExecute = async (config, data) => {
-      return executeTool(config, data, execContext)
-    }
-
     // Execute with failover
-    const result = await executeWithFailover(toolDef, validationReq.body, wrappedExecute)
-
-    const duration = Date.now() - startTime
-
-    // Estimate token usage (rough estimate based on request/response size)
-    const inputEstimate = Math.ceil(JSON.stringify(formData).length / 3)
-    const outputEstimate = Math.ceil(JSON.stringify(result).length / 3)
-    const model = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
-
-    // Extract KB metadata from response _meta
-    const meta = result._meta || {}
-
-    recordTokenUsage({
-      toolCode,
-      userId: String(userId),
-      memberLevel,
-      inputTokens: inputEstimate,
-      outputTokens: outputEstimate,
-      model,
-      engineType: toolDef.engineType || 'rag',
-      duration,
-      traceId,
-      kbFilesUsed: meta.kbFilesUsed || [],
-      retrievalMode: meta.retrievalMode || DEFAULT_RETRIEVAL_MODE,
-      contextChars: meta.contextChars || 0,
-      success: true
-    })
+    const result = await executeWithFailover(toolDef, validationReq.body, executeTool)
 
     await trackUsage(userId, toolCode)
 
     // Track success
-    await trackEvent(userId, EVENT_TYPES.TOOL_SUCCESS, { toolCode, traceId })
+    await trackEvent(userId, EVENT_TYPES.TOOL_SUCCESS, { toolCode })
 
     res.json(result)
   } catch (error) {
-    logger.toolFailure(userId, toolCode, error, Date.now() - startTime)
+    logger.toolFailure(userId, toolCode, error, 0)
     await trackEvent(userId, EVENT_TYPES.TOOL_FAILURE, {
       toolCode,
-      error: error.message,
-      traceId
+      error: error.message
     })
-
-    // Record failed usage
-    const duration = Date.now() - startTime
-    const inputEstimate = Math.ceil(JSON.stringify(formData).length / 3)
-    const model = process.env.MCAI_LLM_MODEL || 'minimax-m2.7'
-
-    recordTokenUsage({
-      toolCode,
-      userId: String(userId),
-      memberLevel: await getUserMemberLevel(userId).catch(() => 'free'),
-      inputTokens: inputEstimate,
-      outputTokens: 0,
-      model,
-      engineType: toolDef?.engineType || 'unknown',
-      duration,
-      traceId,
-      success: false
-    })
-
     next(error)
   }
 })

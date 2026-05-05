@@ -124,4 +124,233 @@ router.get('/tool-usage', async (req, res) => {
   }
 })
 
+// === 返利管理 ===
+router.get('/commissions', async (req, res) => {
+  try {
+    const { status, page = 1, limit = 50 } = req.query
+    const pageNum = Math.max(1, parseInt(page) || 1)
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50))
+    const offset = (pageNum - 1) * limitNum
+
+    let where = ''
+    const params = []
+    if (status) {
+      where = 'WHERE rc.status = ?'
+      params.push(status)
+    }
+
+    const rows = await query(`
+      SELECT rc.id, rc.referrer_id, rc.referred_id, rc.order_id, rc.order_amount,
+             rc.commission_rate, rc.commission_amount, rc.status, rc.pending_until,
+             rc.paid_at, rc.created_at,
+             u1.nickname AS referrer_nickname, u1.phone AS referrer_phone,
+             u2.nickname AS referred_nickname, u2.phone AS referred_phone
+      FROM referral_commissions rc
+      LEFT JOIN users u1 ON rc.referrer_id = u1.id
+      LEFT JOIN users u2 ON rc.referred_id = u2.id
+      ${where}
+      ORDER BY rc.created_at DESC
+      LIMIT ${limitNum} OFFSET ${offset}
+    `, params)
+
+    const countResult = await query(`SELECT COUNT(*) as total FROM referral_commissions ${where}`, params)
+
+    res.json({ rows, total: countResult[0].total, page: pageNum, limit: limitNum })
+  } catch (error) {
+    logger.error('admin', 'Commissions error', { error: error.message })
+    res.status(500).json({ message: '获取返利列表失败' })
+  }
+})
+
+router.put('/commissions/:id/status', async (req, res) => {
+  const { id } = req.params
+  const { status } = req.body
+
+  if (!['pending', 'paid', 'cancelled'].includes(status)) {
+    return res.status(400).json({ message: '状态无效' })
+  }
+
+  try {
+    const updateFields = { status }
+    if (status === 'paid') {
+      updateFields.paid_at = new Date()
+    }
+
+    const fields = Object.keys(updateFields).map(k => `${k} = ?`).join(', ')
+    const values = [...Object.values(updateFields), id]
+
+    await query(`UPDATE referral_commissions SET ${fields} WHERE id = ?`, values)
+    res.json({ success: true })
+  } catch (error) {
+    logger.error('admin', `Update commission status error: ${error.message}`)
+    res.status(500).json({ message: '更新状态失败' })
+  }
+})
+
+// === 用户管理操作 ===
+router.put('/users/:id/member-level', async (req, res) => {
+  const { id } = req.params
+  const { member_level, member_expire_at } = req.body
+
+  if (!member_level || !['free', 'starter', 'pro', 'annual'].includes(member_level)) {
+    return res.status(400).json({ message: '会员等级无效' })
+  }
+
+  try {
+    const expire = member_expire_at || null
+    await query(
+      'UPDATE users SET member_level = ?, member_expire_at = ? WHERE id = ?',
+      [member_level, expire, id]
+    )
+    res.json({ success: true })
+  } catch (error) {
+    logger.error('admin', `Update user member level error: ${error.message}`)
+    res.status(500).json({ message: '更新会员等级失败' })
+  }
+})
+
+router.post('/users/:id/extend-expire', async (req, res) => {
+  const { id } = req.params
+  const { days } = req.body
+
+  if (!days || days <= 0) {
+    return res.status(400).json({ message: '天数必须大于0' })
+  }
+
+  try {
+    const users = await query('SELECT member_expire_at FROM users WHERE id = ?', [id])
+    if (users.length === 0) return res.status(404).json({ message: '用户不存在' })
+
+    let newExpire
+    if (users[0].member_expire_at) {
+      newExpire = new Date(users[0].member_expire_at)
+    } else {
+      newExpire = new Date()
+    }
+    newExpire.setDate(newExpire.getDate() + days)
+
+    await query('UPDATE users SET member_expire_at = ? WHERE id = ?', [newExpire, id])
+    res.json({ success: true, new_expire_at: newExpire })
+  } catch (error) {
+    logger.error('admin', `Extend user expire error: ${error.message}`)
+    res.status(500).json({ message: '延长有效期失败' })
+  }
+})
+
+// === 错误日志 ===
+router.get('/error-logs', async (req, res) => {
+  const { level = 'error', lines = 100 } = req.query
+
+  try {
+    const logDir = process.env.LOG_DIR || './logs'
+    const fs = await import('fs')
+    const path = await import('path')
+    const errorLogFile = path.resolve(logDir, 'backend-error.log')
+
+    if (!fs.existsSync(errorLogFile)) {
+      return res.json({ logs: [] })
+    }
+
+    const content = fs.readFileSync(errorLogFile, 'utf-8')
+    const allLines = content.split('\n').filter(l => l.trim())
+
+    // 解析 JSON 格式日志
+    const logs = []
+    for (const line of allLines) {
+      try {
+        const entry = JSON.parse(line)
+        if (!level || entry.level === level || level === 'all') {
+          logs.push(entry)
+        }
+      } catch {
+        // 非 JSON 行也保留
+        if (!level || level === 'all') {
+          logs.push({ raw: line, timestamp: new Date().toISOString() })
+        }
+      }
+    }
+
+    res.json({ logs: logs.slice(-parseInt(lines)) })
+  } catch (error) {
+    logger.error('admin', `Read error logs failed: ${error.message}`)
+    res.status(500).json({ message: '读取日志失败' })
+  }
+})
+
+// === 用户反馈管理 ===
+router.get('/user-feedbacks', async (req, res) => {
+  const { type, status, page = 1, limit = 50 } = req.query
+  const pageNum = Math.max(1, parseInt(page) || 1)
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50))
+  const offset = (pageNum - 1) * limitNum
+
+  try {
+    const conditions = []
+    const params = []
+
+    if (type && ['feature', 'bug'].includes(type)) {
+      conditions.push('type = ?')
+      params.push(type)
+    }
+    if (status && ['pending', 'processing', 'resolved', 'closed'].includes(status)) {
+      conditions.push('status = ?')
+      params.push(status)
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    const rows = await query(`
+      SELECT f.id, f.user_id, f.type, f.title, f.description, f.image_url, f.status,
+             f.admin_note, f.created_at, f.updated_at,
+             u.phone, u.nickname
+      FROM user_feedbacks f
+      LEFT JOIN users u ON f.user_id = u.id
+      ${where}
+      ORDER BY f.created_at DESC
+      LIMIT ${limitNum} OFFSET ${offset}
+    `, params)
+
+    const countResult = await query(`SELECT COUNT(*) as total FROM user_feedbacks ${where}`, params)
+
+    res.json({ rows, total: countResult[0].total, page: pageNum, limit: limitNum })
+  } catch (error) {
+    logger.error('admin', `Get user feedbacks error: ${error.message}`)
+    res.status(500).json({ message: '获取反馈列表失败' })
+  }
+})
+
+router.put('/user-feedbacks/:id', async (req, res) => {
+  const { id } = req.params
+  const { status, admin_note } = req.body
+
+  if (status && !['pending', 'processing', 'resolved', 'closed'].includes(status)) {
+    return res.status(400).json({ message: '状态无效' })
+  }
+
+  try {
+    const updates = []
+    const values = []
+
+    if (status) {
+      updates.push('status = ?')
+      values.push(status)
+    }
+    if (admin_note !== undefined) {
+      updates.push('admin_note = ?')
+      values.push(admin_note)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: '无更新内容' })
+    }
+
+    values.push(id)
+    await query(`UPDATE user_feedbacks SET ${updates.join(', ')} WHERE id = ?`, values)
+    res.json({ success: true })
+  } catch (error) {
+    logger.error('admin', `Update user feedback error: ${error.message}`)
+    res.status(500).json({ message: '更新反馈失败' })
+  }
+})
+
 export default router

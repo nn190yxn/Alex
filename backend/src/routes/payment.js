@@ -3,7 +3,8 @@ import crypto from 'crypto'
 import { query } from '../models/db.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { logger } from '../middleware/logger.js'
-import { PLAN_PRICES, PLAN_CYCLES } from '../config/plans.js'
+import { PLAN_PRICES, PLAN_CYCLES, PLAN_NAMES } from '../config/plans.js'
+import { applyReferralCommissionForPaidOrder } from '../utils/referral.js'
 
 const router = express.Router()
 const PAYMENT_CALLBACK_SECRET = process.env.PAYMENT_CALLBACK_SECRET
@@ -31,8 +32,8 @@ router.post('/create-order', authMiddleware, async (req, res) => {
 
   try {
     const result = await query(
-      'INSERT INTO orders (user_id, plan_code, amount, status, created_at) VALUES (?, ?, ?, ?, NOW())',
-      [userId, planCode, PLAN_PRICES[planCode], 'pending']
+      'INSERT INTO orders (user_id, plan_code, plan_name, amount, status, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+      [userId, planCode, PLAN_NAMES[planCode] || planCode, PLAN_PRICES[planCode], 'pending']
     )
 
     const orderId = result.insertId
@@ -87,6 +88,12 @@ router.post('/callback', async (req, res) => {
         'UPDATE users SET member_level = ?, member_expire_at = DATE_ADD(NOW(), INTERVAL ? MONTH) WHERE id = ?',
         [order.plan_code, PLAN_CYCLES[order.plan_code] || 1, order.user_id]
       )
+
+      try {
+        await applyReferralCommissionForPaidOrder(orderId)
+      } catch (commissionError) {
+        logger.error('payment', `Apply referral commission error: ${commissionError.message}`)
+      }
 
       res.json({ message: '支付成功' })
     } else {
