@@ -18,7 +18,7 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       // 使用 router 跳转而非直接 location.href

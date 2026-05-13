@@ -32,6 +32,7 @@ import generateRoutes from './routes/generate.js'
 import analyticsRoutes from './routes/analytics.js'
 import douyinAgentRoutes from './routes/douyinAgents.js'
 import xhsAgentRoutes from './routes/xhsAgents.js'
+import privateAgentRoutes from './routes/privateAgents.js'
 
 import userFeedbackRoutes from './routes/user-feedback.js'
 
@@ -48,6 +49,7 @@ app.use('/api/generate', generateRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/douyin', douyinAgentRoutes)
 app.use('/api/xhs', xhsAgentRoutes)
+app.use('/api/private', privateAgentRoutes)
 app.use('/api/user-feedback', userFeedbackRoutes)
 
 app.get('/health', (req, res) => {

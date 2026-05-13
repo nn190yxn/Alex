@@ -1364,17 +1364,72 @@
       {
         "path": "04_方案模板库/08-海报生成知识库.md",
         "sections": [
-          { "keyword": "节日促销海报", "types": ["festival"] },
-          { "keyword": "产品/服务推广海报", "types": ["product"] },
-          { "keyword": "活动招募海报", "types": ["event"] },
-          { "keyword": "开业/周年庆海报", "types": ["anniversary"] },
-          { "keyword": "会员储值海报", "types": ["membership"] },
-          { "keyword": "招聘海报", "types": ["recruitment"] },
-          { "keyword": "品牌宣传海报", "types": ["brand"] },
-          { "keyword": "优惠/折扣海报", "types": ["discount"] },
-          { "keyword": "色彩搭配", "types": ["_common"] },
-          { "keyword": "字体层级", "types": ["_common"] },
-          { "keyword": "排版黄金法则", "types": ["_common"] }
+          {
+            "keyword": "节日促销海报",
+            "types": [
+              "festival"
+            ]
+          },
+          {
+            "keyword": "产品/服务推广海报",
+            "types": [
+              "product"
+            ]
+          },
+          {
+            "keyword": "活动招募海报",
+            "types": [
+              "event"
+            ]
+          },
+          {
+            "keyword": "开业/周年庆海报",
+            "types": [
+              "anniversary"
+            ]
+          },
+          {
+            "keyword": "会员储值海报",
+            "types": [
+              "membership"
+            ]
+          },
+          {
+            "keyword": "招聘海报",
+            "types": [
+              "recruitment"
+            ]
+          },
+          {
+            "keyword": "品牌宣传海报",
+            "types": [
+              "brand"
+            ]
+          },
+          {
+            "keyword": "优惠/折扣海报",
+            "types": [
+              "discount"
+            ]
+          },
+          {
+            "keyword": "色彩搭配",
+            "types": [
+              "_common"
+            ]
+          },
+          {
+            "keyword": "字体层级",
+            "types": [
+              "_common"
+            ]
+          },
+          {
+            "keyword": "排版黄金法则",
+            "types": [
+              "_common"
+            ]
+          }
         ],
         "purpose": "按场景类型注入设计规范、文案结构和配色建议",
         "memberLevel": "free"
@@ -1389,435 +1444,1863 @@
     }
   },
   "gross-margin-restaurant": {
-    "name": "餐饮毛利率计算器",
+    "name": "品类毛利智能体（餐饮版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["成本结构", "定价策略"],
+        "sections": [
+          "成本结构",
+          "定价策略"
+        ],
         "purpose": "餐饮成本核算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "break-even-restaurant": {
     "name": "餐饮盈亏平衡计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["成本结构", "盈亏平衡"],
+        "sections": [
+          "成本结构",
+          "盈亏平衡"
+        ],
         "purpose": "盈亏平衡分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "investment-budget": {
     "name": "餐饮投资预算计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["开店筹备", "预算规划"],
+        "sections": [
+          "开店筹备",
+          "预算规划"
+        ],
         "purpose": "开店预算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "food-yield-rate": {
     "name": "食材出成率计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["食材管理", "成本控制"],
+        "sections": [
+          "食材管理",
+          "成本控制"
+        ],
         "purpose": "食材出成核算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "turnover-rate-restaurant": {
-    "name": "餐饮翻台率计算器",
+    "name": "翻台率智能体（餐饮版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["运营效率", "翻台管理"],
+        "sections": [
+          "运营效率",
+          "翻台管理"
+        ],
         "purpose": "翻台率分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "cup-efficiency": {
     "name": "杯效计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["饮品运营", "效率分析"],
+        "sections": [
+          "饮品运营",
+          "效率分析"
+        ],
         "purpose": "饮品杯效分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "drink-cost": {
     "name": "饮品成本计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["成本结构", "饮品定价"],
+        "sections": [
+          "成本结构",
+          "饮品定价"
+        ],
         "purpose": "饮品成本核算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "dish-pricing": {
-    "name": "菜品定价计算器",
+    "name": "菜品定价智能体（产品结构设计版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["定价策略", "成本核算"],
+        "sections": [
+          "定价策略",
+          "成本核算"
+        ],
         "purpose": "菜品定价参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "food-waste-rate": {
-    "name": "食材损耗率计算器",
+    "name": "食材损耗率智能体",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["食材管理", "损耗控制"],
+        "sections": [
+          "食材管理",
+          "损耗控制"
+        ],
         "purpose": "食材损耗分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "labor-efficiency-restaurant": {
-    "name": "餐饮人效计算器",
+    "name": "人效智能体（餐饮版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["人力成本", "效率分析"],
+        "sections": [
+          "人力成本",
+          "效率分析"
+        ],
         "purpose": "人效分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "delivery-profit": {
-    "name": "外卖利润计算器",
+    "name": "外卖利润智能体",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["外卖运营", "利润分析"],
+        "sections": [
+          "外卖运营",
+          "利润分析"
+        ],
         "purpose": "外卖利润核算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "delivery-analysis": {
-    "name": "外卖经营分析计算器",
+    "name": "外卖经营综合分析器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["外卖运营", "平台策略"],
+        "sections": [
+          "外卖运营",
+          "平台策略"
+        ],
         "purpose": "外卖经营分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "payback-restaurant": {
     "name": "餐饮回本周期计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["预算规划", "投资回报"],
+        "sections": [
+          "预算规划",
+          "投资回报"
+        ],
         "purpose": "回本周期分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "cashflow-restaurant": {
     "name": "餐饮现金流计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["财务管理", "现金流"],
+        "sections": [
+          "财务管理",
+          "现金流"
+        ],
         "purpose": "现金流分析参考",
         "memberLevel": "starter"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "profit-rate-restaurant": {
-    "name": "餐饮利润率计算器",
+    "name": "利润率智能体（餐饮版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["利润分析", "成本结构"],
+        "sections": [
+          "利润分析",
+          "成本结构"
+        ],
         "purpose": "利润率核算参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "return-rate-restaurant": {
-    "name": "餐饮回报率计算器",
+    "name": "回报率智能体（餐饮版）",
     "knowledgeFiles": [
       {
+        "path": "02_行业知识库/餐饮行业/营销案例/节假日促销方案.md",
+        "sections": [
+          "活动回报",
+          "复购"
+        ],
+        "purpose": "餐饮活动回报参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/投放运营/美团经营基准数据库.md",
+        "sections": [
+          "平台投放",
+          "ROI"
+        ],
+        "purpose": "平台投放回报参考",
+        "memberLevel": "free"
+      },
+      {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["投资回报", "利润分析"],
-        "purpose": "投资回报分析参考",
+        "sections": [
+          "营销 ROI",
+          "毛利结构"
+        ],
+        "purpose": "餐饮 ROI 综合参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "inventory-turnover": {
     "name": "库存周转率计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["库存管理", "运营效率"],
+        "sections": [
+          "库存管理",
+          "运营效率"
+        ],
         "purpose": "库存周转分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "dish-contribution": {
     "name": "菜品贡献度计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["菜品分析", "利润结构"],
+        "sections": [
+          "菜品分析",
+          "利润结构"
+        ],
         "purpose": "菜品贡献度分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "repurchase-rate": {
     "name": "复购率计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["客户分析", "复购策略"],
+        "sections": [
+          "客户分析",
+          "复购策略"
+        ],
         "purpose": "复购率分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "ltv-restaurant": {
-    "name": "餐饮客户终身价值计算器",
+    "name": "客户终身价值智能体（餐饮版）",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
-        "sections": ["客户价值", "生命周期"],
-        "purpose": "LTV 分析参考",
+        "sections": [
+          "客户价值",
+          "生命周期"
+        ],
+        "purpose": "餐饮 LTV 分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/会员储值方案.md",
+        "sections": [
+          "会员储值",
+          "复购"
+        ],
+        "purpose": "餐饮会员复购价值参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/案例库/餐饮私域案例_瑞幸.md",
+        "sections": [
+          "餐饮私域",
+          "客户复购"
+        ],
+        "purpose": "餐饮私域 LTV 案例参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "break-even-education": {
-    "name": "教培盈亏平衡计算器",
+    "name": "盈亏平衡点智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["成本结构", "盈亏平衡"],
-        "purpose": "盈亏平衡分析参考",
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "成本结构",
+          "盈亏平衡"
+        ],
+        "purpose": "校区保本模型对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "校区健康度",
+          "经营安全线"
+        ],
+        "purpose": "保本招生与校区健康参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "course-structure-education": {
     "name": "教培课程结构计算器",
     "knowledgeFiles": [
       {
         "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["课程设计", "课时规划"],
+        "sections": [
+          "课程设计",
+          "课时规划"
+        ],
         "purpose": "课程结构分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "renewal-rate-education": {
-    "name": "教培续费率计算器",
+    "name": "续费率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["续费管理", "客户留存"],
-        "purpose": "续费率分析参考",
+        "path": "02_行业知识库/教培行业/营销案例/续费活动方案.md",
+        "sections": [
+          "续费活动",
+          "客户留存"
+        ],
+        "purpose": "续费率提升与老生留存参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+        "sections": [
+          "续费管理",
+          "校区改善"
+        ],
+        "purpose": "续费问题诊断与改善参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "class-consumption-rate-education": {
-    "name": "教培消课率计算器",
+    "name": "课时消耗率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["消课管理", "课时消耗"],
-        "purpose": "消课率分析参考",
+        "path": "02_行业知识库/教培行业/制度模板/课时管理制度.md",
+        "sections": [
+          "课时管理",
+          "消课管理"
+        ],
+        "purpose": "课时消耗与预收管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "校区健康度",
+          "课消指标"
+        ],
+        "purpose": "校区课耗健康度参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "gross-margin-education": {
-    "name": "教培毛利率计算器",
+    "name": "毛利率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["成本结构", "毛利分析"],
-        "purpose": "毛利率核算参考",
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "成本结构",
+          "行业对标"
+        ],
+        "purpose": "课程毛利与成本结构对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/课程结构分析.md",
+        "sections": [
+          "课程结构",
+          "课程利润"
+        ],
+        "purpose": "课程结构和毛利分析参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "salary-cost-ratio-education": {
-    "name": "教培薪酬占比计算器",
+    "name": "员工成本占比智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["人力成本", "薪酬结构"],
-        "purpose": "薪酬占比分析参考",
+        "path": "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+        "sections": [
+          "师资管理",
+          "人力成本"
+        ],
+        "purpose": "师资结构与人力成本参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "人力成本",
+          "薪酬结构"
+        ],
+        "purpose": "教培人工成本对标参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "labor-efficiency-education": {
-    "name": "教培人效计算器",
+    "name": "人效智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["人力效率", "师资管理"],
-        "purpose": "人效分析参考",
+        "path": "02_行业知识库/教培行业/制度模板/教练培训制度.md",
+        "sections": [
+          "师资管理",
+          "人效"
+        ],
+        "purpose": "教师产能与教练管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "校区健康度",
+          "人效指标"
+        ],
+        "purpose": "校区人效健康度参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "venue-utilization-education": {
-    "name": "教培场地利用率计算器",
+    "name": "场地利用率智能体",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["场地管理", "利用率分析"],
-        "purpose": "场地利用率参考",
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "场地利用",
+          "排课密度"
+        ],
+        "purpose": "场地利用与排课健康度参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+        "sections": [
+          "场地管理",
+          "排课优化"
+        ],
+        "purpose": "场地闲置改善参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "cac-education": {
-    "name": "教培获客成本计算器",
+    "name": "获客成本智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["获客策略", "成本分析"],
-        "purpose": "获客成本分析参考",
+        "path": "02_行业知识库/教培行业/营销案例/招生策划方案.md",
+        "sections": [
+          "招生策划",
+          "获客策略"
+        ],
+        "purpose": "招生获客策略参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/营销案例/体验课引流方案.md",
+        "sections": [
+          "体验课",
+          "线索转化"
+        ],
+        "purpose": "体验课获客和转化参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "payback-education": {
-    "name": "教培回本周期计算器",
+    "name": "投资回本周期智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["投资回报", "回本分析"],
-        "purpose": "回本周期参考",
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "投资回报",
+          "经营模型"
+        ],
+        "purpose": "教培投资回本对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "校区健康度",
+          "利润模型"
+        ],
+        "purpose": "校区回本健康度参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "cashflow-education": {
-    "name": "教培现金流计算器",
+    "name": "现金流预测智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["财务管理", "现金流"],
-        "purpose": "现金流分析参考",
+        "path": "02_行业知识库/教培行业/制度模板/课时管理制度.md",
+        "sections": [
+          "课时管理",
+          "预收管理"
+        ],
+        "purpose": "预收款和现金流风险参考",
         "memberLevel": "starter"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "现金流",
+          "校区健康度"
+        ],
+        "purpose": "校区现金流健康度参考",
+        "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "profit-rate-education": {
-    "name": "教培利润率计算器",
+    "name": "利润率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["利润分析", "成本结构"],
-        "purpose": "利润率核算参考",
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "利润分析",
+          "成本结构"
+        ],
+        "purpose": "净利率和成本结构对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区诊断改善方案库.md",
+        "sections": [
+          "利润改善",
+          "校区诊断"
+        ],
+        "purpose": "利润改善方案参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "return-rate-education": {
-    "name": "教培回报率计算器",
+    "name": "回报率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["投资回报", "利润分析"],
-        "purpose": "投资回报分析参考",
+        "path": "02_行业知识库/教培行业/营销案例/招生策划方案.md",
+        "sections": [
+          "营销 ROI",
+          "招生投放"
+        ],
+        "purpose": "招生活动回报分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/营销案例/转介绍方案.md",
+        "sections": [
+          "转介绍",
+          "低成本获客"
+        ],
+        "purpose": "转介绍回报参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "class-rate-education": {
-    "name": "教培满班率计算器",
+    "name": "消课率智能体（教培版）",
     "knowledgeFiles": [
       {
-        "path": "02_行业知识库/教培行业/教培行业知识库_综合v3.0.md",
-        "sections": ["班级管理", "满班率"],
-        "purpose": "满班率分析参考",
+        "path": "02_行业知识库/教培行业/制度模板/课时管理制度.md",
+        "sections": [
+          "课时管理",
+          "消课率"
+        ],
+        "purpose": "消课率和预收课时管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/校区健康度评分.md",
+        "sections": [
+          "校区健康度",
+          "课消指标"
+        ],
+        "purpose": "课消健康度评分参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "cashflow": {
     "name": "通用现金流计算器",
     "knowledgeFiles": [
       {
         "path": "06_通用支撑库/财务管理/现金流管理指南.md",
-        "sections": ["现金流分析", "资金规划"],
+        "sections": [
+          "现金流分析",
+          "资金规划"
+        ],
         "purpose": "通用现金流分析参考",
         "memberLevel": "starter"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   },
   "roi": {
     "name": "投流 ROI 计算器",
     "knowledgeFiles": [
       {
         "path": "01_业务场景库/投放运营/投放ROI分析指南.md",
-        "sections": ["ROI基准", "投放优化"],
+        "sections": [
+          "ROI基准",
+          "投放优化"
+        ],
         "purpose": "ROI 计算与优化参考",
         "memberLevel": "free"
       }
     ],
-    "aiConfig": { "temperature": 0.3, "maxTokensFree": 300, "maxTokensStarter": 500, "maxTokensPro": 800, "maxTokensAnnual": 1000 }
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "card-consumption-rate-beauty": {
+    "name": "耗卡率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "卡项设计",
+          "耗卡管理"
+        ],
+        "purpose": "卡项消耗与预收负债管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "耗卡率",
+          "门店健康度"
+        ],
+        "purpose": "门店耗卡健康度参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "gross-margin-beauty": {
+    "name": "毛利率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/品项结构分析.md",
+        "sections": [
+          "品项结构",
+          "项目毛利"
+        ],
+        "purpose": "项目毛利和品项结构参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "毛利率",
+          "成本结构"
+        ],
+        "purpose": "美业毛利对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "break-even-beauty": {
+    "name": "盈亏平衡点智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "盈亏平衡",
+          "成本结构"
+        ],
+        "purpose": "美业保本模型对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "保本线",
+          "经营安全"
+        ],
+        "purpose": "门店经营安全线参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "salary-cost-ratio-beauty": {
+    "name": "员工成本占比智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/制度模板/美容师服务规范.md",
+        "sections": [
+          "岗位服务",
+          "人工结构"
+        ],
+        "purpose": "美容师服务与人工结构参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "人工成本",
+          "薪酬结构"
+        ],
+        "purpose": "美业人工成本对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "labor-efficiency-beauty": {
+    "name": "人效智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/制度模板/美容师服务规范.md",
+        "sections": [
+          "服务规范",
+          "人效"
+        ],
+        "purpose": "美容师服务效率参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "人效",
+          "排班效率"
+        ],
+        "purpose": "门店人效健康度参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "conversion-rate-beauty": {
+    "name": "拓客转化率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/拓客引流方案.md",
+        "sections": [
+          "拓客引流",
+          "转化"
+        ],
+        "purpose": "拓客转化策略参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/品项升级方案.md",
+        "sections": [
+          "体验项目",
+          "升单转化"
+        ],
+        "purpose": "体验和升单转化参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "project-profit-beauty": {
+    "name": "项目利润智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/品项结构分析.md",
+        "sections": [
+          "项目利润",
+          "品项结构"
+        ],
+        "purpose": "单项目利润分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/品项升级方案.md",
+        "sections": [
+          "品项升级",
+          "项目定价"
+        ],
+        "purpose": "项目升级和定价参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "ltv-beauty": {
+    "name": "客户生命周期价值智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "会员运营",
+          "LTV"
+        ],
+        "purpose": "会员复购与客户价值参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "会员卡",
+          "客户留存"
+        ],
+        "purpose": "会员卡和客户生命周期参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "repurchase-rate-beauty": {
+    "name": "复购率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "复购",
+          "会员日"
+        ],
+        "purpose": "复购提升活动参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+        "sections": [
+          "复购改善",
+          "老客运营"
+        ],
+        "purpose": "老客复购诊断参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "payback-beauty": {
+    "name": "投资回本周期智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "投资回报",
+          "回本周期"
+        ],
+        "purpose": "美业回本周期对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "利润模型",
+          "门店健康"
+        ],
+        "purpose": "门店回本健康度参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "cashflow-beauty": {
+    "name": "现金流预测智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "充值",
+          "现金流"
+        ],
+        "purpose": "充值现金流与履约负债参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "现金流",
+          "健康度"
+        ],
+        "purpose": "门店现金流健康度参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "profit-rate-beauty": {
+    "name": "利润率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "净利率",
+          "成本结构"
+        ],
+        "purpose": "美业净利率对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+        "sections": [
+          "利润改善",
+          "门店诊断"
+        ],
+        "purpose": "利润改善方案参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "return-rate-beauty": {
+    "name": "回报率智能体（美业版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/拓客引流方案.md",
+        "sections": [
+          "营销 ROI",
+          "拓客回报"
+        ],
+        "purpose": "拓客投入回报参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "活动回报",
+          "复购"
+        ],
+        "purpose": "会员活动回报参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "project-structure-beauty": {
+    "name": "美业品项结构与利润智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/品项结构分析.md",
+        "sections": [
+          "品项结构",
+          "项目分层"
+        ],
+        "purpose": "品项结构分层参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/品项升级方案.md",
+        "sections": [
+          "品项升级",
+          "项目组合"
+        ],
+        "purpose": "项目组合升级参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "labor-structure-beauty": {
+    "name": "美业人工成本与人效分析器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/制度模板/美容师服务规范.md",
+        "sections": [
+          "岗位配置",
+          "服务效率"
+        ],
+        "purpose": "岗位配置和服务效率参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "人工占比",
+          "床位产出"
+        ],
+        "purpose": "人工成本和床位产出对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "card-debt-beauty": {
+    "name": "美业卡项负债与实收智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "卡项负债",
+          "实收确认"
+        ],
+        "purpose": "卡项负债和实收管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "耗卡率",
+          "现金流"
+        ],
+        "purpose": "卡项健康度参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "funnel-ltv-beauty": {
+    "name": "美业拓客转化与 LTV 智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/拓客引流方案.md",
+        "sections": [
+          "拓客漏斗",
+          "转化"
+        ],
+        "purpose": "拓客漏斗参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "LTV",
+          "复购"
+        ],
+        "purpose": "LTV 和会员复购参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "breakeven-profit-beauty": {
+    "name": "美业盈亏平衡与净利预测器",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "盈亏平衡",
+          "净利预测"
+        ],
+        "purpose": "保本和净利预测对标参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/门店诊断改善方案库.md",
+        "sections": [
+          "成本改善",
+          "利润改善"
+        ],
+        "purpose": "保本压力改善参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "device-roi-beauty": {
+    "name": "美容仪器投资回报智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/品项升级方案.md",
+        "sections": [
+          "仪器项目",
+          "投资回报"
+        ],
+        "purpose": "仪器项目升级和回报参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "设备投资",
+          "项目利润"
+        ],
+        "purpose": "设备投资对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "member-card-design-beauty": {
+    "name": "会员储值卡设计智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员卡方案.md",
+        "sections": [
+          "会员卡设计",
+          "储值方案"
+        ],
+        "purpose": "会员储值卡设计参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "会员活动",
+          "促销折扣"
+        ],
+        "purpose": "会员活动和折扣设计参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "channel-cac": {
+    "name": "多渠道获客成本智能体",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/微信朋友圈广告投放实操指南.md",
+        "sections": [
+          "投放预算",
+          "转化成本"
+        ],
+        "purpose": "线上投放 CAC 分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/引流获客/微信生态全链路营销指南.md",
+        "sections": [
+          "获客链路",
+          "转化跟进"
+        ],
+        "purpose": "微信生态获客成本参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/投放运营/美团经营基准数据库.md",
+        "sections": [
+          "平台推广",
+          "获客成本"
+        ],
+        "purpose": "平台获客成本对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "campaign-roi": {
+    "name": "活动效果追踪智能体",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/引流获客/餐饮引流方案案例.md",
+        "sections": [
+          "活动设计",
+          "效果复盘"
+        ],
+        "purpose": "餐饮活动复盘参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "会员活动",
+          "活动回报"
+        ],
+        "purpose": "美业会员活动 ROI 参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/营销案例/招生策划方案.md",
+        "sections": [
+          "招生活动",
+          "投放回报"
+        ],
+        "purpose": "教培招生活动 ROI 参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "referral-roi": {
+    "name": "转介绍效果智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/营销案例/转介绍方案.md",
+        "sections": [
+          "转介绍",
+          "奖励机制"
+        ],
+        "purpose": "教培转介绍方案参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/话术库/话术_转介绍裂变.md",
+        "sections": [
+          "转介绍话术",
+          "裂变机制"
+        ],
+        "purpose": "私域转介绍话术参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/理论层/F_裂变增长引擎.md",
+        "sections": [
+          "裂变增长",
+          "K 值"
+        ],
+        "purpose": "裂变增长模型参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "conversion-funnel": {
+    "name": "营销转化漏斗智能体",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/话术转化/餐饮促单话术案例.md",
+        "sections": [
+          "转化话术",
+          "成交链路"
+        ],
+        "purpose": "餐饮转化漏斗参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/话术转化/美业促单话术案例.md",
+        "sections": [
+          "促单话术",
+          "体验转化"
+        ],
+        "purpose": "美业转化漏斗参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/话术转化/教培促单话术案例.md",
+        "sections": [
+          "促单话术",
+          "试听转化"
+        ],
+        "purpose": "教培转化漏斗参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "retention-rate": {
+    "name": "客户留存率智能体",
+    "knowledgeFiles": [
+      {
+        "path": "07_私域运营专项库/理论层/B_客户生命周期管理.md",
+        "sections": [
+          "客户生命周期",
+          "留存"
+        ],
+        "purpose": "客户留存管理参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/标准执行/SOP_客户分层打标流程.md",
+        "sections": [
+          "客户分层",
+          "留存运营"
+        ],
+        "purpose": "分层留存执行参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/标准执行/SOP_沉睡客户激活流程.md",
+        "sections": [
+          "沉睡客户",
+          "激活流程"
+        ],
+        "purpose": "沉睡客户激活参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "marketing-budget": {
+    "name": "营销预算分配智能体",
+    "knowledgeFiles": [
+      {
+        "path": "01_业务场景库/投放运营/微信朋友圈广告投放实操指南.md",
+        "sections": [
+          "预算分配",
+          "投放优化"
+        ],
+        "purpose": "投放预算分配参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/投放运营/薯条投放全指南.md",
+        "sections": [
+          "投放预算",
+          "数据复盘"
+        ],
+        "purpose": "内容投放预算参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "01_业务场景库/投放运营/美团经营基准数据库.md",
+        "sections": [
+          "平台预算",
+          "效果评估"
+        ],
+        "purpose": "平台预算分配参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "churn-rate": {
+    "name": "客户流失率智能体",
+    "knowledgeFiles": [
+      {
+        "path": "07_私域运营专项库/理论层/B_客户生命周期管理.md",
+        "sections": [
+          "流失预警",
+          "客户生命周期"
+        ],
+        "purpose": "客户流失分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/标准执行/SOP_沉睡客户激活流程.md",
+        "sections": [
+          "沉睡客户",
+          "流失挽回"
+        ],
+        "purpose": "流失挽回执行参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "07_私域运营专项库/话术库/话术_复购引导.md",
+        "sections": [
+          "复购引导",
+          "客户挽留"
+        ],
+        "purpose": "复购挽留话术参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "ltv-education": {
+    "name": "客户终身价值智能体（教培版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/教培行业/营销案例/续费活动方案.md",
+        "sections": [
+          "续费",
+          "客户价值"
+        ],
+        "purpose": "教培学员 LTV 参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/营销案例/转介绍方案.md",
+        "sections": [
+          "转介绍",
+          "获客成本"
+        ],
+        "purpose": "教培 LTV/CAC 参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/教培行业/行业特征与诊断/行业对标数据库.md",
+        "sections": [
+          "续费率",
+          "客单价"
+        ],
+        "purpose": "教培 LTV 对标参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "promotion-profit": {
+    "name": "促销活动利润智能体",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/节假日促销方案.md",
+        "sections": [
+          "促销活动",
+          "利润测算"
+        ],
+        "purpose": "餐饮促销利润参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/美业行业/营销案例/会员日活动方案.md",
+        "sections": [
+          "会员活动",
+          "促销折扣"
+        ],
+        "purpose": "美业促销利润参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/营销案例/外卖满减方案.md",
+        "sections": [
+          "满减活动",
+          "利润结构"
+        ],
+        "purpose": "外卖促销利润参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
   }
 }
