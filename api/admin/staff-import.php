@@ -7,7 +7,7 @@
  * multipart: type=staff file=staff.csv
  */
 
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/common.php';
 
 header('Content-Type: application/json; charset=utf-8');
 handleCORS();
@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    jsonResponse(1, '仅支持 POST 请求');
+}
+
+[, $user, $operatorStaff] = adminRequireAuth(static fn($u, $s) => isSuperAdminUser($u, $s));
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(1, '只支持POST请求');
@@ -68,14 +74,14 @@ try {
 
     jsonResponse(0, 'success', $result);
 } catch (Exception $e) {
-    error_log('staff import error: ' . $e->getMessage());
-    jsonResponse(1, '员工导入失败: ' . $e->getMessage());
+    error_log('staff import error');
+    jsonResponse(1, '员工导入失败');
 }
 
 function readStaffImportRecords() {
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
     if (stripos($contentType, 'application/json') !== false) {
-        $input = getRequestInput();
+        $input = adminJsonInput();
         $records = $input['records'] ?? $input;
         return is_array($records) ? normalizeRecords($records) : [];
     }

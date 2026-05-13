@@ -40,8 +40,9 @@ FROM staffs s
 LEFT JOIN stores st ON s.store_id = st.id
 $whereSql
 ORDER BY s.created_at DESC
-LIMIT $offset, $perPage");
-$stmt->execute($params);
+LIMIT ? OFFSET ?");
+$limitParams = [...$params, (int)$perPage, (int)$offset];
+$stmt->execute($limitParams);
 $staffs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 jsonSuccess([

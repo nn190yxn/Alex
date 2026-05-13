@@ -307,6 +307,6 @@ try {
     jsonResponse(0, 'success', $result);
 
 } catch (Exception $e) {
-    error_log('Stats API error: ' . $e->getMessage());
-    jsonResponse(1, '服务器错误: ' . $e->getMessage());
+    error_log('Stats API error');
+    jsonResponse(1, '服务器错误');
 }

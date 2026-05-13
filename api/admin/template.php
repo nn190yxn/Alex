@@ -46,7 +46,7 @@ $templates = [
 ];
 
 if (!isset($templates[$type])) {
-    json_response(404, '模板类型不存在');
+    jsonResponse(1, '模板类型不存在');
 }
 
 header('Content-Type: application/json; charset=utf-8');
