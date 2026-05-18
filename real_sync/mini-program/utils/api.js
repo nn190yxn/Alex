@@ -14,7 +14,7 @@ function normalizeError(res, fallbackMessage) {
 function request(options) {
   options = options || {};
   const app = getApp ? getApp() : null;
-  const apiBase = options.apiBase || (app && app.globalData && app.globalData.apiBase) || 'http://122.51.223.46/api';
+  const apiBase = options.apiBase || (app && app.globalData && app.globalData.apiBase) || 'https://supercalf.com/api';
   const url = /^https?:\/\//.test(options.url || '') ? options.url : `${apiBase}${options.url || ''}`;
   const token = auth.getToken();
   const header = Object.assign({ 'Content-Type': 'application/json' }, options.header || {});

@@ -43,7 +43,15 @@ try {
     if (!isset($rules[$metricCode]) || !(int)$rules[$metricCode]['need_evidence']) {
         appJsonError(400, '该指标无需上传凭证');
     }
-    
+    $maxEvidenceCount = workloadEvidenceMaxLimit($rules[$metricCode]);
+
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM workload_evidences WHERE report_id = ? AND metric_code = ?");
+    $countStmt->execute([$reportId, $metricCode]);
+    $currentCount = (int)$countStmt->fetchColumn();
+    if ($currentCount >= $maxEvidenceCount) {
+        appJsonError(400, '该指标最多只能上传 ' . $maxEvidenceCount . ' 张凭证图片');
+    }
+
     $uploadDir = '/www/wwwroot/122.51.223.46/uploads/workload/evidence/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);

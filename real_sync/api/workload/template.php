@@ -27,15 +27,15 @@ try {
             'metric_name' => $item['metric_name'],
             'category' => $item['metric_category'],
             'unit' => $item['unit'],
-            'value_type' => $item['value_type'],
-            'required' => (bool)$item['is_required'],
-            'editable' => (bool)$item['is_editable'],
-            'default_value' => $item['default_value'],
-            'need_evidence' => (int)($item['need_evidence'] ?? 0),
-            'min_evidence_count' => (int)($item['min_evidence_count'] ?? 1),
-            'max_evidence_count' => (int)($item['max_evidence_count'] ?? 3),
-        ];
-        }, $tpl['items']),
+             'value_type' => $item['value_type'],
+             'required' => (bool)$item['is_required'],
+             'editable' => (bool)$item['is_editable'],
+             'default_value' => $item['default_value'],
+             'need_evidence' => (int)($item['need_evidence'] ?? 0),
+             'min_evidence_count' => workloadEvidenceMinLimit($item),
+             'max_evidence_count' => workloadEvidenceMaxLimit($item),
+         ];
+         }, $tpl['items']),
     ]);
 } catch (Throwable $e) {
     appLogEvent('workload.template_error', ['error' => $e->getMessage()]);

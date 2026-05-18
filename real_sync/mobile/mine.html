@@ -255,19 +255,16 @@ function showUserInfo(user) {
   document.getElementById('userCard').style.display = 'flex';
   var name = (user.staff && user.staff.name) ? user.staff.name : (user.display_name || user.username || '员工');
   const role = String(user.role || '').toLowerCase();
-  const phone = (user.staff && user.staff.phone) ? String(user.staff.phone) : '';
-  const nameLower = String(name || '').trim();
-  const campaignWhitelist = ['18285031172','18685147960','13885135551','13668501068'];
-  const campaignNames = ['何梓辛','周颖','陈琪琪','姚修宁'];
-  const canAccessCampaign = !!user.is_manager || role === 'admin' || role === 'manager' || role === 'operation' || role === 'finance' || campaignWhitelist.includes(phone) || campaignNames.includes(nameLower);
+  const canShowAdmin = !!user.is_hq || !!user.is_admin || ['admin','ceo','operation','finance'].includes(role);
+  const canAccessCampaign = canShowAdmin || ['manager','sales','coach','consultant'].includes(role);
   document.getElementById('userName').textContent = name;
-  var roleLabels = {admin:'管理员',manager:'店长',coach:'教练',sales:'顾问',newbie:'新员工'};
+  var roleLabels = {admin:'管理员',ceo:'总经理',operation:'总部运营',finance:'财务',manager:'店长',coach:'教练',sales:'顾问',consultant:'顾问',newbie:'新员工'};
   document.getElementById('userRole').textContent = roleLabels[user.role] || user.role || '员工';
   document.getElementById('loginBtn').textContent = '已登录';
   document.getElementById('loginBtn').onclick = '';
   document.getElementById('userContent').style.display = 'block';
   document.getElementById('loginTip').style.display = 'none';
-  if (canAccessCampaign) {
+  if (canShowAdmin) {
     document.getElementById('adminMenuItem').style.display = 'flex';
   }
   if (canAccessCampaign) {
@@ -329,7 +326,7 @@ async function doChangePassword() {
 function goLogin() { window.location.href = '/mobile/login.html?redirect=' + encodeURIComponent(window.location.pathname); }
 function goWorkbench() { window.location.href = '/internal.html'; }
 function goAdmin() { window.location.href = '/admin/dashboard.html'; }
-function goWorkload() { window.location.href = '/mobile/workload.html'; }
+function goWorkload() { window.location.href = '/mobile/workload-v2.html?v=20260515d'; }
 function goCampaignBoard() { window.location.href = '/周年庆数据看板-V5.html?v=20260509b'; }
 function showReadHistory() { window.location.href = '/mobile/history.html'; }
 function showSubscription() { window.location.href = '/mobile/subscription.html'; }

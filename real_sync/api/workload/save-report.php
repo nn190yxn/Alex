@@ -29,10 +29,12 @@ try {
     if ($role !== (string)($context['role'] ?? '')) {
         appJsonError(403, '只能提交本人岗位日报');
     }
-    if ($storeId !== (int)($context['store_id'] ?? 0)) {
-        appJsonError(403, '只能提交本人所属门店日报');
+    if (!appCanViewStore($context, $storeId)) {
+        $myStoreId = (int)($context['store_id'] ?? 0);
+        if ($myStoreId > 0 || !appCanEditOwn($context)) {
+            appJsonError(403, '只能提交本人所属门店日报');
+        }
     }
-    appRequireViewStore($context, $storeId);
     $staffId = (int)($context['staff_id'] ?? 0);
     appRequireOperateStaff($context, $staffId, $storeId);
 
@@ -91,28 +93,39 @@ try {
         $valueStmt->execute([$reportId, (int)$metricMap[$code]['id'], $numeric]);
     }
 
-    // Phase 2: Evidence Validation & Audit Task Creation
     if ($status === 'submitted') {
         $rules = workloadGetMetricRules($pdo, $role);
-        
-        // 1. Check if required evidence exists
-        foreach ($rules as $code => $rule) {
-            if (isset($normalizedValues[$code]) && (float)$normalizedValues[$code] > 0) {
-                if ((int)$rule['need_evidence']) {
-                    $stmt = $pdo->prepare("SELECT COUNT(*) FROM workload_evidences WHERE report_id = ? AND metric_code = ?");
-                    $stmt->execute([$reportId, $code]);
-                    $count = (int)$stmt->fetchColumn();
-                    $min = (int)$rule['min_evidence_count'];
-                    
-                    if ($count < $min) {
-                        $pdo->rollBack();
-                        appJsonError(400, '指标 [' . $code . '] 需要至少 ' . $min . ' 张凭证');
-                    }
-                }
+
+        $evidenceCountMap = [];
+        if ($rules) {
+            $evidenceStmt = $pdo->prepare("SELECT metric_code, COUNT(*) AS evidence_count FROM workload_evidences WHERE report_id = ? GROUP BY metric_code");
+            $evidenceStmt->execute([$reportId]);
+            foreach ($evidenceStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $evidenceCountMap[(string)$row['metric_code']] = (int)($row['evidence_count'] ?? 0);
             }
         }
 
-        // 2. Create Audit Tasks
+        foreach ($rules as $code => $rule) {
+            if ((int)($rule['need_evidence'] ?? 0) !== 1) {
+                continue;
+            }
+            $submittedValue = (float)($normalizedValues[$code] ?? 0);
+            if ($submittedValue <= 0) {
+                continue;
+            }
+            $requiredCount = workloadEvidenceMinLimit($rule);
+            $maxAllowedCount = workloadEvidenceMaxLimit($rule);
+            $actualCount = (int)($evidenceCountMap[$code] ?? 0);
+            if ($actualCount < $requiredCount) {
+                $metricName = (string)($metricMap[$code]['metric_name'] ?? $code);
+                appJsonError(400, sprintf('%s 至少需要上传 %d 张凭证图片', $metricName, $requiredCount));
+            }
+            if ($actualCount > $maxAllowedCount) {
+                $metricName = (string)($metricMap[$code]['metric_name'] ?? $code);
+                appJsonError(400, sprintf('%s 最多只能上传 %d 张凭证图片', $metricName, $maxAllowedCount));
+            }
+        }
+
         $delTasks = $pdo->prepare("DELETE FROM workload_audit_tasks WHERE report_id = ?");
         $delTasks->execute([$reportId]);
         

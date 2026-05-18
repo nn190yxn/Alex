@@ -3,7 +3,7 @@ const api = require('./utils/api');
 
 App({
   globalData: {
-    apiBase: 'http://122.51.223.46/api',
+    apiBase: 'https://supercalf.com/api',
     userInfo: null,
     token: null,
     deviceInfo: null

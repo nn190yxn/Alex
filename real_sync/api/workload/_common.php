@@ -188,6 +188,15 @@ function workloadGetMetricRules(PDO $pdo, string $role): array {
     return $rules;
 }
 
+function workloadEvidenceMaxLimit(array $rule): int {
+    return min(10, max(1, (int)($rule['max_evidence_count'] ?? 3)));
+}
+
+function workloadEvidenceMinLimit(array $rule): int {
+    $min = max(1, (int)($rule['min_evidence_count'] ?? 1));
+    return min($min, workloadEvidenceMaxLimit($rule));
+}
+
 function workloadEnsureAuditSchema(PDO $pdo): void {
     $pdo->exec("CREATE TABLE IF NOT EXISTS workload_metric_rules (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

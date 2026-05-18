@@ -2,6 +2,7 @@
   const LOGIN_PATH = '/mobile/login.html';
   const redirectKey = 'mc_internal_auth_redirect_once';
   const path = window.location.pathname || '/';
+  const shouldSkipAutoInternalAuth = !!window.__SKIP_AUTO_INTERNAL_AUTH__;
   const UNIFIED_NAV_ITEMS = [
     { label: '内网首页', href: '/internal.html' },
     { label: '制度中心', href: '/制度标准/' },
@@ -21,6 +22,11 @@
     return currentPath === targetHref;
   }
 
+  function canShowAdminDashboardEntry(user) {
+    const role = String(user?.role || '').toLowerCase();
+    return !!user?.is_hq || !!user?.is_admin || ['admin', 'ceo', 'operation', 'finance'].includes(role);
+  }
+
   function unifyTopNav(user = null) {
     const nav = document.querySelector('.site-header .topbar .nav');
     if (!nav) {
@@ -28,11 +34,11 @@
     }
 
     const currentPath = window.location.pathname || '/';
-    const role = String(user?.role || '').toLowerCase();
-    const isManager = !!user?.is_manager || role === 'admin' || role === 'manager';
-
     const html = [];
     for (const item of UNIFIED_NAV_ITEMS) {
+      if (item.href === '/admin/dashboard.html' && !canShowAdminDashboardEntry(user)) {
+        continue;
+      }
       const classes = [];
       if (navIsCurrent(item.href, currentPath)) {
         classes.push('current');
@@ -42,9 +48,6 @@
       }
       html.push(`<a href="${item.href}"${classes.length ? ` class="${classes.join(' ')}"` : ''}>${item.label}</a>`);
     }
-
-    // 管理中心固定显示，权限由后台页面自身控制
-
     nav.innerHTML = html.join('');
   }
 
@@ -140,7 +143,9 @@
     }
 
     sessionStorage.removeItem(redirectKey);
-    unifyTopNav(result.user);
+    if (!shouldSkipAutoInternalAuth) {
+      unifyTopNav(result.user);
+    }
     if (typeof options.onAuthed === 'function') {
       await options.onAuthed(result.user);
     }
@@ -156,9 +161,11 @@
     return;
   }
 
-  unifyTopNav();
+  if (!shouldSkipAutoInternalAuth) {
+    unifyTopNav();
+  }
 
-  if (window.__SKIP_AUTO_INTERNAL_AUTH__) {
+  if (shouldSkipAutoInternalAuth) {
     return;
   }
 

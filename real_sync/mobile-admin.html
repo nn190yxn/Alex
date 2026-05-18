@@ -1,131 +1,104 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>管理员中心 - 追光小牛</title>
-<link rel="stylesheet" href="/styles.css">
-<script src="/js/auth.js"></script>
-<style>
-:root { --brand-orange: #ff6b35; --brand-ink: #1f1a17; --brand-muted: #6b625c; --bg: #f5f3f0; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--brand-ink); background: var(--bg); min-height: 100vh; padding-bottom: 20px; }
-.header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.95); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(0,0,0,0.06); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
-.header-title { font-size: 17px; font-weight: 700; }
-.back-btn { font-size: 14px; color: var(--brand-orange); background: none; border: none; cursor: pointer; }
-.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
-.stat-card { background: white; border-radius: 16px; padding: 16px; border: 1px solid rgba(0,0,0,0.06); }
-.stat-label { font-size: 12px; color: var(--brand-muted); margin-bottom: 4px; }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--brand-orange); }
-.section { padding: 0 16px; margin-bottom: 16px; }
-.section-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-.staff-card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; }
-.staff-info { flex: 1; }
-.staff-name { font-size: 15px; font-weight: 600; }
-.staff-detail { font-size: 12px; color: var(--brand-muted); margin-top: 2px; }
-.staff-actions { display: flex; gap: 6px; }
-.staff-actions button { padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); background: white; font-size: 11px; cursor: pointer; }
-.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-.badge-green { background: #e8f5e9; color: #2e7d32; }
-.badge-red { background: #fce4ec; color: #c62828; }
-.search-box { padding: 0 16px; margin-bottom: 12px; }
-.search-box input { width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 10px 12px; font-size: 13px; outline: none; }
-.empty { text-align: center; padding: 40px 20px; color: var(--brand-muted); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>跳转中 - 管理中心</title>
+  <meta http-equiv="refresh" content="0; url=/admin/dashboard.html">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    :root {
+      --brand-orange: #ff6b35;
+      --brand-ink: #1f1a17;
+      --brand-muted: #6b625c;
+      --bg: #f5f3f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--brand-ink);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .card {
+      width: min(100%, 420px);
+      padding: 28px 24px;
+      border-radius: 20px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 12px 30px rgba(31, 26, 23, 0.08);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--brand-muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: var(--brand-orange);
+      color: #fff;
+    }
+
+    .secondary {
+      background: rgba(255,107,53,0.08);
+      color: var(--brand-orange);
+    }
+  </style>
 </head>
 <body>
-<header class="header">
-  <button class="back-btn" onclick="history.back()">返回</button>
-  <div class="header-title">管理员中心</div>
-  <div style="width:40px"></div>
-</header>
-<div class="stat-grid" id="statGrid"><div class="empty">加载中...</div></div>
-<div class="search-box"><input id="searchInput" placeholder="搜索员工姓名/手机号..." oninput="loadStaffs()"></div>
-<div class="section">
-  <div class="section-title">员工列表</div>
-  <div id="staffList"><div class="empty">加载中...</div></div>
-</div>
-<script src="/js/auth.js"></script>
-<script>
-// Access control check
-(function() {
-  var token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/mobile/login.html?redirect=' + encodeURIComponent(window.location.href);
-    return;
-  }
-  fetch('/api/auth/me.php', { headers: { 'Authorization': 'Bearer ' + token } })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.code !== 0 || !data.data || (data.data.role !== 'admin' && data.data.role !== 'manager')) {
-        document.body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:#6b625c;"><p>无权限访问管理员中心</p><a href="/mobile/mine.html" style="color:#ff6b35;">返回个人中心</a></div>';
+  <div class="card">
+    <h1>正在前往管理中心</h1>
+    <p>旧平铺管理员页已收敛为兼容入口，系统将跳转到正式后台首页。</p>
+    <div class="actions">
+      <a class="primary" href="/admin/dashboard.html">进入管理中心</a>
+      <a class="secondary" href="/mobile/mine.html">返回个人中心</a>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var target = '/admin/dashboard.html';
+      var query = window.location.search || '';
+      if (query) {
+        target += query;
       }
-    })
-    .catch(function() {
-      window.location.href = '/mobile/login.html?redirect=' + encodeURIComponent(window.location.href);
-    });
-})();
-</script>
-<script>
-const API = '/api/admin';
-const roleLabels = {admin:'管理员',manager:'店长',coach:'教练',sales:'顾问',newbie:'新员工'};
-document.addEventListener('DOMContentLoaded', loadDashboard);
-
-async function loadDashboard() {
-  try {
-    const res = await fetch(API + '/dashboard.php', authHeaders());
-    const data = await res.json();
-    if (data.code !== 0) return;
-    const d = data.data;
-    const passRate = d.pass_total_users > 0 ? Math.round(d.pass_completed_users / d.pass_total_users * 100) : 0;
-    const examRate = d.exam_completed > 0 ? Math.round(d.exam_passed / d.exam_completed * 100) : 0;
-    document.getElementById('statGrid').innerHTML = `
-      <div class="stat-card"><div class="stat-label">员工总数</div><div class="stat-value">${d.staff_total}</div></div>
-      <div class="stat-card"><div class="stat-label">考试完成</div><div class="stat-value">${d.exam_completed}</div><div style="font-size:11px;color:var(--brand-muted);">通过率 ${examRate}%</div></div>
-      <div class="stat-card"><div class="stat-label">通关用户</div><div class="stat-value">${d.pass_completed_users}/${d.pass_total_users}</div></div>
-      <div class="stat-card"><div class="stat-label">知识库阅读</div><div class="stat-value">${d.knowledge_read}</div></div>
-    `;
-    loadStaffs();
-  } catch(e) {}
-}
-
-async function loadStaffs() {
-  const kw = document.getElementById('searchInput').value;
-  const url = API + '/staff-list.php?keyword=' + encodeURIComponent(kw);
-  try {
-    const res = await fetch(url, authHeaders());
-    const data = await res.json();
-    if (data.code !== 0) return;
-    const el = document.getElementById('staffList');
-    if (data.data.list.length === 0) { el.innerHTML = '<div class="empty">没有找到员工</div>'; return; }
-    let html = '';
-    data.data.list.forEach(function(s) {
-      const statusBadge = s.status == 1 ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-red">停用</span>';
-      html += `<div class="staff-card"><div class="staff-info"><div class="staff-name">${s.name||'-'} ${statusBadge}</div><div class="staff-detail">${s.phone||''} | ${roleLabels[s.role]||s.role} | 考试${s.exam_count||0}次</div></div><div class="staff-actions"><button onclick="toggleStatus(${s.id},${s.status==1?0:1})">${s.status==1?'停用':'启用'}</button><button onclick="resetPwd(${s.user_id},'${s.name}')">重置密码</button></div></div>`;
-    });
-    el.innerHTML = html;
-  } catch(e) {}
-}
-
-async function toggleStatus(sid, status) {
-  if (!confirm('确定' + (status===1?'启用':'停用') + '该账号？')) return;
-  try {
-    const res = await fetch(API + '/staff-toggle-status.php', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ staff_id: sid, status: status }) });
-    const data = await res.json();
-    if (data.code === 0) { alert(data.message); loadStaffs(); }
-    else alert(data.message);
-  } catch(e) { alert('操作失败'); }
-}
-
-async function resetPwd(uid, name) {
-  if (!confirm('重置 ' + name + ' 密码为 123456？')) return;
-  try {
-    const res = await fetch(API + '/reset-password.php', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid }) });
-    const data = await res.json();
-    if (data.code === 0) alert('密码已重置：' + data.data.default_password);
-    else alert(data.message);
-  } catch(e) { alert('重置失败'); }
-}
-</script>
+      window.location.replace(target);
+    })();
+  </script>
 </body>
 </html>

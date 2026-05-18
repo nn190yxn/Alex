@@ -139,10 +139,6 @@
         
         <!-- 数据概览 -->
         <div class="stats-bar">
-          <a class="stat-card" href="/周年庆数据看板-V5.html?v=20260509b" style="border-color:var(--brand-orange);">
-            <span class="label">🔥 7周年庆</span>
-            <span class="value" id="campaignDay">第1天</span>
-          </a>
           <a class="stat-card" href="/制度标准/">
             <span class="label">制度文件</span>
             <span class="value">40+</span>
@@ -173,12 +169,7 @@
         <!-- 核心工作入口 -->
         <div class="section-title">核心工作入口</div>
         <div class="module-grid">
-          <a class="module-card" href="/周年庆数据看板-V5.html?v=20260509b" style="--c: #ff6b35; --bg: #fff4ec; border-color: #ff6b35;">
-            <div class="icon" style="font-size:28px;">🔥</div>
-            <h3>7周年庆作战看板</h3>
-            <div class="desc">45天冲刺 · 每日数据录入 · 工作量排行</div>
-          </a>
-          <a class="module-card" href="/mobile/workload.html" style="--c: #f39c12; --bg: #fff7e6; border-color: #f39c12;">
+          <a class="module-card" href="/mobile/workload-v2.html?v=20260515d" style="--c: #f39c12; --bg: #fff7e6; border-color: #f39c12;">
             <div class="icon">&#128221;</div>
             <h3>工作量日报</h3>
             <div class="desc">销售/教练每日过程指标提交</div>
@@ -257,45 +248,18 @@ function goStaffLogin(){
     alert('请输入手机号和密码');
     return;
   }
-  var formData=new FormData();
-  formData.append('username', username);
-  formData.append('password', pwd);
-  fetch('/api/auth-jwt.php', { method:'POST', body:formData }).then(function(r){ return r.json(); }).then(function(res){
-    if(res && res.code===0 && res.data && res.data.token){
-      localStorage.setItem('jwt_token', res.data.token);
-      localStorage.setItem('user_info', JSON.stringify(res.data.user || {}));
-      window.location.href='/internal.html';
-      return;
-    }
-    alert((res && res.message) || '登录失败，请检查手机号和密码');
-  }).catch(function(){
-    alert('登录失败，请检查网络后重试');
-  });
+  window.location.href='/mobile/login.html?redirect=%2Finternal.html';
 }
 
 requirePageAuth({
   onAuthed: function(user){
     if(!user) return;
     var role = String(user.role || '').toLowerCase();
-    var phone = String((user.staff && user.staff.phone) || '').trim();
-    var name = String((user.staff && user.staff.name) || user.display_name || user.username || '').trim();
-    var isManager = !!user.is_manager || role === 'admin' || role === 'manager' || role === 'operation' || role === 'finance'
-      || ['18285031172','18685147960','13885135551','13668501068'].includes(phone)
-      || ['何梓辛','周颖','陈琪琪','姚修宁'].includes(name);
+    var canShowAdmin = !!user.is_hq || !!user.is_admin || ['admin','ceo','operation','finance'].includes(role);
     var a=document.getElementById('adminLink');
-    if(a && isManager) a.style.display='';
+    if(a && canShowAdmin) a.style.display='';
   }
 });
 </script>
 </body>
-  <script>
-    // 7周年庆倒计时
-    (function(){
-      var start=new Date('2026-05-05');
-      var now=new Date();
-      var day=Math.max(1,Math.min(45,Math.ceil((now-start)/86400000)));
-      var el=document.getElementById('campaignDay');
-      if(el) el.textContent='第'+day+'天';
-    })();
-  </script>
 </html>
