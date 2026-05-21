@@ -17,8 +17,9 @@ Page({
     submitting: false,
   },
 
+  recorderManager: null,
   recordTimer: null,
-  tempFilePath: '',
+  recorderCallbacksBound: false,
 
   onShow() {
     this.setData({
@@ -28,60 +29,18 @@ Page({
       isRecording: false,
       recordTime: 0,
     });
-    if (this.recordTimer) {
-      clearInterval(this.recordTimer);
-      this.recordTimer = null;
-    }
+    this._stopRecord();
+    this._initRecorder();
   },
 
   onUnload() {
-    if (this.recordTimer) {
-      clearInterval(this.recordTimer);
-      this.recordTimer = null;
-    }
-    if (this.recorderManager) {
-      this.recorderManager.stop();
-    }
+    this._stopRecord();
+    this._clearRecordTimer();
   },
 
-  switchScene(e) {
-    this.setData({ activeScene: Number(e.currentTarget.dataset.index) });
-  },
-
-  chooseFile() {
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['mix'],
-      sourceType: ['album'],
-      success: (res) => {
-        const file = res.tempFiles[0];
-        const name = file.name || 'audio';
-        this.setData({
-          filePath: file.tempFilePath,
-          fileName: name,
-          isRecording: false,
-          recordTime: 0,
-        });
-        if (this.recordTimer) {
-          clearInterval(this.recordTimer);
-          this.recordTimer = null;
-        }
-      },
-    });
-  },
-
-  toggleRecord() {
-    if (this.data.isRecording) {
-      this.stopRecord();
-    } else {
-      this.startRecord();
-    }
-  },
-
-  startRecord() {
-    wx.authorize({ scope: 'scope.record', fail: () => {} });
-
-    const rm = this.recorderManager || wx.getRecorderManager();
+  _initRecorder() {
+    if (this.recorderCallbacksBound) return;
+    const rm = wx.getRecorderManager();
     this.recorderManager = rm;
 
     rm.onStart(() => {
@@ -92,42 +51,93 @@ Page({
     });
 
     rm.onStop((res) => {
-      if (this.recordTimer) {
-        clearInterval(this.recordTimer);
-        this.recordTimer = null;
-      }
+      this._clearRecordTimer();
       this.setData({
         isRecording: false,
         filePath: res.tempFilePath,
-        fileName: `录音_${this.formatTime(this.data.recordTime)}.m4a`,
+        fileName: `录音_${this._formatTime(this.data.recordTime)}.m4a`,
       });
     });
 
     rm.onError((err) => {
       console.error('录音错误:', err);
+      this._clearRecordTimer();
       this.setData({ isRecording: false });
       wx.showToast({ title: '录音失败', icon: 'none' });
     });
 
-    rm.start({
+    this.recorderCallbacksBound = true;
+  },
+
+  _stopRecord() {
+    if (this.recorderManager) {
+      try { this.recorderManager.stop(); } catch (e) {}
+    }
+  },
+
+  _clearRecordTimer() {
+    if (this.recordTimer) {
+      clearInterval(this.recordTimer);
+      this.recordTimer = null;
+    }
+  },
+
+  _formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  },
+
+  switchScene(e) {
+    this.setData({ activeScene: Number(e.currentTarget.dataset.index) });
+  },
+
+  chooseFile() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['audio'],
+      sourceType: ['album'],
+      success: (res) => {
+        const file = res.tempFiles[0];
+        const tempPath = file.tempFilePath || '';
+        const name = file.name || 'audio';
+        const ext = name.split('.').pop().toLowerCase();
+        const allowedAudioExts = ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'webm'];
+        if (!allowedAudioExts.includes(ext)) {
+          wx.showToast({ title: '请选择音频文件', icon: 'none' });
+          return;
+        }
+        this.setData({
+          filePath: tempPath,
+          fileName: name,
+          isRecording: false,
+          recordTime: 0,
+        });
+        this._stopRecord();
+        this._clearRecordTimer();
+      },
+    });
+  },
+
+  toggleRecord() {
+    if (this.data.isRecording) {
+      this._stopRecord();
+    } else {
+      this._startRecord();
+    }
+  },
+
+  _startRecord() {
+    wx.authorize({ scope: 'scope.record', fail: () => {} });
+    if (!this.recorderManager) this._initRecorder();
+
+    this.recorderManager.start({
       duration: 600000,
       sampleRate: 16000,
       numberOfChannels: 1,
       encodeBitRate: 48000,
       format: 'aac',
     });
-  },
-
-  stopRecord() {
-    if (this.recorderManager) {
-      this.recorderManager.stop();
-    }
-  },
-
-  formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   },
 
   submitReview() {
@@ -177,8 +187,12 @@ Page({
       },
     });
 
+    let lastProgress = 0;
     uploadTask.onProgressUpdate((res) => {
-      wx.showLoading({ title: `上传 ${res.progress}%` });
+      if (res.progress - lastProgress >= 10 || res.progress === 100) {
+        wx.showLoading({ title: `上传 ${res.progress}%` });
+        lastProgress = res.progress;
+      }
     });
   },
 });

@@ -18,10 +18,17 @@ Page({
 
   pollTimer: null,
   pollCount: 0,
+  failCount: 0,
 
   onLoad(options) {
+    const id = Number(options.id);
+    if (!id) {
+      wx.showToast({ title: '参数错误', icon: 'none' });
+      setTimeout(() => wx.navigateBack({ delta: 1 }), 1500);
+      return;
+    }
     this.setData({
-      recordId: options.id,
+      recordId: String(id),
       sceneName: options.scene || '复盘分析',
     });
     this.startPoll();
@@ -36,6 +43,7 @@ Page({
 
   startPoll() {
     this.pollCount = 0;
+    this.failCount = 0;
     this.doPoll();
   },
 
@@ -44,16 +52,20 @@ Page({
       this.setData({ loading: false, statusText: '分析超时，请稍后查看' });
       return;
     }
+    if (this.failCount >= 5) {
+      this.setData({ loading: false, statusText: '网络连接失败，请稍后重试' });
+      return;
+    }
 
     this.pollCount++;
 
     api.get('/skill/review-list.php', {
-      data: { page: 1, page_size: 20 },
+      data: { record_id: this.data.recordId },
       redirectOnUnauthorized: false,
     })
       .then((res) => {
-        const records = (res.data && res.data.records) || [];
-        const record = records.find((r) => Number(r.id) === Number(this.data.recordId));
+        this.failCount = 0;
+        const record = res.data && res.data.record;
 
         if (!record) {
           this.pollTimer = setTimeout(() => this.doPoll(), 3000);
@@ -62,11 +74,12 @@ Page({
 
         if (record.status === 'completed') {
           if (this.pollTimer) clearTimeout(this.pollTimer);
+          const aiReport = this._parseReport(record.ai_report);
           this.setData({
             loading: false,
             status: 'completed',
             statusText: '分析完成',
-            result: record,
+            result: Object.assign({}, record, { ai_report: aiReport }),
           });
         } else if (record.status === 'failed') {
           if (this.pollTimer) clearTimeout(this.pollTimer);
@@ -84,8 +97,40 @@ Page({
         }
       })
       .catch(() => {
+        this.failCount++;
         this.pollTimer = setTimeout(() => this.doPoll(), 3000);
       });
+  },
+
+  _parseReport(report) {
+    if (!report) return '';
+    if (typeof report === 'string') {
+      try {
+        const parsed = JSON.parse(report);
+        if (typeof parsed === 'object') {
+          let text = '';
+          for (const key in parsed) {
+            if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+              text += `## ${key}\n\n${parsed[key]}\n\n`;
+            }
+          }
+          return text.trim();
+        }
+        return report;
+      } catch (e) {
+        return report;
+      }
+    }
+    if (typeof report === 'object') {
+      let text = '';
+      for (const key in report) {
+        if (Object.prototype.hasOwnProperty.call(report, key)) {
+          text += `## ${key}\n\n${report[key]}\n\n`;
+        }
+      }
+      return text.trim();
+    }
+    return String(report);
   },
 
   goBackToList() {

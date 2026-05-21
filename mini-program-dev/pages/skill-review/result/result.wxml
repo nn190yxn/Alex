@@ -17,10 +17,11 @@
     <view class="result-card">
       <view class="result-header">
         <view class="score-area">
-          <view class="score-value">{{result.ai_score}}</view>
+          <view class="score-value" wx:if="{{result.ai_score > 0}}">{{result.ai_score}}</view>
+          <view class="score-value" wx:else>--</view>
           <view class="score-total">/ 100 分</view>
         </view>
-        <view class="level-badge level-{{result.ai_level}}">
+        <view class="level-badge level-{{result.ai_level}}" wx:if="{{result.ai_level}}">
           {{result.ai_level}}
         </view>
       </view>
@@ -32,7 +33,7 @@
     </view>
 
     <view class="action-btns">
-      <button class="action-btn secondary" bindtap="goBackToList">查看历史</button>
+      <button class="action-btn secondary" bindtap="goBackToList">返回</button>
       <button class="action-btn primary" bindtap="goUpload">新的复盘</button>
     </view>
   </view>
