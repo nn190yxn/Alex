@@ -88,6 +88,32 @@
         .module-grid { grid-template-columns: repeat(2, 1fr); }
         .stats-bar { grid-template-columns: repeat(2, 1fr); }
       }
+
+      /* Global Search */
+      .global-search { position: relative; margin-left: 16px; }
+      .global-search-input {
+        width: 220px; height: 34px; padding: 0 36px 0 12px; border-radius: 999px;
+        border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.8);
+        font-size: 13px; outline: none; transition: all 0.2s;
+      }
+      .global-search-input:focus {
+        width: 280px; border-color: var(--brand-orange);
+        background: #fff; box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+      }
+      .global-search-btn {
+        position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+        width: 26px; height: 26px; border: none; background: var(--brand-orange);
+        color: #fff; border-radius: 50%; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; font-size: 14px;
+      }
+      .global-search-btn:hover { opacity: 0.9; }
+      .global-search-input::placeholder { color: #b0a89e; }
+      
+      @media (max-width: 1100px) {
+        .global-search { display: none; }
+      }
+
+
       @media (max-width: 600px) {
         .module-grid { grid-template-columns: 1fr; }
         .tool-grid { grid-template-columns: 1fr; }
@@ -115,6 +141,12 @@
           <a href="/action-library/">教案</a>
           <a href="/survey-manage.html">问卷</a>
           <a class="staff-link" href="/mobile/mine.html">我的</a>
+                    <div class="global-search">
+            <input type="text" class="global-search-input" id="globalSearchInput" placeholder="搜索知识、制度、员工..." />
+            <button class="global-search-btn" onclick="doGlobalSearch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+          </div>
           <a id="adminLink" href="/admin/dashboard.html" style="display:none;background:#1f1a17;color:#fff;">管理员</a>
         </nav>
       </div>
@@ -261,5 +293,25 @@ requirePageAuth({
   }
 });
 </script>
-</body>
+
+    <script>
+      function doGlobalSearch() {
+        var q = document.getElementById('globalSearchInput').value.trim();
+        if (q) {
+          window.location.href = '/search.html?q=' + encodeURIComponent(q);
+        }
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        var input = document.getElementById('globalSearchInput');
+        if (input) {
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              doGlobalSearch();
+            }
+          });
+        }
+      });
+    </script>
+
+  </body>
 </html>
