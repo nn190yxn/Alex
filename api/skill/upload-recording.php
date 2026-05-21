@@ -51,11 +51,13 @@ if (!isset($_FILES['recording']) || $_FILES['recording']['error'] !== UPLOAD_ERR
 }
 
 $recording = $_FILES['recording'];
-$ext = strtolower(pathinfo($recording['name'], PATHINFO_EXTENSION));
-$allowedExts = ['mp3', 'wav', 'm4a', 'ogg', 'webm'];
+// 安全过滤：只保留字母数字和点号，防止路径穿越和特殊字符注入
+$rawExt = preg_replace('/[^a-zA-Z0-9.]/', '', pathinfo($recording['name'], PATHINFO_EXTENSION));
+$ext = strtolower($rawExt);
+$allowedExts = ['mp3', 'wav', 'm4a', 'ogg', 'webm', 'aac'];
 if (!in_array($ext, $allowedExts)) {
     http_response_code(400);
-    echo json_encode(['code' => 400, 'message' => '不支持的音频格式，请上传 mp3/wav/m4a 格式'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['code' => 400, 'message' => '不支持的音频格式，请上传 mp3/wav/m4a/aac 格式'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -71,7 +73,8 @@ if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }
 
-$filename = date('YmdHis') . '_' . substr(md5(uniqid()), 0, 8) . '.' . $ext;
+// 安全文件名：使用 random_bytes 避免碰撞，不依赖用户输入
+$filename = date('YmdHis') . '_' . bin2hex(random_bytes(16)) . '.' . $ext;
 $savePath = $uploadDir . $filename;
 
 if (!move_uploaded_file($recording['tmp_name'], $savePath)) {
@@ -434,7 +437,7 @@ function readSkillContent($skillDir) {
 }
 
 function getAudioMimeType($ext) {
-    $map = ['mp3' => 'audio/mpeg', 'wav' => 'audio/wav', 'm4a' => 'audio/mp4', 'ogg' => 'audio/ogg', 'webm' => 'audio/webm'];
+    $map = ['mp3' => 'audio/mpeg', 'wav' => 'audio/wav', 'm4a' => 'audio/mp4', 'ogg' => 'audio/ogg', 'webm' => 'audio/webm', 'aac' => 'audio/aac'];
     return $map[$ext] ?? 'audio/mpeg';
 }
 
