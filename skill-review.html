@@ -395,38 +395,50 @@
         }
       });
 
-      // 轮询结果
+      // 轮询结果（使用 record_id 单条查询）
       async function pollResult(recordId) {
         var maxAttempts = 60;
         var attempt = 0;
+        var failCount = 0;
 
         while (attempt < maxAttempts) {
           attempt++;
           await sleep(3000);
 
           try {
-            var response = await apiFetch('/api/skill/review-list.php?page=1&page_size=20');
-            if (response.data && response.data.records) {
-              var record = response.data.records.find(function(r) { return r.id == recordId; });
-              if (record) {
-                if (record.status === 'completed') {
-                  showResult(record);
-                  return;
-                } else if (record.status === 'failed') {
-                  showToast('分析失败: ' + (record.error_message || '未知错误'));
-                  resetUI();
-                  return;
-                } else {
-                  var texts = {
-                    'transcribing': '正在将录音转为文字...',
-                    'analyzing': 'AI 正在分析录音内容...',
-                  };
-                  document.getElementById('progressText').textContent = texts[record.status] || '正在处理中...';
-                }
+            var response = await apiFetch('/api/skill/review-list.php?record_id=' + recordId);
+            if (response.data && response.data.record) {
+              failCount = 0;
+              var record = response.data.record;
+              if (record.status === 'completed') {
+                showResult(record);
+                return;
+              } else if (record.status === 'failed') {
+                showToast('分析失败: ' + (record.error_message || '未知错误'));
+                resetUI();
+                return;
+              } else {
+                var texts = {
+                  'transcribing': '正在将录音转为文字...',
+                  'analyzing': 'AI 正在分析录音内容...',
+                };
+                document.getElementById('progressText').textContent = texts[record.status] || '正在处理中...';
+              }
+            } else {
+              failCount++;
+              if (failCount >= 5) {
+                showToast('网络连接失败，请稍后重试');
+                resetUI();
+                return;
               }
             }
           } catch (err) {
-            console.error('Poll error:', err);
+            failCount++;
+            if (failCount >= 5) {
+              showToast('网络连接失败，请稍后重试');
+              resetUI();
+              return;
+            }
           }
         }
 
@@ -439,32 +451,56 @@
         resetUI();
         document.getElementById('resultContainer').style.display = 'block';
 
-        var report = record.ai_report;
-        try { report = typeof report === 'string' ? JSON.parse(report) : report; } catch(e) {}
+        var report = parseReport(record.ai_report);
 
         var html = '<div class="card">';
         html += '<div class="result-header">';
         html += '<div><div style="font-size:12px;color:var(--muted);">' + esc(sceneNames[record.scene_type]) + '</div>';
-        html += '<div class="result-score">' + record.ai_score + '</div>';
+        html += '<div class="result-score">' + (record.ai_score > 0 ? record.ai_score : '--') + '</div>';
         html += '<div style="font-size:12px;color:var(--muted);">/ 100 分</div></div>';
         if (record.ai_level) {
           html += '<div class="result-level level-' + esc(record.ai_level) + '">' + esc(record.ai_level) + '</div>';
         }
         html += '</div>';
 
-        if (typeof report === 'string') {
+        if (report) {
           html += '<div class="result-section"><h4>分析报告</h4><p>' + esc(report) + '</p></div>';
-        } else if (report && typeof report === 'object') {
-          for (var key in report) {
-            if (Object.prototype.hasOwnProperty.call(report, key)) {
-              html += '<div class="result-section"><h4>' + esc(key) + '</h4><p>' + esc(String(report[key])) + '</p></div>';
-            }
-          }
         }
 
         html += '</div>';
         document.getElementById('resultContainer').innerHTML = html;
         loadHistory();
+      }
+
+      function parseReport(report) {
+        if (!report) return '';
+        if (typeof report === 'string') {
+          try {
+            var parsed = JSON.parse(report);
+            if (typeof parsed === 'object') {
+              var text = '';
+              for (var key in parsed) {
+                if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+                  text += key + ':\n' + parsed[key] + '\n\n';
+                }
+              }
+              return text.trim();
+            }
+            return report;
+          } catch (e) {
+            return report;
+          }
+        }
+        if (typeof report === 'object') {
+          var text = '';
+          for (var key in report) {
+            if (Object.prototype.hasOwnProperty.call(report, key)) {
+              text += key + ':\n' + report[key] + '\n\n';
+            }
+          }
+          return text.trim();
+        }
+        return String(report);
       }
 
       // 加载历史
