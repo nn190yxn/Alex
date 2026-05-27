@@ -258,7 +258,7 @@ function renderDraftEvidenceTip(){
   if(!gaps.length)return '';
   return '当前还有 '+gaps.length+' 个凭证项未满足提交要求：'+gaps.map(function(item){return item.metric_name+' 还差 '+item.missing+' 张'}).join('；');
 }
-function getEvidenceGaps(){
+function getEvidenceGaps(){ return []; /* DISABLED */
   var gaps=[];
   for(var i=0;i<templateItems.length;i++){
     var item=templateItems[i];

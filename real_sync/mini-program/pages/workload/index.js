@@ -270,7 +270,7 @@ Page({
     return currentReportId;
   },
 
-  validateEvidenceRequirements() {
+  validateEvidenceRequirements() { return ''; /* DISABLED */
     for (const item of this.data.items) {
       if (!item.need_evidence) continue;
       const minCount = Math.max(1, Number(item.min_evidence_count || 1));
@@ -296,7 +296,7 @@ Page({
     this.setData({ draftEvidenceTip });
   },
 
-  getEvidenceGaps() {
+  getEvidenceGaps() { return []; /* DISABLED */
     const gaps = [];
     for (const item of this.data.items) {
       if (!item.need_evidence) continue;
