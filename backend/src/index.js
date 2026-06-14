@@ -27,6 +27,10 @@ app.use(express.static(DIST_DIR, {
 }))
 
 import { requestLogger, perfMonitor, errorTracker } from './middleware/logger.js'
+import { initDB } from './models/db.js'
+
+// Initialize database tables
+initDB().catch(err => console.warn('[Init] DB init warning:', err.message))
 
 // Request logging (must be before routes)
 app.use(requestLogger)
