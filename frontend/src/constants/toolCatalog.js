@@ -82,6 +82,14 @@ export const allTools = [
   createTool({ code: 'hook', name: '钩子文案生成器', description: '把短视频开头、海报标题和开场句做得更抓人。', tag: '内容', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['restaurant', 'education', 'beauty', 'douyin'], freePolicy: '3/day', sceneTags: ['钩子', '短视频开头'] }),
   createTool({ code: 'script', name: '短视频脚本生成器', description: '给出结构完整的脚本框架，适合老板和员工直接开拍。', tag: '内容', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['restaurant', 'education', 'beauty', 'service', 'douyin'], freePolicy: '2/day', sceneTags: ['脚本', '短视频'] }),
   createTool({ code: 'xiaohongshu', name: '小红书内容生成器', description: '面向种草场景输出标题、正文和互动引导。', tag: '内容', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['beauty', 'education', 'service'], freePolicy: '2/day', sceneTags: ['种草', '小红书'] }),
+  createTool({ code: 'xiaohongshu-education', name: '教培小红书运营专版', description: '面向校区招生、课程转化和家长信任建设生成小红书笔记方案。', tag: '教培', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['education'], freePolicy: '2/day', sceneTags: ['教培招生', '小红书', '家长种草'], capabilityType: 'industry', path: '/tools/xiaohongshu-education' }),
+  createTool({ code: 'douyin-education', name: '教培抖音运营专版', description: '面向同城招生、老师IP、试听转化生成教培短视频运营方案。', tag: '教培', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['education', 'douyin'], freePolicy: '2/day', sceneTags: ['教培招生', '抖音', '短视频'], capabilityType: 'industry', path: '/tools/douyin-education' }),
+  createTool({ code: 'xiaohongshu-beauty', name: '美业小红书运营专版', description: '面向项目种草、门店信任和私信预约生成小红书笔记方案。', tag: '美业', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['beauty'], freePolicy: '2/day', sceneTags: ['美业拓客', '小红书', '项目种草'], capabilityType: 'industry', path: '/tools/xiaohongshu-beauty' }),
+  createTool({ code: 'douyin-beauty', name: '美业抖音运营专版', description: '面向同城拓客、团购核销和老板 IP 生成短视频运营方案。', tag: '美业', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['beauty', 'douyin'], freePolicy: '2/day', sceneTags: ['美业拓客', '抖音', '同城到店'], capabilityType: 'industry', path: '/tools/douyin-beauty' }),
+  createTool({ code: 'xiaohongshu-restaurant', name: '餐饮小红书运营专版', description: '按正餐、小吃、火锅、奶茶、轻食、西式等品类生成种草笔记和到店转化方案。', tag: '餐饮', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['restaurant'], freePolicy: '2/day', sceneTags: ['餐饮种草', '小红书', '同城到店'], capabilityType: 'industry', path: '/tools/xiaohongshu-restaurant' }),
+  createTool({ code: 'douyin-restaurant', name: '餐饮抖音运营专版', description: '按餐饮细分品类生成短视频、团购、直播和同城到店方案。', tag: '餐饮', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['restaurant', 'douyin'], freePolicy: '2/day', sceneTags: ['餐饮获客', '抖音', '团购核销'], capabilityType: 'industry', path: '/tools/douyin-restaurant' }),
+  createTool({ code: 'xiaohongshu-service', name: '生活服务小红书运营专版', description: '按到店、上门、项目、车辆、专业服务生成种草笔记和预约转化方案。', tag: '生活服务', iconColor: 'pink', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['service'], freePolicy: '2/day', sceneTags: ['生活服务', '小红书', '预约转化'], capabilityType: 'industry', path: '/tools/xiaohongshu-service' }),
+  createTool({ code: 'douyin-service', name: '生活服务抖音运营专版', description: '按履约模型生成短视频、案例展示、同城获客和咨询预约方案。', tag: '生活服务', iconColor: 'purple', requiredLevel: MEMBER_LEVEL_FREE, category: 'content', industries: ['service', 'douyin'], freePolicy: '2/day', sceneTags: ['生活服务', '抖音', '同城获客'], capabilityType: 'industry', path: '/tools/douyin-service' }),
   createTool({ code: 'salary', name: '薪酬方案设计器', description: '帮助门店和团队快速搭建更容易执行的薪酬结构。', tag: '制度', iconColor: 'orange', requiredLevel: MEMBER_LEVEL_STARTER, category: 'operations', industries: ['restaurant', 'education', 'beauty', 'service'], capabilityType: 'industry', sceneTags: ['薪酬', '制度管理'] }),
   createTool({ code: 'sop', name: 'SOP 生成器', description: '适合前台接待、服务流程、交付流程标准化。', tag: '制度', iconColor: 'teal', requiredLevel: MEMBER_LEVEL_STARTER, category: 'operations', industries: ['restaurant', 'education', 'beauty', 'service'], capabilityType: 'industry', sceneTags: ['SOP', '流程管理'] }),
   createTool({ code: 'marketing-plan', name: '营销方案生成器', description: '根据目标、预算和周期自动生成完整营销执行方案。', tag: '策划', iconColor: 'blue', requiredLevel: MEMBER_LEVEL_STARTER, category: 'planning', industries: ['restaurant', 'education', 'beauty', 'service'], sceneTags: ['营销方案', '活动策划'] }),
@@ -217,13 +225,22 @@ export const strategyCapabilityTools = [
 ]
 
 export const xhsOperationTools = [
-  createStandaloneToolMeta({ code: 'xhs-note', name: '小红书笔记生成器', description: '输入产品/服务，一键生成完整笔记内容', requiredLevel: MEMBER_LEVEL_FREE, path: '/tools/xiaohongshu' }),
-
-  createStandaloneToolMeta({ code: 'xiaohongshu-growth', name: '小红书增长方案', description: '围绕种草内容、账号运营和转化链路输出增长建议。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/xhs' }),
-  createStandaloneToolMeta({ code: 'boss-ip', name: '老板IP打造方案', description: '围绕老板定位、内容矩阵和表达方式给出长期品牌方案。', requiredLevel: MEMBER_LEVEL_ANNUAL, path: '/tools/boss-ip' })
-]
+  'xiaohongshu-education',
+  'xiaohongshu-beauty',
+  'xiaohongshu',
+  'xhs-title',
+  'xhs-topic',
+  'xhs-traffic',
+  'xhs-seo',
+  'xhs-diagnosis',
+  'xhs-review',
+  'xhs-conversion',
+  'xiaohongshu-growth'
+].map(code => getToolByCode(code)).filter(Boolean)
 
 export const douyinOperationTools = [
+  'douyin-education',
+  'douyin-beauty',
   'headline',
   'hook',
   'script',
@@ -392,10 +409,10 @@ export const industryEntries = [
     slug: 'restaurant',
     name: '餐饮版',
     shortName: '餐饮',
-    audience: '正餐、小吃、火锅、饮品等门店老板',
-    summary: '围绕毛利、人效、活动、平台经营和复购做整套工具组合。',
+    audience: '正餐、小吃、火锅、奶茶、轻食、西式等门店老板',
+    summary: '按细分品类拆毛利、人效、外卖、团购、内容获客和复购。',
     accent: '#f97316',
-    featuredCodes: ['roi', 'payback', 'schedule', 'festival', 'meituan', 'gross-margin-restaurant', 'break-even-restaurant', 'turnover-rate-restaurant', 'salary-cost-ratio-restaurant', 'dish-pricing', 'food-waste-rate', 'delivery-profit', 'payback-restaurant', 'cashflow-restaurant', 'profit-rate-restaurant', 'return-rate-restaurant', 'investment-budget']
+    featuredCodes: ['douyin-restaurant', 'xiaohongshu-restaurant', 'roi', 'payback', 'schedule', 'festival', 'meituan', 'gross-margin-restaurant', 'break-even-restaurant', 'turnover-rate-restaurant', 'salary-cost-ratio-restaurant', 'dish-pricing', 'food-waste-rate', 'food-yield-rate', 'delivery-profit', 'delivery-analysis', 'inventory-turnover', 'dish-contribution', 'repurchase-rate', 'cup-efficiency', 'drink-cost', 'payback-restaurant', 'cashflow-restaurant', 'profit-rate-restaurant', 'return-rate-restaurant', 'investment-budget', 'channel-cac', 'campaign-roi', 'referral-roi', 'conversion-funnel', 'retention-rate', 'marketing-budget', 'churn-rate', 'ltv-restaurant', 'promotion-profit']
   },
   {
     slug: 'education',
@@ -419,10 +436,10 @@ export const industryEntries = [
     slug: 'service',
     name: '生活服务版',
     shortName: '生活服务',
-    audience: '家政、汽修、家装、本地服务等经营者',
-    summary: '帮助服务型门店做报价表达、流程标准和客户转介绍。',
+    audience: '上门、到店、项目、车辆和本地专业服务经营者',
+    summary: '按履约模型拆报价、派单、人效、案例内容、预约转化和复购。',
     accent: '#0f766e',
-    featuredCodes: ['selling-point', 'sop', 'fission', 'competitor', 'marketing-calendar']
+    featuredCodes: ['douyin-service', 'xiaohongshu-service', 'selling-point', 'close-deal', 'friend', 'roi', 'payback', 'schedule', 'salary', 'sop', 'marketing-plan', 'team-training', 'fission', 'festival', 'employee-incentive', 'store-opening', 'offseason-traffic', 'experience-service', 'complaint-handling', 'competitor-strategy', 'store-health', 'meituan', 'competitor', 'business-plan', 'membership-design', 'ip-agent', 'channel-cac', 'campaign-roi', 'referral-roi', 'conversion-funnel', 'retention-rate', 'marketing-budget', 'churn-rate', 'promotion-profit', 'marketing-calendar']
   },
   {
     slug: 'xiaohongshu',
@@ -521,11 +538,11 @@ export const advancedCapabilityCards = [
 
 const industryScenarioTemplates = {
   restaurant: [
-    { group: '经营计算', items: ['算毛利', '算人效', '盈亏平衡', '翻台率', '食材成本率'] },
-    { group: '制度管理', items: ['员工制度', '薪酬方案', '后厨标准', '奖惩制度'] },
-    { group: '营销获客', items: ['活动方案', '朋友圈文案', '爆款标题', '社群话术'] },
-    { group: '诊断分析', items: ['运营诊断', '毛利诊断', '客流分析', '竞品对比'] },
-    { group: '抖音团购', items: ['投流 ROI', '组品方案', '直播脚本', 'A3 判定'] }
+    { group: '品类策略', items: ['正餐', '小吃', '火锅', '奶茶', '轻食', '西式'] },
+    { group: '经营计算', items: ['毛利', '人效', '盈亏平衡', '翻台率', '外卖利润'] },
+    { group: '营销获客', items: ['抖音团购', '小红书种草', '活动复盘', '复购留存'] },
+    { group: '制度管理', items: ['员工制度', '薪酬方案', '后厨标准', '排班管理'] },
+    { group: '诊断分析', items: ['平台经营', '菜品结构', '库存周转', '竞品对比'] }
   ],
   education: [
     { group: '经营计算', items: ['续费率测算', '课消计算', '人效测算', '盈亏平衡'] },
@@ -542,11 +559,11 @@ const industryScenarioTemplates = {
     { group: '老板 IP', items: ['IP 定位', '账号内容', '直播脚本', '直播话术'] }
   ],
   service: [
-    { group: '经营计算', items: ['报价毛利', '人效测算', '订单回本', '排班效率'] },
-    { group: '制度管理', items: ['接单流程', '上门服务 SOP', '薪酬方案', '考核规则'] },
-    { group: '营销获客', items: ['朋友圈文案', '裂变转介绍', '节日活动', '促销海报'] },
-    { group: '诊断分析', items: ['服务诊断', '客诉分析', '竞品对比', '平台经营'] },
-    { group: '品牌表达', items: ['卖点提炼', '短视频脚本', 'IP 表达'] }
+    { group: '品类策略', items: ['上门服务', '到店服务', '项目服务', '车辆服务', '专业服务'] },
+    { group: '经营计算', items: ['报价毛利', '派单效率', '人效测算', '订单回本', '现金流'] },
+    { group: '营销获客', items: ['抖音案例', '小红书种草', '转介绍', '活动复盘', '复购留存'] },
+    { group: '制度管理', items: ['接单流程', '上门 SOP', '师傅排班', '售后标准'] },
+    { group: '诊断分析', items: ['服务诊断', '客诉分析', '竞品对比', '平台经营'] }
   ],
   douyin: [
     { group: '内容起量', items: ['爆款标题', '开头钩子', '短视频脚本', '直播话术'] },
@@ -1301,6 +1318,172 @@ export const industryTemplateEntries = [
     sceneTags: ['促销记录', '利润分析'],
     keyFields: ['活动名称', '折扣率', '正常日均单', '活动日均单', '增量', '活动毛利率', '净利'],
     outputs: ['促销活动净利排名', '折扣与增量关系', '最优折扣区间']
+  },
+  // === 生活服务行业专属表格 ===
+  {
+    code: 'daily-revenue-service-sheet',
+    name: '日营收记录表（生活服务版）',
+    industry: 'service',
+    group: '经营计算',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '按天记录生活服务营收、成本和利润，跟踪经营状况。',
+    linkedTools: ['break-even-restaurant'],
+    plannedTools: [],
+    sceneTags: ['营收记录', '成本管理'],
+    keyFields: ['日期', '营收', '成本', '利润', '备注'],
+    outputs: ['日营收趋势', '成本占比', '利润变化']
+  },
+  {
+    code: 'employee-attendance-service-sheet',
+    name: '员工考勤表（生活服务版）',
+    industry: 'service',
+    group: '人事管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '记录服务人员出勤、请假和排班，统计工时。',
+    linkedTools: ['salary-cost-ratio-beauty'],
+    plannedTools: [],
+    sceneTags: ['考勤', '排班'],
+    keyFields: ['姓名', '日期', '状态', '备注'],
+    outputs: ['出勤统计', '缺勤频次', '工时汇总']
+  },
+  {
+    code: 'customer-info-service-sheet',
+    name: '客户信息表（生活服务版）',
+    industry: 'service',
+    group: '客户管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'input',
+    summary: '记录服务客户基本信息、偏好和历史消费，驱动精准营销。',
+    linkedTools: ['friend', 'repurchase-rate-beauty'],
+    plannedTools: [],
+    sceneTags: ['客户档案', '服务偏好'],
+    keyFields: ['姓名', '电话', '地址', '偏好', '备注'],
+    outputs: ['客户分布', '偏好分析', '高价值客户']
+  },
+  {
+    code: 'service-order-sheet',
+    name: '工单管理表（生活服务版）',
+    industry: 'service',
+    group: '工单管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '按工单号管理服务派单、进度和完成状态。',
+    linkedTools: ['schedule'],
+    plannedTools: [],
+    sceneTags: ['工单', '派单', '服务进度'],
+    keyFields: ['工单号', '日期', '客户', '服务项目', '状态', '备注'],
+    outputs: ['工单完成率', '服务时长', '积压预警']
+  },
+  {
+    code: 'service-schedule-service-sheet',
+    name: '排班表（生活服务版）',
+    industry: 'service',
+    group: '排期管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P0',
+    templateType: 'record',
+    summary: '按日和时段管理服务人员排班，合理安排派单。',
+    linkedTools: ['schedule'],
+    plannedTools: [],
+    sceneTags: ['排班', '服务调度'],
+    keyFields: ['日期', '时段', '服务人员', '客户', '备注'],
+    outputs: ['排班冲突', '空闲时段', '覆盖分析']
+  },
+  {
+    code: 'supplier-service-sheet',
+    name: '供应商管理表（生活服务版）',
+    industry: 'service',
+    group: '供应链管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '记录耗材、工具和配件供应商信息及合作情况。',
+    linkedTools: [],
+    plannedTools: [],
+    sceneTags: ['供应商', '耗材管理'],
+    keyFields: ['供应商', '联系人', '电话', '备注'],
+    outputs: ['供应商清单', '合作状态']
+  },
+  {
+    code: 'inventory-service-sheet',
+    name: '物料库存表（生活服务版）',
+    industry: 'service',
+    group: '供应链管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '管理服务耗材、配件和工具库存，防止缺料影响服务。',
+    linkedTools: [],
+    plannedTools: [],
+    sceneTags: ['库存', '物料管理'],
+    keyFields: ['物料名称', '库存量', '单位', '备注'],
+    outputs: ['库存预警', '消耗排行', '补货建议']
+  },
+  {
+    code: 'member-service-sheet',
+    name: '会员管理表（生活服务版）',
+    industry: 'service',
+    group: '客户管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'input',
+    summary: '管理会员卡项、余额和消费记录，提升会员复购。',
+    linkedTools: ['membership-design'],
+    plannedTools: [],
+    sceneTags: ['会员', '卡项管理'],
+    keyFields: ['会员姓名', '电话', '卡项', '余额', '备注'],
+    outputs: ['会员活跃度', '卡项分布', '余额统计']
+  },
+  {
+    code: 'service-complaint-sheet',
+    name: '客诉处理表（生活服务版）',
+    industry: 'service',
+    group: '质量管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '记录客诉类型、处理结果和跟进，提升服务质量。',
+    linkedTools: ['complaint-handling'],
+    plannedTools: [],
+    sceneTags: ['客诉', '服务改善'],
+    keyFields: ['日期', '客户', '类型', '处理结果', '备注'],
+    outputs: ['客诉趋势', '客诉类型TOP', '处理时效']
+  },
+  {
+    code: 'service-quality-sheet',
+    name: '服务质量评分表（生活服务版）',
+    industry: 'service',
+    group: '质量管理',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '按服务人员记录评分和好评率，跟踪服务质量。',
+    linkedTools: ['employee-incentive'],
+    plannedTools: [],
+    sceneTags: ['质量评分', '好评率'],
+    keyFields: ['日期', '服务人员', '评分', '好评率', '备注'],
+    outputs: ['评分排名', '好评率趋势', '待改进人员']
+  },
+  {
+    code: 'project-consumption-service-sheet',
+    name: '项目消费记录表（生活服务版）',
+    industry: 'service',
+    group: '经营计算',
+    requiredLevel: MEMBER_LEVEL_STARTER,
+    priority: 'P1',
+    templateType: 'record',
+    summary: '记录客户项目消费频次和金额，分析热门项目。',
+    linkedTools: ['break-even-restaurant'],
+    plannedTools: [],
+    sceneTags: ['消费记录', '项目分析'],
+    keyFields: ['日期', '客户', '项目', '次数', '备注'],
+    outputs: ['热门项目', '消费频次', '复购分析']
   }
 ].map(template => ({
   ...template,
@@ -1379,7 +1562,7 @@ export const testimonials = [
 export const homeFaqs = [
   { q: '我赢AI适合谁？', a: '面向全国实体老板，尤其是餐饮、教培、美业和生活服务行业的经营者。不管你在哪个城市，这套工具都能帮上忙。' },
   { q: '免费版能用什么？', a: '可先体验通用计算、基础文案、脚本和部分经营工具，适合先验证工具是否匹配你的业务。' },
-  { q: '行业场景和表格中心有什么区别？', a: '行业场景按业务类型帮你缩小入口范围，表格中心负责统一承接输入模板、经营记录和输出报表。' },
+  { q: '行业场景和所有工具有什么区别？', a: '行业场景按业务类型帮你缩小入口范围，所有工具负责统一承接智能体、计算器、输入模板、经营记录和输出报表。' },
   { q: '企业增长是独立的吗？', a: '是。它对应独立的企业增长全景顾问能力，重点解决老板不知道问题卡在哪、下一步该做什么的场景。' },
   { q: '会员升级后权限怎么变化？', a: '权限按免费版、初阶版、进阶版、高阶版递增，高阶版包含前面所有层级能力。' },
   { q: '价格会调整吗？', a: '当前页面展示的是建议价格，后续仍可根据运营策略微调，已开通的会员不受影响。' }

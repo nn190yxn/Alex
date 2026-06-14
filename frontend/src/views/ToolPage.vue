@@ -173,6 +173,19 @@ import ReferralTrackingSheet from './sheets/ReferralTrackingSheet.vue'
 import MarketingBudgetSheet from './sheets/MarketingBudgetSheet.vue'
 import PromotionProfitSheet from './sheets/PromotionProfitSheet.vue'
 
+// 生活服务表格
+import DailyRevenueServiceSheet from './sheets/DailyRevenueServiceSheet.vue'
+import EmployeeAttendanceServiceSheet from './sheets/EmployeeAttendanceServiceSheet.vue'
+import CustomerInfoServiceSheet from './sheets/CustomerInfoServiceSheet.vue'
+import ServiceOrderSheet from './sheets/ServiceOrderSheet.vue'
+import ServiceScheduleServiceSheet from './sheets/ServiceScheduleServiceSheet.vue'
+import SupplierServiceSheet from './sheets/SupplierServiceSheet.vue'
+import InventoryServiceSheet from './sheets/InventoryServiceSheet.vue'
+import MemberServiceSheet from './sheets/MemberServiceSheet.vue'
+import ServiceComplaintSheet from './sheets/ServiceComplaintSheet.vue'
+import ServiceQualitySheet from './sheets/ServiceQualitySheet.vue'
+import ProjectConsumptionServiceSheet from './sheets/ProjectConsumptionServiceSheet.vue'
+
 const route = useRoute()
 
 const toolComponents = {
@@ -331,7 +344,19 @@ const toolComponents = {
   'customer-retention-sheet': CustomerRetentionSheet,
   'referral-tracking-sheet': ReferralTrackingSheet,
   'marketing-budget-sheet': MarketingBudgetSheet,
-  'promotion-profit-sheet': PromotionProfitSheet
+  'promotion-profit-sheet': PromotionProfitSheet,
+  // 生活服务表格
+  'daily-revenue-service-sheet': DailyRevenueServiceSheet,
+  'employee-attendance-service-sheet': EmployeeAttendanceServiceSheet,
+  'customer-info-service-sheet': CustomerInfoServiceSheet,
+  'service-order-sheet': ServiceOrderSheet,
+  'service-schedule-service-sheet': ServiceScheduleServiceSheet,
+  'supplier-service-sheet': SupplierServiceSheet,
+  'inventory-service-sheet': InventoryServiceSheet,
+  'member-service-sheet': MemberServiceSheet,
+  'service-complaint-sheet': ServiceComplaintSheet,
+  'service-quality-sheet': ServiceQualitySheet,
+  'project-consumption-service-sheet': ProjectConsumptionServiceSheet
 }
 
 const toolComponent = computed(() => {

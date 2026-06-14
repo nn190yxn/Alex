@@ -1,8 +1,10 @@
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 
-dotenv.config()
+try {
+  const { default: dotenv } = await import('dotenv')
+  dotenv.config()
+} catch {}
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -30,9 +32,12 @@ import adminRoutes from './routes/admin.js'
 import cronRoutes from './routes/cron.js'
 import generateRoutes from './routes/generate.js'
 import analyticsRoutes from './routes/analytics.js'
+import industryRoutes from './routes/industry.js'
 import douyinAgentRoutes from './routes/douyinAgents.js'
 import xhsAgentRoutes from './routes/xhsAgents.js'
 import privateAgentRoutes from './routes/privateAgents.js'
+import posterGeneratorRoutes from './routes/posterGenerator.js'
+import sheetsRoutes from './routes/sheets.js'
 
 import userFeedbackRoutes from './routes/user-feedback.js'
 
@@ -46,13 +51,20 @@ app.use('/api/diagnosis', diagnosisRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/cron', cronRoutes)
 app.use('/api/generate', generateRoutes)
+app.use('/api/generate/poster', posterGeneratorRoutes)
+app.use('/api/sheets', sheetsRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/industries', industryRoutes)
 app.use('/api/douyin', douyinAgentRoutes)
 app.use('/api/xhs', xhsAgentRoutes)
 app.use('/api/private', privateAgentRoutes)
 app.use('/api/user-feedback', userFeedbackRoutes)
 
 app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
