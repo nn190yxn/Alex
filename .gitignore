@@ -1,0 +1,5 @@
+*.pem
+*.zip
+
+.monkeycode-tmp-files/
+${HOME}/
