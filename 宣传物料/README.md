@@ -5,19 +5,22 @@
 ## 目录说明
 
 - `index.html`
-  - 根入口，自动跳转到 `showcase/start-here.html`
-- `showcase/`
-  - 全部宣传 HTML 源文件
-- `showcase/start-here.html`
-  - 统一入口
-- `showcase/index.html`
+  - 宣传物料总入口
+- `全站版/`
+  - 最新完整宣传版本
+- `全站版/start-here.html`
+  - 全站统一入口
+- `全站版/index.html`
   - 短页目录，短页页面内带 JPG 导出功能
-- `showcase/tablet-store-standalone.html`
-  - 门店平板单文件版，适合本地直接打开
-- `showcase/tablet/`
-  - 原始多文件平板版
+- `全站版/tablet.html`
+  - 最新单文件平板版，供全站入口调用
+- `平板版/`
+  - 最新门店平板单独版本
+- `平板版/index.html`
+  - 门店平板单文件版入口
 
 ## 维护约定
 
 - 之后所有宣传物料相关修改都在 `宣传物料/` 目录内进行。
+- 目录只保留两套最新版本：`全站版/` 和 `平板版/`。
 - Git 仓库不提交压缩包和密钥文件，只提交 HTML 源文件。
