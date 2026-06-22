@@ -430,6 +430,46 @@ body {
   padding: 24px 0;
   line-height: 1.6;
 }
+
+/* Industry filter */
+.industry-filter {
+  max-width: 1400px;
+  margin: 0 auto 16px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.industry-btn {
+  padding: 4px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--sans);
+  font-weight: 600;
+}
+.industry-btn:hover { border-color: var(--accent); color: var(--accent); }
+.industry-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.ind-restaurant.active { background: #cb6f3f; }
+.ind-education.active { background: #486b4d; }
+.ind-beauty.active { background: #b4648c; }
+.ind-service.active { background: #2c82c9; }
+
+.industry-scripts { display: none; }
+.industry-scripts.show { display: block; }
+
+.ind-card { margin-bottom: 14px; }
+.ind-card .ind-name {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 </style>
 </head>
 <body>
@@ -443,6 +483,14 @@ body {
     <button class="btn-sm" onclick="exportCSV()">导出 CSV</button>
     <button class="btn-sm" onclick="copySummary()">复制摘要</button>
   </div>
+</div>
+
+<div class="industry-filter" id="industry-filter">
+  <button class="industry-btn active" data-ind="all">全部行业</button>
+  <button class="industry-btn ind-restaurant" data-ind="restaurant">餐饮</button>
+  <button class="industry-btn ind-education" data-ind="education">教培</button>
+  <button class="industry-btn ind-beauty" data-ind="beauty">美业</button>
+  <button class="industry-btn ind-service" data-ind="service">生活服务</button>
 </div>
 
 <div class="main">
@@ -521,8 +569,12 @@ body {
     <div id="center-content" style="display:none;">
       <div class="day-header" id="day-title">Day 1</div>
       <div class="day-theme" id="day-theme"></div>
-      <div id="day-cta" style="text-align:right;margin-bottom:8px;"></div>
+      <div id="cta" style="text-align:right;margin-bottom:8px;"></div>
       <div id="task-list"></div>
+      <div class="card" id="industry-angle" style="display:none;margin-top:12px;">
+        <div class="card-header" id="industry-angle-header">今日行业角度</div>
+        <div id="industry-angle-content" style="font-size:12px;color:var(--text);line-height:1.6;"></div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn-primary" id="btn-mark-all">标记全天完成</button>
         <button class="btn-sm" id="btn-prev-day">← 前一天</button>
@@ -549,6 +601,58 @@ body {
       </div>
       <div class="script-item" onclick="copyText(this)" data-copy="如果你身边也有做门店、教培、美业、同城服务的老板朋友，可以直接把推荐码发给他。他开通后你拿20%返利，顺手就把体验成本赚回来了。">
         <div class="script-tag">转介绍</div>推荐码转给老板朋友，拿 20% 返利
+      </div>
+    </div>
+
+    <div class="card industry-scripts" data-ind="restaurant">
+      <div class="card-header">餐饮行业话术</div>
+      <div class="script-item" onclick="copyText(this)" data-copy="你是不是每天也要发团购活动和朋友圈？先别硬想，把你今天的新菜或活动场景发我，我让你看看我赢AI能出什么。">
+        <div class="script-tag">餐饮首条</div>你每天发团购和朋友圈很累吧？
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="餐饮老板最常用的就是标题、发圈和团购文案。你先把这周要推的菜或活动发我，我直接给你一版能发的。">
+        <div class="script-tag">餐饮试用</div>把你这周要推的发我，直接出稿
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="很多餐饮老板第一次用完直接说'早该用了'。你先拿49体验试一周，标题、发圈、抖音脚本随便用。">
+        <div class="script-tag">餐饮 49</div>49 体验试一周，标题发圈脚本随便
+      </div>
+    </div>
+
+    <div class="card industry-scripts" data-ind="education">
+      <div class="card-header">教培行业话术</div>
+      <div class="script-item" onclick="copyText(this)" data-copy="你是不是每次发招生活动通知都觉得像群发广告？先别自己改，把活动信息发我，我让你看教培专属版文案什么样。">
+        <div class="script-tag">教培首条</div>发招生通知总像广告？先看专属版
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="教培校长最需要的就是招生活动文案、试听转化话术和校长IP内容。你先试一个场景，我让你看看效果。">
+        <div class="script-tag">教培试用</div>先试一个场景，看看效果
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="很多校长开了49体验后就把一季招生内容跑出来了。你先试一个月，把活动通知、试听话术、家长信任内容都跑一遍。">
+        <div class="script-tag">教培 49</div>49 试一个月，一季招生内容全搞定
+      </div>
+    </div>
+
+    <div class="card industry-scripts" data-ind="beauty">
+      <div class="card-header">美业行业话术</div>
+      <div class="script-item" onclick="copyText(this)" data-copy="你做美业的是不是也觉得项目介绍写不出高级感？先把你最想推的项目发我，我看美业版怎么帮你重新说。">
+        <div class="script-tag">美业首条</div>项目总写不出高级感？先试试
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="美业最重要的是种草感和到店转化。你先说你的项目和目标客户，我帮你出一版真正能种草的内容。">
+        <div class="script-tag">美业试用</div>说出项目和人群，帮你出种草稿
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="美业主理人最适合用我赢AI做三件事：种草文案、卖点提炼、到店话术。49体验先把这三样跑出来。">
+        <div class="script-tag">美业 49</div>49 先把种草+卖点+话术跑出来
+      </div>
+    </div>
+
+    <div class="card industry-scripts" data-ind="service">
+      <div class="card-header">生活服务行业话术</div>
+      <div class="script-item" onclick="copyText(this)" data-copy="你做同城服务的，是不是也发现内容发了没人约？先把你最想推的服务发我，我看怎么帮你重新组织内容。">
+        <div class="script-tag">服务首条</div>发了没人约？先看怎么重新说
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="同城服务最重要的是信任感和专业感。你先说你的服务类型和目标人群，我帮你出能建立信任的第一篇。">
+        <div class="script-tag">服务试用</div>说服务和人群，出信任第一篇
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="生活服务商家最该做三件事：让客户信任你、让客户找到你、让客户想约你。49体验先把这三样内容跑出来。">
+        <div class="script-tag">服务 49</div>49 把信任+引流+预约跑出来
       </div>
     </div>
 
@@ -759,6 +863,49 @@ function selectDay(day) {
   document.getElementById("center-content").style.display = "block";
 }
 
+// ── 行业角度数据 ──
+const IND_ANGLES = {
+  restaurant: [
+    { range:[1,7], text:"本周证明快速出稿：重点打动"每天发朋友圈/团购/抖音但写不出来"的餐饮痛点。每条内容都展示从菜单到成品内容的过程。" },
+    { range:[8,14], text:"本周证明懂行业：餐饮版懂菜单、懂活动节奏、懂探店表达。让餐饮老板感觉'这个AI真的懂餐饮'而不是通用工具。" },
+    { range:[15,21], text:"本周证明能转化：重点展示'发出去有人问、有人来'的结果。团购文案+引流标题+促单话术一条链。" },
+    { range:[22,30], text:"本周推会员和裂变：让餐饮老板算账——一天发3条内容省2小时，一个月省60小时，129会员一天4块钱。" }
+  ],
+  education: [
+    { range:[1,7], text:"本周证明快速出稿：打动'招生活动通知总像广告'的教培痛点。每次从活动信息到成品文案不超过1分钟。" },
+    { range:[8,14], text:"本周证明懂行业：教培版懂招生节点、懂试听转化、懂家长焦虑。不是教育理论，是落地内容。" },
+    { range:[15,21], text:"本周证明能转化：展示招生通知→报名咨询的链路，试听邀约→试听到场的话术转化。" },
+    { range:[22,30], text:"本周推会员和裂变：让校长算账——一季招生的内容矩阵用AI一次跑通，129会员一天省出来的时间就回本。" }
+  ],
+  beauty: [
+    { range:[1,7], text:"本周证明快速出稿：打动'项目介绍总像价目表'的美业痛点。从项目名到种草文案只差一句话。" },
+    { range:[8,14], text:"本周证明懂行业：美业版懂项目包装、懂种草逻辑、懂到店转化心理。出稿自带美业高级感。" },
+    { range:[15,21], text:"本周证明能转化：展示'客户从咨询到预约'的内容承接链，卖点提炼+种草笔记+到店话术全配齐。" },
+    { range:[22,30], text:"本周推会员和裂变：让主理人算账——一周内容轻松发，客户觉得你专业，129会员等于免费请了个内容助手。" }
+  ],
+  service: [
+    { range:[1,7], text:"本周证明快速出稿：打动'发了没人约'的同城服务痛点。从服务类型到信任内容一步到位。" },
+    { range:[8,14], text:"本周证明懂行业：服务版懂同城标签、懂信任建立、懂预约转化。不是泛泛介绍，是能引流的表达。" },
+    { range:[15,21], text:"本周证明能转化：展示'发了有人问→问了有人约'的转化链，服务介绍+案例背书+预约引流一体化。" },
+    { range:[22,30], text:"本周推会员和裂变：让服务商家算账——每天省出编内容的时间可以多接一单，一个月129会员一单就赚回来。" }
+  ]
+};
+
+function renderIndustryAngle(day) {
+  const el = document.getElementById("industry-angle");
+  const content = document.getElementById("industry-angle-content");
+  const header = document.getElementById("industry-angle-header");
+  if (activeIndustry === "all") { el.style.display = "none"; return; }
+  const angles = IND_ANGLES[activeIndustry];
+  if (!angles) { el.style.display = "none"; return; }
+  const match = angles.find(a => day >= a.range[0] && day <= a.range[1]);
+  if (!match) { el.style.display = "none"; return; }
+  const names = { restaurant:"餐饮", education:"教培", beauty:"美业", service:"生活服务" };
+  header.textContent = "今日行业角度 · " + (names[activeIndustry] || activeIndustry);
+  content.textContent = match.text;
+  el.style.display = "block";
+}
+
 function renderDayContent(day) {
   const d = DAYS[day - 1];
   document.getElementById("day-title").textContent = "Day " + day;
@@ -839,6 +986,7 @@ function renderDayContent(day) {
     <div style="margin-top:4px;">${d.tasks.xhs.slice(0,20)}...</div>
     <div class="weekly-tag">CTA: ${d.cta}</div>
   `;
+  renderIndustryAngle(day);
 }
 
 // ── 任务切换 ──
@@ -1006,6 +1154,25 @@ function copySummary() {
 document.addEventListener("keydown", function(e) {
   if (e.key === "ArrowLeft" && activeDay > 1) selectDay(activeDay - 1);
   if (e.key === "ArrowRight" && activeDay < 30) selectDay(activeDay + 1);
+});
+
+// ── 行业筛选 ──
+let activeIndustry = "all";
+
+function setIndustry(ind) {
+  activeIndustry = ind;
+  document.querySelectorAll("#industry-filter .industry-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.ind === ind);
+  });
+  document.querySelectorAll(".industry-scripts").forEach(el => {
+    el.classList.toggle("show", el.dataset.ind === ind);
+  });
+  if (activeDay) renderDayContent(activeDay);
+}
+
+document.getElementById("industry-filter").addEventListener("click", function(e) {
+  if (!e.target.classList.contains("industry-btn")) return;
+  setIndustry(e.target.dataset.ind);
 });
 
 // ── 启动 ──

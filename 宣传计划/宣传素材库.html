@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我赢AI · 全行业宣传素材库</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fcf8f3;
+  --panel: rgba(255,251,246,0.92);
+  --panel2: rgba(248,244,240,0.9);
+  --line: rgba(83,48,29,0.08);
+  --text: #3f261b;
+  --muted: #7d5d4d;
+  --accent: #cb6f3f;
+  --accent-soft: #f4b487;
+  --accent-deep: #9f4f2f;
+  --good: #486b4d;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --serif: "Noto Serif SC", "STSong", "SimSun", "Songti SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255,214,180,0.6), transparent 30%),
+    radial-gradient(circle at top right, rgba(255,236,190,0.5), transparent 25%),
+    linear-gradient(180deg, #fcf6ef 0%, #f5eadb 50%, #efe0cc 100%);
+  min-height: 100vh;
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.lib-header {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+.lib-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.lib-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.tab-btn {
+  padding: 6px 18px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--sans);
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.type-tabs {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.type-btn {
+  padding: 4px 14px;
+  border-radius: 99px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--sans);
+}
+.type-btn:hover { background: rgba(203,111,63,0.06); color: var(--accent); }
+.type-btn.active { background: rgba(203,111,63,0.12); color: var(--accent); font-weight: 700; border-color: rgba(203,111,63,0.2); }
+
+/* Card grid */
+.card-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.promo-card {
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(83,48,29,0.06);
+}
+.promo-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(83,48,29,0.1); }
+
+.promo-card .card-inner {
+  padding: 28px 24px;
+}
+
+/* Pain card */
+.card-pain .pain-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(203,111,63,0.1);
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 14px;
+}
+.card-pain .pain-headline {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.card-pain .pain-list {
+  list-style: none;
+  padding: 0;
+}
+.card-pain .pain-list li {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 5px 0;
+  padding-left: 16px;
+  position: relative;
+}
+.card-pain .pain-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+}
+.card-pain .pain-emoji {
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  font-size: 40px;
+  opacity: 0.7;
+}
+
+/* Solution card */
+.card-solution .sol-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.card-solution .sol-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+.card-solution .sol-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-solution .sol-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.card-solution .sol-feat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(203,111,63,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.card-solution .sol-feat-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.card-solution .sol-feat-text strong { color: var(--accent); }
+
+/* Compare card */
+.card-compare .cmp-header {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+.card-compare .cmp-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.card-compare .cmp-col {
+  border-radius: var(--radius-sm);
+  padding: 16px 14px;
+  text-align: center;
+}
+.card-compare .cmp-before {
+  background: rgba(203,111,63,0.04);
+  border: 1px solid rgba(203,111,63,0.1);
+}
+.card-compare .cmp-after {
+  background: rgba(72,107,77,0.04);
+  border: 1px solid rgba(72,107,77,0.15);
+}
+.card-compare .cmp-label {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.card-compare .cmp-before .cmp-label { color: var(--muted); }
+.card-compare .cmp-after .cmp-label { color: var(--good); }
+.card-compare .cmp-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+.card-compare .cmp-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+/* CTA card */
+.card-cta .cta-ribbon {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  padding: 6px;
+  letter-spacing: 1px;
+}
+.card-cta .cta-body {
+  padding: 24px 24px 20px;
+}
+.card-cta .cta-price-anchor {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-bottom: 4px;
+}
+.card-cta .cta-price-main {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.card-cta .cta-price-main small {
+  font-size: 16px;
+  font-weight: 400;
+}
+.card-cta .cta-benefits {
+  list-style: none;
+  padding: 12px 0;
+}
+.card-cta .cta-benefits li {
+  font-size: 12px;
+  color: var(--text);
+  padding: 4px 0;
+  text-align: center;
+}
+.card-cta .cta-benefits li::before { content: '✓ '; color: var(--good); font-weight: 700; }
+.card-cta .cta-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s;
+  text-align: center;
+  margin-top: 8px;
+  font-family: var(--sans);
+}
+.card-cta .cta-btn:hover { background: var(--accent-deep); }
+.card-cta .cta-urgency {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Card footer actions */
+.card-foot {
+  display: flex;
+  gap: 6px;
+  padding: 10px 24px 16px;
+  justify-content: center;
+}
+.btn-mini {
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--sans);
+}
+.btn-mini:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Modal for full-card preview */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(63,38,27,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  background: #fff;
+  border-radius: var(--radius);
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(63,38,27,0.2);
+}
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.9);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: var(--muted);
+  transition: all .18s;
+}
+.modal-close:hover { border-color: var(--accent); color: var(--accent); }
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px 20px;
+  justify-content: center;
+}
+
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-size: 12px;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+}
+.toast.show { animation: toastIn .28s ease, toastOut .28s .9s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 0;
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
+
+.industry-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-left: 6px;
+}
+.tag-restaurant { background: rgba(203,111,63,0.1); color: #cb6f3f; }
+.tag-education { background: rgba(72,107,77,0.1); color: #486b4d; }
+.tag-beauty    { background: rgba(180,100,140,0.1); color: #b4648c; }
+.tag-service   { background: rgba(44,130,201,0.1); color: #2c82c9; }
+</style>
+</head>
+<body>
+
+<div class="lib-header">
+  <div class="lib-title">我赢AI · 全行业宣传素材库</div>
+  <div class="lib-subtitle">16 张推广卡片 · 4 大行业 · 4 种场景 · 点击卡片全屏预览后截图使用</div>
+</div>
+
+<div class="tab-bar" id="industry-tabs">
+  <button class="tab-btn active" data-industry="all">全部行业</button>
+  <button class="tab-btn" data-industry="restaurant">餐饮</button>
+  <button class="tab-btn" data-industry="education">教培</button>
+  <button class="tab-btn" data-industry="beauty">美业</button>
+  <button class="tab-btn" data-industry="service">生活服务</button>
+</div>
+
+<div class="type-tabs" id="type-tabs">
+  <button class="type-btn active" data-type="all">全部类型</button>
+  <button class="type-btn" data-type="pain">痛点卡</button>
+  <button class="type-btn" data-type="solution">方案卡</button>
+  <button class="type-btn" data-type="compare">对比卡</button>
+  <button class="type-btn" data-type="cta">成交卡</button>
+</div>
+
+<div class="card-grid" id="card-grid"></div>
+
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal-card" id="modal-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = [
+  // ============ 餐饮 ============
+  {
+    id: "restaurant-pain",
+    industry: "restaurant",
+    type: "pain",
+    title: "餐饮老板 · 痛点卡",
+    tagClass: "tag-restaurant",
+    render: function() {
+      return `
+        <div class="card-pain">
+          <div class="pain-emoji">🍜</div>
+          <div class="pain-badge">你在经历吗？</div>
+          <div class="pain-headline">每天都要发朋友圈、团购文案、抖音脚本，但你真的写不出来。</div>
+          <ul class="pain-list">
+            <li>打开朋友圈，不知道该发什么才能让人想来店里</li>
+            <li>团购活动文案改了一上午，最后又改回了第一版</li>
+            <li>看同行天天发爆款内容，自己憋半天还是硬广</li>
+            <li>最忙的时候还要分心想内容，后厨前厅已经够累了</li>
+          </ul>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "restaurant-solution",
+    industry: "restaurant",
+    type: "solution",
+    title: "餐饮老板 · 方案卡",
+    tagClass: "tag-restaurant",
+    render: function() {
+      return `
+        <div class="card-solution">
+          <div class="sol-header">我赢AI 怎么帮你</div>
+          <div class="sol-title">一句需求，马上给你出稿<br>标题、发圈、脚本、活动文案</div>
+          <div class="sol-features">
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🔥</div>
+              <div class="sol-feat-text"><strong>爆款标题</strong> — 10 秒出 5 条，团购引流标题不用再硬想</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">📱</div>
+              <div class="sol-feat-text"><strong>朋友圈文案</strong> — 今天上新、今天活动，打开就有内容发</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🎬</div>
+              <div class="sol-feat-text"><strong>抖音脚本</strong> — 探店口播、菜品展示脚本直接生成</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">📋</div>
+              <div class="sol-feat-text"><strong>活动文案</strong> — 周末活动、节日促销，一句话出整版</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "restaurant-compare",
+    industry: "restaurant",
+    type: "compare",
+    title: "餐饮老板 · 对比卡",
+    tagClass: "tag-restaurant",
+    render: function() {
+      return `
+        <div class="card-compare">
+          <div class="cmp-header">一个餐饮老板的内容日常</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">花 2 小时憋一个朋友圈，最后还是发了张菜品图加两个字"上新"</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">打开我赢AI，说一句"今天上了新菜，帮我写朋友圈"，1 分钟出 3 版</div>
+            </div>
+          </div>
+          <div class="cmp-arrow">↓</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">团购文案写了改，改了删，最后原样发出，打开率不到 2%</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 按"引流+促单"双结构出稿，打开率翻 3 倍</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "restaurant-cta",
+    industry: "restaurant",
+    type: "cta",
+    title: "餐饮老板 · 成交卡",
+    tagClass: "tag-restaurant",
+    render: function() {
+      return `
+        <div class="card-cta">
+          <div class="cta-ribbon">餐饮老板专享 · 限时体验</div>
+          <div class="cta-body">
+            <div class="cta-price-anchor">原价 149/月</div>
+            <div class="cta-price-main"><small>¥</small>49<small>/月 体验价</small></div>
+            <ul class="cta-benefits">
+              <li>标题 / 朋友圈 / 抖音脚本 / 活动文案 无限生成</li>
+              <li>餐饮行业专属表达，不说外行话</li>
+              <li>语音输入，后厨也能边忙边说</li>
+              <li>历史记录复用，好内容反复发</li>
+            </ul>
+            <button class="cta-btn" onclick="event.stopPropagation()">先试一次，让今天内容发出去</button>
+            <div class="cta-urgency">先领 49 体验，再决定要不要长期开</div>
+          </div>
+        </div>
+      `;
+    }
+  },
+
+  // ============ 教培 ============
+  {
+    id: "education-pain",
+    industry: "education",
+    type: "pain",
+    title: "教培校长 · 痛点卡",
+    tagClass: "tag-education",
+    render: function() {
+      return `
+        <div class="card-pain">
+          <div class="pain-emoji">📚</div>
+          <div class="pain-badge">你在经历吗？</div>
+          <div class="pain-headline">招生活动通知写了删、试听转化文案总像硬广、家长群里不知道发什么。</div>
+          <ul class="pain-list">
+            <li>每次发招生活动通知都像群发广告，没人回复</li>
+            <li>试听课结束要推转化文案，写来写去都是那几句</li>
+            <li>家长群除了发上课提醒，不知道还能发什么建立信任</li>
+            <li>同行已经在做校长 IP 了，你还在纠结第一句话怎么写</li>
+          </ul>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "education-solution",
+    industry: "education",
+    type: "solution",
+    title: "教培校长 · 方案卡",
+    tagClass: "tag-education",
+    render: function() {
+      return `
+        <div class="card-solution">
+          <div class="sol-header">我赢AI 怎么帮你</div>
+          <div class="sol-title">招生文案、试听话术、家长信任内容<br>校长 IP 全部一句话生成</div>
+          <div class="sol-features">
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🎯</div>
+              <div class="sol-feat-text"><strong>招生活动文案</strong> — 不再是通知，是让家长想点开的引流内容</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">💬</div>
+              <div class="sol-feat-text"><strong>试听转化话术</strong> — 从邀约到跟单，每一步都有话术</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🏫</div>
+              <div class="sol-feat-text"><strong>家长信任内容</strong> — 孩子进步案例、教学理念表达，建立专业感</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">👤</div>
+              <div class="sol-feat-text"><strong>校长 IP 文案</strong> — 创始人故事、教育观点，让家长先认你</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "education-compare",
+    industry: "education",
+    type: "compare",
+    title: "教培校长 · 对比卡",
+    tagClass: "tag-education",
+    render: function() {
+      return `
+        <div class="card-compare">
+          <div class="cmp-header">一个教培校长的招生日常</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">活动通知写了 3 版都觉得像广告，最后发了表格截图，没人问</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 按"痛点+方案+限时"结构出稿，家长主动私信问名额</div>
+            </div>
+          </div>
+          <div class="cmp-arrow">↓</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">试听结束只会说"有需要可以报名"，转化率不到 15%</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 按孩子表现生成个性化跟单话术，转化率提到 30%+</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "education-cta",
+    industry: "education",
+    type: "cta",
+    title: "教培校长 · 成交卡",
+    tagClass: "tag-education",
+    render: function() {
+      return `
+        <div class="card-cta">
+          <div class="cta-ribbon">教培校长专享 · 限时体验</div>
+          <div class="cta-body">
+            <div class="cta-price-anchor">原价 149/月</div>
+            <div class="cta-price-main"><small>¥</small>49<small>/月 体验价</small></div>
+            <ul class="cta-benefits">
+              <li>招生文案 / 试听话术 / 家长信任内容 无限生成</li>
+              <li>教培行业专属表达，懂教育场景</li>
+              <li>校长 IP 内容自动生成，建立个人品牌</li>
+              <li>历史内容可复用，一季招生反复优化</li>
+            </ul>
+            <button class="cta-btn" onclick="event.stopPropagation()">先拿 3 条招生活动文案</button>
+            <div class="cta-urgency">先领 49 体验，再决定要不要长期开</div>
+          </div>
+        </div>
+      `;
+    }
+  },
+
+  // ============ 美业 ============
+  {
+    id: "beauty-pain",
+    industry: "beauty",
+    type: "pain",
+    title: "美业主理人 · 痛点卡",
+    tagClass: "tag-beauty",
+    render: function() {
+      return `
+        <div class="card-pain">
+          <div class="pain-emoji">💅</div>
+          <div class="pain-badge">你在经历吗？</div>
+          <div class="pain-headline">项目介绍写不出高级感，种草笔记总被划走，到店转化总差最后一句。</div>
+          <ul class="pain-list">
+            <li>明明项目很好，写出来就是像价格表，没有想来的冲动</li>
+            <li>小红书笔记发了没人看，不知道"种草感"怎么写</li>
+            <li>客户咨询完说"再看看"，你不知道最后那一句该说什么</li>
+            <li>想做老板 IP 但不知道从哪里开始表达自己</li>
+          </ul>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "beauty-solution",
+    industry: "beauty",
+    type: "solution",
+    title: "美业主理人 · 方案卡",
+    tagClass: "tag-beauty",
+    render: function() {
+      return `
+        <div class="card-solution">
+          <div class="sol-header">我赢AI 怎么帮你</div>
+          <div class="sol-title">种草笔记、卖点提炼、到店转化<br>美业专属内容一句话出稿</div>
+          <div class="sol-features">
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🌸</div>
+              <div class="sol-feat-text"><strong>美业种草文案</strong> — 小红书笔记结构、项目种草角度自动生成</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">💎</div>
+              <div class="sol-feat-text"><strong>项目卖点提炼</strong> — 不再是价格和项目名，是客户想来的理由</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🤝</div>
+              <div class="sol-feat-text"><strong>到店转化话术</strong> — 从咨询到预约，每一步有承接</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">✨</div>
+              <div class="sol-feat-text"><strong>主理人 IP 文案</strong> — 审美表达、专业态度，让客户先认你这个人</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "beauty-compare",
+    industry: "beauty",
+    type: "compare",
+    title: "美业主理人 · 对比卡",
+    tagClass: "tag-beauty",
+    render: function() {
+      return `
+        <div class="card-compare">
+          <div class="cmp-header">一个美业主理人的内容困境</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">项目介绍写了几版都像价目表，发出去像硬广，没人互动</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 按"场景+效果+信任"结构写种草文，收藏率明显提升</div>
+            </div>
+          </div>
+          <div class="cmp-arrow">↓</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">客户问完价格就没下文了，不知道怎么推进到预约</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 生成个性化跟单文案，从"再考虑"到"约个时间"转化率翻倍</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "beauty-cta",
+    industry: "beauty",
+    type: "cta",
+    title: "美业主理人 · 成交卡",
+    tagClass: "tag-beauty",
+    render: function() {
+      return `
+        <div class="card-cta">
+          <div class="cta-ribbon">美业主理人专享 · 限时体验</div>
+          <div class="cta-body">
+            <div class="cta-price-anchor">原价 149/月</div>
+            <div class="cta-price-main"><small>¥</small>49<small>/月 体验价</small></div>
+            <ul class="cta-benefits">
+              <li>种草笔记 / 卖点提炼 / 到店话术 无限生成</li>
+              <li>美业专属表达，不写外行文案</li>
+              <li>主理人 IP 内容自动生成</li>
+              <li>语音输入，忙的时候也能说需求</li>
+            </ul>
+            <button class="cta-btn" onclick="event.stopPropagation()">先试美业版，让你的项目说人话</button>
+            <div class="cta-urgency">先领 49 体验，再决定要不要长期开</div>
+          </div>
+        </div>
+      `;
+    }
+  },
+
+  // ============ 生活服务 ============
+  {
+    id: "service-pain",
+    industry: "service",
+    type: "pain",
+    title: "生活服务商家 · 痛点卡",
+    tagClass: "tag-service",
+    render: function() {
+      return `
+        <div class="card-pain">
+          <div class="pain-emoji">🏠</div>
+          <div class="pain-badge">你在经历吗？</div>
+          <div class="pain-headline">同城预约类内容总是没人约，不知道怎么写出"信任感"。</div>
+          <ul class="pain-list">
+            <li>发了服务介绍没人看，不知道问题出在标题还是内容</li>
+            <li>想写案例背书吸引新客户，但不知道怎么写才不像自夸</li>
+            <li>同城流量很重要，但你的文案和其他商家看不出区别</li>
+            <li>专业能力很强，但不知道怎么通过内容让陌生人信任你</li>
+          </ul>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "service-solution",
+    industry: "service",
+    type: "solution",
+    title: "生活服务商家 · 方案卡",
+    tagClass: "tag-service",
+    render: function() {
+      return `
+        <div class="card-solution">
+          <div class="sol-header">我赢AI 怎么帮你</div>
+          <div class="sol-title">服务介绍、预约引流、案例背书<br>同城商家专属内容一句话出稿</div>
+          <div class="sol-features">
+            <div class="sol-feat">
+              <div class="sol-feat-icon">📝</div>
+              <div class="sol-feat-text"><strong>服务介绍文案</strong> — 从"我们做什么"升级为"为什么选我们"</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">📍</div>
+              <div class="sol-feat-text"><strong>预约引流文案</strong> — 同城标签+场景痛点，让附近的人想点进来</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">⭐</div>
+              <div class="sol-feat-text"><strong>案例背书内容</strong> — 真实案例表达，不是自夸而是自然展示</div>
+            </div>
+            <div class="sol-feat">
+              <div class="sol-feat-icon">🔍</div>
+              <div class="sol-feat-text"><strong>专业信任内容</strong> — 行业见解、避坑指南，让客户先信你的专业</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "service-compare",
+    industry: "service",
+    type: "compare",
+    title: "生活服务商家 · 对比卡",
+    tagClass: "tag-service",
+    render: function() {
+      return `
+        <div class="card-compare">
+          <div class="cmp-header">一个同城服务商家的内容变化</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">服务介绍写得像说明书，发出去只有同行点赞，客户不感兴趣</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 按"客户痛点+专业方案+信任案例"结构出稿，咨询量明显增加</div>
+            </div>
+          </div>
+          <div class="cmp-arrow">↓</div>
+          <div class="cmp-cols">
+            <div class="cmp-col cmp-before">
+              <div class="cmp-label">之前</div>
+              <div class="cmp-text">不知道怎么做同城内容，和全市几百家同行发的差不多</div>
+            </div>
+            <div class="cmp-col cmp-after">
+              <div class="cmp-label">现在</div>
+              <div class="cmp-text">AI 帮你锁定本地搜索关键词，内容更有同城辨识度</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: "service-cta",
+    industry: "service",
+    type: "cta",
+    title: "生活服务商家 · 成交卡",
+    tagClass: "tag-service",
+    render: function() {
+      return `
+        <div class="card-cta">
+          <div class="cta-ribbon">生活服务商家专享 · 限时体验</div>
+          <div class="cta-body">
+            <div class="cta-price-anchor">原价 149/月</div>
+            <div class="cta-price-main"><small>¥</small>49<small>/月 体验价</small></div>
+            <ul class="cta-benefits">
+              <li>服务介绍 / 预约引流 / 案例背书 无限生成</li>
+              <li>同城服务行业专属表达</li>
+              <li>专业信任内容自动生成</li>
+              <li>AI 对话直接说需求，不用填复杂表单</li>
+            </ul>
+            <button class="cta-btn" onclick="event.stopPropagation()">先拿你的服务介绍文案</button>
+            <div class="cta-urgency">先领 49 体验，再决定要不要长期开</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+];
+
+let industryFilter = "all";
+let typeFilter = "all";
+
+function filterCards() {
+  return DATA.filter(c => {
+    if (industryFilter !== "all" && c.industry !== industryFilter) return false;
+    if (typeFilter !== "all" && c.type !== typeFilter) return false;
+    return true;
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById("card-grid");
+  const cards = filterCards();
+  if (cards.length === 0) {
+    grid.innerHTML = '<div class="empty-state">没有匹配的素材卡片，试试切换筛选条件</div>';
+    return;
+  }
+  grid.innerHTML = cards.map(c => {
+    const tags = { restaurant: "餐饮", education: "教培", beauty: "美业", service: "生活服务" };
+    const types = { pain: "痛点卡", solution: "方案卡", compare: "对比卡", cta: "成交卡" };
+    return `
+      <div class="promo-card" onclick="openModal('${c.id}')">
+        <div class="card-inner">
+          ${c.render()}
+        </div>
+        <div class="card-foot">
+          <span class="industry-tag ${c.tagClass.split(' ')[0]}">${tags[c.industry]}</span>
+          <span style="font-size:10px;color:var(--muted);">${types[c.type]}</span>
+          <span style="flex:1;"></span>
+          <button class="btn-mini" onclick="event.stopPropagation();copyCardHTML('${c.id}')">复制 HTML</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function openModal(id) {
+  const card = DATA.find(c => c.id === id);
+  if (!card) return;
+  const modal = document.getElementById("modal");
+  const content = document.getElementById("modal-content");
+  const tags = { restaurant: "餐饮", education: "教培", beauty: "美业", service: "生活服务" };
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="card-inner">${card.render()}</div>
+    <div class="modal-actions">
+      <span class="industry-tag ${card.tagClass.split(' ')[0]}">${tags[card.industry]}</span>
+      <button class="btn-mini" onclick="copyCardHTML('${card.id}')">复制 HTML</button>
+      <button class="btn-mini" onclick="screenshotHint()">截图提示</button>
+    </div>
+  `;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+function copyCardHTML(id) {
+  const card = DATA.find(c => c.id === id);
+  if (!card) return;
+  const html = `<div style="background:#fff;border-radius:16px;overflow:hidden;max-width:420px;">${card.render()}</div>`;
+  navigator.clipboard.writeText(html).then(() => toast("卡片 HTML 已复制"));
+}
+
+function screenshotHint() {
+  toast("在弹窗中截图即可获得完整卡片素材");
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 1400);
+}
+
+// Event listeners
+document.getElementById("industry-tabs").addEventListener("click", function(e) {
+  if (!e.target.classList.contains("tab-btn")) return;
+  industryFilter = e.target.dataset.industry;
+  this.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  renderGrid();
+});
+
+document.getElementById("type-tabs").addEventListener("click", function(e) {
+  if (!e.target.classList.contains("type-btn")) return;
+  typeFilter = e.target.dataset.type;
+  this.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  renderGrid();
+});
+
+document.getElementById("modal").addEventListener("click", function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closeModal();
+});
+
+// Init
+window.addEventListener("DOMContentLoaded", renderGrid);
+</script>
+
+</body>
+</html>
