@@ -113,6 +113,14 @@ export async function executeWithFailover(toolConfig, formData, executeFn) {
     const duration = Date.now() - startTime
     logger.toolFailure(null, toolCode, error, duration)
 
+    if (typeof toolConfig.fallbackBuilder === 'function') {
+      try {
+        return await toolConfig.fallbackBuilder(formData, error)
+      } catch (fallbackError) {
+        logger.error('failover', `Fallback builder failed: ${fallbackError.message}`, { toolCode })
+      }
+    }
+
     // Return fallback response instead of throwing
     return getFallbackResponse(toolName, toolCode)
   }

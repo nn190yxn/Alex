@@ -245,6 +245,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -255,6 +287,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('delivery-analysis')
 
@@ -280,7 +313,14 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.monthlyOrders || form.monthlyOrders <= 0) {
     result.value = { error: '请填写月订单量' }
     return
@@ -298,121 +338,11 @@ function handleSubmit() {
     return
   }
 
-  const monthlyOrders = form.monthlyOrders
-  const avgOrderValue = form.avgOrderValue
-  const platformFeeRate = form.platformFeeRate
-  const foodCostRate = form.foodCostRate
-  const packageCostPerOrder = form.packageCostPerOrder || 0
-  const deliverySubsidyPerOrder = form.deliverySubsidyPerOrder || 0
-  const monthlyMarketing = form.monthlyMarketing || 0
-  const monthlyFixed = form.monthlyFixed || 0
-
-  // 单件拆解
-  const platformFeeAmount = avgOrderValue * (platformFeeRate / 100)
-  const foodCost = avgOrderValue * (foodCostRate / 100)
-  const totalCostPerOrder = foodCost + packageCostPerOrder + platformFeeAmount + deliverySubsidyPerOrder
-  const profitPerOrder = avgOrderValue - totalCostPerOrder
-  const marginPerOrder = (profitPerOrder / avgOrderValue * 100)
-
-  // 月度汇总
-  const monthlyRevenue = monthlyOrders * avgOrderValue
-  const monthlyGrossProfit = monthlyOrders * profitPerOrder
-  const monthlyNetProfit = monthlyGrossProfit - monthlyMarketing - monthlyFixed
-  const netMargin = (monthlyNetProfit / monthlyRevenue * 100)
-
-  // 年度
-  const annualRevenue = monthlyRevenue * 12
-  const annualNetProfit = monthlyNetProfit * 12
-
-  // 保本
-  const contributionPerOrder = avgOrderValue - foodCost - packageCostPerOrder - deliverySubsidyPerOrder
-  const breakEvenOrders = contributionPerOrder > 0 ? Math.ceil((monthlyMarketing + monthlyFixed) / contributionPerOrder) : null
-  const breakEvenDaily = breakEvenOrders ? Math.ceil(breakEvenOrders / 30) : null
-
-  // 状态
-  let profitClass = ''
-  let marginClass = ''
-  if (monthlyNetProfit >= 0) profitClass = 'good'
-  else profitClass = 'danger'
-
-  if (marginPerOrder >= 20) marginClass = 'good'
-  else if (marginPerOrder >= 10) marginClass = 'warn'
-  else marginClass = 'danger'
-
-  // 堂食对比
-  let dineInComparison = null
-  if (form.dineInRevenue && form.dineInRevenue > 0 && form.dineInMargin != null) {
-    const dineInProfit = form.dineInRevenue * (form.dineInMargin / 100)
-    let conclusion = ''
-    if (monthlyNetProfit > dineInProfit) {
-      conclusion = `外卖月利润高于堂食，外卖是重要营收来源，建议持续优化。`
-    } else if (monthlyNetProfit > 0) {
-      conclusion = `堂食利润更高，但外卖仍有正向贡献，建议保持现有运营水平。`
-    } else {
-      conclusion = `外卖在亏损，堂食是主要利润来源，建议重新评估外卖定价和成本结构。`
-    }
-    dineInComparison = {
-      dineInProfit: dineInProfit.toLocaleString(),
-      dineInRevenue: form.dineInRevenue.toLocaleString(),
-      conclusion
-    }
-  }
-
-  // 建议
-  const suggestions = []
-  if (profitPerOrder < 0) {
-    suggestions.push('[紧急] 每单外卖都在亏钱！需要立即：1）提高定价或减少满减活动力度；2）降低食材成本率；3）优化包装成本。')
-  } else if (marginPerOrder < 15) {
-    suggestions.push('[建议] 单件利润率偏低，建议：1）推出高毛利套餐组合提高客单价；2）适当提价或减少满减；3）优化食材采购成本。')
-  } else {
-    suggestions.push('[良好] 单件利润率健康，建议持续监控平台费率变动和食材成本波动。')
-  }
-
-  if ((form.repeatRate || 0) < 15) {
-    suggestions.push('[建议] 外卖复购率偏低，建议：1）优化包装体验和口味稳定性；2）设置收藏店铺优惠；3）做好评价回复和客服。')
-  } else if ((form.repeatRate || 0) >= 30) {
-    suggestions.push('[良好] 复购率优秀，说明顾客认可口味和服务。')
-  }
-
-  if (monthlyMarketing > 0) {
-    const mROI = (monthlyGrossProfit - monthlyNetProfit + monthlyMarketing) / monthlyMarketing
-    if (mROI < 3) {
-      suggestions.push(`[建议] 外卖营销 ROI 仅 ${mROI.toFixed(1)}，建议优化投放策略，目标 ROI 应 >= 3。`)
-    } else {
-      suggestions.push(`[良好] 营销 ROI ${mROI.toFixed(1)}，投放效率不错。`)
-    }
-  }
-
-  if (breakEvenOrders && monthlyOrders < breakEvenOrders) {
-    suggestions.push(`[建议] 当前月订单 ${monthlyOrders} 单未达到保本线 ${breakEvenOrders} 单，需要提升订单量或降低成本。`)
-  }
-
-  result.value = {
-    monthlyNetProfit: monthlyNetProfit.toLocaleString(),
-    netMargin: netMargin.toFixed(1),
-    marginPerOrder: marginPerOrder.toFixed(1),
-    profitPerOrder: profitPerOrder.toFixed(2),
-    monthlyRevenue: monthlyRevenue.toLocaleString(),
-    monthlyGrossProfit: monthlyGrossProfit.toLocaleString(),
-    monthlyPlatformFee: (monthlyOrders * platformFeeAmount).toLocaleString(),
-    annualRevenue: annualRevenue.toLocaleString(),
-    annualNetProfit: annualNetProfit.toLocaleString(),
-    profitClass,
-    marginClass,
-    marginPerOrderPct: Math.abs(marginPerOrder),
-    foodCostPerOrder: foodCost.toFixed(1),
-    foodCostPct: (foodCost / avgOrderValue * 100).toFixed(0),
-    platformFeeAmount: platformFeeAmount.toFixed(1),
-    platformFeePct: (platformFeeAmount / avgOrderValue * 100).toFixed(0),
-    packageCost: packageCostPerOrder.toFixed(1),
-    packageCostPct: avgOrderValue > 0 ? (packageCostPerOrder / avgOrderValue * 100).toFixed(0) : '0',
-    deliverySubsidy: deliverySubsidyPerOrder.toFixed(1),
-    deliverySubsidyPct: avgOrderValue > 0 ? (deliverySubsidyPerOrder / avgOrderValue * 100).toFixed(0) : '0',
-    breakEvenOrders,
-    breakEvenDaily,
-    contributionPerOrder: contributionPerOrder.toFixed(1),
-    dineInComparison,
-    suggestions
+  try {
+    const data = await generateTool('delivery-analysis', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -536,6 +466,19 @@ function handleSubmit() {
 .suggestions { display: flex; flex-direction: column; gap: var(--space-3); }
 .suggestion-item { display: flex; gap: var(--space-3); align-items: flex-start; }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 

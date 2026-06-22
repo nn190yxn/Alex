@@ -1,12 +1,11 @@
 <template>
   <ToolDetail :tool-info="toolInfo" :result="result" @submit="handleSubmit">
     <template #inputs>
-      <div class="section">
-        <div class="section-header" @click="toggleSection('daily')">
-          <span class="section-icon">☕</span>
-          <span class="section-title">日均出杯数据</span>
-          <span class="section-arrow" :class="{ open: sections.daily }">▾</span>
-        </div>
+        <div class="section">
+          <div class="section-header" @click="toggleSection('daily')">
+            <span class="section-title">日均出杯数据</span>
+            <span class="section-arrow" :class="{ open: sections.daily }">▾</span>
+          </div>
         <div v-show="sections.daily" class="section-body">
           <div class="form-row">
             <div class="form-group">
@@ -28,12 +27,11 @@
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-header" @click="toggleSection('peak')">
-          <span class="section-icon">⏰</span>
-          <span class="section-title">高峰期数据</span>
-          <span class="section-arrow" :class="{ open: sections.peak }">▾</span>
-        </div>
+        <div class="section">
+          <div class="section-header" @click="toggleSection('peak')">
+            <span class="section-title">高峰期数据</span>
+            <span class="section-arrow" :class="{ open: sections.peak }">▾</span>
+          </div>
         <div v-show="sections.peak" class="section-body">
           <div class="form-row">
             <div class="form-group">
@@ -125,6 +123,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -135,6 +165,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('cup-efficiency')
 
@@ -151,48 +182,23 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.dailyCups || form.dailyCups <= 0) { result.value = { error: '请填写日均出杯量' }; return }
   if (!form.operatingHours || form.operatingHours <= 0) { result.value = { error: '请填写营业时间' }; return }
   if (!form.staffCount || form.staffCount <= 0) { result.value = { error: '请填写店员人数' }; return }
 
-  const cupsPerHour = Math.round(form.dailyCups / form.operatingHours)
-  const cupsPerStaff = Math.round(form.dailyCups / form.staffCount)
-  const peakCupsPerHour = form.peakHours > 0 && form.peakCups > 0 ? Math.round(form.peakCups / form.peakHours) : null
-  const peakRatio = peakCupsPerHour ? (peakCupsPerHour / cupsPerHour).toFixed(1) : null
-
-  let statusClass, statusText
-  if (cupsPerHour >= 40) { statusClass = 'good'; statusText = '高效' }
-  else if (cupsPerHour >= 25) { statusClass = 'warn'; statusText = '正常' }
-  else { statusClass = 'danger'; statusText = '偏低' }
-
-  let peakClass, peakText, peakNote
-  if (peakCupsPerHour) {
-    if (peakCupsPerHour >= 80) { peakClass = 'danger'; peakText = '高峰压力大'; peakNote = `高峰期每小时 ${peakCupsPerHour} 杯，出杯压力很大！建议增加人手或提前备料。` }
-    else if (peakCupsPerHour >= 50) { peakClass = 'warn'; peakText = '高峰正常'; peakNote = `高峰期每小时 ${peakCupsPerHour} 杯，属于正常水平，但需注意保持品质。` }
-    else { peakClass = 'good'; peakText = '高峰轻松'; peakNote = `高峰期每小时 ${peakCupsPerHour} 杯，出杯轻松，有提升空间。` }
-  } else {
-    peakClass = ''; peakText = '未填写'; peakNote = '填写高峰期数据可查看高峰压力分析。'
-  }
-
-  const suggestions = []
-  if (cupsPerHour < 25) {
-    suggestions.push('出杯效率偏低，建议：1）优化操作流程，减少动作浪费；2）提前备料，高峰时直接取用；3）增加兼职人员。')
-  }
-  if (peakCupsPerHour && peakCupsPerHour >= 80) {
-    suggestions.push(`高峰期每小时 ${peakCupsPerHour} 杯，压力较大！建议：1）设置高峰期专属备料台；2）简化高峰期菜单；3）增加 1-2 名临时工。`)
-  }
-  if (peakRatio && parseFloat(peakRatio) > 3) {
-    suggestions.push(`峰谷比 ${peakRatio}:1 过高，说明客流极度不均匀，建议通过优惠引导错峰消费（如下午茶时段打折）。`)
-  }
-  if (suggestions.length === 0) {
-    suggestions.push('出杯效率良好，建议持续监控高峰期表现，适时调整人员配置。')
-  }
-
-  result.value = {
-    cupsPerHour, cupsPerStaff, peakCupsPerHour: peakCupsPerHour || '—',
-    peakRatio: peakRatio || '—',
-    statusClass, statusText, peakClass, peakText, peakNote, suggestions
+  try {
+    const data = await generateTool('cup-efficiency', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -246,6 +252,18 @@ function handleSubmit() {
 .suggestion-item { display: flex; gap: var(--space-3); align-items: flex-start; }
 .suggestion-num { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-size: var(--text-caption); font-weight: var(--font-weight-bold); }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 @media (max-width: 640px) { .result-hero { grid-template-columns: 1fr; } .diag-grid { grid-template-columns: 1fr; } .benchmark-grid { grid-template-columns: 1fr; } }
 </style>

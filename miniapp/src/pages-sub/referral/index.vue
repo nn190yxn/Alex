@@ -1,9 +1,13 @@
 <template>
   <view class="container">
+    <view class="loading-card" v-if="loading">
+      <text class="loading-text">加载中...</text>
+    </view>
+    <template v-else>
     <view class="card">
       <text class="title">我的推荐码</text>
       <view class="code-box">
-        <text class="code">{{ stats.referralCode || '加载中...' }}</text>
+        <text class="code">{{ stats.referralCode || '--' }}</text>
         <button class="btn-copy" @click="copyCode">复制</button>
       </view>
       <text class="tip">邀请好友注册，双方各得 1 天体验；好友付费你得 20% 返利（不设上限）</text>
@@ -32,28 +36,38 @@
     </view>
 
     <button class="btn-share" open-type="share">邀请好友</button>
+    </template>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow, onShareAppMessage } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onPullDownRefresh } from '@dcloudio/uni-app'
 import { getMyReferralCode, getReferralStats, getReferralCommissions } from '@/api/referral'
 
 const stats = ref({})
 const commissions = ref([])
+const loading = ref(true)
+const loadError = ref(false)
 
 const totalCommission = computed(() => stats.value.commissionSummary?.totalCommission || 0)
 
 onShow(loadData)
 
+onPullDownRefresh(async () => {
+  await loadData()
+  uni.stopPullDownRefresh()
+})
+
 // 小程序分享配置
 onShareAppMessage(() => ({
   title: `推荐码：${stats.value.referralCode || ''}，注册得会员`,
-  path: `/pages/register/index?ref=${stats.value.referralCode || ''}`
+  path: `/pages-sub/register/index?ref=${stats.value.referralCode || ''}`
 }))
 
 async function loadData() {
+  loading.value = true
+  loadError.value = false
   try {
     const [code, s, list] = await Promise.all([
       getMyReferralCode(),
@@ -62,7 +76,13 @@ async function loadData() {
     ])
     stats.value = { ...s, referralCode: code.referralCode }
     commissions.value = list
-  } catch {}
+  } catch (e) {
+    loadError.value = true
+    console.error('[Referral] loadData error:', e)
+    uni.showToast({ title: '加载失败，下拉重试', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
 }
 
 function copyCode() {
@@ -93,4 +113,6 @@ function statusText(s) {
 .money { color: #0e7490; margin: 0 16rpx; font-weight: bold; }
 .status { font-size: 22rpx; padding: 4rpx 10rpx; background: #eee; border-radius: 8rpx; }
 .btn-share { background: #0e7490; color: #fff; margin-top: 30rpx; }
+.loading-card { background: #fff; padding: 60rpx 30rpx; border-radius: 16rpx; display: flex; justify-content: center; align-items: center; }
+.loading-text { font-size: 26rpx; color: #6b7780; }
 </style>

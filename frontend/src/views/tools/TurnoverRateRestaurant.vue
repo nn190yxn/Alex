@@ -4,7 +4,6 @@
       <!-- 基础信息 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('base')">
-          <span class="section-icon">🏪</span>
           <span class="section-title">餐厅基础信息</span>
           <span class="section-arrow" :class="{ open: sections.base }">▾</span>
         </div>
@@ -43,7 +42,6 @@
       <!-- 午市 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('lunch')">
-          <span class="section-icon">🌞</span>
           <span class="section-title">午市（11:00 - 14:00）</span>
           <span class="section-arrow" :class="{ open: sections.lunch }">▾</span>
         </div>
@@ -65,7 +63,6 @@
       <!-- 晚市 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('dinner')">
-          <span class="section-icon">🌙</span>
           <span class="section-title">晚市（17:00 - 21:00）</span>
           <span class="section-arrow" :class="{ open: sections.dinner }">▾</span>
         </div>
@@ -87,7 +84,6 @@
       <!-- 其他时段（可选） -->
       <div class="section">
         <div class="section-header" @click="toggleSection('other')">
-          <span class="section-icon">☕</span>
           <span class="section-title">其他时段（下午茶/夜宵等，可选）</span>
           <span class="section-arrow" :class="{ open: sections.other }">▾</span>
         </div>
@@ -112,13 +108,13 @@
         <div class="result-hero">
           <div class="hero-main">
             <div class="hero-label">全天翻台率</div>
-            <div class="hero-value">{{ result.totalTurnover }} 次/桌</div>
-            <div class="hero-status" :class="result.totalStatus">{{ result.totalStatusText }}</div>
+            <div class="hero-value">{{ result.extra?.totalTurnover }} 次/桌</div>
+            <div class="hero-status" :class="result.extra?.totalStatus">{{ result.extra?.totalStatusText }}</div>
           </div>
           <div class="hero-sub-card">
             <div class="hero-label">座位利用率</div>
-            <div class="hero-value seat">{{ result.seatUtilization }}%</div>
-            <div class="hero-sub">每桌平均 {{ result.avgGuests }} 人</div>
+            <div class="hero-value seat">{{ result.extra?.seatUtilization || '-' }}%</div>
+            <div class="hero-sub">每桌平均 {{ result.extra?.avgGuests }} 人</div>
           </div>
         </div>
 
@@ -127,43 +123,40 @@
           <h3 class="card-title">分时段翻台率</h3>
           <div class="period-grid">
             <div class="period-card lunch">
-              <div class="period-icon">🌞</div>
               <div class="period-label">午市</div>
-              <div class="period-value">{{ result.lunchTurnover }} 次</div>
+              <div class="period-value">{{ result.extra?.lunchTurnover }} 次</div>
               <div class="period-detail">{{ form.lunchTables }} 桌 / {{ form.totalTables }} 张桌</div>
-              <div class="period-status" :class="result.lunchStatus">{{ result.lunchStatusText }}</div>
+              <div class="period-status" :class="result.extra?.lunchStatus">{{ result.extra?.lunchStatusText }}</div>
             </div>
             <div class="period-card dinner">
-              <div class="period-icon">🌙</div>
               <div class="period-label">晚市</div>
-              <div class="period-value">{{ result.dinnerTurnover }} 次</div>
+              <div class="period-value">{{ result.extra?.dinnerTurnover }} 次</div>
               <div class="period-detail">{{ form.dinnerTables }} 桌 / {{ form.totalTables }} 张桌</div>
-              <div class="period-status" :class="result.dinnerStatus">{{ result.dinnerStatusText }}</div>
+              <div class="period-status" :class="result.extra?.dinnerStatus">{{ result.extra?.dinnerStatusText }}</div>
             </div>
-            <div v-if="result.otherTurnover != null" class="period-card other">
-              <div class="period-icon">☕</div>
+            <div v-if="result.extra?.otherTurnover != null" class="period-card other">
               <div class="period-label">其他时段</div>
-              <div class="period-value">{{ result.otherTurnover }} 次</div>
+              <div class="period-value">{{ result.extra?.otherTurnover }} 次</div>
               <div class="period-detail">{{ form.otherTables }} 桌 / {{ form.totalTables }} 张桌</div>
             </div>
           </div>
         </div>
 
         <!-- 经营关联分析 -->
-        <div v-if="result.revenueData" class="result-card">
+        <div v-if="result.extra?.revenueData" class="result-card">
           <h3 class="card-title">经营关联分析</h3>
           <div class="revenue-grid">
             <div class="revenue-item">
               <div class="revenue-label">日总营业额</div>
-              <div class="revenue-value">¥{{ formatNum(result.revenueData.daily) }}</div>
+              <div class="revenue-value">¥{{ formatNum(result.extra.revenueData.daily) }}</div>
             </div>
             <div class="revenue-item">
               <div class="revenue-label">每桌产出</div>
-              <div class="revenue-value">¥{{ formatNum(result.revenueData.perTable) }}</div>
+              <div class="revenue-value">¥{{ formatNum(result.extra.revenueData.perTable) }}</div>
             </div>
             <div class="revenue-item">
               <div class="revenue-label">客单价</div>
-              <div class="revenue-value">¥{{ formatNum(result.revenueData.avgTicket) }}</div>
+              <div class="revenue-value">¥{{ formatNum(result.extra.revenueData.avgTicket) }}</div>
             </div>
           </div>
         </div>
@@ -184,20 +177,52 @@
               <span>优秀</span>
             </div>
             <div class="benchmark-text">
-              你的翻台率 {{ result.totalTurnover }} 次，在{{ result.typeName }}行业中 {{ result.benchmarkLevel }}
+              你的翻台率 {{ result.extra?.totalTurnover }} 次，在{{ result.extra?.typeName }}行业中 {{ result.extra?.benchmarkLevel }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
             </div>
           </div>
         </div>
 
         <!-- 经营建议 -->
-        <div v-if="result.suggestions && result.suggestions.length" class="result-card">
+        <div v-if="result.extra?.suggestions?.length" class="result-card">
           <h3 class="card-title">经营建议</h3>
           <div class="suggestions">
-            <div v-for="(s, i) in result.suggestions" :key="i" class="suggestion-item">
+            <div v-for="(s, i) in result.extra.suggestions" :key="i" class="suggestion-item">
               <span class="suggestion-num">{{ i + 1 }}</span>
               <span class="suggestion-text">{{ s }}</span>
             </div>
           </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -209,6 +234,7 @@
 import { ref, reactive, computed } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('turnover-rate-restaurant')
 
@@ -238,110 +264,37 @@ function formatNum(n) {
   return Math.round(n).toLocaleString()
 }
 
-const typeBenchmarks = {
-  fast: { name: '快餐', low: [0, 3], mid: [3, 6], high: [6, 15] },
-  chinese: { name: '中餐/正餐', low: [0, 1.5], mid: [1.5, 3], high: [3, 8] },
-  hotpot: { name: '火锅', low: [0, 1.5], mid: [1.5, 3], high: [3, 6] },
-  western: { name: '西餐', low: [0, 1], mid: [1, 2.5], high: [2.5, 5] },
-  cafe: { name: '咖啡/茶饮', low: [0, 2], mid: [2, 5], high: [5, 12] },
-  bbq: { name: '烧烤/夜宵', low: [0, 1], mid: [1, 2.5], high: [2.5, 5] }
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
 }
 
-function getStatus(rate, type) {
-  const b = typeBenchmarks[type] || typeBenchmarks.chinese
-  if (rate >= b.high[0]) return { status: 'excellent', text: '优秀' }
-  if (rate >= b.mid[0]) return { status: 'normal', text: '正常' }
-  return { status: 'low', text: '偏低' }
-}
-
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.totalTables || form.totalTables <= 0) {
     result.value = { error: '请输入总桌数' }
     return
   }
-  const totalTables = form.totalTables
-  const lunchTables = form.lunchTables || 0
-  const dinnerTables = form.dinnerTables || 0
-  const otherTables = form.otherTables || 0
-  const dailyTables = lunchTables + dinnerTables + otherTables
+  const dailyTables = (form.lunchTables || 0) + (form.dinnerTables || 0) + (form.otherTables || 0)
 
   if (dailyTables <= 0) {
     result.value = { error: '请至少填写一个时段的就餐桌次' }
     return
   }
 
-  const lunchTurnover = lunchTables > 0 ? (lunchTables / totalTables).toFixed(1) : '0'
-  const dinnerTurnover = dinnerTables > 0 ? (dinnerTables / totalTables).toFixed(1) : '0'
-  const otherTurnover = otherTables > 0 ? (otherTables / totalTables).toFixed(1) : null
-  const totalTurnover = (dailyTables / totalTables).toFixed(1)
-
-  const lunchStatus = getStatus(parseFloat(lunchTurnover), form.restaurantType)
-  const dinnerStatus = getStatus(parseFloat(dinnerTurnover), form.restaurantType)
-  const totalStatus = getStatus(parseFloat(totalTurnover), form.restaurantType)
-
-  const avgGuests = form.avgGuestsPerTable || 3
-  const totalGuests = dailyTables * avgGuests
-  const seatUtilization = form.totalSeats > 0 ? ((totalGuests / form.totalSeats) * 100).toFixed(0) : null
-
-  // 营业额关联分析
-  const lunchRev = form.lunchRevenue || 0
-  const dinnerRev = form.dinnerRevenue || 0
-  const otherRev = form.otherRevenue || 0
-  const dailyRevenue = lunchRev + dinnerRev + otherRev
-  let revenueData = null
-  if (dailyRevenue > 0) {
-    revenueData = {
-      daily: dailyRevenue,
-      perTable: dailyRevenue / dailyTables,
-      avgTicket: totalGuests > 0 ? dailyRevenue / totalGuests : 0
-    }
-  }
-
-  // 经营建议
-  const suggestions = []
-  const b = typeBenchmarks[form.restaurantType] || typeBenchmarks.chinese
-  const turnoverNum = parseFloat(totalTurnover)
-
-  if (turnoverNum < b.mid[0]) {
-    suggestions.push('翻台率低于行业正常水平，建议：1）加强线上引流（美团/抖音团购）；2）推出午市/下午茶特价套餐吸引非高峰客流；3）检查菜品口味和价格是否有竞争力。')
-  }
-  if (lunchTables < dinnerTables * 0.5 && form.restaurantType !== 'fast') {
-    suggestions.push('午市明显弱于晚市，建议推出工作日午市套餐、附近企业团餐合作，提升午市利用率。')
-  }
-  if (turnoverNum >= b.high[0]) {
-    suggestions.push('翻台率已达优秀水平，可适当提价或优化菜品结构提升客单价，不必继续追求翻台。')
-  }
-  if (seatUtilization && parseInt(seatUtilization) < 50) {
-    suggestions.push('座位利用率偏低，考虑：1）减少部分大桌改设小桌/吧台；2）推出拼桌或单人套餐。')
-  }
-  if (suggestions.length === 0) {
-    suggestions.push('翻台率在正常范围内，保持当前运营节奏即可。可关注提高客单价来增加营收。')
-  }
-
-  result.value = {
-    lunchTurnover,
-    dinnerTurnover,
-    otherTurnover,
-    totalTurnover,
-    lunchStatus: lunchStatus.status,
-    lunchStatusText: lunchStatus.text,
-    dinnerStatus: dinnerStatus.status,
-    dinnerStatusText: dinnerStatus.text,
-    totalStatus: totalStatus.status,
-    totalStatusText: totalStatus.text,
-    seatUtilization,
-    avgGuests,
-    revenueData,
-    typeName: b.name,
-    benchmarkLevel: totalStatus.text === '优秀' ? '表现优秀' : totalStatus.text === '正常' ? '处于正常范围' : '偏低，需要提升',
-    suggestions
+  try {
+    result.value = await generateTool('turnover-rate-restaurant', { ...form })
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 
 const benchmarkRange = computed(() => {
   if (!result.value) return { low: 0, mid: 0, high: 0 }
-  const b = typeBenchmarks[form.restaurantType] || typeBenchmarks.chinese
-  const maxRate = Math.max(b.high[1], parseFloat(result.value.totalTurnover) + 1)
+  const b = result.value.extra?.benchmark
+  if (!b) return { low: 0, mid: 0, high: 0 }
+  const maxRate = Math.max(b.high[1], parseFloat(result.value.extra?.totalTurnover || 0) + 1)
   const lowPct = (b.low[1] / maxRate) * 100
   const midPct = ((b.mid[1] - b.low[1]) / maxRate) * 100
   const highPct = ((b.high[1] - b.mid[1]) / maxRate) * 100
@@ -350,9 +303,10 @@ const benchmarkRange = computed(() => {
 
 const benchmarkPosition = computed(() => {
   if (!result.value) return 0
-  const b = typeBenchmarks[form.restaurantType] || typeBenchmarks.chinese
-  const maxRate = Math.max(b.high[1], parseFloat(result.value.totalTurnover) + 1)
-  return ((parseFloat(result.value.totalTurnover) / maxRate) * 100).toFixed(1)
+  const b = result.value.extra?.benchmark
+  if (!b) return 0
+  const maxRate = Math.max(b.high[1], parseFloat(result.value.extra?.totalTurnover || 0) + 1)
+  return ((parseFloat(result.value.extra?.totalTurnover || 0) / maxRate) * 100).toFixed(1)
 })
 </script>
 
@@ -471,6 +425,18 @@ const benchmarkPosition = computed(() => {
   justify-content: center; font-size: var(--text-caption); font-weight: var(--font-weight-bold);
 }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

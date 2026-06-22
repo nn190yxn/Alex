@@ -1,18 +1,25 @@
 {
   "name": "我赢AI",
-  "appid": "",
+  "appid": "__WECHAT_APPID__",
   "description": "老板的AI生意助理",
   "versionName": "1.0.0",
   "versionCode": "100",
   "transformPx": false,
   "mp-weixin": {
-    "appid": "",
+    "appid": "__WECHAT_APPID__",
     "setting": {
       "urlCheck": true
     },
     "usingComponents": true,
+    "__usePrivacyCheck__": true,
     "permission": {},
-    "requiredPrivateInfos": []
+    "requiredPrivateInfos": [],
+    "plugins": {
+      "WechatSI": {
+        "version": "0.3.6",
+        "provider": "wx069ba97219f66d99"
+      }
+    }
   },
   "networkTimeout": {
     "request": 10000,

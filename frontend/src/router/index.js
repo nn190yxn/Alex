@@ -12,7 +12,7 @@ const routes = [
     path: '/tools',
     name: 'Tools',
     component: () => import('@/views/Tools.vue'),
-    meta: { title: '表格中心' }
+    meta: { title: '所有工具' }
   },
   {
     path: '/industries/:slug',
@@ -33,6 +33,60 @@ const routes = [
   {
     path: '/modules/xiaohongshu',
     redirect: '/xhs'
+  },
+  {
+    path: '/tools/poster',
+    name: 'PosterGenerator',
+    component: () => import('@/views/tool/PosterGenerator.vue'),
+    meta: { title: '海报生成器' }
+  },
+  {
+    path: '/tools/xiaohongshu-education',
+    name: 'EducationXiaohongshuGenerator',
+    component: () => import('@/views/tools/EducationXiaohongshuGenerator.vue'),
+    meta: { title: '教培小红书运营专版' }
+  },
+  {
+    path: '/tools/douyin-education',
+    name: 'EducationDouyinGenerator',
+    component: () => import('@/views/tools/EducationDouyinGenerator.vue'),
+    meta: { title: '教培抖音运营专版' }
+  },
+  {
+    path: '/tools/xiaohongshu-beauty',
+    name: 'BeautyXiaohongshuGenerator',
+    component: () => import('@/views/tools/BeautyXiaohongshuGenerator.vue'),
+    meta: { title: '美业小红书运营专版' }
+  },
+  {
+    path: '/tools/douyin-beauty',
+    name: 'BeautyDouyinGenerator',
+    component: () => import('@/views/tools/BeautyDouyinGenerator.vue'),
+    meta: { title: '美业抖音运营专版' }
+  },
+  {
+    path: '/tools/xiaohongshu-restaurant',
+    name: 'RestaurantXiaohongshuGenerator',
+    component: () => import('@/views/tools/RestaurantXiaohongshuGenerator.vue'),
+    meta: { title: '餐饮小红书运营专版' }
+  },
+  {
+    path: '/tools/douyin-restaurant',
+    name: 'RestaurantDouyinGenerator',
+    component: () => import('@/views/tools/RestaurantDouyinGenerator.vue'),
+    meta: { title: '餐饮抖音运营专版' }
+  },
+  {
+    path: '/tools/xiaohongshu-service',
+    name: 'ServiceXiaohongshuGenerator',
+    component: () => import('@/views/tools/ServiceXiaohongshuGenerator.vue'),
+    meta: { title: '生活服务小红书运营专版' }
+  },
+  {
+    path: '/tools/douyin-service',
+    name: 'ServiceDouyinGenerator',
+    component: () => import('@/views/tools/ServiceDouyinGenerator.vue'),
+    meta: { title: '生活服务抖音运营专版' }
   },
   {
     path: '/tools/:code',

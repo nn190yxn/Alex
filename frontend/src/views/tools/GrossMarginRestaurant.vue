@@ -32,6 +32,7 @@
                 <option value="小吃">小吃</option>
                 <option value="烧烤">烧烤</option>
                 <option value="饮品">饮品</option>
+                <option value="自定义">自定义</option>
               </select>
               <input 
                 v-if="cat.name === '' || cat.name === '自定义'" 
@@ -84,6 +85,13 @@
           </div>
         </div>
 
+        <div v-if="result.extra?.diagnosis?.length" class="report-section">
+          <h4 class="section-subtitle">核心结论</h4>
+          <ul class="report-list">
+            <li v-for="(item, i) in result.extra.diagnosis" :key="i">{{ item }}</li>
+          </ul>
+        </div>
+
         <div class="categories-grid">
           <div v-for="(cat, idx) in result.extra?.categories || []" :key="idx" class="category-result-card">
             <div class="cat-header">
@@ -118,6 +126,24 @@
               <span class="suggestion-icon" :class="s.type">{{ getTypeIcon(s.type) }}</span>
               <span class="suggestion-text">{{ s.text }}</span>
             </li>
+          </ul>
+        </div>
+
+        <div v-if="result.actions?.length" class="report-section">
+          <h4 class="section-subtitle">行动清单</h4>
+          <div class="action-list">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-item" :class="action.priority">
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-meta">负责人：{{ action.owner }}｜周期：{{ action.timeline }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="report-section risk-section">
+          <h4 class="section-subtitle">口径与风险</h4>
+          <ul class="report-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
           </ul>
         </div>
       </div>
@@ -446,6 +472,13 @@ async function handleSubmit() {
   padding: var(--space-4);
 }
 
+.report-section {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
 .section-subtitle {
   font-size: var(--text-body-sm);
   font-weight: var(--font-weight-semibold);
@@ -469,6 +502,60 @@ async function handleSubmit() {
   font-size: var(--text-body-sm);
   color: var(--text-secondary);
   line-height: var(--leading-body-lg);
+}
+
+.report-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-lg);
+}
+
+.action-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.action-item {
+  border-left: 3px solid var(--line-default);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.action-item.critical {
+  border-left-color: #dc2626;
+}
+
+.action-item.high {
+  border-left-color: #f59e0b;
+}
+
+.action-item.medium {
+  border-left-color: #2563eb;
+}
+
+.action-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.action-desc,
+.action-meta {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.action-meta {
+  margin-top: var(--space-2);
+}
+
+.risk-section {
+  background: #fffbeb;
+  border-color: #fde68a;
 }
 
 .suggestion-icon {

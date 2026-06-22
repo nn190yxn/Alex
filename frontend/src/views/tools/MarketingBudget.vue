@@ -47,11 +47,48 @@
         <div class="result-card">
           <h3 class="card-title">预估效果汇总</h3>
           <div class="summary-grid">
-            <div class="summary-item"><span>总预算</span><strong>¥{{ form.totalBudget }}</strong></div>
+            <div class="summary-item"><span>总预算</span><strong>¥{{ result.totalBudget }}</strong></div>
             <div class="summary-item"><span>预估总获客</span><strong>{{ result.totalEstCustomers }} 人</strong></div>
             <div class="summary-item"><span>综合 CAC</span><strong>¥{{ result.blendedCAC }}</strong></div>
             <div class="summary-item"><span>推荐重点渠道</span><strong class="highlight">{{ result.topChannel }}</strong></div>
+            <div class="summary-item"><span>预算集中度</span><strong>{{ result.concentrationPct }}%</strong></div>
+            <div class="summary-item"><span>每千元获客</span><strong>{{ result.estCustomersPerThousand }} 人</strong></div>
           </div>
+        </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-card">
+          <h3 class="card-title">执行建议</h3>
+          <div class="suggestion-list">
+            <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -63,6 +100,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('marketing-budget')
 const form = reactive({
@@ -78,34 +116,24 @@ const form = reactive({
 })
 const result = ref(null)
 
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4']
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.totalBudget) { result.value = { error: '请输入营销总预算' }; return }
   const enabled = form.channels.filter(ch => ch.enabled && ch.cac > 0)
   if (enabled.length === 0) { result.value = { error: '至少启用一个渠道并填入预估CAC' }; return }
 
-  const goalWeights = {
-    acquisition: { douyin: 35, meituan: 25, referral: 15, community: 10, offline: 10, collab: 5 },
-    retention: { douyin: 10, meituan: 10, referral: 35, community: 30, offline: 5, collab: 10 },
-    brand: { douyin: 40, meituan: 10, referral: 10, community: 20, offline: 10, collab: 10 },
-    balanced: { douyin: 25, meituan: 25, referral: 20, community: 15, offline: 10, collab: 5 }
+  try {
+    const data = await generateTool('marketing-budget', { ...form, channels: enabled })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-  const weights = goalWeights[form.goal]
-  let totalWeight = 0
-  const allocations = enabled.map((ch, i) => {
-    const w = weights[ch.key] || 10
-    totalWeight += w
-    return { ...ch, weight: w, color: COLORS[i % COLORS.length] }
-  })
-
-  allocations.forEach(a => { a.pct = ((a.weight / totalWeight) * 100).toFixed(0); a.amount = (form.totalBudget * a.pct / 100).toFixed(0); a.estCustomers = Math.floor(a.amount / a.cac) })
-
-  const totalEst = allocations.reduce((s, a) => s + a.estCustomers, 0)
-  const blendedCAC = totalEst > 0 ? (form.totalBudget / totalEst).toFixed(0) : '-'
-  const top = allocations.reduce((best, a) => a.estCustomers > best.estCustomers ? a : best, allocations[0])
-
-  result.value = { allocations, totalEstCustomers: totalEst, blendedCAC, topChannel: top.name }
 }
 </script>
 
@@ -134,5 +162,20 @@ function handleSubmit() {
 .summary-item span { display: block; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-1); }
 .summary-item strong { font-size: var(--text-body); }
 .summary-item strong.highlight { color: var(--brand-primary-weak); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.suggestion-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.suggestion-list p { margin: 0; font-size: var(--text-body-sm); line-height: var(--leading-body-lg); color: var(--text-secondary); }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .summary-grid { grid-template-columns: 1fr; } .channel-check { flex-wrap: wrap; } .ch-cac { width: 100%; } }
 </style>

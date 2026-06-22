@@ -5,30 +5,83 @@
       "style": { "navigationBarTitleText": "首页" }
     },
     {
-      "path": "pages/login/index",
-      "style": { "navigationBarTitleText": "登录" }
-    },
-    {
-      "path": "pages/register/index",
-      "style": { "navigationBarTitleText": "注册" }
+      "path": "pages/ai/index",
+      "style": {
+        "navigationBarTitleText": "AI",
+        "enablePullDownRefresh": true
+      }
     },
     {
       "path": "pages/tools/index",
       "style": { "navigationBarTitleText": "工具箱" }
     },
     {
-      "path": "pages/membership/index",
-      "style": { "navigationBarTitleText": "会员中心" }
-    },
-    {
-      "path": "pages/referral/index",
-      "style": { "navigationBarTitleText": "邀请返利" }
-    },
-    {
       "path": "pages/user/index",
       "style": { "navigationBarTitleText": "我的" }
     }
   ],
+  "subPackages": [
+    {
+      "root": "pages-sub",
+      "pages": [
+        {
+          "path": "login/index",
+          "style": { "navigationBarTitleText": "登录" }
+        },
+        {
+          "path": "register/index",
+          "style": { "navigationBarTitleText": "注册" }
+        },
+        {
+          "path": "tool-run/index",
+          "style": { "navigationBarTitleText": "生成" }
+        },
+        {
+          "path": "history/index",
+          "style": {
+            "navigationBarTitleText": "历史",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "history-detail/index",
+          "style": { "navigationBarTitleText": "详情" }
+        },
+        {
+          "path": "membership/index",
+          "style": { "navigationBarTitleText": "会员中心" }
+        },
+        {
+          "path": "referral/index",
+          "style": {
+            "navigationBarTitleText": "邀请返利",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "favorites/index",
+          "style": {
+            "navigationBarTitleText": "收藏",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "privacy/index",
+          "style": { "navigationBarTitleText": "隐私政策" }
+        },
+        {
+          "path": "agreement/index",
+          "style": { "navigationBarTitleText": "用户协议" }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/home/index": {
+      "network": "all",
+      "packages": ["pages-sub"]
+    }
+  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "我赢AI",
@@ -44,6 +97,10 @@
       {
         "pagePath": "pages/home/index",
         "text": "首页"
+      },
+      {
+        "pagePath": "pages/ai/index",
+        "text": "AI"
       },
       {
         "pagePath": "pages/tools/index",

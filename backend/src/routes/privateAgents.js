@@ -16,7 +16,7 @@ const checkAccess = async (req, res, next) => {
   try {
     const jwt = await import('jsonwebtoken')
     const token = authHeader.split(' ')[1]
-    const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'woying-ai-secret-key')
+    const decoded = jwt.default.verify(token, process.env.JWT_SECRET)
     const users = await query('SELECT member_level FROM users WHERE id = ?', [decoded.userId])
     if (users.length === 0) return res.status(403).json({ error: '用户不存在' })
     req.userLevel = users[0].member_level || 'free'

@@ -5,13 +5,13 @@
         <div class="hero-copy">
           <p class="hero-eyebrow">我赢AI</p>
           <h1>
-            <span>100+知识库</span>
-            <span>让老板多赚三倍钱的 AI 助理</span>
+            <span>行业工具</span>
+            <span>增长智能体</span>
           </h1>
           <p class="hero-desc">本站已有会员 <strong class="hero-member-inline">{{ displayMemberCount }}</strong></p>
           <div class="hero-actions">
-            <router-link to="/tools" class="btn btn-primary btn-lg">功能分类</router-link>
-            <router-link to="/membership" class="btn btn-secondary btn-lg">会员介绍</router-link>
+            <router-link to="/tools" class="btn btn-primary btn-lg">进入所有工具</router-link>
+            <router-link to="/membership" class="btn btn-secondary btn-lg">会员</router-link>
           </div>
         </div>
 
@@ -23,20 +23,20 @@
           <div class="hero-metrics">
             <div class="metric-card">
               <strong class="numeral">{{ capabilityCount }}</strong>
-              <span>已上线能力</span>
+              <span>工具</span>
             </div>
             <div class="metric-card">
-              <strong class="numeral">8</strong>
-              <span>模块入口</span>
+              <strong class="numeral">5</strong>
+              <span>目标</span>
             </div>
             <div class="metric-card">
               <strong class="numeral">{{ industryTemplateEntries.length }}</strong>
-              <span>表格模板</span>
+              <span>模板</span>
             </div>
           </div>
           <router-link to="/diagnosis" class="growth-spotlight">
-            <span class="growth-spotlight-label">特色能力</span>
-            <strong>企业增长全景顾问</strong>
+            <span class="growth-spotlight-label">增长</span>
+            <strong>企业增长</strong>
           </router-link>
         </div>
       </div>
@@ -45,26 +45,21 @@
     <section class="section">
       <div class="container">
         <div class="section-head">
-          <h2>功能分类</h2>
+          <h2>行业</h2>
         </div>
-
-        <div class="module-grid">
+        <div class="industry-grid">
           <router-link
-            v-for="pillar in pillars"
-            :key="pillar.key"
-            :to="pillar.path || `/modules/${pillar.key}`"
-            class="module-card card"
+            v-for="industry in industryEntries"
+            :key="industry.slug"
+            :to="`/industries/${industry.slug}`"
+            class="industry-entry card"
           >
-            <div class="module-top">
-              <span class="module-icon" :style="{ color: pillar.color, backgroundColor: pillar.bg }">
-                <component :is="pillar.icon" />
-              </span>
-              <span class="module-count">{{ pillar.count }} 个能力</span>
+            <div class="industry-entry-top">
+              <span class="mini-dot" :style="{ backgroundColor: industry.accent }"></span>
+              <strong>{{ industry.shortName }}</strong>
             </div>
-            <h3>{{ pillar.name }}</h3>
-            <div class="module-cues">
-              <span v-for="cue in pillar.cues" :key="cue" class="module-cue">{{ cue }}</span>
-            </div>
+            <p>{{ industry.summary }}</p>
+            <span class="industry-entry-count">{{ getIndustryTemplateCount(industry.slug) }} 张表格</span>
           </router-link>
         </div>
       </div>
@@ -73,20 +68,33 @@
     <section class="section section-subtle">
       <div class="container">
         <div class="section-head">
-          <h2>行业入口</h2>
+          <h2>目标</h2>
         </div>
-        <div class="mini-grid industry-entry-grid">
-          <router-link
-            v-for="industry in industryEntries"
-            :key="industry.slug"
-            :to="`/industries/${industry.slug}`"
-            class="industry-entry"
-          >
-            <div class="industry-entry-top">
-              <span class="mini-dot" :style="{ backgroundColor: industry.accent }"></span>
-              <strong>{{ industry.shortName }}</strong>
+
+        <div class="goal-grid">
+          <router-link v-for="goal in businessGoals" :key="goal.key" :to="goal.path" class="goal-card card">
+            <span class="goal-kicker">{{ goal.kicker }}</span>
+            <h3>{{ goal.name }}</h3>
+            <p>{{ goal.description }}</p>
+            <div class="module-cues">
+              <span v-for="cue in goal.cues" :key="cue" class="module-cue">{{ cue }}</span>
             </div>
-            <span class="industry-entry-count">{{ getIndustryTemplateCount(industry.slug) }} 张表格</span>
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>高频</h2>
+        </div>
+
+        <div class="quick-grid">
+          <router-link v-for="item in quickEntries" :key="item.name" :to="item.path" class="quick-card card">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.name }}</strong>
+            <p>{{ item.description }}</p>
           </router-link>
         </div>
       </div>
@@ -95,7 +103,7 @@
     <section class="section membership-section">
       <div class="container">
         <div class="section-head">
-          <h2>会员介绍</h2>
+          <h2>会员</h2>
         </div>
 
         <div class="membership-grid">
@@ -120,13 +128,10 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import {
-  allTools,
   capabilityCount,
   industryTemplateEntries,
   visibleIndustryEntries as industryEntries,
-  mapToolToPillar,
-  pricingPlans,
-  pillarMeta
+  pricingPlans
 } from '@/constants/toolCatalog'
 
 const targetMemberCount = 867
@@ -145,16 +150,20 @@ onMounted(() => {
   window.requestAnimationFrame(tick)
 })
 
-function getToolCountByPillar(pillarKey) {
-  if (pillarMeta[pillarKey]?.count) return pillarMeta[pillarKey].count
-  return allTools.filter(tool => mapToolToPillar(tool) === pillarKey).length
-}
+const businessGoals = [
+  { key: 'profit', name: '算利润', kicker: '先看钱', description: '毛利、净利、回本周期和现金流先算清楚。', path: '/industries/restaurant', cues: ['毛利', '回本', '现金流'] },
+  { key: 'cost', name: '控成本', kicker: '压住损耗', description: '围绕人效、食材、库存和排班找到成本漏洞。', path: '/tools/salary-cost-ratio-restaurant', cues: ['人效', '损耗', '排班'] },
+  { key: 'marketing', name: '做营销', kicker: '活动复盘', description: '活动、投流、转介绍。', path: '/tools/campaign-roi', cues: ['活动', 'ROI', '转介绍'] },
+  { key: 'private', name: '做私域', kicker: '留存复购', description: '把会员、社群、复购和沉睡客户激活串起来。', path: '/private', cues: ['会员', '社群', '复购'] },
+  { key: 'video', name: '做短视频', kicker: '内容获客', description: '标题、钩子、脚本。', path: '/douyin', cues: ['标题', '脚本', '投流'] }
+]
 
-const pillars = Object.entries(pillarMeta).map(([key, meta]) => ({
-  key,
-  ...meta,
-  count: getToolCountByPillar(key)
-}))
+const quickEntries = [
+  { label: '工具', name: '所有工具', description: '智能体、计算器、表格模板。', path: '/tools' },
+  { label: '计算', name: '投流 ROI', description: '投放、活动、回报。', path: '/tools/roi' },
+  { label: '计算', name: '回本周期', description: '投资、毛利、时间。', path: '/tools/payback' },
+  { label: '诊断', name: '企业增长', description: '卡点、策略、动作。', path: '/diagnosis' }
+]
 
 const membershipPlans = pricingPlans.map(plan => {
   const coverageMap = { free: '3/8', starter: '5/8', pro: '7/8', annual: '8/8' }
@@ -309,13 +318,27 @@ function getIndustryTemplateCount(slug) {
   margin-bottom: var(--space-3);
 }
 
-.module-grid {
+.industry-grid,
+.goal-grid,
+.quick-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-.module-card {
+.industry-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.goal-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.quick-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.goal-card,
+.quick-card {
   padding: 18px;
   text-decoration: none;
   color: inherit;
@@ -323,7 +346,8 @@ function getIndustryTemplateCount(slug) {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.module-card:hover,
+.goal-card:hover,
+.quick-card:hover,
 .industry-entry:hover,
 .growth-spotlight:hover {
   transform: translateY(-2px);
@@ -331,7 +355,6 @@ function getIndustryTemplateCount(slug) {
   border-color: rgba(30, 58, 138, 0.12);
 }
 
-.module-top,
 .membership-top {
   display: flex;
   align-items: center;
@@ -339,28 +362,33 @@ function getIndustryTemplateCount(slug) {
   gap: var(--space-3);
 }
 
-.module-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.module-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.module-count {
-  font-size: var(--text-caption);
-  color: var(--text-muted);
-}
-
-.module-card h3,
+.goal-card h3,
 .membership-card h3 {
   margin: var(--space-3) 0 6px;
+  font-size: var(--text-h4);
+}
+
+.goal-card p,
+.quick-card p,
+.industry-entry p,
+.section-head p {
+  color: var(--text-secondary);
+}
+
+.goal-kicker,
+.quick-card span {
+  font-size: var(--text-caption);
+  color: var(--brand-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quick-card strong {
   font-size: var(--text-h4);
 }
 
@@ -455,7 +483,9 @@ function getIndustryTemplateCount(slug) {
 @media (max-width: 1023px) {
   .hero-grid,
   .membership-grid,
-  .module-grid,
+  .industry-grid,
+  .goal-grid,
+  .quick-grid,
   .mini-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -476,7 +506,9 @@ function getIndustryTemplateCount(slug) {
 
   .hero-actions,
   .hero-metrics,
-  .module-grid,
+  .industry-grid,
+  .goal-grid,
+  .quick-grid,
   .mini-grid,
   .membership-grid {
     grid-template-columns: 1fr;

@@ -13,7 +13,7 @@ const checkAccess = async (req, res, next) => {
   try {
     const jwt = await import('jsonwebtoken')
     const token = authHeader.split(' ')[1]
-    const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'woai-ai-secret-key')
+    const decoded = jwt.default.verify(token, process.env.JWT_SECRET)
 
     const users = await query('SELECT member_level FROM users WHERE id = ?', [decoded.userId])
     if (users.length === 0) {
@@ -60,7 +60,6 @@ const requireLevel = (requiredLevel) => {
 // 1. 体检诊断智能体
 router.post('/diagnosis', checkAccess, requireLevel('free'), async (req, res) => {
   const { industry, mode, painPoints } = req.body
-  // TODO: 调用 AI 生成诊断报告
   res.json({
     agent: 'diagnosis',
     status: 'success',
@@ -87,7 +86,6 @@ router.post('/product-pricing', checkAccess, requireLevel('pro'), async (req, re
       ? '美业行业/营销案例/*'
       : '教培行业/营销案例/*'
 
-  // TODO: 实际调用 AI 接口
   res.json({
     agent: 'product-pricing',
     status: 'success',

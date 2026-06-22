@@ -61,6 +61,7 @@
           <div class="summary-label">人工成本占比</div>
           <div class="summary-value">{{ result.extra?.laborRatio || '0.0' }}%</div>
           <div class="summary-status" :class="result.extra?.laborStatus">{{ result.extra?.laborStatusText }}</div>
+          <div class="summary-target">参考区间：{{ result.extra?.targetRange || '-' }}</div>
           <div class="summary-breakdown">
             <div class="breakdown-item">
               <span>前厅人工</span>
@@ -73,6 +74,16 @@
             <div class="breakdown-item">
               <span>管理人工</span>
               <span class="numeral">¥{{ result.extra?.mgmtTotalCost }} ({{ result.extra?.mgmtRatio }}%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="report-section diagnosis-section">
+          <h4 class="subsection-title">经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
             </div>
           </div>
         </div>
@@ -137,6 +148,28 @@
             </li>
           </ul>
         </div>
+
+        <div v-if="result.actions?.length" class="report-section actions-section">
+          <h4 class="subsection-title">落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span class="action-priority">{{ getPriorityLabel(action.priority) }}</span>
+                <span class="action-timeline">{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="report-section risk-section">
+          <h4 class="subsection-title">口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -165,6 +198,13 @@ const backStaff = reactive([{ role: '炒锅', customRole: '', count: 1, salary: 
 const mgmtStaff = reactive([{ role: '店长', customRole: '', count: 1, salary: null }])
 
 const result = ref(null)
+
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
 
 async function handleSubmit() {
   const prepareData = (arr) => arr.filter(s => s.salary > 0 && s.count > 0).map(s => ({
@@ -325,6 +365,12 @@ async function handleSubmit() {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.summary-target {
+  margin-top: var(--space-2);
+  font-size: var(--text-caption);
+  opacity: 0.75;
+}
+
 .summary-breakdown {
   display: flex;
   justify-content: center;
@@ -388,11 +434,40 @@ async function handleSubmit() {
   color: var(--text-disabled);
 }
 
-.structure-section, .suggestions-section {
+.structure-section, .suggestions-section, .report-section {
   background: white;
   border: 1px solid var(--line-default);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
+}
+
+.diagnosis-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.diagnosis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--text-primary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-lg);
+}
+
+.diagnosis-index {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  flex-shrink: 0;
 }
 
 .subsection-title {
@@ -454,6 +529,68 @@ async function handleSubmit() {
 .suggestion-icon {
   font-size: var(--text-body);
   flex-shrink: 0;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.action-card {
+  padding: var(--space-4);
+  background: var(--bg-base);
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-md);
+}
+
+.action-card.critical {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.action-card.high {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.action-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+.action-priority {
+  font-weight: var(--font-weight-semibold);
+}
+
+.action-title {
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.action-desc,
+.action-owner {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.action-owner {
+  margin-top: var(--space-2);
+}
+
+.risk-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-lg);
 }
 
 .result-error {

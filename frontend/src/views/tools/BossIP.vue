@@ -68,7 +68,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
-import { generateWithAI, getToolQuota } from '@/api/tool'
+import { generateTool, getToolQuota } from '@/api/index.js'
 import { getToolByCode } from '@/constants/toolCatalog'
 
 const toolInfo = getToolByCode('boss-ip')
@@ -100,7 +100,7 @@ async function handleSubmit() {
   }
 
   try {
-    const data = await generateWithAI('boss-ip', form)
+    const data = await generateTool('boss-ip', { ...form })
     result.value = data
   } catch (e) {
     result.value = { error: e.message || '生成失败，请稍后重试' }

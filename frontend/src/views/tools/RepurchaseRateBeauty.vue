@@ -8,18 +8,44 @@
     </template>
     <template #result>
       <div class="repurchase-result" v-if="result && !result.error">
-        <div class="result-main">
-          <div class="result-label">复购率</div>
-          <div class="result-value numeral">{{ result.rate }}%</div>
-          <div class="result-status" :class="result.status">{{ result.statusText }}</div>
+        <div class="result-summary" v-if="result.summary">
+          <div class="summary-text">{{ result.summary }}</div>
         </div>
-        <div class="result-details">
-          <div class="detail-item"><span>总消费客户</span><span class="numeral">{{ form.totalClients }} 人</span></div>
-          <div class="detail-item"><span>复购客户</span><span class="numeral">{{ form.repeatClients }} 人</span></div>
-          <div class="detail-item"><span>流失客户</span><span class="numeral">{{ form.totalClients - form.repeatClients }} 人</span></div>
+        <div class="result-benchmarks" v-if="result.benchmarks && result.benchmarks.length">
+          <h4>核心指标</h4>
+          <div class="benchmark-list">
+            <div class="benchmark-item" v-for="b in result.benchmarks" :key="b.metric">
+              <span class="benchmark-metric">{{ b.metric }}</span>
+              <span class="benchmark-value numeral">{{ b.value }}</span>
+              <span class="benchmark-status" :class="b.status">{{ b.status === 'ok' ? '达标' : b.status === 'caution' ? '注意' : '偏低' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="result-suggestion"><h4>提升建议</h4><p>{{ result.suggestion }}</p></div>
-        <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div class="result-sections" v-if="result.sections && result.sections.length">
+          <div class="section" v-for="section in result.sections" :key="section.title">
+            <h4>{{ section.title }}</h4>
+            <div class="section-items">
+              <div class="item" v-for="(item, i) in section.items" :key="i">{{ item }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions" v-if="result.actions && result.actions.length">
+          <h4>行动建议</h4>
+          <div class="action-list">
+            <div class="action-item" v-for="action in result.actions" :key="action.title" :class="action.priority">
+              <span class="action-priority">{{ action.priority === 'critical' ? '紧急' : action.priority === 'high' ? '高' : '中' }}</span>
+              <span class="action-title">{{ action.title }}</span>
+              <span class="action-desc">{{ action.description }}</span>
+              <span class="action-meta">{{ action.owner }} · {{ action.timeline }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="result-risks" v-if="result.riskNotes && result.riskNotes.length">
+          <h4>风险提示</h4>
+          <div class="risk-list">
+            <div class="risk-item" v-for="(risk, i) in result.riskNotes" :key="i">{{ risk }}</div>
+          </div>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -30,13 +56,14 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('repurchase-rate-beauty')
 
 const form = reactive({ totalClients: null, repeatClients: null })
 const result = ref(null)
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.totalClients || !form.repeatClients || form.totalClients <= 0) {
     result.value = { error: '请输入有效的客户数' }; return
   }
@@ -44,16 +71,10 @@ function handleSubmit() {
     result.value = { error: '复购客户数不能超过总消费客户数' }; return
   }
 
-  const rate = (form.repeatClients / form.totalClients) * 100
-
-  let status = 'warning', statusText = '正常', suggestion = '', reference = '20-30%为正常，>40%优秀，<15%需重点优化服务体验'
-
-  if (rate >= 40) { status = 'success'; statusText = '优秀'; suggestion = '复购率非常好！说明服务体验和项目粘性很强，继续保持。' }
-  else if (rate >= 20) { status = 'success'; statusText = '正常'; suggestion = '复购率在正常范围。可通过会员日、储值活动进一步提升。' }
-  else if (rate >= 15) { status = 'warning'; statusText = '偏低'; suggestion = '复购率偏低。建议：1.增加回访频率 2.推出老客专属优惠 3.优化服务体验。' }
-  else { status = 'danger'; statusText = '过低'; suggestion = '复购率过低！客户不认可服务。建议：1.全面排查服务质量 2.推出锁客方案 3.分析流失原因。' }
-
-  result.value = { rate: rate.toFixed(1), status, statusText, suggestion, reference }
+  result.value = await generateTool('repurchase-rate-beauty', {
+    totalClients: form.totalClients,
+    repeatClients: form.repeatClients
+  })
 }
 </script>
 
@@ -63,17 +84,30 @@ function handleSubmit() {
 .form-label { font-size: var(--text-body-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); }
 .form-input { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); font-size: var(--text-body); }
 .repurchase-result { padding: var(--space-4); background-color: var(--bg-base); border-radius: var(--radius-card); }
-.result-main { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); }
-.result-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
-.result-value { font-size: 56px; font-weight: var(--font-weight-bold); color: var(--text-main); line-height: 1; margin-bottom: var(--space-3); }
-.result-status { display: inline-block; padding: var(--space-1) var(--space-4); border-radius: 9999px; font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); }
-.result-status.success { background-color: #dcfce7; color: #166534; }
-.result-status.warning { background-color: #fef3c7; color: #92400e; }
-.result-status.danger { background-color: #fee2e2; color: #991b1b; }
-.result-details { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--line-default); }
-.detail-item { display: flex; justify-content: space-between; font-size: var(--text-body-sm); color: var(--text-secondary); }
-.result-suggestion, .result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
-.result-suggestion h4, .result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
-.result-suggestion p, .result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.result-summary { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); background: white; border-radius: var(--radius-md); }
+.summary-text { font-size: var(--text-body); color: var(--text-main); font-weight: var(--font-weight-semibold); }
+.result-benchmarks, .result-actions { margin-top: var(--space-4); padding: var(--space-3); background: white; border-radius: var(--radius-md); }
+.result-benchmarks h4, .result-actions h4, .section h4, .result-risks h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
+.benchmark-list, .action-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.benchmark-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-2); font-size: var(--text-body-sm); align-items: center; }
+.benchmark-metric, .section-items, .action-desc { color: var(--text-secondary); }
+.benchmark-value, .action-title { color: var(--text-main); font-weight: var(--font-weight-medium); }
+.benchmark-status { text-align: right; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+.benchmark-status.ok { background: #dcfce7; color: #166534; }
+.benchmark-status.caution { background: #fef3c7; color: #92400e; }
+.benchmark-status.below { background: #fee2e2; color: #991b1b; }
+.result-sections { margin-top: var(--space-4); }
+.section { padding: var(--space-3); background: white; border-radius: var(--radius-md); margin-bottom: var(--space-2); }
+.section-items, .action-desc, .risk-list { font-size: var(--text-body-sm); line-height: var(--leading-body-lg); }
+.item, .risk-item { margin-bottom: var(--space-1); }
+.action-item { padding: var(--space-2); border-radius: var(--radius-sm); border-left: 3px solid var(--line-default); }
+.action-item.critical { border-left-color: #991b1b; background: #fee2e2; }
+.action-item.high { border-left-color: #92400e; background: #fef3c7; }
+.action-item.medium { border-left-color: #166534; background: #dcfce7; }
+.action-priority { display: inline-block; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--bg-muted); margin-right: var(--space-2); }
+.action-desc, .action-meta { display: block; margin-top: var(--space-1); }
+.action-meta { font-size: var(--text-body-xs); color: var(--text-muted); }
+.result-risks { margin-top: var(--space-4); padding: var(--space-3); background: #fff7ed; border-radius: var(--radius-md); border: 1px solid #fed7aa; }
+.result-risks h4, .risk-list { color: #9a3412; }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

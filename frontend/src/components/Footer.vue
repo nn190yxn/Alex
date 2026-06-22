@@ -15,7 +15,7 @@
         <div class="footer-links">
           <div class="link-group">
             <h4>产品</h4>
-            <router-link to="/tools">表格中心</router-link>
+            <router-link to="/tools">所有工具</router-link>
             <router-link to="/diagnosis">企业增长</router-link>
             <router-link to="/membership">会员中心</router-link>
           </div>

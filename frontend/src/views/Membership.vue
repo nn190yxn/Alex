@@ -3,7 +3,7 @@
     <div class="container">
       <div class="page-header text-center">
         <h1>会员体系</h1>
-        <p class="page-desc">v4 版本恢复四层会员结构，先满足免费体验，再逐步进入表格中心、企业增长和高阶专项能力。</p>
+        <p class="page-desc">v4 版本恢复四层会员结构，先满足免费体验，再逐步进入所有工具、企业增长和高阶专项能力。</p>
       </div>
 
       <div class="plans-grid">

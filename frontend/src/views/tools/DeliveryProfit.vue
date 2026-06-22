@@ -36,44 +36,76 @@
       <div class="delivery-result" v-if="result && !result.error">
         <div class="result-main">
           <div class="result-label">外卖实际利润</div>
-          <div class="result-value numeral">¥{{ result.profit }}</div>
-          <div class="result-status" :class="result.status">{{ result.statusText }}</div>
+          <div class="result-value numeral">¥{{ result.extra?.profit }}</div>
+          <div class="result-status" :class="result.extra?.status">{{ result.extra?.statusText }}</div>
         </div>
         <div class="result-details">
           <div class="detail-item">
             <span>外卖营业额</span>
-            <span class="numeral">¥{{ form.deliveryRevenue }}</span>
+            <span class="numeral">¥{{ result.extra?.revenue }}</span>
           </div>
           <div class="detail-item">
             <span>平台抽成</span>
-            <span class="numeral">¥{{ result.platformFee }}</span>
+            <span class="numeral">¥{{ result.extra?.platformFeeAmount }} ({{ result.extra?.platformCostRatio }}%)</span>
           </div>
           <div class="detail-item">
             <span>食材成本</span>
-            <span class="numeral">¥{{ form.ingredientCost }}</span>
+            <span class="numeral">¥{{ result.extra?.foodCost }} ({{ result.extra?.foodCostRatio }}%)</span>
           </div>
           <div class="detail-item">
             <span>包装+配送</span>
-            <span class="numeral">¥{{ result.extraCost }}</span>
+            <span class="numeral">¥{{ result.extra?.extraCost }} ({{ result.extra?.extraCostRatio }}%)</span>
           </div>
           <div class="detail-item">
             <span>外卖利润率</span>
-            <span class="numeral">{{ result.profitRate }}%</span>
+            <span class="numeral">{{ result.extra?.margin }}%</span>
           </div>
         </div>
-        <div v-if="result.compare" class="result-compare">
+
+        <div v-if="result.extra?.diagnosis?.length" class="report-section">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.compare" class="result-compare">
           <h4>外卖 vs 堂食对比</h4>
-          <div class="compare-row"><span>外卖利润率</span><span class="numeral">{{ result.profitRate }}%</span></div>
-          <div class="compare-row"><span>堂食利润率</span><span class="numeral">{{ form.dineInMargin }}%</span></div>
-          <div class="compare-row"><span>差距</span><span class="numeral warn">{{ result.compareDiff }} 个百分点</span></div>
+          <div class="compare-row"><span>外卖利润率</span><span class="numeral">{{ result.extra?.margin }}%</span></div>
+          <div class="compare-row"><span>堂食利润率</span><span class="numeral">{{ result.extra?.dineInMargin }}%</span></div>
+          <div class="compare-row"><span>差距</span><span class="numeral warn">{{ result.extra?.compareDiff }} 个百分点</span></div>
         </div>
-        <div class="result-verdict">
-          <h4>外卖判断</h4>
-          <p>{{ result.verdict }}</p>
+
+        <div class="report-section" v-if="result.extra?.suggestions?.length">
+          <h4>优化建议</h4>
+          <ul class="suggestion-list">
+            <li v-for="(suggestion, i) in result.extra.suggestions" :key="i">{{ suggestion }}</li>
+          </ul>
         </div>
-        <div class="result-reference">
-          <h4>行业参考</h4>
-          <p>{{ result.reference }}</p>
+
+        <div v-if="result.actions?.length" class="report-section">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-section" v-if="result.riskNotes?.length">
+          <h4>口径与风险</h4>
+          <ul class="suggestion-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -85,6 +117,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('delivery-profit')
 
@@ -99,7 +132,14 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.deliveryRevenue || !form.platformRate || !form.ingredientCost || !form.packagingCost || !form.deliveryCost) {
     result.value = { error: '请填写所有必填字段' }
     return
@@ -109,52 +149,17 @@ function handleSubmit() {
     return
   }
 
-  const platformFee = form.deliveryRevenue * (form.platformRate / 100)
-  const afterPlatform = form.deliveryRevenue - platformFee
-  const profit = afterPlatform - form.ingredientCost - form.packagingCost - form.deliveryCost
-  const profitRate = (profit / form.deliveryRevenue) * 100
-  const extraCost = form.packagingCost + form.deliveryCost
-
-  let status = 'warning'
-  let statusText = '微利'
-  let verdict = ''
-
-  if (profitRate >= 30) {
-    status = 'success'
-    statusText = '盈利'
-    verdict = '外卖利润健康，可以继续扩大外卖业务。建议优化套餐组合提升客单价。'
-  } else if (profitRate >= 15) {
-    status = 'success'
-    statusText = '有利润'
-    verdict = '外卖有利润但不高，需要关注成本控制。可适当减少包装成本或优化菜品结构。'
-  } else if (profitRate > 0) {
-    status = 'warning'
-    statusText = '微利'
-    verdict = '外卖利润很薄！建议：1）调整外卖定价（比堂食高10-15%）；2）减少包装成本；3）选择抽成更低的平台。'
-  } else {
-    status = 'danger'
-    statusText = '亏损'
-    verdict = '外卖在亏钱！卖得越多亏得越多！需要紧急：1）重新定价或减少平台抽佣；2）控制食材和包装成本；3）考虑是否暂停外卖业务。'
-  }
-
-  let compare = null
-  let compareDiff = null
-  if (form.dineInMargin) {
-    compareDiff = (form.dineInMargin - profitRate).toFixed(1)
-    compare = true
-  }
-
-  result.value = {
-    profit: profit.toFixed(0),
-    platformFee: platformFee.toFixed(0),
-    profitRate: profitRate.toFixed(1),
-    extraCost: extraCost.toFixed(0),
-    status,
-    statusText,
-    verdict,
-    compare,
-    compareDiff,
-    reference: '堂食利润率通常比外卖高15-25个百分点，外卖占比>40%需警惕'
+  try {
+    result.value = await generateTool('delivery-profit', {
+      price: form.deliveryRevenue,
+      platformFee: form.platformRate,
+      foodCost: form.ingredientCost,
+      packageCost: form.packagingCost,
+      deliverySubsidy: form.deliveryCost,
+      dineInMargin: form.dineInMargin || null
+    })
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -178,11 +183,19 @@ function handleSubmit() {
 .result-compare h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
 .compare-row { display: flex; justify-content: space-between; font-size: var(--text-body-sm); padding: var(--space-1) 0; }
 .compare-row .warn { color: #dc2626; font-weight: var(--font-weight-semibold); }
-.result-verdict { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
-.result-verdict h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); }
-.result-verdict p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
-.result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
-.result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
-.result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.report-section { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
+.report-section h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ffedd5; color: #c2410c; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.suggestion-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

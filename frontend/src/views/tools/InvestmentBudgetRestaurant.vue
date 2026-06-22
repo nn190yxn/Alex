@@ -4,7 +4,7 @@
       <!-- 店型与城市 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('basic')">
-          <span class="section-icon">🏪</span>
+          <span class="section-icon">店</span>
           <span class="section-title">店型与城市级别</span>
           <span class="section-arrow" :class="{ open: sections.basic }">▾</span>
         </div>
@@ -55,7 +55,7 @@
       <!-- 租金成本 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('rent')">
-          <span class="section-icon">🏠</span>
+          <span class="section-icon">租</span>
           <span class="section-title">租金与押金</span>
           <span class="section-arrow" :class="{ open: sections.rent }">▾</span>
         </div>
@@ -93,7 +93,7 @@
       <!-- 装修与设备 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('renovation')">
-          <span class="section-icon">🔨</span>
+          <span class="section-icon">装</span>
           <span class="section-title">装修与设备采购</span>
           <span class="section-arrow" :class="{ open: sections.renovation }">▾</span>
         </div>
@@ -125,7 +125,7 @@
       <!-- 证照与营销 -->
       <div class="section">
         <div class="section-header" @click="toggleSection('license')">
-          <span class="section-icon">📋</span>
+          <span class="section-icon">证</span>
           <span class="section-title">证照办理与开业营销</span>
           <span class="section-arrow" :class="{ open: sections.license }">▾</span>
         </div>
@@ -366,6 +366,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="result.diagnosis && result.diagnosis.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, index) in result.diagnosis" :key="index" class="diagnosis-item">
+              <span class="diagnosis-index">{{ index + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.actions && result.actions.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, index) in result.actions" :key="index" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ action.priority }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes && result.riskNotes.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="note-list">
+            <li v-for="(note, index) in result.riskNotes" :key="index">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -376,6 +408,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api'
 
 const toolInfo = getToolByCode('investment-budget')
 
@@ -427,205 +460,21 @@ function v(val, fallback = 0) {
   return val != null ? val : fallback
 }
 
-// 装修单价基准（元/m²）
-const RENOVATION_PRICES = {
-  fast:     { tier1: { simple: 800,  standard: 1000, premium: 1200 }, tier2: { simple: 600,  standard: 800,  premium: 1000 }, tier3: { simple: 400,  standard: 600,  premium: 800 } },
-  normal:   { tier1: { simple: 1200, standard: 1500, premium: 1800 }, tier2: { simple: 800,  standard: 1200, premium: 1500 }, tier3: { simple: 600,  standard: 900,  premium: 1200 } },
-  hotpot:   { tier1: { simple: 1500, standard: 1800, premium: 2200 }, tier2: { simple: 1000, standard: 1500, premium: 1800 }, tier3: { simple: 800,  standard: 1200, premium: 1500 } },
-  coffee:   { tier1: { simple: 1500, standard: 2000, premium: 2500 }, tier2: { simple: 1000, standard: 1500, premium: 2000 }, tier3: { simple: 800,  standard: 1200, premium: 1500 } },
-  bubbleTea:{ tier1: { simple: 800,  standard: 1200, premium: 1500 }, tier2: { simple: 600,  standard: 900,  premium: 1200 }, tier3: { simple: 400,  standard: 600,  premium: 900 } },
-  snack:    { tier1: { simple: 500,  standard: 800,  premium: 1000 }, tier2: { simple: 400,  standard: 600,  premium: 800 },  tier3: { simple: 300,  standard: 500,  premium: 600 } },
-  premium:  { tier1: { simple: 2000, standard: 2800, premium: 3500 }, tier2: { simple: 1500, standard: 2000, premium: 2500 }, tier3: { simple: 1000, standard: 1500, premium: 2000 } }
-}
-
-// 设备基准（元）
-const EQUIPMENT_BASE = { fast: 80000, normal: 120000, hotpot: 150000, coffee: 80000, bubbleTea: 50000, snack: 30000, premium: 250000 }
-
-// 月度运营基准（二线城市）
-const MONTHLY_BASE = {
-  fast:   { labor: 30000, utilities: 5000 },
-  normal: { labor: 50000, utilities: 8000 },
-  hotpot: { labor: 60000, utilities: 12000 },
-  coffee: { labor: 25000, utilities: 4000 },
-  bubbleTea: { labor: 15000, utilities: 3000 },
-  snack: { labor: 12000, utilities: 2500 },
-  premium:{ labor: 80000, utilities: 15000 }
-}
-
-const CITY_MULTIPLIER = { tier1: 1.3, tier2: 1.0, tier3: 0.7 }
-
-const STORE_LABELS = { fast: '快餐/简餐', normal: '中档正餐', hotpot: '火锅', coffee: '咖啡/茶饮', bubbleTea: '奶茶/果茶', snack: '小吃/档口', premium: '高端餐厅' }
-const CITY_LABELS = { tier1: '一线/新一线', tier2: '二线/省会', tier3: '三四线/县城' }
-
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.storeType || !form.cityLevel) {
     result.value = { error: '请选择店型和城市级别' }
     return
   }
-
-  const storeType = form.storeType
-  const cityLevel = form.cityLevel
-  const area = v(form.area, 80)
-  const renLevel = form.renovationLevel || 'standard'
-  const cityMul = CITY_MULTIPLIER[cityLevel] || 1
-
-  // 一次性投入计算
-  const rent = v(form.monthlyRent)
-  const deposit = form.depositType === 'months' ? rent * v(form.depositMonths, 3) : v(form.depositFixed)
-  const otherOneTime = v(form.otherOneTime)
-
-  // 装修费用（自动估算或手动）
-  const renPrice = RENOVATION_PRICES[storeType]?.[cityLevel]?.[renLevel] || 1000
-  const renovation = form.renovationCost != null ? form.renovationCost : renPrice * area
-
-  // 设备费用（自动估算或手动）
-  const equipBase = EQUIPMENT_BASE[storeType] || 100000
-  const equipment = form.equipmentCost != null ? form.equipmentCost : Math.round(equipBase * cityMul)
-
-  const hvac = v(form.hvacCost)
-  const design = v(form.designCost)
-  const license = v(form.licenseBudget, 5000)
-  const marketing = v(form.marketingBudget, 10000)
-  const pos = v(form.posCost, 5000)
-  const otherStartup = v(form.otherStartup)
-
-  const oneTimeTotal = rent + deposit + otherOneTime + renovation + equipment + hvac + design + license + marketing + pos + otherStartup
-
-  // 月度运营成本
-  const mb = MONTHLY_BASE[storeType] || { labor: 40000, utilities: 6000 }
-  const monthlyLabor = form.monthlyLabor != null ? form.monthlyLabor : Math.round(mb.labor * cityMul)
-  const foodCostPct = v(form.foodCostPct, 35)
-  const monthlyUtilities = form.monthlyUtilities != null ? form.monthlyUtilities : Math.round(mb.utilities * cityMul)
-  const monthlyMarketing = v(form.monthlyMarketing)
-  const monthlyTotal = monthlyLabor + monthlyUtilities + monthlyMarketing + rent
-
-  // 流动资金
-  const reserveMonths = v(form.reserveMonths, 3)
-  const reserveAmount = monthlyTotal * reserveMonths
-
-  // 总投资
-  const totalInvestment = oneTimeTotal + reserveAmount
-
-  // 合伙
-  const hasPartner = form.hasPartner
-  const partnerCount = hasPartner ? v(form.partnerCount, 2) : 1
-  const perPerson = hasPartner ? totalInvestment / partnerCount : totalInvestment
-
-  // 保本推演
-  const TICKET_BASE = { fast: 25, normal: 70, hotpot: 90, coffee: 30, premium: 200 }
-  const MARGIN_BASE = { fast: 60, normal: 62, hotpot: 58, coffee: 65, premium: 65 }
-  const ticketMul = cityLevel === 'tier1' ? 1.2 : cityLevel === 'tier3' ? 0.8 : 1.0
-  const avgTicket = (TICKET_BASE[storeType] || 50) * ticketMul
-  const grossMargin = MARGIN_BASE[storeType] || 60
-  const breakEvenRevenue = monthlyTotal / (grossMargin / 100)
-  const breakEvenDaily = breakEvenRevenue / 30
-
-  // 安全边际
-  let safetyClass = ''
-  let safetyText = ''
-  if (form.expectedRevenue && form.expectedRevenue > 0) {
-    const margin = ((form.expectedRevenue - breakEvenRevenue) / form.expectedRevenue * 100)
-    if (margin >= 40) {
-      safetyClass = 'safe'
-      safetyText = `预期月营业额 ¥${formatNum(form.expectedRevenue)}，安全边际 ${margin.toFixed(0)}%，经营状况良好，建议尽快选址开业。`
-    } else if (margin >= 15) {
-      safetyClass = 'warn'
-      safetyText = `预期月营业额 ¥${formatNum(form.expectedRevenue)}，安全边际 ${margin.toFixed(0)}%，有一定盈利空间但需要精细化运营。`
-    } else {
-      safetyClass = 'danger'
-      safetyText = `预期月营业额 ¥${formatNum(form.expectedRevenue)} 仅比保本线高一点（安全边际 ${margin.toFixed(0)}%），风险较高，建议重新评估选址或控制成本。`
+  try {
+    const data = await generateTool('investment-budget', { ...form })
+    result.value = {
+      ...data.extra,
+      summary: data.summary,
+      actions: data.actions || [],
+      riskNotes: data.riskNotes || []
     }
-  }
-
-  // 投资占比
-  const costBreakdown = [
-    { icon: '租金', label: '租金与押金', amount: rent + deposit, color: '#3b82f6' },
-    { icon: '装修', label: '装修费用', amount: renovation, color: '#8b5cf6' },
-    { icon: '设备', label: '设备采购', amount: equipment + hvac, color: '#f59e0b' },
-    { icon: '证照', label: '证照与营销', amount: license + marketing, color: '#10b981' },
-    { icon: '系统', label: '系统与其他', amount: pos + design + otherOneTime + otherStartup, color: '#6366f1' },
-    { icon: '储备', label: '流动资金储备', amount: reserveAmount, color: '#ec4899' }
-  ].filter(c => c.amount > 0).map(c => ({ ...c, pct: (c.amount / totalInvestment * 100) }))
-
-  // 费用明细
-  const oneTimeDetails = [
-    { label: '首月租金', amount: rent, note: '经营场地租金' },
-    { label: '押金', amount: deposit, note: form.depositType === 'months' ? `押${form.depositMonths}个月` : '固定押金' },
-    { label: '装修费用', amount: renovation, note: form.renovationCost != null ? '手动填写' : `${renPrice}元/m² × ${area}m²` },
-    { label: '设备采购', amount: equipment, note: form.equipmentCost != null ? '手动填写' : '行业基准估算' },
-    { label: '空调/排烟/新风', amount: hvac, note: hvac > 0 ? '单独采购' : '已含在设备中' },
-    { label: '设计费/监理费', amount: design, note: design > 0 ? '设计+监理' : '未发生' },
-    { label: '证照办理', amount: license, note: '营业执照/食品经营许可/消防等' },
-    { label: '开业营销', amount: marketing, note: '宣传/活动/团购上线' },
-    { label: 'POS/SaaS 系统', amount: pos, note: '收银系统/点餐小程序' },
-    { label: '其他开办费用', amount: otherStartup, note: otherStartup > 0 ? '手动填写' : '未发生' },
-    { label: '其他一次性费用', amount: otherOneTime, note: otherOneTime > 0 ? '中介费/进场费等' : '未发生' }
-  ].filter(d => d.amount > 0)
-
-  // 月度明细
-  const monthlyDetails = [
-    { label: '人工成本', amount: monthlyLabor, note: form.monthlyLabor != null ? '手动填写' : '行业基准估算' },
-    { label: '水电燃气', amount: monthlyUtilities, note: form.monthlyUtilities != null ? '手动填写' : '行业基准估算' },
-    { label: '营销/推广', amount: monthlyMarketing, note: monthlyMarketing > 0 ? '美团/抖音推广' : '暂未规划' },
-    { label: '房租', amount: rent, note: '固定支出' }
-  ]
-
-  // 行业基准对比
-  const benchmarks = [
-    { icon: '', label: '装修单价', value: `${Math.round(renovation / area)} 元/m²`, benchmark: `${RENOVATION_PRICES[storeType]?.[cityLevel]?.[renLevel] || '—'} 元/m²`, status: '' },
-    { icon: '', label: '人效参考', value: `${Math.round(monthlyLabor)} 元/月`, benchmark: `${Math.round(mb.labor * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
-    { icon: '', label: '水电参考', value: `${monthlyUtilities} 元/月`, benchmark: `${Math.round(mb.utilities * cityMul)} 元/月（${CITY_LABELS[cityLevel]}）`, status: '' },
-    { icon: '', label: '客单价参考', value: `¥${avgTicket.toFixed(0)}`, benchmark: `${CITY_LABELS[cityLevel]} ${STORE_LABELS[storeType]} 行业均价`, status: '' }
-  ]
-
-  // 风险提示
-  const risks = []
-  if (reserveMonths < 3) {
-    risks.push('流动资金储备不足 3 个月，餐饮行业通常需要 3-6 个月储备以应对开业初期的不稳定期。')
-  }
-  if (monthlyLabor > monthlyTotal * 0.45) {
-    risks.push('人工成本占比超过 45%，建议优化人员结构或引入灵活用工。')
-  }
-  if (renovation > oneTimeTotal * 0.5) {
-    risks.push('装修费用占一次性投入超过 50%，可能存在过度装修风险。')
-  }
-  if (breakEvenRevenue > v(form.expectedRevenue, 0) && form.expectedRevenue > 0) {
-    risks.push('预期营业额低于保本线，开业即亏损！需要提升营业额预期或降低成本。')
-  }
-
-  // 建议
-  const suggestions = []
-  if (reserveMonths < 3) {
-    suggestions.push('建议将流动资金储备提高到 3-6 个月，以应对开业初期的营收波动和意外支出。')
-  }
-  suggestions.push(`根据行业数据，${STORE_LABELS[storeType]}在${CITY_LABELS[cityLevel]}平均回本周期为 ${storeType === 'fast' ? '8-12' : storeType === 'normal' ? '12-18' : storeType === 'hotpot' ? '10-16' : storeType === 'coffee' ? '12-24' : storeType === 'bubbleTea' ? '6-12' : storeType === 'snack' ? '4-8' : '18-30'} 个月。`)
-  suggestions.push('选址是餐饮成败的关键，建议在目标商圈蹲点数人流，测算潜在客流和转化率。')
-  if (monthlyMarketing === 0) {
-    suggestions.push('建议预留月营业额 3%-5% 作为持续营销预算（美团推广/抖音团购/会员运营）。')
-  }
-  if (suggestions.length === 0) {
-    suggestions.push('各项指标在合理范围内，建议做好菜品标准化和服务流程 SOP，确保开业体验。')
-  }
-
-  result.value = {
-    totalInvestment,
-    oneTimeTotal,
-    reserveAmount,
-    hasPartner,
-    partnerCount,
-    perPerson,
-    costBreakdown,
-    oneTimeDetails,
-    monthlyDetails,
-    monthlyTotal,
-    breakEvenRevenue,
-    breakEvenDaily,
-    benchmark: { avgTicket, grossMargin },
-    safetyClass,
-    safetyText,
-    benchmarks,
-    risks,
-    suggestions
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -755,6 +604,19 @@ function handleSubmit() {
   justify-content: center; font-size: var(--text-caption); font-weight: var(--font-weight-bold);
 }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ccfbf1; color: #0f766e; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.note-list { list-style: disc; padding-left: var(--space-5); }
+.note-list li { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); margin-bottom: var(--space-1); }
 
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 

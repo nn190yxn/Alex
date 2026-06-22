@@ -16,6 +16,30 @@
           <label class="form-label">平均课时费（元）</label>
           <input v-model.number="form.avgClassFee" type="number" class="form-input" placeholder="每课时平均收费" min="0" />
         </div>
+        <div class="form-group">
+          <label class="form-label">统计周期</label>
+          <input v-model="form.period" type="text" class="form-input" placeholder="如 2026年6月" />
+        </div>
+      </div>
+      <div class="form-row" style="margin-top: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">班型</label>
+          <select v-model="form.classType" class="form-input">
+            <option value="一对一">一对一</option>
+            <option value="小班">小班</option>
+            <option value="大班">大班</option>
+            <option value="特大班">特大班</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">科目类型</label>
+          <select v-model="form.subjectType" class="form-input">
+            <option value="K12学科">K12学科</option>
+            <option value="素质教育">素质教育</option>
+            <option value="职业教育">职业教育</option>
+            <option value="语言培训">语言培训</option>
+          </select>
+        </div>
       </div>
     </template>
     <template #result>
@@ -26,14 +50,47 @@
           <div class="result-status" :class="result.status">{{ result.statusText }}</div>
         </div>
         <div class="result-details">
-          <div class="detail-item"><span>应消课时</span><span class="numeral">{{ form.shouldConsume }} 课时</span></div>
-          <div class="detail-item"><span>实消课时</span><span class="numeral">{{ form.actualConsume }} 课时</span></div>
+          <div class="detail-item"><span>应消课时</span><span class="numeral">{{ result.shouldConsume }} 课时</span></div>
+          <div class="detail-item"><span>实消课时</span><span class="numeral">{{ result.actualConsume }} 课时</span></div>
           <div class="detail-item"><span>未消课时</span><span class="numeral" :class="result.unconsumedClass > 0 ? 'negative' : ''">{{ result.unconsumedClass }} 课时</span></div>
-          <div class="detail-item" v-if="form.avgClassFee"><span>积压课时金额</span><span class="numeral negative">¥{{ result.backlogAmount }}</span></div>
+          <div class="detail-item" v-if="result.backlogAmount"><span>积压课时金额</span><span class="numeral negative">¥{{ result.backlogAmount }}</span></div>
         </div>
         <div class="result-warning"><h4>风险预警</h4><p>{{ result.warning }}</p></div>
         <div class="result-suggestion"><h4>催课建议</h4><p>{{ result.suggestion }}</p></div>
+        <div v-if="result.diagnosis?.length" class="result-reference">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-reference">
+          <h4>优化建议</h4>
+          <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+        </div>
         <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div v-if="result.actions?.length" class="result-reference">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-reference">
+          <h4>口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -44,13 +101,21 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('class-rate-education')
 
-const form = reactive({ shouldConsume: null, actualConsume: null, avgClassFee: null })
+const form = reactive({ shouldConsume: null, actualConsume: null, avgClassFee: null, period: '', classType: '小班', subjectType: 'K12学科' })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.shouldConsume || !form.actualConsume || form.shouldConsume <= 0) {
     result.value = { error: '请输入有效的应消课时和实消课时' }; return
   }
@@ -58,17 +123,12 @@ function handleSubmit() {
     result.value = { error: '实消课时不能超过应消课时' }; return
   }
 
-  const rate = (form.actualConsume / form.shouldConsume) * 100
-  const unconsumedClass = form.shouldConsume - form.actualConsume
-  const backlogAmount = form.avgClassFee ? (unconsumedClass * form.avgClassFee).toFixed(0) : null
-
-  let status = 'warning', statusText = '及格', warning = '', suggestion = '', reference = '>85%优秀，70-85%及格，<70%需紧急催课排课'
-
-  if (rate >= 85) { status = 'success'; statusText = '优秀'; warning = '消课情况良好，继续保持。'; suggestion = '可考虑增加高阶课程推荐，提升学员客单价。' }
-  else if (rate >= 70) { status = 'warning'; statusText = '及格'; warning = '消课率偏一般，有部分课时积压。'; suggestion = '主动联系消课慢的学员，安排补课或加课。关注消课进度。' }
-  else { status = 'danger'; statusText = '危险'; warning = '消课率过低！大量预收款未消化，存在负债风险。'; suggestion = '紧急催课！联系所有未消课学员安排上课。考虑调整排课密度或增加消课活动。' }
-
-  result.value = { rate: rate.toFixed(1), unconsumedClass, backlogAmount, status, statusText, warning, suggestion, reference }
+  try {
+    const data = await generateTool('class-rate-education', { ...form, totalClasses: form.shouldConsume, consumedClasses: form.actualConsume })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
+  }
 }
 </script>
 
@@ -94,5 +154,18 @@ function handleSubmit() {
 .result-warning { background: #fee2e2; }
 .result-warning h4 { color: #991b1b; }
 .result-warning p { color: #b91c1c; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 </style>

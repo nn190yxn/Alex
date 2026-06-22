@@ -61,13 +61,13 @@
         <div class="result-hero">
           <div class="hero-main">
             <div class="hero-label">出成率</div>
-            <div class="hero-value" :class="result.statusClass">{{ result.yieldRate }}%</div>
-            <div class="hero-sub">{{ result.statusText }}</div>
+            <div class="hero-value" :class="result.extra?.statusClass">{{ result.extra?.yieldRate }}%</div>
+            <div class="hero-sub">{{ result.extra?.statusText }}</div>
           </div>
           <div class="hero-secondary">
             <div class="hero-label">实际净料成本</div>
-            <div class="hero-value cost">¥{{ result.actualUnitCost }}/斤</div>
-            <div class="hero-sub">采购单价 ¥{{ form.purchasePrice }}/斤 → 净料 ¥{{ result.actualUnitCost }}/斤</div>
+            <div class="hero-value cost">¥{{ result.extra?.actualUnitCost }}/斤</div>
+            <div class="hero-sub">采购单价 ¥{{ form.purchasePrice }}/斤 → 净料 ¥{{ result.extra?.actualUnitCost }}/斤</div>
           </div>
         </div>
 
@@ -75,16 +75,16 @@
         <div class="result-card">
           <h3 class="card-title">出成 vs 损耗</h3>
           <div class="yield-bar">
-            <div class="yield-fill" :style="{ width: result.yieldRate + '%', background: 'linear-gradient(90deg, #22c55e, #16a34a)' }">
-              <span class="yield-label">出成 {{ result.yieldRate }}%</span>
+            <div class="yield-fill" :style="{ width: result.extra?.yieldRate + '%', background: 'linear-gradient(90deg, #22c55e, #16a34a)' }">
+              <span class="yield-label">出成 {{ result.extra?.yieldRate }}%</span>
             </div>
-            <div class="waste-fill" :style="{ width: result.wasteRate + '%', background: result.wasteRate > 40 ? '#dc2626' : '#f59e0b' }">
-              <span class="waste-label">损耗 {{ result.wasteRate }}%</span>
+            <div class="waste-fill" :style="{ width: result.extra?.wasteRate + '%', background: Number(result.extra?.wasteRate || 0) > 40 ? '#dc2626' : '#f59e0b' }">
+              <span class="waste-label">损耗 {{ result.extra?.wasteRate }}%</span>
             </div>
           </div>
           <div class="yield-legend">
-            <span class="legend-item"><span class="legend-dot good"></span>可用净料 {{ result.netWeight }} 斤</span>
-            <span class="legend-item"><span class="legend-dot waste"></span>损耗 {{ result.wasteWeight }} 斤</span>
+            <span class="legend-item"><span class="legend-dot good"></span>可用净料 {{ result.extra?.netWeight }} 斤</span>
+            <span class="legend-item"><span class="legend-dot waste"></span>损耗 {{ result.extra?.wasteWeight }} 斤</span>
             <span class="legend-item"><span class="legend-dot total"></span>采购毛重 {{ form.rawWeight }} 斤</span>
           </div>
         </div>
@@ -97,26 +97,36 @@
               <tbody>
                 <tr>
                   <td class="label-cell">采购总价</td>
-                  <td class="value-cell">¥{{ result.totalCost }}</td>
+                  <td class="value-cell">¥{{ result.extra?.totalCost }}</td>
                 </tr>
                 <tr>
                   <td class="label-cell">边角料回收收入</td>
-                  <td class="value-cell" :class="{ positive: result.wasteRevenue > 0 }">
-                    {{ result.wasteRevenue > 0 ? '+¥' + result.wasteRevenue : '¥0（未利用）' }}
+                  <td class="value-cell" :class="{ positive: Number(result.extra?.wasteRevenue || 0) > 0 }">
+                    {{ Number(result.extra?.wasteRevenue || 0) > 0 ? '+¥' + result.extra?.wasteRevenue : '¥0（未利用）' }}
                   </td>
                 </tr>
                 <tr class="table-highlight">
                   <td class="label-cell">实际净料成本</td>
-                  <td class="value-cell highlight">¥{{ result.actualUnitCost }}/斤</td>
+                  <td class="value-cell highlight">¥{{ result.extra?.actualUnitCost }}/斤</td>
                 </tr>
                 <tr>
                   <td class="label-cell">成本上浮幅度</td>
                   <td class="value-cell">
-                    <span :class="result.costIncreaseClass">采购单价 ¥{{ form.purchasePrice }} → 净料 ¥{{ result.actualUnitCost }}（+{{ result.costIncrease }}%）</span>
+                    <span :class="result.extra?.costIncreaseClass">采购单价 ¥{{ form.purchasePrice }} → 净料 ¥{{ result.extra?.actualUnitCost }}（+{{ result.extra?.costIncrease }}%）</span>
                   </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
           </div>
         </div>
 
@@ -144,14 +154,36 @@
         </div>
 
         <!-- 优化建议 -->
-        <div v-if="result.suggestions && result.suggestions.length" class="result-card">
+        <div v-if="result.extra?.suggestions?.length" class="result-card">
           <h3 class="card-title">降本建议</h3>
           <div class="suggestions">
-            <div v-for="(s, i) in result.suggestions" :key="i" class="suggestion-item">
+            <div v-for="(s, i) in result.extra.suggestions" :key="i" class="suggestion-item">
               <span class="suggestion-num">{{ i + 1 }}</span>
               <span class="suggestion-text">{{ s }}</span>
             </div>
           </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -163,6 +195,7 @@
 import { ref, reactive, computed } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('food-yield-rate')
 
@@ -188,7 +221,14 @@ const wasteRevenuePreview = computed(() => {
   return (waste * form.wastePrice).toFixed(1)
 })
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.rawWeight || form.rawWeight <= 0) {
     result.value = { error: '请填写采购毛重' }
     return
@@ -206,59 +246,10 @@ function handleSubmit() {
     return
   }
 
-  const rawWeight = form.rawWeight
-  const netWeight = form.netWeight
-  const purchasePrice = form.purchasePrice
-  const wasteWeight = rawWeight - netWeight
-  const yieldRate = (netWeight / rawWeight * 100)
-  const wasteRate = (wasteWeight / rawWeight * 100)
-  const totalCost = rawWeight * purchasePrice
-  const wasteRevenue = form.wasteSellable ? (wasteWeight * (form.wastePrice || 0)) : 0
-  const netCost = totalCost - wasteRevenue
-  const actualUnitCost = netWeight > 0 ? netCost / netWeight : 0
-  const costIncrease = purchasePrice > 0 ? ((actualUnitCost - purchasePrice) / purchasePrice * 100) : 0
-
-  let statusClass = ''
-  let statusText = ''
-  if (yieldRate >= 80) { statusClass = 'good'; statusText = '出成优秀' }
-  else if (yieldRate >= 60) { statusClass = 'warn'; statusText = '正常范围' }
-  else { statusClass = 'danger'; statusText = '出成偏低，损耗过大' }
-
-  let costIncreaseClass = ''
-  if (costIncrease <= 20) costIncreaseClass = 'good'
-  else if (costIncrease <= 50) costIncreaseClass = 'warn'
-  else costIncreaseClass = 'danger'
-
-  const suggestions = []
-  if (yieldRate < 60) {
-    suggestions.push('出成率低于 60%，损耗过大！建议：1）检查原料品质是否达标；2）规范加工手法培训；3）考虑直接采购标准净料。')
-  } else if (yieldRate < 70) {
-    suggestions.push('出成率偏低，建议优化加工工艺或更换更优质的供应商。')
-  }
-  if (form.wasteSellable && form.wastePrice > 0) {
-    suggestions.push(`边角料回收做得好！每月可挽回约 ¥${(wasteRevenue * 30).toLocaleString()}（按日用量估算）。`)
-  } else if (wasteWeight > 0) {
-    suggestions.push('边角料全部废弃太浪费，建议评估：鱼骨熬汤、猪皮做皮冻、菜根做高汤、出售给饲料厂等回收方式。')
-  }
-  if (costIncrease > 50) {
-    suggestions.push(`净料成本比采购单价高出 ${costIncrease.toFixed(0)}%，说明损耗成本占比很大，需要重点管控。`)
-  }
-  if (suggestions.length === 0) {
-    suggestions.push('出成率良好，继续保持标准化加工流程，定期抽查各档口出成数据。')
-  }
-
-  result.value = {
-    yieldRate: yieldRate.toFixed(1),
-    wasteRate: wasteRate.toFixed(1),
-    wasteWeight: wasteWeight.toFixed(1),
-    totalCost: totalCost.toFixed(0),
-    wasteRevenue: wasteRevenue.toFixed(1),
-    actualUnitCost: actualUnitCost.toFixed(2),
-    costIncrease: costIncrease.toFixed(0),
-    costIncreaseClass,
-    statusClass,
-    statusText,
-    suggestions
+  try {
+    result.value = await generateTool('food-yield-rate', { ...form })
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -388,6 +379,18 @@ function handleSubmit() {
   justify-content: center; font-size: var(--text-caption); font-weight: var(--font-weight-bold);
 }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 

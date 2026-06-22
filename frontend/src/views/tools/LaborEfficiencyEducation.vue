@@ -13,12 +13,43 @@
       </div>
       <div class="form-row" style="margin-top: var(--space-4);">
         <div class="form-group">
-          <label class="form-label">工作天数（月）</label>
-          <input v-model.number="form.workDays" type="number" class="form-input" placeholder="月工作天数" min="1" max="31" value="26" />
+          <label class="form-label">月排课总课时</label>
+          <input v-model.number="form.monthlyClasses" type="number" class="form-input" placeholder="全部老师本月排课" min="0" />
         </div>
         <div class="form-group">
-          <label class="form-label">月排课量（课时）</label>
-          <input v-model.number="form.monthlyClasses" type="number" class="form-input" placeholder="月总排课课时" min="0" />
+          <label class="form-label">月工作天数</label>
+          <input v-model.number="form.workDays" type="number" class="form-input" placeholder="默认 26 天" min="1" max="31" />
+        </div>
+      </div>
+      <div class="form-row" style="margin-top: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">班型</label>
+          <select v-model="form.classType" class="form-input">
+            <option value="一对一">一对一</option>
+            <option value="小班">小班</option>
+            <option value="大班">大班</option>
+            <option value="特大班">特大班</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">科目类型</label>
+          <select v-model="form.subjectType" class="form-input">
+            <option value="K12学科">K12学科</option>
+            <option value="素质教育">素质教育</option>
+            <option value="职业教育">职业教育</option>
+            <option value="语言培训">语言培训</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">城市层级</label>
+          <select v-model="form.cityLevel" class="form-input">
+            <option value="一线">一线</option>
+            <option value="二线">二线</option>
+            <option value="三线">三线</option>
+            <option value="四线及以下">四线及以下</option>
+          </select>
         </div>
       </div>
     </template>
@@ -30,12 +61,45 @@
           <div class="result-sub">日人效：¥{{ result.daily }}/人/日</div>
         </div>
         <div class="result-details">
-          <div class="detail-item"><span>月营业额</span><span class="numeral">¥{{ form.revenue }}</span></div>
-          <div class="detail-item"><span>教练人数</span><span class="numeral">{{ form.coachCount }} 人</span></div>
+          <div class="detail-item"><span>月营业额</span><span class="numeral">¥{{ result.monthlyRevenue || form.revenue }}</span></div>
+          <div class="detail-item"><span>教练人数</span><span class="numeral">{{ result.teacherCount || form.coachCount }} 人</span></div>
           <div class="detail-item" v-if="result.classesPerCoach"><span>每教练月排课</span><span class="numeral">{{ result.classesPerCoach }} 课时</span></div>
         </div>
         <div class="result-status-block" :class="result.status"><h4>{{ result.statusText }}</h4><p>{{ result.suggestion }}</p></div>
+        <div v-if="result.diagnosis?.length" class="result-reference">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-reference">
+          <h4>跟进建议</h4>
+          <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+        </div>
         <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div v-if="result.actions?.length" class="result-reference">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-reference">
+          <h4>口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -46,38 +110,31 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('labor-efficiency-education')
 
-const form = reactive({ revenue: null, coachCount: null, workDays: 26, monthlyClasses: null })
+const form = reactive({ revenue: null, coachCount: null, workDays: 26, monthlyClasses: null, classType: '小班', subjectType: 'K12学科', cityLevel: '二线' })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.revenue || !form.coachCount || !form.workDays || form.revenue <= 0 || form.coachCount < 1) {
     result.value = { error: '请输入有效的月营业额、教练人数和工作天数' }; return
   }
 
-  const monthly = form.revenue / form.coachCount
-  const daily = monthly / form.workDays
-  let classesPerCoach = null
-  if (form.monthlyClasses && form.monthlyClasses > 0) {
-    classesPerCoach = (form.monthlyClasses / form.coachCount).toFixed(0)
+  try {
+    const data = await generateTool('labor-efficiency-education', { ...form, monthlyRevenue: form.revenue, teacherCount: form.coachCount })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  let status = 'warning', statusText = '排课不足', suggestion = '', reference = '月人效1.5-3万为正常，<1.5万排课不足或冗员'
-
-  if (monthly >= 30000) {
-    status = 'success'; statusText = '优秀'
-    suggestion = '人效很高！注意教练工作强度，适当增加人手可以支撑更大规模。'
-  } else if (monthly >= 15000) {
-    status = 'success'; statusText = '正常'
-    suggestion = '人效在合理范围。可通过增加排课量进一步提升。'
-  } else {
-    status = 'danger'; statusText = '排课不足或冗员'
-    suggestion = '人效过低！建议：1）增加招生和排课量；2）评估是否教练过多；3）优化课程结构提高客单价。'
-  }
-
-  result.value = { monthly: monthly.toFixed(0), daily: daily.toFixed(0), classesPerCoach, status, statusText, suggestion, reference }
 }
 </script>
 
@@ -108,5 +165,18 @@ function handleSubmit() {
 .result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
 .result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
 .result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 </style>

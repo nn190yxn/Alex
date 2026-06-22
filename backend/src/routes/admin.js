@@ -378,7 +378,7 @@ router.get('/config', async (req, res) => {
       },
       payment: {
         callbackSecret: process.env.PAYMENT_CALLBACK_SECRET ? '***已配置***' : '⚠️ 未配置',
-        frontendBaseUrl: process.env.FRONTEND_BASE_URL || 'http://localhost:5173'
+        frontendBaseUrl: process.env.FRONTEND_BASE_URL || 'https://woyai.cn'
       },
       llm: {
         baseUrl: process.env.MCAI_LLM_BASE_URL || '未配置',

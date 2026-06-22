@@ -41,17 +41,52 @@
           <div class="cost-grid">
             <div class="cost-item"><span>年化流失损失</span><strong>¥{{ result.annualLoss }}</strong></div>
             <div class="cost-item"><span>挽留单个客户需投入</span><strong>¥{{ result.retainBudget }}</strong></div>
-            <div class="cost-item"><span>挽留 vs 获新成本比</span><strong>1:{{ costRatio }}</strong></div>
+            <div class="cost-item"><span>获新 / 挽留成本比</span><strong>{{ result.costRatio }}</strong></div>
           </div>
         </div>
         <div class="result-card">
           <h3 class="card-title">挽留优先级</h3>
           <div class="priority-list">
             <div v-for="(p, i) in result.priorities" :key="i" class="priority-item" :class="p.level">
-              <span class="priority-badge">{{ p.level === 'high' ? '高' : p.level === 'medium' ? '中' : '低' }}</span>
+              <span class="priority-badge" :class="p.level">{{ p.level === 'high' ? '高' : p.level === 'medium' ? '中' : '低' }}</span>
               <span class="priority-text">{{ p.text }}</span>
             </div>
           </div>
+        </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-card">
+          <h3 class="card-title">优化建议</h3>
+          <div class="suggestion-list">
+            <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -63,35 +98,29 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('churn-rate')
 const form = reactive({ startCustomers: null, churned: null, avgOrder: null, freq: null })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.startCustomers || !form.churned || !form.avgOrder || !form.freq) { result.value = { error: '请填写所有字段' }; return }
   if (form.churned > form.startCustomers) { result.value = { error: '流失客户数不能超过总客户数' }; return }
 
-  const churnRate = ((form.churned / form.startCustomers) * 100).toFixed(1)
-  const monthlyLossValue = form.churned * form.avgOrder * form.freq
-  const annualLoss = monthlyLossValue * 12
-  const retainBudget = (form.avgOrder * form.freq * 0.3).toFixed(0)
-  const newCustomerCost = (form.avgOrder * 3).toFixed(0)
-  const costRatio = (parseFloat(newCustomerCost) / parseFloat(retainBudget)).toFixed(1)
-
-  let statusText = '', rateClass = ''
-  if (churnRate <= 5) { statusText = '流失率健康，客户粘性强'; rateClass = 'good' }
-  else if (churnRate <= 15) { statusText = '流失率偏高，需要关注客户体验'; rateClass = 'warn' }
-  else { statusText = '流失率严重，客户大量流失！'; rateClass = 'bad' }
-
-  const priorities = [
-    { level: 'high', text: `立即联系流失的前 ${Math.ceil(form.churned * 0.3)} 位高价值客户，了解流失原因` },
-    { level: 'high', text: '推出老客户专属权益（积分翻倍/专属折扣），降低二次流失' },
-    { level: 'medium', text: `每月投入约 ¥${retainBudget} 用于客户挽留，远低于获新成本` },
-    { level: 'low', text: '建立客户健康度评分，提前识别即将流失的客户' }
-  ]
-
-  result.value = { churnRate, rateClass, statusText, monthlyLoss: monthlyLossValue.toFixed(0), monthlyLossCustomers: form.churned, annualLoss: annualLoss.toFixed(0), retainBudget, costRatio: `1:${costRatio}`, priorities }
+  try {
+    const data = await generateTool('churn-rate', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
+  }
 }
 </script>
 
@@ -118,5 +147,20 @@ function handleSubmit() {
 .priority-badge { padding: 2px 8px; border-radius: 999px; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); color: white; }
 .priority-badge.high { background: var(--state-danger); } .priority-badge.medium { background: var(--state-warning); } .priority-badge.low { background: var(--state-success); }
 .priority-text { font-size: var(--text-body-sm); flex: 1; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.suggestion-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.suggestion-list p { margin: 0; font-size: var(--text-body-sm); line-height: var(--leading-body-lg); color: var(--text-secondary); }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .form-row, .result-hero, .cost-grid { grid-template-columns: 1fr; } }
 </style>

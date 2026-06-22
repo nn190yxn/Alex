@@ -62,6 +62,35 @@
             <li v-for="(s, i) in result.suggestions" :key="i">{{ s }}</li>
           </ul>
         </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -72,43 +101,28 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('referral-roi')
 const form = reactive({ name: '', oldCustomers: null, newCustomers: null, rewardCost: null, newRevenue: null, otherCAC: null })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.oldCustomers || !form.newCustomers || !form.rewardCost || !form.newRevenue || !form.otherCAC) {
     result.value = { error: '请填写所有字段' }; return
   }
-  const referralRate = ((form.newCustomers / form.oldCustomers) * 100).toFixed(1)
-  const referralCAC = (form.rewardCost / form.newCustomers).toFixed(0)
-  const kValue = (form.newCustomers / form.oldCustomers).toFixed(2)
-  const totalNewRevenue = form.newCustomers * form.newRevenue
-  const netGain = (totalNewRevenue - form.rewardCost).toFixed(0)
-  const roi = (totalNewRevenue / form.rewardCost).toFixed(2)
-  const savingPct = (((form.otherCAC - parseFloat(referralCAC)) / form.otherCAC) * 100).toFixed(0)
-
-  let rateText = '转介绍率偏低，需加强激励机制'
-  let rateClass = 'bad'
-  if (referralRate >= 30) { rateText = '转介绍率优秀，老带新效果显著'; rateClass = 'good' }
-  else if (referralRate >= 15) { rateText = '转介绍率良好，有提升空间'; rateClass = 'warn' }
-
-  const suggestions = []
-  if (referralRate < 15) suggestions.push('提升奖励吸引力：加大返利力度或升级赠品')
-  if (parseFloat(kValue) < 0.3) suggestions.push('降低参与门槛：简化推荐流程，一键分享')
-  if (parseFloat(savingPct) < 20 && parseFloat(savingPct) > 0) suggestions.push('对比其他渠道成本，转介绍优势不明显，需优化活动设计')
-  if (parseFloat(savingPct) > 0) suggestions.push(`转介绍 CAC ¥${referralCAC}，比新客 CAC ¥${form.otherCAC} 节省 ${savingPct}%`)
-  if (suggestions.length === 0) suggestions.push('活动效果优秀，建议：1）持续运营转介绍体系；2）设置阶梯奖励刺激复推')
-
-  result.value = {
-    referralRate, rateClass, rateText, referralCAC, kValue,
-    savingPct,
-    savingClass: parseFloat(savingPct) > 0 ? 'good' : 'bad',
-    savingText: parseFloat(savingPct) > 0 ? `节省 ${savingPct}%` : `高出 ${Math.abs(savingPct)}%`,
-    netGain: parseFloat(netGain) > 0 ? netGain : '-' + Math.abs(netGain),
-    roi, evaluation: netGain > 0 ? '活动实现正向收益，转介绍是高效的获客方式。' : '活动成本高于新客收益，需调整奖励策略或提高客单价。',
-    evalClass: netGain > 0 ? 'good' : 'bad', suggestions
+  try {
+    const data = await generateTool('referral-roi', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -124,7 +138,7 @@ function handleSubmit() {
 .hero-main, .hero-secondary { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); text-align: center; }
 .hero-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
 .hero-value { font-size: 42px; font-weight: var(--font-weight-bold); line-height: 1; }
-.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.bad { color: var(--state-danger); }
+.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.danger, .hero-value.bad { color: var(--state-danger); }
 .hero-sub { font-size: var(--text-body-sm); color: var(--text-secondary); margin-top: var(--space-2); }
 .result-card { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); }
 .card-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
@@ -132,9 +146,22 @@ function handleSubmit() {
 .analysis-item { padding: var(--space-3); background: white; border-radius: var(--radius-md); text-align: center; }
 .analysis-item span { display: block; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-1); }
 .analysis-item strong { font-size: var(--text-body); }
-.analysis-item strong.good { color: var(--state-success); } .analysis-item strong.bad { color: var(--state-danger); }
+.analysis-item strong.good { color: var(--state-success); } .analysis-item strong.danger, .analysis-item strong.bad { color: var(--state-danger); }
 .evaluation { padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-body-sm); margin-bottom: var(--space-3); }
-.evaluation.good { background: #dcfce7; color: #166534; } .evaluation.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
+.evaluation.good { background: #dcfce7; color: #166534; } .evaluation.danger, .evaluation.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
 .suggestions { padding-left: var(--space-5); font-size: var(--text-body-sm); line-height: 1.8; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .result-hero, .analysis-grid, .form-row { grid-template-columns: 1fr; } }
 </style>

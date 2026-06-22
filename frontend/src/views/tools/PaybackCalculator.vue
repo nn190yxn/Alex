@@ -157,6 +157,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('payback')
 
@@ -178,12 +179,8 @@ const form = reactive({
   variableCostRate: 0
 })
 
-function handleSubmit() {
+async function handleSubmit() {
   const totalInvestment = (form.franchiseFee || 0) + (form.equipment || 0) + (form.initialInventory || 0) + (form.decoration || 0) + (form.loanInterest || 0) + (form.otherInvestment || 0)
-  const totalOperation = (form.labor || 0) + (form.rent || 0) + (form.utilities || 0) + (form.otherOperation || 0)
-  const variableCost = (form.monthlyRevenue || 0) * (form.variableCostRate || 0) / 100
-  const monthlyNetProfit = (form.monthlyRevenue || 0) - totalOperation - variableCost
-
   if (totalInvestment <= 0) {
     result.value = { error: '请至少填写一项前期投资' }
     return
@@ -192,87 +189,8 @@ function handleSubmit() {
     result.value = { error: '请填写月均收入' }
     return
   }
-
-  const investmentBreakdown = []
-  if (form.franchiseFee) investmentBreakdown.push({ label: '加盟费/品牌使用费', value: (form.franchiseFee || 0).toLocaleString() })
-  if (form.equipment) investmentBreakdown.push({ label: '设备采购', value: (form.equipment || 0).toLocaleString() })
-  if (form.initialInventory) investmentBreakdown.push({ label: '首批货款/原材料', value: (form.initialInventory || 0).toLocaleString() })
-  if (form.decoration) investmentBreakdown.push({ label: '装修费用', value: (form.decoration || 0).toLocaleString() })
-  if (form.loanInterest) investmentBreakdown.push({ label: '银行利息/贷款成本', value: (form.loanInterest || 0).toLocaleString() })
-  if (form.otherInvestment) investmentBreakdown.push({ label: '其他前期投入', value: (form.otherInvestment || 0).toLocaleString() })
-
-  const operationBreakdown = []
-  if (form.labor) operationBreakdown.push({ label: '人工成本', value: (form.labor || 0).toLocaleString() })
-  if (form.rent) operationBreakdown.push({ label: '房租', value: (form.rent || 0).toLocaleString() })
-  if (form.utilities) operationBreakdown.push({ label: '水电/杂费', value: (form.utilities || 0).toLocaleString() })
-  if (form.otherOperation) operationBreakdown.push({ label: '其他运营支出', value: (form.otherOperation || 0).toLocaleString() })
-
-  if (monthlyNetProfit <= 0) {
-    result.value = {
-      totalInvestment: totalInvestment.toLocaleString(),
-      monthlyOperation: totalOperation.toLocaleString(),
-      monthlyNetProfit: monthlyNetProfit.toLocaleString(),
-      netProfitClass: 'negative',
-      paybackMonths: '无法回本',
-      paybackClass: 'negative',
-      investmentBreakdown,
-      operationBreakdown,
-      cannotPayback: true,
-      warning: `月净利润 ¥${monthlyNetProfit.toLocaleString()} 为负数，当前收入无法覆盖运营成本。需要提升收入或降低支出。`,
-      advice: ''
-    }
-    return
-  }
-
-  const paybackMonthNum = Math.ceil(totalInvestment / monthlyNetProfit)
-  const years = Math.floor(paybackMonthNum / 12)
-  const months = paybackMonthNum % 12
-  const paybackStr = years > 0 ? `${years}年${months > 0 ? months + '个月' : ''}` : `${months}个月`
-
-  const now = new Date()
-  const paybackDate = new Date(now.getFullYear(), now.getMonth() + paybackMonthNum)
-  const paybackDateStr = `${paybackDate.getFullYear()}年${paybackDate.getMonth() + 1}月`
-
-  const annualROI = ((monthlyNetProfit * 12) / totalInvestment * 100).toFixed(1)
-  let roiClass = 'roi-low'
-  if (annualROI >= 50) roiClass = 'roi-high'
-  else if (annualROI >= 20) roiClass = 'roi-mid'
-
-  let paybackClass = 'safe'
-  if (paybackMonthNum <= 12) paybackClass = 'safe'
-  else if (paybackMonthNum <= 18) paybackClass = 'warning'
-  else paybackClass = 'danger'
-
-  let advice = ''
-  if (paybackMonthNum <= 6) {
-    advice = '回本周期很短，资金周转效率高，建议快速启动并关注扩张机会。'
-  } else if (paybackMonthNum <= 12) {
-    advice = '回本周期在1年内，风险可控，建议稳步推进并做好现金流管理。'
-  } else if (paybackMonthNum <= 18) {
-    advice = '回本周期中等，需确保有充足的运营资金支撑前期亏损阶段。'
-  } else if (paybackMonthNum <= 24) {
-    advice = '回本周期较长，建议重新评估投资规模，或考虑降低前期投入、提升收入预期。'
-  } else {
-    advice = '回本周期超过2年，建议谨慎决策，优先寻找回报更快的项目或优化成本结构。'
-  }
-
-  result.value = {
-    totalInvestment: totalInvestment.toLocaleString(),
-    monthlyOperation: totalOperation.toLocaleString(),
-    monthlyNetProfit: monthlyNetProfit.toLocaleString(),
-    netProfitClass: 'positive',
-    paybackMonths: paybackStr,
-    paybackClass,
-    investmentBreakdown,
-    operationBreakdown,
-    cannotPayback: false,
-    paybackMonthNum,
-    paybackDate: paybackDateStr,
-    annualROI: `${annualROI}%`,
-    roiClass,
-    warning: '',
-    advice
-  }
+  const response = await generateTool('payback', { ...form })
+  result.value = { ...response, ...(response.extra || {}) }
 }
 </script>
 

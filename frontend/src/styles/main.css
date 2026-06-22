@@ -43,6 +43,38 @@ input, select, textarea {
   font-size: inherit;
 }
 
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select,
+textarea,
+.form-input,
+.form-select,
+.form-textarea {
+  box-sizing: border-box;
+  min-height: 44px !important;
+  line-height: var(--leading-body-md) !important;
+}
+
+textarea,
+textarea.form-input,
+.form-textarea {
+  height: auto !important;
+  min-height: 120px !important;
+  line-height: var(--leading-body-md) !important;
+  resize: vertical;
+}
+
+:where(.form-input, .form-select, .form-textarea),
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: 44px !important;
+  line-height: var(--leading-body-md) !important;
+}
+
+:where(textarea, textarea.form-input, .form-textarea) {
+  height: auto !important;
+  min-height: 120px !important;
+  line-height: var(--leading-body-md) !important;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -157,11 +189,12 @@ h4 { font-size: var(--text-h4); line-height: var(--leading-h4); font-weight: var
 
 .form-input {
   width: 100%;
-  height: 44px;
+  min-height: 44px;
   padding: 0 var(--space-4);
   border: 1px solid var(--line-default);
   border-radius: var(--radius-input);
   font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
   color: var(--text-main);
   background-color: var(--bg-base);
   transition: all var(--duration-fast) var(--ease-out);
@@ -186,6 +219,7 @@ h4 { font-size: var(--text-h4); line-height: var(--leading-h4); font-weight: var
 .form-textarea {
   min-height: 120px;
   padding: var(--space-3) var(--space-4);
+  line-height: var(--leading-body-md);
   resize: vertical;
 }
 

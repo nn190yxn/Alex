@@ -37,12 +37,12 @@
         <div class="result-hero">
           <div class="hero-main">
             <div class="hero-label">库存周转率</div>
-            <div class="hero-value" :class="result.statusClass">{{ result.turnover }} 次</div>
+            <div class="hero-value" :class="result.extra?.statusClass">{{ result.extra?.turnover }} 次</div>
             <div class="hero-sub">每{{ form.period }}周转这么多次</div>
           </div>
-          <div v-if="result.daysOfInventory" class="hero-secondary">
+          <div v-if="result.extra?.daysOfInventory" class="hero-secondary">
             <div class="hero-label">库存天数</div>
-            <div class="hero-value days">{{ result.daysOfInventory }} 天</div>
+            <div class="hero-value days">{{ result.extra?.daysOfInventory }} 天</div>
             <div class="hero-sub">当前库存大约够卖这么多天</div>
           </div>
         </div>
@@ -51,15 +51,15 @@
           <h3 class="card-title">周转诊断</h3>
           <div class="diag-grid">
             <div class="diag-item">
-              <div class="diag-value" :class="result.statusClass">{{ result.statusText }}</div>
+              <div class="diag-value" :class="result.extra?.statusClass">{{ result.extra?.statusText }}</div>
               <div class="diag-label">周转状况</div>
             </div>
             <div class="diag-item">
-              <div class="diag-value">{{ result.turnover }}</div>
+              <div class="diag-value">{{ result.extra?.turnover }}</div>
               <div class="diag-label">周转次数/{{ form.period }}</div>
             </div>
             <div class="diag-item">
-              <div class="diag-value">¥{{ form.avgInventory.toLocaleString() }}</div>
+              <div class="diag-value">¥{{ result.extra?.avgInventory }}</div>
               <div class="diag-label">平均库存</div>
             </div>
           </div>
@@ -68,28 +68,60 @@
         <div class="result-card">
           <h3 class="card-title">行业基准对比</h3>
           <div class="benchmark-grid">
-            <div class="bm-item" :class="{ active: result.turnover >= 6 && result.turnover <= 8 }">
+            <div class="bm-item" :class="{ active: Number(result.extra?.turnover || 0) >= 6 && Number(result.extra?.turnover || 0) <= 8 }">
               <div class="bm-label">快餐</div>
               <div class="bm-range">6-8 次/月</div>
             </div>
-            <div class="bm-item" :class="{ active: result.turnover >= 4 && result.turnover <= 6 }">
+            <div class="bm-item" :class="{ active: Number(result.extra?.turnover || 0) >= 4 && Number(result.extra?.turnover || 0) <= 6 }">
               <div class="bm-label">正餐</div>
               <div class="bm-range">4-6 次/月</div>
             </div>
-            <div class="bm-item" :class="{ active: result.turnover >= 5 && result.turnover <= 7 }">
+            <div class="bm-item" :class="{ active: Number(result.extra?.turnover || 0) >= 5 && Number(result.extra?.turnover || 0) <= 7 }">
               <div class="bm-label">火锅</div>
               <div class="bm-range">5-7 次/月</div>
             </div>
           </div>
         </div>
 
-        <div v-if="result.suggestions && result.suggestions.length" class="result-card">
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.suggestions?.length" class="result-card">
           <h3 class="card-title">优化建议</h3>
           <div class="suggestions">
-            <div v-for="(s, i) in result.suggestions" :key="i" class="suggestion-item">
+            <div v-for="(s, i) in result.extra.suggestions" :key="i" class="suggestion-item">
               <span class="suggestion-text">{{ s }}</span>
             </div>
           </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -101,6 +133,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('inventory-turnover')
 
@@ -115,7 +148,14 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.avgInventory || form.avgInventory <= 0) {
     result.value = { error: '请填写平均库存' }
     return
@@ -125,25 +165,11 @@ function handleSubmit() {
     return
   }
 
-  const turnover = form.costOfGoods / form.avgInventory
-  const days = turnover > 0 ? Math.round((form.period === '月' ? 30 : form.period === '周' ? 7 : 90) / turnover) : null
-
-  let statusClass = ''
-  let statusText = ''
-  if (turnover >= 4) { statusClass = 'good'; statusText = '周转健康' }
-  else if (turnover >= 2) { statusClass = 'warn'; statusText = '正常' }
-  else { statusClass = 'danger'; statusText = '积压' }
-
-  const suggestions = []
-  if (turnover < 2) {
-    suggestions.push('库存周转率偏低，食材积压严重！建议：1）减少采购频次和单次采购量；2）清理临期食材；3）优化菜单减少低销量菜品备料。')
-  } else if (turnover < 4) {
-    suggestions.push('周转率一般，建议建立安全库存线，避免过多备货占用资金。')
-  } else {
-    suggestions.push('周转健康，食材新鲜度高，继续保持"少量多次"采购策略。')
+  try {
+    result.value = await generateTool('inventory-turnover', { ...form })
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  result.value = { turnover: turnover.toFixed(1), daysOfInventory: days, statusClass, statusText, suggestions }
 }
 </script>
 
@@ -190,6 +216,18 @@ function handleSubmit() {
 .suggestions { display: flex; flex-direction: column; gap: var(--space-3); }
 .suggestion-item { display: flex; gap: var(--space-3); align-items: flex-start; }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 @media (max-width: 640px) { .result-hero { grid-template-columns: 1fr; } .diag-grid { grid-template-columns: repeat(2, 1fr); } .benchmark-grid { grid-template-columns: 1fr; } }
 </style>

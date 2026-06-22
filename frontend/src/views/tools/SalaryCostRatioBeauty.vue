@@ -12,19 +12,44 @@
     </template>
     <template #result>
       <div class="salarycost-result" v-if="result && !result.error">
-        <div class="result-main">
-          <div class="result-label">员工成本占比</div>
-          <div class="result-value numeral">{{ result.ratio }}%</div>
-          <div class="result-status" :class="result.status">{{ result.statusText }}</div>
+        <div class="result-summary" v-if="result.summary">
+          <div class="summary-text">{{ result.summary }}</div>
         </div>
-        <div class="result-details">
-          <div class="detail-item"><span>月工资总额</span><span class="numeral">¥{{ form.totalSalary }}</span></div>
-          <div class="detail-item"><span>月营业额</span><span class="numeral">¥{{ form.revenue }}</span></div>
-          <div class="detail-item"><span>底薪占比</span><span class="numeral">{{ result.baseRatio }}%</span></div>
-          <div class="detail-item"><span>提成占比</span><span class="numeral">{{ result.commissionRatio }}%</span></div>
+        <div class="result-benchmarks" v-if="result.benchmarks && result.benchmarks.length">
+          <h4>核心指标</h4>
+          <div class="benchmark-list">
+            <div class="benchmark-item" v-for="b in result.benchmarks" :key="b.metric">
+              <span class="benchmark-metric">{{ b.metric }}</span>
+              <span class="benchmark-value numeral">{{ b.value }}</span>
+              <span class="benchmark-status" :class="b.status">{{ b.status === 'ok' ? '达标' : b.status === 'caution' ? '注意' : '偏低' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="result-suggestion"><h4>优化建议</h4><p>{{ result.suggestion }}</p></div>
-        <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div class="result-sections" v-if="result.sections && result.sections.length">
+          <div class="section" v-for="section in result.sections" :key="section.title">
+            <h4>{{ section.title }}</h4>
+            <div class="section-items">
+              <div class="item" v-for="(item, i) in section.items" :key="i">{{ item }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions" v-if="result.actions && result.actions.length">
+          <h4>行动建议</h4>
+          <div class="action-list">
+            <div class="action-item" v-for="action in result.actions" :key="action.title" :class="action.priority">
+              <span class="action-priority">{{ action.priority === 'critical' ? '紧急' : action.priority === 'high' ? '高' : '中' }}</span>
+              <span class="action-title">{{ action.title }}</span>
+              <span class="action-desc">{{ action.description }}</span>
+              <span class="action-meta">{{ action.owner }} · {{ action.timeline }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="result-risks" v-if="result.riskNotes && result.riskNotes.length">
+          <h4>风险提示</h4>
+          <div class="risk-list">
+            <div class="risk-item" v-for="(risk, i) in result.riskNotes" :key="i">{{ risk }}</div>
+          </div>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -35,29 +60,23 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('salary-cost-ratio-beauty')
 
 const form = reactive({ totalSalary: null, revenue: null, baseSalary: null, commission: null })
 const result = ref(null)
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.totalSalary || !form.revenue || form.revenue <= 0) {
     result.value = { error: '请输入有效的工资总额和营业额' }; return
   }
-
-  const ratio = (form.totalSalary / form.revenue) * 100
-  const baseRatio = form.baseSalary ? (form.baseSalary / form.revenue) * 100 : 0
-  const commissionRatio = form.commission ? (form.commission / form.revenue) * 100 : 0
-
-  let status = 'warning', statusText = '正常', suggestion = '', reference = '美业25-35%为正常，>35%需优化提成比例或提升客单价'
-
-  if (ratio > 35) { status = 'danger'; statusText = '超标'; suggestion = '员工成本严重超标！建议：1.优化提成结构 2.提升客单价 3.提高人效。' }
-  else if (ratio > 30) { status = 'warning'; statusText = '偏高'; suggestion = '员工成本偏高，建议关注人均产出，优化排班。' }
-  else if (ratio >= 25) { status = 'success'; statusText = '正常'; suggestion = '在合理范围内，继续保持。' }
-  else { status = 'success'; statusText = '优秀'; suggestion = '人工成本控制得很好！注意不要过度压缩导致人才流失。' }
-
-  result.value = { ratio: ratio.toFixed(1), baseRatio: baseRatio.toFixed(1), commissionRatio: commissionRatio.toFixed(1), status, statusText, suggestion, reference }
+  result.value = await generateTool('salary-cost-ratio-beauty', {
+    totalSalary: form.totalSalary,
+    revenue: form.revenue,
+    baseSalary: form.baseSalary,
+    commission: form.commission
+  })
 }
 </script>
 
@@ -67,17 +86,30 @@ function handleSubmit() {
 .form-label { font-size: var(--text-body-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); }
 .form-input { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); font-size: var(--text-body); }
 .salarycost-result { padding: var(--space-4); background-color: var(--bg-base); border-radius: var(--radius-card); }
-.result-main { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); }
-.result-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
-.result-value { font-size: 56px; font-weight: var(--font-weight-bold); color: var(--text-main); line-height: 1; margin-bottom: var(--space-3); }
-.result-status { display: inline-block; padding: var(--space-1) var(--space-4); border-radius: 9999px; font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); }
-.result-status.success { background-color: #dcfce7; color: #166534; }
-.result-status.warning { background-color: #fef3c7; color: #92400e; }
-.result-status.danger { background-color: #fee2e2; color: #991b1b; }
-.result-details { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--line-default); }
-.detail-item { display: flex; justify-content: space-between; font-size: var(--text-body-sm); color: var(--text-secondary); }
-.result-suggestion, .result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
-.result-suggestion h4, .result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
-.result-suggestion p, .result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.result-summary { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); background: white; border-radius: var(--radius-md); }
+.summary-text { font-size: var(--text-body); color: var(--text-main); font-weight: var(--font-weight-semibold); }
+.result-benchmarks, .result-actions { margin-top: var(--space-4); padding: var(--space-3); background: white; border-radius: var(--radius-md); }
+.result-benchmarks h4, .result-actions h4, .section h4, .result-risks h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
+.benchmark-list, .action-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.benchmark-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-2); font-size: var(--text-body-sm); align-items: center; }
+.benchmark-metric, .section-items, .action-desc { color: var(--text-secondary); }
+.benchmark-value, .action-title { color: var(--text-main); font-weight: var(--font-weight-medium); }
+.benchmark-status { text-align: right; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+.benchmark-status.ok { background: #dcfce7; color: #166534; }
+.benchmark-status.caution { background: #fef3c7; color: #92400e; }
+.benchmark-status.below { background: #fee2e2; color: #991b1b; }
+.result-sections { margin-top: var(--space-4); }
+.section { padding: var(--space-3); background: white; border-radius: var(--radius-md); margin-bottom: var(--space-2); }
+.section-items, .action-desc, .risk-list { font-size: var(--text-body-sm); line-height: var(--leading-body-lg); }
+.item, .risk-item { margin-bottom: var(--space-1); }
+.action-item { padding: var(--space-2); border-radius: var(--radius-sm); border-left: 3px solid var(--line-default); }
+.action-item.critical { border-left-color: #991b1b; background: #fee2e2; }
+.action-item.high { border-left-color: #92400e; background: #fef3c7; }
+.action-item.medium { border-left-color: #166534; background: #dcfce7; }
+.action-priority { display: inline-block; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--bg-muted); margin-right: var(--space-2); }
+.action-desc, .action-meta { display: block; margin-top: var(--space-1); }
+.action-meta { font-size: var(--text-body-xs); color: var(--text-muted); }
+.result-risks { margin-top: var(--space-4); padding: var(--space-3); background: #fff7ed; border-radius: var(--radius-md); border: 1px solid #fed7aa; }
+.result-risks h4, .risk-list { color: #9a3412; }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

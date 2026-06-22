@@ -11,7 +11,7 @@
           首页
         </router-link>
         <router-link to="/tools" class="nav-link" @click="menuOpen = false">
-          表格中心
+          所有工具
         </router-link>
         <router-link to="/membership" class="nav-link" @click="menuOpen = false">
           会员中心

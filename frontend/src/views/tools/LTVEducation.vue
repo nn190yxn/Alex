@@ -26,6 +26,15 @@
         <label class="form-label">单个学员获客成本（元）</label>
         <input v-model.number="form.cac" type="number" class="form-input" placeholder="试听课+投流成本" min="0" />
       </div>
+      <div class="form-group" style="margin-top: var(--space-3);">
+        <label class="form-label">科目类型</label>
+        <select v-model="form.subjectType" class="form-input">
+          <option value="K12学科">K12学科</option>
+          <option value="素质教育">素质教育</option>
+          <option value="职业教育">职业教育</option>
+          <option value="语言培训">语言培训</option>
+        </select>
+      </div>
     </template>
     <template #result>
       <div v-if="result && !result.error" class="result-page">
@@ -54,6 +63,43 @@
           <h3 class="card-title">招生策略建议</h3>
           <div class="suggestions" :class="result.suggestClass"><p>{{ result.suggestion }}</p></div>
         </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-card">
+          <h3 class="card-title">跟进建议</h3>
+          <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+        </div>
+        <div v-if="result.reference" class="result-card">
+          <h3 class="card-title">行业参考</h3>
+          <p>{{ result.reference }}</p>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -64,34 +110,30 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('ltv-education')
-const form = reactive({ hourlyFee: null, monthlyHours: null, retentionMonths: null, extraIncomePct: null, cac: null })
+const form = reactive({ hourlyFee: null, monthlyHours: null, retentionMonths: null, extraIncomePct: null, cac: null, subjectType: 'K12学科' })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.hourlyFee || !form.monthlyHours || !form.retentionMonths || form.extraIncomePct === null || !form.cac) {
     result.value = { error: '请填写所有字段' }; return
   }
-  const monthlyFee = form.hourlyFee * form.monthlyHours
-  const monthlyExtra = Math.round(monthlyFee * (form.extraIncomePct / 100))
-  const monthlyTotal = monthlyFee + monthlyExtra
-  const ltv = monthlyTotal * form.retentionMonths
-  const ratio = form.cac > 0 ? (ltv / form.cac).toFixed(1) : '∞'
 
-  let ratioText = '', ratioClass = '', ltvClass = '', suggestClass = '', suggestion = ''
-  if (parseFloat(ratio) >= 3) {
-    ratioText = '健康，招生投入合理'; ratioClass = 'good'; ltvClass = 'good'; suggestClass = 'good'
-    suggestion = 'LTV/CAC > 3，招生模式健康。建议：1）加大招生力度扩大规模；2）提高续班率延长在读月数；3）开发高附加值课程（考级/比赛/集训）。'
-  } else if (parseFloat(ratio) >= 1) {
-    ratioText = '偏低，招生利润空间有限'; ratioClass = 'warn'; ltvClass = 'warn'; suggestClass = 'warn'
-    suggestion = '需要提升学员价值或降低获客成本。建议：1）推出长期班优惠锁定在读时长；2）增加附加收入来源（教材/夏令营/考级）；3）用转介绍降低试听课成本。'
-  } else {
-    ratioText = '危险，招一个亏一个'; ratioClass = 'bad'; ltvClass = 'bad'; suggestClass = 'bad'
-    suggestion = '获客成本远超学员价值！必须：1）大幅提升课单价或缩减试听成本；2）提高满班率摊薄成本；3）重点提升续班率，延长在读周期。'
+  try {
+    const data = await generateTool('ltv-education', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  result.value = { ltv: ltv.toFixed(0), ratio, ratioClass, ratioText, ltvClass, suggestClass, monthlyFee: monthlyFee.toFixed(0), monthlyExtra: monthlyExtra.toFixed(0), suggestion }
 }
 </script>
 
@@ -116,5 +158,18 @@ function handleSubmit() {
 .suggestions { padding: var(--space-3); border-radius: var(--radius-md); }
 .suggestions.good { background: #dcfce7; } .suggestions.warn { background: var(--pillar-management-bg); } .suggestions.bad { background: var(--pillar-douyin-bg); }
 .suggestions p { font-size: var(--text-body-sm); line-height: 1.6; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } .result-hero { grid-template-columns: 1fr; } }
 </style>

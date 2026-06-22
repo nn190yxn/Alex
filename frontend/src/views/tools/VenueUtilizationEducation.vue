@@ -11,8 +11,41 @@
           <input v-model.number="form.scheduledHours" type="number" class="form-input" placeholder="每周实际排课" min="0" />
         </div>
       </div>
-    </template>
-    <template #result>
+      <div class="form-row" style="margin-top: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">班型</label>
+          <select v-model="form.classType" class="form-input">
+            <option value="一对一">一对一</option>
+            <option value="小班">小班</option>
+            <option value="大班">大班</option>
+            <option value="特大班">特大班</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">科目类型</label>
+          <select v-model="form.subjectType" class="form-input">
+            <option value="K12学科">K12学科</option>
+            <option value="素质教育">素质教育</option>
+            <option value="职业教育">职业教育</option>
+            <option value="语言培训">语言培训</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top: var(--space-4);">
+        <div class="form-group">
+          <label class="form-label">教室数量</label>
+          <input v-model.number="form.rooms" type="number" class="form-input" placeholder="可用教室数" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">城市层级</label>
+          <select v-model="form.cityLevel" class="form-input">
+            <option value="一线">一线</option>
+            <option value="二线">二线</option>
+            <option value="三线">三线</option>
+            <option value="四线及以下">四线及以下</option>
+          </select>
+        </div>
+      </div>
       <div class="utilization-result" v-if="result && !result.error">
         <div class="result-main">
           <div class="result-label">场地利用率</div>
@@ -20,12 +53,45 @@
           <div class="result-status" :class="result.status">{{ result.statusText }}</div>
         </div>
         <div class="result-details">
-          <div class="detail-item"><span>可用课时/周</span><span class="numeral">{{ form.availableHours }} 课时</span></div>
-          <div class="detail-item"><span>实际排课/周</span><span class="numeral">{{ form.scheduledHours }} 课时</span></div>
+          <div class="detail-item"><span>可用课时/周</span><span class="numeral">{{ result.availableHours || form.availableHours }} 课时</span></div>
+          <div class="detail-item"><span>实际排课/周</span><span class="numeral">{{ result.bookedHours || form.scheduledHours }} 课时</span></div>
           <div class="detail-item"><span>空闲课时</span><span class="numeral">{{ result.idleHours }} 课时/周</span></div>
         </div>
         <div class="result-suggestion"><h4>优化排课建议</h4><p>{{ result.suggestion }}</p></div>
+        <div v-if="result.diagnosis?.length" class="result-reference">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-reference">
+          <h4>跟进建议</h4>
+          <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+        </div>
         <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div v-if="result.actions?.length" class="result-reference">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-reference">
+          <h4>口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -36,13 +102,21 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('venue-utilization-education')
 
-const form = reactive({ availableHours: null, scheduledHours: null })
+const form = reactive({ availableHours: null, scheduledHours: null, classType: '小班', subjectType: 'K12学科', rooms: 1, cityLevel: '二线' })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.availableHours || !form.scheduledHours || form.availableHours <= 0) {
     result.value = { error: '请输入有效的可用课时和实际排课课时' }; return
   }
@@ -50,23 +124,12 @@ function handleSubmit() {
     result.value = { error: '实际排课课时不能大于可用课时' }; return
   }
 
-  const utilization = (form.scheduledHours / form.availableHours) * 100
-  const idleHours = form.availableHours - form.scheduledHours
-
-  let status = 'warning', statusText = '及格', suggestion = '', reference = '>80%优秀，60-80%及格，<60%需优化排课或拓客'
-
-  if (utilization >= 80) {
-    status = 'success'; statusText = '优秀'
-    suggestion = '场地利用率很高！可以考虑增加教室或开设更多班级。'
-  } else if (utilization >= 60) {
-    status = 'success'; statusText = '达标'
-    suggestion = '利用率在合理范围。可通过增加周末排课或开设新班级进一步提升。'
-  } else {
-    status = 'danger'; statusText = '过低'
-    suggestion = '场地大量闲置！建议：1）增加招生推广；2）开设体验课/短期班填充空档；3）考虑是否需要缩小场地。'
+  try {
+    const data = await generateTool('venue-utilization-education', { ...form, availableHours: form.availableHours, scheduledHours: form.scheduledHours, totalHours: form.availableHours, bookedHours: form.scheduledHours })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  result.value = { utilization: utilization.toFixed(1), idleHours, status, statusText, suggestion, reference }
 }
 </script>
 
@@ -88,5 +151,18 @@ function handleSubmit() {
 .result-suggestion, .result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
 .result-suggestion h4, .result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
 .result-suggestion p, .result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 </style>

@@ -1,12 +1,11 @@
 <template>
   <ToolDetail :tool-info="toolInfo" :result="result" @submit="handleSubmit">
     <template #inputs>
-      <div class="section">
-        <div class="section-header" @click="toggleSection('basic')">
-          <span class="section-icon">🧋</span>
-          <span class="section-title">饮品名称</span>
-          <span class="section-arrow" :class="{ open: sections.basic }">▾</span>
-        </div>
+        <div class="section">
+          <div class="section-header" @click="toggleSection('basic')">
+            <span class="section-title">饮品名称</span>
+            <span class="section-arrow" :class="{ open: sections.basic }">▾</span>
+          </div>
         <div v-show="sections.basic" class="section-body">
           <div class="form-group">
             <label class="form-label">饮品名称</label>
@@ -17,7 +16,6 @@
 
       <div class="section">
         <div class="section-header">
-          <span class="section-icon">📋</span>
           <span class="section-title">配方原料</span>
           <span class="section-add" @click="addIngredient">+ 添加原料</span>
         </div>
@@ -138,6 +136,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -148,6 +178,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('drink-cost')
 
@@ -175,56 +206,24 @@ function removeIngredient(idx) {
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.drinkName) { result.value = { error: '请填写饮品名称' }; return }
 
   const validIngredients = form.ingredients.filter(i => i.name && i.amount > 0 && i.packagePrice > 0 && i.packageWeight > 0)
   if (validIngredients.length === 0) { result.value = { error: '请至少填写一种完整的原料（名称、用量、采购价、包装量）' }; return }
 
-  let totalCost = 0
-  const items = validIngredients.map(ing => {
-    const unitRatio = ing.packageUnit === 'kg' ? 1000 : ing.packageUnit === 'L' ? 1000 : 1
-    const cost = (ing.amount / (ing.packageWeight * unitRatio)) * ing.packagePrice
-    totalCost += cost
-    return { ...ing, cost: cost.toFixed(3) }
-  })
-
-  const suggestedPrice = totalCost / 0.3
-  const actualPrice = Math.ceil(suggestedPrice * 0.9 * 10) / 10 // 向下取整到角
-  const actualMargin = ((actualPrice - totalCost) / actualPrice * 100)
-
-  const itemsWithPct = items.map(item => ({
-    ...item,
-    pct: totalCost > 0 ? (parseFloat(item.cost) / totalCost * 100) : 0
-  }))
-
-  let marginClass = actualMargin >= 70 ? 'good' : actualMargin >= 60 ? 'warn' : 'danger'
-  let statusText = actualMargin >= 70 ? '毛利健康' : actualMargin >= 60 ? '毛利正常' : '毛利偏低'
-
-  const suggestions = []
-  if (actualMargin < 60) {
-    suggestions.push(`毛利率 ${actualMargin.toFixed(0)}% 偏低，奶茶行业建议 65-75%。建议：1）优化配方减少高成本原料用量；2）寻找更便宜的供应商；3）适当提高售价。`)
-  } else if (actualMargin >= 70) {
-    suggestions.push('毛利率健康，继续保持当前配方和成本控制。')
-  }
-
-  // 找出成本最高的原料
-  const maxCostItem = itemsWithPct.reduce((a, b) => parseFloat(a.cost) > parseFloat(b.cost) ? a : b)
-  if (maxCostItem.pct > 40) {
-    suggestions.push(`${maxCostItem.name} 占单杯成本 ${maxCostItem.pct.toFixed(0)}%，是最大的成本项，可考虑优化用量或更换供应商。`)
-  }
-
-  result.value = {
-    drinkName: form.drinkName,
-    totalCost: totalCost.toFixed(2),
-    ingredientCount: items.length,
-    items: itemsWithPct,
-    suggestedPrice: suggestedPrice.toFixed(1),
-    actualPrice: actualPrice.toFixed(1),
-    actualMargin: actualMargin.toFixed(1),
-    marginClass,
-    statusText,
-    suggestions
+  try {
+    const data = await generateTool('drink-cost', { drinkName: form.drinkName, ingredients: validIngredients })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -292,6 +291,18 @@ function handleSubmit() {
 .suggestions { display: flex; flex-direction: column; gap: var(--space-3); }
 .suggestion-item { display: flex; gap: var(--space-3); align-items: flex-start; }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 @media (max-width: 640px) { .result-hero { grid-template-columns: 1fr; } .ingredient-row { flex-direction: column; align-items: stretch; } .pricing-grid { grid-template-columns: 1fr; } }
 </style>

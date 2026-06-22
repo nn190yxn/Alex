@@ -69,6 +69,41 @@
           <h3 class="card-title">活动结论</h3>
           <div class="conclusion" :class="result.conclusionClass"><p>{{ result.conclusion }}</p></div>
         </div>
+        <div v-if="result.suggestions?.length" class="result-card">
+          <h3 class="card-title">优化建议</h3>
+          <div class="suggestions">
+            <div v-for="(item, i) in result.suggestions" :key="i" class="suggestion-item">{{ item }}</div>
+          </div>
+        </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -79,50 +114,31 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('promotion-profit')
 const form = reactive({ normalPrice: null, normalMargin: null, discount: null, promoOrders: null, normalOrders: null, days: null })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.normalPrice || !form.normalMargin || !form.discount || !form.promoOrders || !form.normalOrders || !form.days) {
     result.value = { error: '请填写所有字段' }; return
   }
   if (form.discount > 100 || form.discount <= 0) { result.value = { error: '请输入有效折扣（1-100）' }; return }
+  if (form.normalMargin > 100 || form.normalMargin <= 0) { result.value = { error: '请输入有效毛利率（1-100）' }; return }
 
-  const promoPrice = form.normalPrice * (form.discount / 100)
-  const costPerOrder = form.normalPrice * (1 - form.normalMargin / 100)
-  const promoMargin = form.normalMargin - (100 - form.discount)
-  const promoMarginAmount = promoPrice - costPerOrder
-  const dailyIncrease = form.promoOrders - form.normalOrders
-  const increasePct = ((dailyIncrease / form.normalOrders) * 100).toFixed(0)
-  const totalRevenue = (promoPrice * form.promoOrders * form.days).toFixed(0)
-  const totalGrossProfit = (promoMarginAmount * form.promoOrders * form.days).toFixed(0)
-  const normalProfit = (form.normalPrice * form.normalMargin / 100 * form.normalOrders * form.days).toFixed(0)
-  const opportunityLoss = Math.max(0, (normalProfit - totalGrossProfit)).toFixed(0)
-
-  const denominator = form.discount - (100 - form.normalMargin)
-  const breakEvenIncrease = denominator !== 0 ? Math.ceil(form.normalOrders * (100 - form.discount) / denominator) : 0
-  const isProfitable = promoMarginAmount > 0 && dailyIncrease >= (breakEvenIncrease > 0 ? breakEvenIncrease : 0)
-
-  let profitText = '', profitClass = '', marginClass = '', vsClass = '', conclusion = '', conclusionClass = ''
-  if (promoMarginAmount <= 0) {
-    profitText = '折扣后每单亏损，活动越做越亏！'; profitClass = 'bad'; marginClass = 'bad'
-    conclusion = '折扣力度过大导致每单亏损。必须提高折扣（减少让利）或降低产品成本。'; conclusionClass = 'bad'
-  } else if (isProfitable) {
-    profitText = '活动盈利，增量覆盖折扣损失'; profitClass = 'good'; marginClass = promoMargin < 30 ? 'warn' : 'good'
-    conclusion = `活动实现净利 ¥${totalGrossProfit}，日均增量 ${dailyIncrease} 单覆盖了折扣损失。建议总结成功经验，优化后复用。`; conclusionClass = 'good'
-  } else {
-    profitText = '活动不赚反亏，增量不足'; profitClass = 'bad'; marginClass = 'warn'
-    conclusion = `虽然有增量（+${dailyIncrease} 单/天），但未达到保本增量（${breakEvenIncrease} 单/天）。下次活动需：1）加大引流力度；2）减小折扣幅度；3）搭售高毛利产品。`; conclusionClass = 'bad'
-  }
-  vsClass = isProfitable ? 'good' : 'bad'
-  const vsText = isProfitable ? '达标' : '未达标'
-
-  result.value = {
-    netProfit: totalGrossProfit, profitText, profitClass, promoMargin: promoMargin.toFixed(1), marginClass,
-    dailyIncrease, increasePct, breakEvenIncrease: breakEvenIncrease > 0 ? breakEvenIncrease : 0,
-    vsText, vsClass, totalRevenue, totalGrossProfit, opportunityLoss, conclusion, conclusionClass
+  try {
+    const data = await generateTool('promotion-profit', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -138,7 +154,7 @@ function handleSubmit() {
 .hero-main, .hero-secondary { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); text-align: center; }
 .hero-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
 .hero-value { font-size: 42px; font-weight: var(--font-weight-bold); line-height: 1; }
-.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.bad { color: var(--state-danger); }
+.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.danger, .hero-value.bad { color: var(--state-danger); }
 .hero-sub { font-size: var(--text-body-sm); color: var(--text-secondary); margin-top: var(--space-2); }
 .result-card { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); }
 .card-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
@@ -146,12 +162,27 @@ function handleSubmit() {
 .analysis-item { padding: var(--space-3); background: white; border-radius: var(--radius-md); text-align: center; }
 .analysis-item span { display: block; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-1); }
 .analysis-item strong { font-size: var(--text-body); }
-.analysis-item strong.good { color: var(--state-success); } .analysis-item strong.bad { color: var(--state-danger); }
+.analysis-item strong.good { color: var(--state-success); } .analysis-item strong.danger, .analysis-item strong.bad { color: var(--state-danger); }
 .loss-display { display: flex; flex-direction: column; gap: var(--space-2); }
 .loss-item { display: flex; justify-content: space-between; padding: var(--space-2) var(--space-3); background: white; border-radius: var(--radius-md); font-size: var(--text-body-sm); }
 .loss-item strong.loss { color: var(--state-danger); }
 .conclusion { padding: var(--space-3); border-radius: var(--radius-md); }
-.conclusion.good { background: #dcfce7; color: #166534; } .conclusion.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
+.conclusion.good { background: #dcfce7; color: #166534; } .conclusion.warn { background: var(--pillar-management-bg); color: #92400e; } .conclusion.danger, .conclusion.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
 .conclusion p { font-size: var(--text-body-sm); line-height: 1.6; }
+.suggestions { display: flex; flex-direction: column; gap: var(--space-2); }
+.suggestion-item { padding: var(--space-2) var(--space-3); background: white; border-radius: var(--radius-md); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .result-hero, .analysis-grid, .form-row { grid-template-columns: 1fr; } }
 </style>

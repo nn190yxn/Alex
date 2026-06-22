@@ -73,6 +73,35 @@
             <li v-for="(s, i) in result.suggestions" :key="i">{{ s }}</li>
           </ul>
         </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -83,37 +112,31 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('campaign-roi')
 const form = reactive({ name: '', totalCost: null, days: null, newVisitors: null, orders: null, revenue: null, grossMargin: null })
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.totalCost || !form.days || !form.newVisitors || !form.orders || !form.revenue || !form.grossMargin) {
     result.value = { error: '请填写所有必填字段' }; return
   }
-  const grossProfit = form.revenue * (form.grossMargin / 100)
-  const netProfit = grossProfit - form.totalCost
-  const roi = (form.revenue / form.totalCost).toFixed(2)
-  const roiClass = parseFloat(roi) >= 2 ? 'good' : parseFloat(roi) >= 1 ? 'warn' : 'bad'
-  const roiText = parseFloat(roi) >= 2 ? '活动效果优秀，投入产出比良好' : parseFloat(roi) >= 1 ? '活动基本保本，有优化空间' : '活动亏损，需要复盘调整'
+  if (form.grossMargin <= 0 || form.grossMargin > 100) { result.value = { error: '请输入有效毛利率（1-100）' }; return }
+  if (form.orders > form.newVisitors) { result.value = { error: '成交单数不能超过新客流' }; return }
 
-  const suggestions = []
-  if (parseFloat(roi) < 2) suggestions.push('提升毛利率：优化产品组合，推高毛利产品')
-  if ((form.orders / form.newVisitors) * 100 < 20) suggestions.push('提升转化率：优化活动机制，降低参与门槛')
-  if (form.totalCost / form.days > form.revenue / form.days * 0.3) suggestions.push('控制成本：降低无效投入，聚焦高ROI渠道')
-  if (suggestions.length === 0) suggestions.push('活动效果优秀！建议：1）总结成功经验形成SOP；2）扩大活动规模复制成功')
-
-  result.value = {
-    roi, roiClass, roiText,
-    grossProfit: grossProfit.toFixed(0), netProfit: netProfit.toFixed(0),
-    dailyVisitors: Math.round(form.newVisitors / form.days),
-    conversionRate: ((form.orders / form.newVisitors) * 100).toFixed(1),
-    avgOrderValue: (form.revenue / form.orders).toFixed(0),
-    cac: (form.totalCost / form.newVisitors).toFixed(0),
-    conclusion: netProfit > 0 ? `本次活动实现净利 ¥${netProfit.toFixed(0)}，整体盈利。` : `本次活动亏损 ¥${Math.abs(netProfit).toFixed(0)}，需要复盘分析。`,
-    conclusionClass: netProfit > 0 ? 'good' : 'bad',
-    suggestions
+  try {
+    const data = await generateTool('campaign-roi', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -129,7 +152,7 @@ function handleSubmit() {
 .hero-main, .hero-secondary { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); text-align: center; }
 .hero-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
 .hero-value { font-size: 42px; font-weight: var(--font-weight-bold); line-height: 1; }
-.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.bad { color: var(--state-danger); }
+.hero-value.good { color: var(--state-success); } .hero-value.warn { color: var(--state-warning); } .hero-value.danger, .hero-value.bad { color: var(--state-danger); }
 .hero-sub { font-size: var(--text-body-sm); color: var(--text-secondary); margin-top: var(--space-2); }
 .result-card { padding: var(--space-4); background: var(--bg-base); border-radius: var(--radius-card); }
 .card-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3); }
@@ -138,7 +161,20 @@ function handleSubmit() {
 .stat-item span { display: block; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-1); }
 .stat-item strong { font-size: var(--text-body); color: var(--text-primary); }
 .conclusion { padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-body-sm); }
-.conclusion.good { background: #dcfce7; color: #166534; } .conclusion.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
+.conclusion.good { background: #dcfce7; color: #166534; } .conclusion.danger, .conclusion.bad { background: var(--pillar-douyin-bg); color: #991b1b; }
 .suggestions { padding-left: var(--space-5); font-size: var(--text-body-sm); line-height: 1.8; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .result-hero, .stats-grid, .form-row { grid-template-columns: 1fr; } }
 </style>

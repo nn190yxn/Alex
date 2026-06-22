@@ -365,7 +365,19 @@ function getToolDisplayName(toolCode) {
 }
 
 function handleShare() {
-  // TODO: 生成分享链接
+  const url = window.location.href
+  const title = reportTitle.value || '企业增长全景诊断报告'
+  const shareText = `${title}\n${url}`
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      alert('链接已复制，可粘贴发送给好友')
+    }).catch(() => {
+      prompt('复制以下链接分享：', url)
+    })
+  } else {
+    prompt('复制以下链接分享：', url)
+  }
 }
 
 onMounted(() => {

@@ -31,52 +31,24 @@
     </template>
     <template #result>
       <div class="roi-result" v-if="result && !result.error">
-        <div class="result-main">
-          <div class="result-label">保本 ROI</div>
-          <div class="result-value numeral">{{ result.breakEvenROI }}</div>
-          <div class="result-hint">投 1 元至少要产出 {{ result.breakEvenROI }} 元 GMV 才能保本</div>
-        </div>
-        <div class="result-details">
-          <div class="detail-item">
-            <span>毛利率</span>
-            <span class="numeral">{{ form.grossMargin }}%</span>
-          </div>
-          <div class="detail-item">
-            <span>各方抽佣总比例</span>
-            <span class="numeral">{{ form.commissionRate }}%</span>
-          </div>
-          <div class="detail-item">
-            <span>营销费率</span>
-            <span class="numeral">{{ form.marketingRate }}%</span>
-          </div>
-          <div class="detail-item">
-            <span>核销率</span>
-            <span class="numeral">{{ form.writeOffRate }}%</span>
-          </div>
-          <div class="detail-item">
-            <span>实际可用利润率</span>
-            <span class="numeral">{{ result.effectiveMargin }}%</span>
+        <div class="result-summary" v-if="result.summary">{{ result.summary }}</div>
+        <div class="result-block" v-if="result.benchmarks && result.benchmarks.length">
+          <h4>核心指标</h4>
+          <div class="benchmark-item" v-for="b in result.benchmarks" :key="b.metric">
+            <span>{{ b.metric }}</span><strong class="numeral">{{ b.value }}</strong><em :class="b.status">{{ b.status === 'ok' ? '达标' : '偏低' }}</em>
           </div>
         </div>
-        <div v-if="result.actualROI" class="result-compare">
-          <h4>实际 ROI 对比</h4>
-          <div class="compare-row">
-            <span>你的实际 ROI</span>
-            <span class="numeral">{{ result.actualROI }}</span>
-          </div>
-          <div class="compare-row">
-            <span>保本 ROI</span>
-            <span class="numeral">{{ result.breakEvenROI }}</span>
-          </div>
-          <div class="compare-status" :class="result.compareStatus">{{ result.compareText }}</div>
+        <div class="result-block" v-for="section in result.sections" :key="section.title">
+          <h4>{{ section.title }}</h4>
+          <p v-for="(item, i) in section.items" :key="i">{{ item }}</p>
         </div>
-        <div class="result-suggestion" v-if="result.suggestion">
-          <h4>投流建议</h4>
-          <p>{{ result.suggestion }}</p>
+        <div class="result-block" v-if="result.actions && result.actions.length">
+          <h4>行动建议</h4>
+          <p v-for="action in result.actions" :key="action.title">{{ action.title }}：{{ action.description }}</p>
         </div>
-        <div class="result-reference">
-          <h4>行业参考（保本 ROI）</h4>
-          <p>{{ result.reference }}</p>
+        <div class="result-block risk" v-if="result.riskNotes && result.riskNotes.length">
+          <h4>风险提示</h4>
+          <p v-for="(risk, i) in result.riskNotes" :key="i">{{ risk }}</p>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -88,6 +60,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('roi')
 
@@ -115,7 +88,7 @@ function fillPreset(industry) {
   form.writeOffRate = p.writeOffRate
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.grossMargin || !form.commissionRate || !form.marketingRate || !form.writeOffRate) {
     result.value = { error: '请填写所有字段' }
     return
@@ -128,40 +101,7 @@ function handleSubmit() {
     return
   }
 
-  const grossMargin = form.grossMargin / 100
-  const commissionRate = form.commissionRate / 100
-  const marketingRate = form.marketingRate / 100
-  const writeOffRate = form.writeOffRate / 100
-
-  const effectiveMargin = grossMargin - commissionRate - marketingRate
-
-  if (effectiveMargin <= 0) {
-    result.value = { error: '毛利率不足以覆盖抽佣和营销费用（毛利率 - 抽佣 - 营销费率 ≤ 0），投流必亏！' }
-    return
-  }
-
-  const breakEvenROI = 1 / (effectiveMargin * writeOffRate)
-  const effectiveMarginPct = (effectiveMargin * 100).toFixed(1)
-
-  let suggestion = ''
-  let reference = '餐饮保本ROI 8-12，教培 5-8，美业 6-10'
-
-  if (breakEvenROI <= 3) {
-    suggestion = '保本ROI很低，投流空间充足。建议加大投放力度，快速起量。'
-  } else if (breakEvenROI <= 6) {
-    suggestion = '保本ROI在合理范围内。建议：1）优化核销率（提高券核销）；2）降低抽佣比例（谈更低平台费率）；3）提升毛利率（优化产品组合）。'
-  } else if (breakEvenROI <= 10) {
-    suggestion = '保本ROI偏高，投流压力大。建议：1）重点提升核销率（短信/电话提醒核销）；2）优化毛利率（提价或降成本）；3）降低抽佣（减少达人佣金比例）。'
-  } else {
-    suggestion = '保本ROI过高，当前参数下投流很难盈利！建议：1）重新评估产品毛利空间；2）降低各项抽佣比例；3）优先通过自然流量和内容获客。'
-  }
-
-  result.value = {
-    breakEvenROI: breakEvenROI.toFixed(2),
-    effectiveMargin: effectiveMarginPct,
-    suggestion,
-    reference
-  }
+  result.value = await generateTool('roi', { ...form })
 }
 </script>
 
@@ -229,6 +169,63 @@ function handleSubmit() {
   padding: var(--space-4);
   background-color: var(--bg-base);
   border-radius: var(--radius-card);
+}
+
+.result-summary, .result-block {
+  padding: var(--space-4);
+  background: white;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.result-summary {
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.result-block h4 {
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+.result-block p, .benchmark-item {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-body-lg);
+}
+
+.benchmark-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.benchmark-item strong {
+  color: var(--text-main);
+}
+
+.benchmark-item em {
+  font-style: normal;
+  text-align: right;
+  font-size: var(--text-caption);
+}
+
+.benchmark-item em.ok {
+  color: #166534;
+}
+
+.benchmark-item em.below {
+  color: #991b1b;
+}
+
+.result-block.risk {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
 }
 
 .result-main {

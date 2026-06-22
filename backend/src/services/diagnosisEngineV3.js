@@ -3,6 +3,8 @@
 
 import { getCityTierInfo } from './cityTiers.js'
 
+export { getCityTierInfo }
+
 // ===== 阶段0：行业与城市画像 =====
 export const STAGE0_QUESTIONS = [
   { key: 'city', text: '你的生意在哪个城市？', type: 'text', required: true },

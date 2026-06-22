@@ -288,6 +288,7 @@
 import { ref, reactive, computed } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('break-even-restaurant')
 
@@ -328,10 +329,8 @@ function formatNum(n) {
   return Math.round(n).toLocaleString()
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   const totalFixed = (form.rent || 0) + (form.salary || 0) + (form.depreciation || 0) + (form.otherFixed || 0)
-  const dineInPct = (form.dineInPct || 0) / 100
-  const deliveryPct = (form.deliveryPct || 0) / 100
 
   if (totalFixed <= 0) {
     result.value = { error: '请至少填写一项固定成本' }
@@ -342,181 +341,31 @@ function handleSubmit() {
     return
   }
 
-  // 贡献率计算
-  const dineInVarRate = (form.dineInVarCost || 0) / 100
-  const deliveryVarRate = (form.deliveryVarCost || 0) / 100
-  const deliveryArrival = (form.deliveryArrivalRate || 0) / 100
-
-  const dineInContribution = 1 - dineInVarRate
-  const deliveryContributionVal = deliveryArrival - deliveryVarRate
-  const weightedContribution = dineInPct * dineInContribution + deliveryPct * deliveryContributionVal
-
-  if (weightedContribution <= 0) {
-    result.value = { error: '加权平均贡献率 <= 0，说明每卖一单都在亏钱，无法计算保本点。请调整堂食/外卖的变动成本或提高外卖到账率。' }
-    return
-  }
-
-  const breakEvenMonthly = totalFixed / weightedContribution
-  const breakEvenDaily = breakEvenMonthly / 30
-  const breakEvenHourly = form.hours > 0 ? breakEvenDaily / form.hours : null
-  const breakEvenDineIn = breakEvenMonthly * dineInPct
-  const breakEvenDelivery = breakEvenMonthly * deliveryPct
-
-  // 多维度拆解
-  const avgTicket = form.avgTicket || 0
-  const seats = form.seats || 0
-  const area = form.area || 0
-  const dailyCustomers = avgTicket > 0 ? breakEvenDaily / avgTicket : null
-  const turnoverRate = (seats > 0 && dailyCustomers != null) ? (dailyCustomers / seats).toFixed(1) : null
-  const revenuePerSqm = area > 0 ? breakEvenMonthly / area : null
-
-  // 安全边际
-  let safetyMargin = null
-  let safetyMarginText = '未填写实际营业额'
-  if (form.actualRevenue && form.actualRevenue > 0) {
-    safetyMargin = ((form.actualRevenue - breakEvenMonthly) / form.actualRevenue * 100)
-    safetyMarginText = safetyMargin.toFixed(1) + '%'
-  }
-
-  // 目标利润营业额
-  let targetProfitRevenue = null
-  if (form.targetProfit && form.targetProfit > 0) {
-    targetProfitRevenue = (totalFixed + form.targetProfit) / weightedContribution
-  }
-
-  // 坪效
-  const breakEvenPerSqm = area > 0 ? breakEvenMonthly / area : null
-  let pinfXiao = null
-  if (area > 0 && form.actualRevenue && form.actualRevenue > 0) {
-    const actualPerSqm = form.actualRevenue / area
-    const dailyActualPerSqm = actualPerSqm / 30
-    // 行业基准：快餐>3000，中餐1500-3000，火锅2000-3500，咖啡2000-4000
-    const benchmarkLow = 1500
-    const benchmarkHigh = 3000
-    let status = 'danger'
-    let statusText = ''
-    let statusClass = ''
-    if (actualPerSqm >= benchmarkHigh) {
-      status = 'success'
-      statusText = '优秀 — 高效产出'
-      statusClass = 'good'
-    } else if (actualPerSqm >= benchmarkLow) {
-      status = 'warn'
-      statusText = '偏低 — 面积未充分利用'
-      statusClass = 'warn'
-    } else {
-      status = 'danger'
-      statusText = '过低 — 面积浪费'
-      statusClass = 'danger'
+  try {
+    const data = await generateTool('break-even-restaurant', { ...form })
+    if (data?.extra) {
+      result.value = {
+        ...data,
+        ...data.extra,
+        breakEvenMonthly: Number(data.extra.breakEvenMonthly),
+        breakEvenDaily: Number(data.extra.breakEvenDaily),
+        breakEvenHourly: data.extra.breakEvenHourly != null ? Number(data.extra.breakEvenHourly) : null,
+        breakEvenDineIn: Number(data.extra.breakEvenDineIn),
+        breakEvenDelivery: Number(data.extra.breakEvenDelivery),
+        dailyCustomers: data.extra.dailyCustomers != null ? Number(data.extra.dailyCustomers) : null,
+        revenuePerSqm: data.extra.revenuePerSqm != null ? Number(data.extra.revenuePerSqm) : null,
+        breakEvenPerSqm: data.extra.breakEvenPerSqm != null ? Number(data.extra.breakEvenPerSqm) : null,
+        safetyMargin: data.extra.safetyMargin != null ? Number(data.extra.safetyMargin) : null,
+        targetProfitRevenue: data.extra.targetProfitRevenue != null ? Number(data.extra.targetProfitRevenue) : null,
+        suggestions: data.extra.suggestions || [],
+        _totalFixed: totalFixed,
+        _actualRevenue: form.actualRevenue
+      }
+      return
     }
-    pinfXiao = {
-      actual: actualPerSqm.toFixed(0),
-      dailyActual: dailyActualPerSqm.toFixed(0),
-      status,
-      statusText,
-      statusClass,
-      benchmarkText: `行业参考：快餐>3000，中餐/火锅1500-3500，咖啡2000-4000 元/m²/月`
-    }
-  }
-
-  // 诊断
-  const diagnostics = []
-  diagnostics.push({
-    key: 'dinein-contrib',
-    status: dineInContribution >= 0.5 ? 'ok' : dineInContribution >= 0.35 ? 'warn' : 'bad',
-    label: '堂食贡献率',
-    value: (dineInContribution * 100).toFixed(1) + '%',
-    benchmark: '50%-65%'
-  })
-
-  diagnostics.push({
-    key: 'delivery-contrib',
-    status: deliveryContributionVal >= 0.15 ? 'ok' : deliveryContributionVal >= 0 ? 'warn' : 'bad',
-    label: '外卖贡献率',
-    value: (deliveryContributionVal * 100).toFixed(1) + '%',
-    benchmark: '15%-30%'
-  })
-
-  diagnostics.push({
-    key: 'weighted-contrib',
-    status: weightedContribution >= 0.4 ? 'ok' : weightedContribution >= 0.25 ? 'warn' : 'bad',
-    label: '加权平均贡献率',
-    value: (weightedContribution * 100).toFixed(1) + '%',
-    benchmark: '35%-50%'
-  })
-
-  if (deliveryArrival > 0) {
-    diagnostics.push({
-      key: 'arrival-rate',
-      status: deliveryArrival >= 0.45 ? 'ok' : deliveryArrival >= 0.35 ? 'warn' : 'bad',
-      label: '外卖到账率',
-      value: (deliveryArrival * 100).toFixed(0) + '%',
-      benchmark: '40%-55%'
-    })
-  }
-
-  // What-If 场景
-  // 场景A：固定成本降10%
-  const scenarioAFixed = totalFixed * 0.9
-  const scenarioABreakEven = scenarioAFixed / weightedContribution
-  const scenarioACustomers = avgTicket > 0 ? (scenarioABreakEven / 30 / avgTicket) : null
-  const scenarioATurnover = (seats > 0 && scenarioACustomers != null) ? (scenarioACustomers / seats).toFixed(1) : null
-
-  // 场景B：外卖到账率提升10%（绝对值+10%，比如从40%变50%）
-  const scenarioBArrival = Math.min(deliveryArrival + 0.1, 1)
-  const scenarioBDeliveryContrib = scenarioBArrival - deliveryVarRate
-  const scenarioBWeighted = dineInPct * dineInContribution + deliveryPct * scenarioBDeliveryContrib
-  const scenarioBBreakEven = scenarioBWeighted > 0 ? totalFixed / scenarioBWeighted : breakEvenMonthly
-  const scenarioBCustomers = avgTicket > 0 ? (scenarioBBreakEven / 30 / avgTicket) : null
-  const scenarioBTurnover = (seats > 0 && scenarioBCustomers != null) ? (scenarioBCustomers / seats).toFixed(1) : null
-
-  // 经营建议
-  const suggestions = []
-  if (deliveryContributionVal < 0) {
-    suggestions.push('外卖每卖一单都在亏钱！建议：1）提高外卖定价或减少满减活动，提升到账率；2）降低外卖食材成本或减少过度包装。')
-  } else if (deliveryContributionVal < 0.1) {
-    suggestions.push('外卖贡献率偏低，接近亏损边缘。建议优化外卖定价策略或控制包装成本。')
-  }
-  if (dineInContribution < 0.4) {
-    suggestions.push('堂食贡献率偏低，建议：1）优化食材采购降低食材成本率；2）适当调整菜品结构提高毛利率。')
-  }
-  if (weightedContribution < 0.3) {
-    suggestions.push('整体贡献率偏低，保本压力较大。建议提升高毛利菜品占比，或适当调整定价。')
-  }
-  if (safetyMargin !== null && safetyMargin < 15) {
-    suggestions.push('安全边际偏低，营业额小幅下滑就会亏损，建议推出引流活动增加营收稳定性。')
-  }
-  if (suggestions.length === 0) {
-    if (safetyMargin !== null && safetyMargin >= 30) {
-      suggestions.push('经营状况良好，可适当增加投入扩大规模或开设分店。')
-    } else {
-      suggestions.push('各项指标在合理范围内，持续关注成本控制和营业额增长即可。')
-    }
-  }
-
-  result.value = {
-    breakEvenMonthly,
-    breakEvenDaily,
-    breakEvenHourly,
-    breakEvenDineIn,
-    breakEvenDelivery,
-    dailyCustomers,
-    turnoverRate,
-    revenuePerSqm,
-    breakEvenPerSqm,
-    pinfXiao,
-    safetyMargin,
-    safetyMarginText,
-    targetProfitRevenue,
-    dineInContribution: (dineInContribution * 100).toFixed(1),
-    deliveryContribution: (deliveryContributionVal * 100).toFixed(1),
-    weightedContribution: (weightedContribution * 100).toFixed(1),
-    diagnostics,
-    scenarioA: { breakEven: scenarioABreakEven, customers: scenarioACustomers, turnover: scenarioATurnover },
-    scenarioB: { breakEven: scenarioBBreakEven, customers: scenarioBCustomers, turnover: scenarioBTurnover },
-    suggestions,
-    _totalFixed: totalFixed,
-    _actualRevenue: form.actualRevenue
+    result.value = { error: data?.summary || '计算失败，请检查输入数据' }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 

@@ -9,6 +9,7 @@ export function useUserStore() {
   function setToken(token) {
     state.token = token
     uni.setStorageSync('token', token)
+    uni.setStorageSync('token_time', Date.now())
   }
 
   function setUserInfo(user) {
@@ -21,6 +22,7 @@ export function useUserStore() {
     state.userInfo = null
     uni.removeStorageSync('token')
     uni.removeStorageSync('user')
+    uni.removeStorageSync('token_time')
   }
 
   function isLoggedIn() {

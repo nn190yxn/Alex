@@ -33,14 +33,33 @@
         <button
           class="btn-code"
           :class="{ disabled: countdown > 0 }"
+          :disabled="countdown > 0"
           @click="handleSendCode"
         >
           {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
         </button>
       </view>
 
-      <button class="btn-primary" @click="handleRegister">
-        立即注册
+      <view class="agreement-row">
+        <view class="checkbox" :class="{ checked: agreed }" @click="agreed = !agreed">
+          <text v-if="agreed" class="check-icon">&#10003;</text>
+        </view>
+        <text class="agreement-text">
+          已阅读并同意
+          <text class="link" @click="openAgreement">《用户协议》</text>
+          和
+          <text class="link" @click="openPrivacy">《隐私政策》</text>
+        </text>
+      </view>
+
+      <button
+        class="btn-primary"
+        :class="{ disabled: !agreed || loading }"
+        :disabled="!agreed || loading"
+        :loading="loading"
+        @click="handleRegister"
+      >
+        {{ loading ? '注册中...' : '立即注册' }}
       </button>
     </view>
   </view>
@@ -48,17 +67,30 @@
 
 <script setup>
 import { ref, reactive, onUnmounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onHide } from '@dcloudio/uni-app'
 import { sendCode, register } from '@/api/auth'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 const form = reactive({ nickname: '', phone: '', code: '' })
 const countdown = ref(0)
+const agreed = ref(false)
+const loading = ref(false)
 const refCode = ref('')
 let countdownTimer = null
 
 onLoad((options) => {
   refCode.value = options?.ref || uni.getStorageSync('ref_code') || ''
 })
+
+function openAgreement() {
+  uni.navigateTo({ url: '/pages-sub/agreement/index' })
+}
+
+function openPrivacy() {
+  uni.navigateTo({ url: '/pages-sub/privacy/index' })
+}
 
 async function handleSendCode() {
   if (!/^1\d{10}$/.test(form.phone)) {
@@ -87,23 +119,37 @@ async function handleRegister() {
     uni.showToast({ title: '请填写完整信息', icon: 'none' })
     return
   }
+  if (!agreed.value) {
+    uni.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' })
+    return
+  }
+  loading.value = true
+  uni.showLoading({ title: '注册中', mask: true })
   try {
-    uni.showLoading({ title: '注册中' })
     const res = await register({ ...form, referralCode: refCode.value })
     uni.hideLoading()
-    uni.setStorageSync('token', res.token)
-    uni.setStorageSync('user', res.user)
+    userStore.setToken(res.token)
+    userStore.setUserInfo(res.user)
     uni.showToast({ title: '注册成功', icon: 'success' })
     uni.removeStorageSync('ref_code')
     setTimeout(() => uni.switchTab({ url: '/pages/home/index' }), 1500)
   } catch (e) {
     uni.hideLoading()
     uni.showToast({ title: e.message || '注册失败，请重试', icon: 'none' })
+  } finally {
+    loading.value = false
   }
 }
 
 onUnmounted(() => {
   if (countdownTimer) clearInterval(countdownTimer)
+})
+
+onHide(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
 })
 </script>
 
@@ -120,5 +166,12 @@ onUnmounted(() => {
 .code-input { flex: 1; }
 .btn-code { width: 220rpx; background: #f3f4f6; font-size: 24rpx; margin: 0; }
 .btn-code.disabled { opacity: 0.6; }
+.agreement-row { display: flex; align-items: flex-start; gap: 12rpx; padding: 0 4rpx; }
+.checkbox { width: 36rpx; height: 36rpx; border: 2rpx solid #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2rpx; }
+.checkbox.checked { background: #0e7490; border-color: #0e7490; }
+.check-icon { color: #fff; font-size: 22rpx; font-weight: bold; }
+.agreement-text { font-size: 24rpx; color: #666; line-height: 1.6; flex: 1; }
+.link { color: #0e7490; }
 .btn-primary { background: #0e7490; color: #fff; margin-top: 24rpx; font-size: 32rpx; }
+.btn-primary.disabled { opacity: 0.5; }
 </style>

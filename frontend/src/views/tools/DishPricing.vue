@@ -82,7 +82,7 @@
         <div class="summary-card">
           <div class="summary-title">门店综合毛利预测</div>
           <div class="summary-value">{{ result.extra?.predictedMargin || '0.0' }}%</div>
-          <div class="summary-subtitle">基于菜品角色销量占比模型</div>
+          <div class="summary-subtitle">{{ result.extra?.marginStatusText || '基于菜品角色销量占比模型' }}</div>
           <div class="summary-stats">
             <div class="stat">
               <span class="stat-label">菜品总数</span>
@@ -97,6 +97,16 @@
             <div class="stat">
               <span class="stat-label">平均售价</span>
               <span class="stat-value">¥{{ result.extra?.avgPrice || '0' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="report-section diagnosis-section">
+          <h4 class="subsection-title">经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
             </div>
           </div>
         </div>
@@ -138,7 +148,7 @@
                   <td><span class="role-badge" :class="d.roleKey">{{ d.roleLabel }}</span></td>
                   <td class="cell-numeral">¥{{ d.cost }}</td>
                   <td class="cell-numeral cell-price">¥{{ d.suggestedPrice }}</td>
-                  <td class="cell-numeral" :class="d.marginStatus">{{ d.margin }}%</td>
+                  <td class="cell-numeral" :class="['marginStatus', d.marginStatus]">{{ d.margin }}%</td>
                   <td>{{ d.position }}</td>
                 </tr>
               </tbody>
@@ -169,6 +179,28 @@
               <span class="suggestion-icon" :class="s.type">{{ getTypeIcon(s.type) }}</span>
               <span class="suggestion-text">{{ s.text }}</span>
             </li>
+          </ul>
+        </div>
+
+        <div v-if="result.actions?.length" class="report-section actions-section">
+          <h4 class="subsection-title">落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span class="action-priority">{{ getPriorityLabel(action.priority) }}</span>
+                <span class="action-timeline">{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="report-section risk-section">
+          <h4 class="subsection-title">口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
           </ul>
         </div>
       </div>
@@ -212,6 +244,13 @@ function getTypeIcon(type) {
   if (type === 'warn') return '注意'
   if (type === 'alert') return '警告'
   return '提示'
+}
+
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
 }
 
 async function handleSubmit() {
@@ -441,6 +480,42 @@ async function handleSubmit() {
   margin-bottom: var(--space-3);
 }
 
+.report-section {
+  background: white;
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.diagnosis-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.diagnosis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--text-primary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-lg);
+}
+
+.diagnosis-index {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-semibold);
+  flex-shrink: 0;
+}
+
 .structure-diagnosis {
   background: white;
   border: 1px solid var(--line-default);
@@ -663,6 +738,68 @@ async function handleSubmit() {
 .suggestion-icon {
   font-size: var(--text-body);
   flex-shrink: 0;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.action-card {
+  padding: var(--space-4);
+  background: var(--bg-base);
+  border: 1px solid var(--line-default);
+  border-radius: var(--radius-md);
+}
+
+.action-card.critical {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.action-card.high {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.action-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+.action-priority {
+  font-weight: var(--font-weight-semibold);
+}
+
+.action-title {
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.action-desc,
+.action-owner {
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.action-owner {
+  margin-top: var(--space-2);
+}
+
+.risk-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body-lg);
 }
 
 .result-error {

@@ -6,7 +6,14 @@
   "scripts": {
     "dev": "NODE_ENV=development node --watch src/index.js",
     "start": "node src/index.js",
-    "build": "echo 'No build step needed for Node.js'"
+    "build": "echo 'No build step needed for Node.js'",
+    "audit:tools": "node scripts/audit-tool-registry-consistency.js",
+    "audit:education-tools": "node scripts/audit-education-tools-deep.js",
+    "audit:restaurant-tools": "node scripts/audit-industry-tools-deep.js restaurant",
+    "audit:service-tools": "node scripts/audit-industry-tools-deep.js service",
+    "audit:service-full": "node scripts/service-full-audit.js",
+    "audit:beauty-tools": "node scripts/audit-industry-tools-deep.js beauty",
+    "audit:beauty-full": "node scripts/beauty-full-audit.js"
   },
   "dependencies": {
     "express": "^4.18.2",

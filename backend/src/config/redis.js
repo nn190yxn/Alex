@@ -1,12 +1,19 @@
+import dotenv from 'dotenv'
 import { createMockRedis } from './mockRedis.js'
+
+dotenv.config()
 
 const USE_REAL_REDIS = process.env.USE_REAL_REDIS === 'true'
 
 let redisInstance = createMockRedis()
-console.log('[Redis] Using in-memory mock')
+let redisReady = Promise.resolve()
+
+if (!USE_REAL_REDIS) {
+  console.log('[Redis] Using in-memory mock')
+}
 
 if (USE_REAL_REDIS) {
-  (async () => {
+  redisReady = (async () => {
     try {
       const Redis = (await import('ioredis')).default
       const instance = new Redis(process.env.REDIS_URL || process.env.REDIS_HOST || 'redis://localhost:6379', {
@@ -33,8 +40,19 @@ if (USE_REAL_REDIS) {
       console.log('[Redis] Ready')
     } catch (err) {
       console.warn('[Redis] Real Redis unavailable:', err.message)
+      console.log('[Redis] Using in-memory mock')
     }
   })()
 }
 
-export { redisInstance as redis }
+const redis = new Proxy({}, {
+  get(_target, prop) {
+    if (prop === 'ready') return () => redisReady
+    return async (...args) => {
+      await redisReady
+      return redisInstance[prop](...args)
+    }
+  }
+})
+
+export { redis }

@@ -39,7 +39,38 @@
         </div>
         <div class="result-card">
           <h3 class="card-title">优化建议</h3>
-          <div class="suggestions"><p>{{ result.suggestion }}</p></div>
+          <div class="suggestions">
+            <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+          </div>
+        </div>
+        <div v-if="result.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -51,6 +82,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('conversion-funnel')
 const form = reactive({
@@ -63,13 +95,18 @@ const form = reactive({
 })
 const result = ref(null)
 
-const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899']
-
 function addStage() {
   if (form.stages.length < 6) form.stages.push({ name: '', count: null })
 }
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   const stages = form.stages.filter(s => s.name && s.count > 0)
   if (stages.length < 2) { result.value = { error: '至少填写 2 个有效环节' }; return }
 
@@ -79,30 +116,12 @@ function handleSubmit() {
     }
   }
 
-  const rates = []
-  const processed = stages.map((s, i) => {
-    if (i > 0) {
-      const rate = ((s.count / stages[i - 1].count) * 100)
-      rates.push(rate.toFixed(1))
-    }
-    return { ...s, color: COLORS[i % COLORS.length] }
-  })
-
-  const widthPcts = processed.map(s => ((s.count / processed[0].count) * 100).toFixed(1))
-  processed.forEach((s, i) => s.widthPct = widthPcts[i])
-
-  const overallRate = ((stages[stages.length - 1].count / stages[0].count) * 100).toFixed(1)
-  const avgRate = (rates.reduce((a, b) => a + parseFloat(b), 0) / rates.length).toFixed(1)
-
-  let maxLossIdx = 0, maxLoss = 0
-  for (let i = 1; i < stages.length; i++) {
-    const loss = stages[i - 1].count - stages[i].count
-    if (loss > maxLoss) { maxLoss = loss; maxLossIdx = i }
+  try {
+    const data = await generateTool('conversion-funnel', { stages })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  const suggestion = `最大流失环节在"${stages[maxLossIdx].name}"（流失 ${maxLoss} 人，转化率 ${rates[maxLossIdx - 1]}%）。建议：1）优化该环节体验流程；2）增加跟进频次；3）设置转化激励。`
-
-  result.value = { stages: processed, rates, overallRate, avgRate: parseFloat(avgRate), maxLossStage: stages[maxLossIdx].name, maxLossCount: maxLoss, suggestion }
 }
 </script>
 
@@ -131,6 +150,20 @@ function handleSubmit() {
 .stat-item span { display: block; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-1); }
 .stat-item strong { font-size: var(--text-body); }
 .stat-item strong.bad { color: var(--state-danger); }
-.suggestions p { font-size: var(--text-body-sm); line-height: 1.6; color: var(--text-secondary); }
+.suggestions { display: flex; flex-direction: column; gap: var(--space-2); }
+.suggestions p { font-size: var(--text-body-sm); line-height: 1.6; color: var(--text-secondary); margin: 0; }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background: var(--pillar-douyin-bg); color: #991b1b; border-radius: var(--radius-card); text-align: center; }
+@media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } .funnel-row { flex-wrap: wrap; } .funnel-count { width: 100%; } }
 </style>

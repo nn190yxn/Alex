@@ -118,7 +118,7 @@ router.get('/share-link', authMiddleware, async (req, res) => {
       referralCode = generateReferralCode(req.user.userId)
       await query('UPDATE users SET referral_code = ? WHERE id = ?', [referralCode, req.user.userId])
     }
-    const baseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173'
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'https://woyai.cn'
     const shareLink = `${baseUrl}/register?ref=${encodeURIComponent(referralCode)}`
     res.json({ referralCode, shareLink })
   } catch (error) {

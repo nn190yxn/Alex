@@ -101,19 +101,19 @@
           <div class="overview-grid">
             <div class="overview-item">
               <span class="label">前期总投资</span>
-              <span class="value numeral">¥{{ result.totalInvestment }}</span>
+              <span class="value numeral">¥{{ result.extra?.totalInvestment }}</span>
             </div>
             <div class="overview-item">
               <span class="label">月固定运营</span>
-              <span class="value numeral">¥{{ result.monthlyFixed }}</span>
+              <span class="value numeral">¥{{ result.extra?.monthlyFixed }}</span>
             </div>
             <div class="overview-item">
               <span class="label">月净利润</span>
-              <span class="value numeral" :class="result.netProfitClass">¥{{ result.monthlyNetProfit }}</span>
+              <span class="value numeral" :class="result.extra?.cannotPayback ? 'negative' : 'positive'">¥{{ result.extra?.monthlyNetProfit }}</span>
             </div>
             <div class="overview-item">
               <span class="label">回本周期</span>
-              <span class="value numeral" :class="result.paybackClass">{{ result.paybackMonths }}</span>
+              <span class="value numeral" :class="result.extra?.paybackClass">{{ result.extra?.paybackMonths }}</span>
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@
         <div class="result-card">
           <h3>前期投资结构</h3>
           <ul class="detail-list">
-            <li v-for="item in result.investmentBreakdown" :key="item.label">
+            <li v-for="item in result.extra?.investmentBreakdown || []" :key="item.label">
               <span>{{ item.label }}</span>
               <span class="numeral">¥{{ item.value }}</span>
             </li>
@@ -133,7 +133,7 @@
         <div class="result-card">
           <h3>月运营成本结构</h3>
           <ul class="detail-list">
-            <li v-for="item in result.operationBreakdown" :key="item.label">
+            <li v-for="item in result.extra?.operationBreakdown || []" :key="item.label">
               <span>{{ item.label }}</span>
               <span class="numeral">¥{{ item.value }}</span>
             </li>
@@ -141,40 +141,83 @@
         </div>
 
         <!-- 回本时间线 -->
-        <div class="result-card" v-if="!result.cannotPayback">
+        <div class="result-card" v-if="!result.extra?.cannotPayback">
           <h3>回本时间线</h3>
           <div class="timeline">
             <div class="timeline-item">
               <span class="timeline-label">预计回本月</span>
-              <span class="timeline-value">第 {{ result.paybackMonthNum }} 个月</span>
+              <span class="timeline-value">第 {{ result.extra?.paybackMonthNum }} 个月</span>
             </div>
             <div class="timeline-item">
               <span class="timeline-label">预计回本日期</span>
-              <span class="timeline-value">{{ result.paybackDate }}</span>
+              <span class="timeline-value">{{ result.extra?.paybackDate }}</span>
             </div>
             <div class="timeline-item">
               <span class="timeline-label">年化收益率</span>
-              <span class="timeline-value numeral" :class="result.roiClass">{{ result.annualROI }}</span>
+              <span class="timeline-value numeral" :class="result.extra?.roiClass">{{ result.extra?.annualROI }}</span>
             </div>
           </div>
         </div>
 
         <!-- 判断 -->
-        <div class="result-card status-block" :class="result.status" v-if="!result.cannotPayback">
-          <h4>{{ result.statusText }}</h4>
-          <p>{{ result.suggestion }}</p>
+        <div class="result-card status-block" :class="result.extra?.status" v-if="!result.extra?.cannotPayback">
+          <h4>{{ result.extra?.statusText }}</h4>
+          <p>{{ result.extra?.diagnosis?.[0] }}</p>
         </div>
 
         <!-- 无法回本 -->
-        <div v-if="result.cannotPayback" class="result-card warning">
+        <div v-if="result.extra?.cannotPayback" class="result-card warning">
           <h3>[警告] 无法回本</h3>
-          <p>{{ result.warning }}</p>
+          <p>{{ result.extra?.diagnosis?.[0] }}</p>
+        </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3>经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.extra?.suggestions?.length" class="result-card">
+          <h3>优化建议</h3>
+          <ul class="detail-list">
+            <li v-for="(suggestion, i) in result.extra.suggestions" :key="i">
+              <span>{{ suggestion }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3>落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card reference">
+          <h3>口径与风险</h3>
+          <ul class="detail-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">
+              <span>{{ note }}</span>
+            </li>
+          </ul>
         </div>
 
         <!-- 行业参考 -->
         <div class="result-card reference">
           <h3>行业参考</h3>
-          <p>{{ result.reference }}</p>
+          <p>快餐：8-12个月，正餐：12-18个月，咖啡店：12-24个月，火锅：15-24个月。</p>
         </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
@@ -186,6 +229,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('payback-restaurant')
 
@@ -209,12 +253,15 @@ const form = reactive({
   monthlyRevenue: 0
 })
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   const totalInvestment = (form.franchiseFee || 0) + (form.decoration || 0) + (form.kitchenEquipment || 0) + (form.furniture || 0) + (form.initialIngredients || 0) + (form.license || 0) + (form.loanInterest || 0) + (form.otherInvestment || 0)
-  const fixedOperation = (form.chefSalary || 0) + (form.serverSalary || 0) + (form.rent || 0) + (form.utilities || 0)
-  const ingredientCost = (form.monthlyRevenue || 0) * (form.ingredientRate || 0) / 100
-  const platformCost = (form.monthlyRevenue || 0) * (form.platformRate || 0) / 100
-  const monthlyNetProfit = (form.monthlyRevenue || 0) - fixedOperation - ingredientCost - platformCost
 
   if (totalInvestment <= 0) {
     result.value = { error: '请至少填写一项前期投资' }
@@ -224,109 +271,10 @@ function handleSubmit() {
     result.value = { error: '请填写月均营业额' }
     return
   }
-
-  const investmentBreakdown = []
-  if (form.franchiseFee) investmentBreakdown.push({ label: '加盟费/品牌使用费', value: (form.franchiseFee || 0).toLocaleString() })
-  if (form.decoration) investmentBreakdown.push({ label: '装修费用', value: (form.decoration || 0).toLocaleString() })
-  if (form.kitchenEquipment) investmentBreakdown.push({ label: '厨房设备', value: (form.kitchenEquipment || 0).toLocaleString() })
-  if (form.furniture) investmentBreakdown.push({ label: '桌椅家具', value: (form.furniture || 0).toLocaleString() })
-  if (form.initialIngredients) investmentBreakdown.push({ label: '首批食材采购', value: (form.initialIngredients || 0).toLocaleString() })
-  if (form.license) investmentBreakdown.push({ label: '证照/押金', value: (form.license || 0).toLocaleString() })
-  if (form.loanInterest) investmentBreakdown.push({ label: '银行利息/贷款成本', value: (form.loanInterest || 0).toLocaleString() })
-  if (form.otherInvestment) investmentBreakdown.push({ label: '其他前期投入', value: (form.otherInvestment || 0).toLocaleString() })
-
-  const operationBreakdown = []
-  if (form.chefSalary) operationBreakdown.push({ label: '厨师工资', value: (form.chefSalary || 0).toLocaleString() })
-  if (form.serverSalary) operationBreakdown.push({ label: '前厅工资', value: (form.serverSalary || 0).toLocaleString() })
-  if (form.rent) operationBreakdown.push({ label: '房租', value: (form.rent || 0).toLocaleString() })
-  if (form.utilities) operationBreakdown.push({ label: '水电燃气', value: (form.utilities || 0).toLocaleString() })
-  if (ingredientCost) operationBreakdown.push({ label: `食材成本（${form.ingredientRate}%）`, value: ingredientCost.toLocaleString() })
-  if (platformCost) operationBreakdown.push({ label: `平台抽成/营销（${form.platformRate}%）`, value: platformCost.toLocaleString() })
-
-  if (monthlyNetProfit <= 0) {
-    result.value = {
-      totalInvestment: totalInvestment.toLocaleString(),
-      monthlyFixed: fixedOperation.toLocaleString(),
-      monthlyNetProfit: monthlyNetProfit.toLocaleString(),
-      netProfitClass: 'negative',
-      paybackMonths: '无法回本',
-      paybackClass: 'negative',
-      investmentBreakdown,
-      operationBreakdown,
-      cannotPayback: true,
-      warning: `月净利润 ¥${monthlyNetProfit.toLocaleString()} 为负数，当前营业额无法覆盖运营成本。食材成本 + 人工 + 房租已超收入。`,
-      statusText: '',
-      suggestion: '',
-      status: '',
-      reference: '',
-      paybackMonthNum: 0,
-      paybackDate: '',
-      annualROI: '',
-      roiClass: ''
-    }
-    return
-  }
-
-  const paybackMonthNum = Math.ceil(totalInvestment / monthlyNetProfit)
-  const years = Math.floor(paybackMonthNum / 12)
-  const months = paybackMonthNum % 12
-  const paybackStr = years > 0 ? `${years}年${months > 0 ? months + '个月' : ''}` : `${months}个月`
-
-  const now = new Date()
-  const paybackDate = new Date(now.getFullYear(), now.getMonth() + paybackMonthNum)
-  const paybackDateStr = `${paybackDate.getFullYear()}年${paybackDate.getMonth() + 1}月`
-
-  const annualROI = ((monthlyNetProfit * 12) / totalInvestment * 100).toFixed(1)
-  let roiClass = 'roi-low'
-  if (annualROI >= 100) roiClass = 'roi-high'
-  else if (annualROI >= 50) roiClass = 'roi-mid'
-
-  let status = 'warning'
-  let statusText = '回本偏慢'
-  let suggestion = ''
-  let reference = '快餐：8-12个月，正餐：12-18个月，咖啡店：12-24个月，火锅：15-24个月'
-
-  if (paybackMonthNum <= 8) {
-    status = 'success'
-    statusText = '快速回本'
-    suggestion = '回本周期很短，项目非常优质！建议加快扩张步伐，复制成功模式。注意保持菜品质量和服务标准。'
-  } else if (paybackMonthNum <= 12) {
-    status = 'success'
-    statusText = '正常回本'
-    suggestion = '回本周期在合理范围内。关注月营业额的稳定性，确保能持续达到预期。可以考虑优化菜品结构提升毛利。'
-  } else if (paybackMonthNum <= 18) {
-    status = 'warning'
-    statusText = '回本偏慢'
-    suggestion = '回本周期偏长。建议：1）提升营业额（增加翻台率/客单价）；2）控制食材成本率；3）优化人员配置降低人工成本。'
-  } else if (paybackMonthNum <= 24) {
-    status = 'warning'
-    statusText = '回本压力大'
-    suggestion = '回本周期较长，资金压力较大。建议：1）重新评估投资规模是否过大；2）考虑降低装修和设备投入；3）提高营销力度增加客流。'
-  } else {
-    status = 'danger'
-    statusText = '回本遥遥无期'
-    suggestion = '回本周期过长，投资风险极大！建议：1）重新评估项目可行性；2）大幅降低投资规模；3）考虑是否有更好的投资方向。'
-  }
-
-  result.value = {
-    totalInvestment: totalInvestment.toLocaleString(),
-    monthlyFixed: fixedOperation.toLocaleString(),
-    monthlyNetProfit: monthlyNetProfit.toLocaleString(),
-    netProfitClass: 'positive',
-    paybackMonths: paybackStr,
-    paybackClass: paybackMonthNum <= 12 ? 'safe' : paybackMonthNum <= 18 ? 'warning' : 'danger',
-    investmentBreakdown,
-    operationBreakdown,
-    cannotPayback: false,
-    paybackMonthNum,
-    paybackDate: paybackDateStr,
-    annualROI: `${annualROI}%`,
-    roiClass,
-    status,
-    statusText,
-    suggestion,
-    reference,
-    warning: ''
+  try {
+    result.value = await generateTool('payback-restaurant', { ...form })
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -383,6 +331,18 @@ function handleSubmit() {
 .result-card.warning p { color: #92400e; }
 
 .reference p { font-size: var(--text-body-sm); }
+
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ccfbf1; color: #0f766e; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
 
 .numeral { font-variant-numeric: tabular-nums; }
 .positive { color: #166534; }

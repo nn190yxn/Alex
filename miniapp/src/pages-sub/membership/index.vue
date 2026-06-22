@@ -9,8 +9,8 @@
       <view class="plan" v-for="p in plans" :key="p.code" :class="{ active: p.code === userInfo?.memberLevel }">
         <text class="plan-name">{{ p.name }}</text>
         <text class="plan-price">{{ p.price }}</text>
-        <button class="btn-plan" @click="handleBuy(p)">
-          {{ p.code === userInfo?.memberLevel ? '当前等级' : '立即开通' }}
+        <button class="btn-plan" :disabled="buying" @click="handleBuy(p)">
+          {{ p.code === userInfo?.memberLevel ? '当前等级' : (buying ? '处理中...' : '立即开通') }}
         </button>
       </view>
     </view>
@@ -32,7 +32,7 @@
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onHide, onShareAppMessage } from '@dcloudio/uni-app'
 import { createOrder } from '@/api/payment'
 import { getUserInfo } from '@/api/auth'
 import { useUserStore } from '@/store/user'
@@ -40,6 +40,7 @@ import { useUserStore } from '@/store/user'
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.state.userInfo)
 const polling = ref(false)
+const buying = ref(false)
 let pollTimer = null
 
 const currentLevel = computed(() => {
@@ -54,7 +55,8 @@ const plans = ref([
 ])
 
 async function handleBuy(plan) {
-  if (plan.code === userInfo.value?.memberLevel) return
+  if (plan.code === userInfo.value?.memberLevel || buying.value) return
+  buying.value = true
   try {
     uni.showLoading({ title: '创建订单中' })
     const res = await createOrder(plan.code)
@@ -71,6 +73,8 @@ async function handleBuy(plan) {
   } catch (e) {
     uni.hideLoading()
     uni.showToast({ title: e.message || '创建订单失败', icon: 'none' })
+  } finally {
+    buying.value = false
   }
 }
 
@@ -85,15 +89,19 @@ function startPolling(orderId) {
       return
     }
     try {
+      const oldLevel = userInfo.value?.memberLevel
       const res = await getUserInfo()
+      if (!res || typeof res.memberLevel === 'undefined') return
       userStore.setUserInfo(res)
-      if (res.memberLevel !== userInfo.value?.memberLevel) {
+      if (res.memberLevel !== oldLevel) {
         clearInterval(pollTimer)
         pollTimer = null
         polling.value = false
         uni.showToast({ title: '会员状态已更新', icon: 'success' })
       }
-    } catch {}
+    } catch (e) {
+      console.error('[Membership] poll error:', e)
+    }
   }, 5000)
 }
 
@@ -104,6 +112,28 @@ function cancelPoll() {
     pollTimer = null
   }
 }
+
+onHide(() => {
+  cancelPoll()
+})
+
+onShareAppMessage(() => ({
+  title: '我赢AI会员 - 解锁无限生成',
+  path: '/pages-sub/membership/index'
+}))
+
+onShow(async () => {
+  if (userStore.isLoggedIn()) {
+    try {
+      const res = await getUserInfo()
+      if (res && typeof res.memberLevel !== 'undefined') {
+        userStore.setUserInfo(res)
+      }
+    } catch (e) {
+      console.error('[Membership] onShow refresh error:', e)
+    }
+  }
+})
 
 onUnmounted(() => {
   if (pollTimer) {

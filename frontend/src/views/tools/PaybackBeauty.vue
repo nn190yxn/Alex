@@ -8,17 +8,44 @@
     </template>
     <template #result>
       <div class="payback-result" v-if="result && !result.error">
-        <div class="result-main">
-          <div class="result-label">回本月数</div>
-          <div class="result-value numeral">{{ result.months }} 个月</div>
-          <div class="result-sub">约 {{ result.years }} 年 · 年化 {{ result.annualReturn }}%</div>
+        <div class="result-summary" v-if="result.summary">
+          <div class="summary-text">{{ result.summary }}</div>
         </div>
-        <div class="result-details">
-          <div class="detail-item"><span>总投资额</span><span class="numeral">¥{{ form.investment }}</span></div>
-          <div class="detail-item"><span>月净利</span><span class="numeral">¥{{ form.monthlyNetProfit }}</span></div>
+        <div class="result-benchmarks" v-if="result.benchmarks && result.benchmarks.length">
+          <h4>核心指标</h4>
+          <div class="benchmark-list">
+            <div class="benchmark-item" v-for="b in result.benchmarks" :key="b.metric">
+              <span class="benchmark-metric">{{ b.metric }}</span>
+              <span class="benchmark-value numeral">{{ b.value }}</span>
+              <span class="benchmark-status" :class="b.status">{{ b.status === 'ok' ? '达标' : b.status === 'caution' ? '注意' : '偏低' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="result-status-block" :class="result.status"><h4>{{ result.statusText }}</h4><p>{{ result.suggestion }}</p></div>
-        <div class="result-reference"><h4>行业参考</h4><p>{{ result.reference }}</p></div>
+        <div class="result-sections" v-if="result.sections && result.sections.length">
+          <div class="section" v-for="section in result.sections" :key="section.title">
+            <h4>{{ section.title }}</h4>
+            <div class="section-items">
+              <div class="item" v-for="(item, i) in section.items" :key="i">{{ item }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions" v-if="result.actions && result.actions.length">
+          <h4>行动建议</h4>
+          <div class="action-list">
+            <div class="action-item" v-for="action in result.actions" :key="action.title" :class="action.priority">
+              <span class="action-priority">{{ action.priority === 'critical' ? '紧急' : action.priority === 'high' ? '高' : '中' }}</span>
+              <span class="action-title">{{ action.title }}</span>
+              <span class="action-desc">{{ action.description }}</span>
+              <span class="action-meta">{{ action.owner }} · {{ action.timeline }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="result-risks" v-if="result.riskNotes && result.riskNotes.length">
+          <h4>风险提示</h4>
+          <div class="risk-list">
+            <div class="risk-item" v-for="(risk, i) in result.riskNotes" :key="i">{{ risk }}</div>
+          </div>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -29,29 +56,21 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('payback-beauty')
 
 const form = reactive({ investment: null, monthlyNetProfit: null })
 const result = ref(null)
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.investment || !form.monthlyNetProfit || form.investment <= 0 || form.monthlyNetProfit <= 0) {
     result.value = { error: '请输入有效的总投资额和月净利' }; return
   }
-
-  const months = form.investment / form.monthlyNetProfit
-  const years = months / 12
-  const annualReturn = (form.monthlyNetProfit * 12 / form.investment) * 100
-
-  let status = 'warning', statusText = '偏长', suggestion = '', reference = '美业8-15个月为正常，>24个月风险大'
-
-  if (months <= 8) { status = 'success'; statusText = '优秀'; suggestion = '回本非常快！投资价值高，可考虑扩店或开分店。' }
-  else if (months <= 15) { status = 'success'; statusText = '正常'; suggestion = '在正常回本范围。关注月净利的稳定性。' }
-  else if (months <= 24) { status = 'warning'; statusText = '偏长'; suggestion = '回本周期偏长。建议提升客单价或增加复购。' }
-  else { status = 'danger'; statusText = '风险大'; suggestion = '回本周期过长！美业变化快，建议重新评估项目可行性。' }
-
-  result.value = { months: months.toFixed(1), years: years.toFixed(1), annualReturn: annualReturn.toFixed(1), status, statusText, suggestion, reference }
+  result.value = await generateTool('payback-beauty', {
+    investment: form.investment,
+    monthlyNetProfit: form.monthlyNetProfit
+  })
 }
 </script>
 
@@ -61,26 +80,30 @@ function handleSubmit() {
 .form-label { font-size: var(--text-body-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); }
 .form-input { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); font-size: var(--text-body); }
 .payback-result { padding: var(--space-4); background-color: var(--bg-base); border-radius: var(--radius-card); }
-.result-main { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); }
-.result-label { font-size: var(--text-body-sm); color: var(--text-secondary); margin-bottom: var(--space-2); }
-.result-value { font-size: 56px; font-weight: var(--font-weight-bold); color: var(--text-main); line-height: 1; margin-bottom: var(--space-3); }
-.result-sub { font-size: var(--text-body); color: var(--text-secondary); }
-.result-details { display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--line-default); }
-.detail-item { display: flex; justify-content: space-between; font-size: var(--text-body-sm); color: var(--text-secondary); }
-.result-status-block { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); }
-.result-status-block.success { background: #dcfce7; }
-.result-status-block.warning { background: #fef3c7; }
-.result-status-block.danger { background: #fee2e2; }
-.result-status-block h4 { font-size: var(--text-body); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); }
-.result-status-block.success h4 { color: #166534; }
-.result-status-block.warning h4 { color: #92400e; }
-.result-status-block.danger h4 { color: #991b1b; }
-.result-status-block p { font-size: var(--text-body-sm); }
-.result-status-block.success p { color: #15803d; }
-.result-status-block.warning p { color: #a16207; }
-.result-status-block.danger p { color: #b91c1c; }
-.result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
-.result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
-.result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.result-summary { text-align: center; padding: var(--space-5); margin-bottom: var(--space-4); background: white; border-radius: var(--radius-md); }
+.summary-text { font-size: var(--text-body); color: var(--text-main); font-weight: var(--font-weight-semibold); }
+.result-benchmarks, .result-actions { margin-top: var(--space-4); padding: var(--space-3); background: white; border-radius: var(--radius-md); }
+.result-benchmarks h4, .result-actions h4, .section h4, .result-risks h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
+.benchmark-list, .action-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.benchmark-item { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-2); font-size: var(--text-body-sm); align-items: center; }
+.benchmark-metric, .section-items, .action-desc { color: var(--text-secondary); }
+.benchmark-value, .action-title { color: var(--text-main); font-weight: var(--font-weight-medium); }
+.benchmark-status { text-align: right; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+.benchmark-status.ok { background: #dcfce7; color: #166534; }
+.benchmark-status.caution { background: #fef3c7; color: #92400e; }
+.benchmark-status.below { background: #fee2e2; color: #991b1b; }
+.result-sections { margin-top: var(--space-4); }
+.section { padding: var(--space-3); background: white; border-radius: var(--radius-md); margin-bottom: var(--space-2); }
+.section-items, .action-desc, .risk-list { font-size: var(--text-body-sm); line-height: var(--leading-body-lg); }
+.item, .risk-item { margin-bottom: var(--space-1); }
+.action-item { padding: var(--space-2); border-radius: var(--radius-sm); border-left: 3px solid var(--line-default); }
+.action-item.critical { border-left-color: #991b1b; background: #fee2e2; }
+.action-item.high { border-left-color: #92400e; background: #fef3c7; }
+.action-item.medium { border-left-color: #166534; background: #dcfce7; }
+.action-priority { display: inline-block; font-size: var(--text-body-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--bg-muted); margin-right: var(--space-2); }
+.action-desc, .action-meta { display: block; margin-top: var(--space-1); }
+.action-meta { font-size: var(--text-body-xs); color: var(--text-muted); }
+.result-risks { margin-top: var(--space-4); padding: var(--space-3); background: #fff7ed; border-radius: var(--radius-md); border: 1px solid #fed7aa; }
+.result-risks h4, .risk-list { color: #9a3412; }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

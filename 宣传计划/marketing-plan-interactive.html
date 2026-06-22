@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我赢AI 30 天推广指挥台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fcf8f3;
+  --panel: rgba(255,251,246,0.92);
+  --panel2: rgba(248,244,240,0.9);
+  --line: rgba(83,48,29,0.08);
+  --text: #3f261b;
+  --muted: #7d5d4d;
+  --accent: #cb6f3f;
+  --accent-soft: #f4b487;
+  --accent-deep: #9f4f2f;
+  --good: #486b4d;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --serif: "Noto Serif SC", "STSong", "SimSun", "Songti SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255,214,180,0.6), transparent 30%),
+    radial-gradient(circle at top right, rgba(255,236,190,0.5), transparent 25%),
+    linear-gradient(180deg, #fcf6ef 0%, #f5eadb 50%, #efe0cc 100%);
+  min-height: 100vh;
+  padding: 24px 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-header {
+  max-width: 1400px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.side-left  { position: sticky; top: 20px; }
+.side-right { position: sticky; top: 20px; }
+.center     { min-height: 600px; }
+
+@media (max-width: 1280px) {
+  .main { grid-template-columns: 1fr; }
+  .side-left, .side-right { position: static; }
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card-header {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stat-number {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Buttons */
+.btn-primary {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: var(--sans);
+}
+.btn-primary:hover { background: var(--accent-deep); }
+
+.btn-sm {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  color: var(--text);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color .18s;
+  font-family: var(--sans);
+}
+.btn-sm:hover { border-color: var(--accent); }
+
+/* Progress bar */
+.bar {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(203,111,63,0.1);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bar .fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent-soft), var(--accent));
+  transition: width .4s;
+  width: 0%;
+}
+.bar.green .fill { background: linear-gradient(90deg, #8fbc8f, var(--good)); }
+.bar.purple .fill { background: linear-gradient(90deg, #c4a7d4, #8b6baa); }
+
+/* Calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(203,111,63,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  position: relative;
+}
+
+.cal-day:hover { border-color: var(--accent); }
+.cal-day.active { border-color: var(--accent); background: rgba(203,111,63,0.12); box-shadow: 0 0 0 2px rgba(203,111,63,0.15); }
+.cal-day.done { border-color: var(--good); background: rgba(72,107,77,0.06); }
+
+.cal-day .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: none;
+}
+.cal-day.done .dot { display: block; }
+
+.week-label {
+  grid-column: span 5;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+
+/* Task card */
+.task-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.task-head .task-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.task-icon.xhs { background: rgba(255,64,64,0.1); color: #e04b4b; }
+.task-icon.douyin { background: rgba(0,0,0,0.06); color: #333; }
+.task-icon.shipinhao { background: rgba(72,180,97,0.1); color: #3a8c52; }
+.task-icon.reach { background: rgba(44,130,201,0.1); color: #2c82c9; }
+.task-icon.review { background: rgba(140,100,180,0.1); color: #7b52ab; }
+.task-icon.script { background: rgba(203,111,63,0.1); color: var(--accent); }
+
+.task-head .task-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.task-head .task-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: transparent;
+  flex-shrink: 0;
+}
+.task-check.done {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+
+.task-body { display: none; padding: 0 16px 12px; }
+.task-card.open .task-body { display: block; }
+.task-body textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  resize: vertical;
+  min-height: 48px;
+  background: rgba(255,255,255,0.6);
+  color: var(--text);
+  transition: border-color .18s;
+}
+.task-body textarea:focus { outline: none; border-color: var(--accent); }
+
+.task-foot {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.cta-tag {
+  font-size: 10px;
+  background: rgba(203,111,63,0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+/* Script library */
+.script-item {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .18s;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  border: 1px solid transparent;
+}
+.script-item:hover { background: var(--panel2); border-color: var(--line); }
+.script-item .script-tag {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+/* Asset chips */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+  color: var(--text);
+}
+.chip:hover { border-color: var(--accent); background: rgba(203,111,63,0.06); }
+.chip.active { border-color: var(--accent); background: rgba(203,111,63,0.12); color: var(--accent); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-size: 12px;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+}
+.toast.show { animation: toastIn .28s ease, toastOut .28s .9s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* Skeleton */
+.skeleton { background: linear-gradient(90deg, rgba(203,111,63,0.06) 25%, rgba(203,111,63,0.1) 50%, rgba(203,111,63,0.06) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 99px; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skel-line { height: 12px; margin-bottom: 8px; }
+.skel-line:last-child { margin-bottom: 0; }
+
+/* Day header in center */
+.day-header {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.day-theme {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.funnel-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.funnel-row .funnel-label { font-size: 11px; color: var(--muted); min-width: 50px; }
+.funnel-row .funnel-val { font-size: 11px; font-weight: 700; color: var(--accent); }
+.funnel-row .funnel-bar-wrap { flex: 1; margin: 0 8px; }
+
+.weekly-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  margin-top: 4px;
+}
+
+/* details/summary */
+.details-block { margin-bottom: 10px; }
+.details-block > summary {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 0;
+  list-style: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.details-block > summary::-webkit-details-marker { display: none; }
+.details-block > summary::before { content: '+'; display: inline-block; width: 16px; font-size: 13px; color: var(--accent); transition: transform .18s; }
+.details-block[open] > summary::before { transform: rotate(45deg); }
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 24px 0;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">我赢AI 30 天推广指挥台</div>
+    <div class="page-subtitle">零预算 · 全社交媒体 · 目标 300 付费会员</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-sm" onclick="exportCSV()">导出 CSV</button>
+    <button class="btn-sm" onclick="copySummary()">复制摘要</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Left: Calendar + Funnel + KPI -->
+  <aside class="side-left">
+    <div class="card">
+      <div class="card-header">
+        <span>总进度</span>
+        <span class="stat-number" style="font-size:14px;" id="prog-text">0/120</span>
+      </div>
+      <div class="bar"><div class="fill" id="prog-bar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">执行日历</div>
+      <div class="calendar-grid" id="calendar"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">转化漏斗</div>
+      <div class="funnel-row">
+        <span class="funnel-label">曝光</span>
+        <span class="funnel-val" id="fv-reach">0</span>
+      </div>
+      <div class="bar"><div class="fill" style="background:linear-gradient(90deg,var(--accent-soft),var(--accent));" id="fb-reach"></div></div>
+
+      <div class="funnel-row" style="margin-top:8px;">
+        <span class="funnel-label">互动</span>
+        <span class="funnel-val" id="fv-engage">0</span>
+      </div>
+      <div class="bar"><div class="fill green" id="fb-engage"></div></div>
+
+      <div class="funnel-row" style="margin-top:8px;">
+        <span class="funnel-label">私信</span>
+        <span class="funnel-val" id="fv-dm">0</span>
+      </div>
+      <div class="bar purple"><div class="fill" id="fb-dm"></div></div>
+
+      <div class="funnel-row" style="margin-top:8px;">
+        <span class="funnel-label">留资</span>
+        <span class="funnel-val" id="fv-leads">0</span>
+      </div>
+      <div class="bar"><div class="fill green" id="fb-leads"></div></div>
+
+      <div class="funnel-row" style="margin-top:8px;">
+        <span class="funnel-label">49/99 体验</span>
+        <span class="funnel-val" id="fv-trial">0</span>
+      </div>
+      <div class="bar purple"><div class="fill" id="fb-trial"></div></div>
+
+      <div class="funnel-row" style="margin-top:8px;">
+        <span class="funnel-label">129 付费</span>
+        <span class="funnel-val" id="fv-paid">0</span>
+      </div>
+      <div class="bar"><div class="fill" id="fb-paid"></div></div>
+
+      <div class="funnel-row" style="margin-top:2px;">
+        <span style="font-size:10px;color:var(--muted);">触达=已发私聊人数，注册/付费累计</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">每日执行概览</div>
+      <div id="day-summary" style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0;">
+        点击左侧日历卡片加载内容
+      </div>
+    </div>
+  </aside>
+
+  <!-- Center: Task flow -->
+  <section class="center">
+    <div id="center-empty" class="empty-hint">
+      选择一天开始执行<br>
+      点击左侧日历卡片加载内容
+    </div>
+    <div id="center-content" style="display:none;">
+      <div class="day-header" id="day-title">Day 1</div>
+      <div class="day-theme" id="day-theme"></div>
+      <div id="day-cta" style="text-align:right;margin-bottom:8px;"></div>
+      <div id="task-list"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-primary" id="btn-mark-all">标记全天完成</button>
+        <button class="btn-sm" id="btn-prev-day">← 前一天</button>
+        <button class="btn-sm" id="btn-next-day">后一天 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right: Assets + Scripts -->
+  <aside class="side-right">
+    <div class="card">
+      <div class="card-header">话术库</div>
+      <div class="script-item" onclick="copyText(this)" data-copy="你如果最近正卡在内容发不出来，我建议先别自己硬想。你把行业和今天要发的场景发我，我可以先让你试一次我赢AI的出稿效果。">
+        <div class="script-tag">私信首条</div>你把行业和场景发我，先试一次出稿
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="现在有一个49体验入口，适合先低门槛试。你先拿去做标题、朋友圈、短视频脚本，先把今天要发的内容跑出来。">
+        <div class="script-tag">49 裂变</div>49 低门槛体验，先跑出今天的内容
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="如果你已经明确会持续发内容，我更建议直接上99限时档。比49多的是连续用的空间，最适合这几天集中把内容矩阵跑起来。">
+        <div class="script-tag">99 限时</div>99 限时档，集中跑内容矩阵
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="如果你是长期做门店内容、活动、老板IP和促单的，我建议直接上129标准会员。这个档位最稳，够你每天持续发，不用每次都犹豫今天还值不值得开。">
+        <div class="script-tag">129 收口</div>129 标准会员，持续产出不犹豫
+      </div>
+      <div class="script-item" onclick="copyText(this)" data-copy="如果你身边也有做门店、教培、美业、同城服务的老板朋友，可以直接把推荐码发给他。他开通后你拿20%返利，顺手就把体验成本赚回来了。">
+        <div class="script-tag">转介绍</div>推荐码转给老板朋友，拿 20% 返利
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">页面资产库</div>
+      <div class="chip-row">
+        <span class="chip active">首页</span>
+        <span class="chip">AI 对话</span>
+        <span class="chip">工具页</span>
+        <span class="chip">生成页</span>
+        <span class="chip">历史</span>
+        <span class="chip">我的</span>
+        <span class="chip">登录</span>
+        <span class="chip">注册</span>
+        <span class="chip">会员</span>
+        <span class="chip">返利</span>
+        <span class="chip">收藏</span>
+        <span class="chip">隐私协议</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">每周复盘模板</div>
+      <details class="details-block">
+        <summary>本周数据</summary>
+        <div style="font-size:11px;color:var(--muted);padding:4px 0 0 20px;">
+          小红书发布数、收藏率前5、抖音完播率前5、视频号私信转化前5、评论区关键词数、私信线索数、49/99/129成交数、邀请返利激活人数
+        </div>
+      </details>
+      <details class="details-block">
+        <summary>本周保留</summary>
+        <div style="font-size:11px;color:var(--muted);padding:4px 0 0 20px;">
+          转化最高的5个标题、私信率最高的5个视频开头、成交率最高的5段私聊话术、裂变效果最好的3条朋友圈文案
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-header">价格梯队参考</div>
+      <div style="font-size:11px;line-height:1.8;">
+        <span style="font-weight:700;color:var(--accent);">149</span> 原价锚点<br>
+        <span style="font-weight:700;color:var(--accent);">129</span> 常规标准主推<br>
+        <span style="font-weight:700;color:var(--accent);">99</span> 限时成交价<br>
+        <span style="font-weight:700;color:var(--accent);">49</span> 裂变体验/破冰
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 30 天任务数据 ──
+const DAYS = [
+  { theme:"定位亮相", cta:"先试一次", tasks:{ xhs:"老板为什么需要一个当天出稿的 AI", douyin:"30 秒看懂我赢AI能做什么", shipinhao:"创始人口播：我为什么做这款产品", reach:"朋友圈首发产品定位" }, review:"首日数据复盘" },
+  { theme:"爆款标题", cta:"先让我写 3 条", tasks:{ xhs:"标题工具前后对比", douyin:"10 秒出 5 个标题过程", shipinhao:"老板视角：标题为什么最难", reach:"私信送 3 条标题" }, review:"标题工具效果复盘" },
+  { theme:"朋友圈", cta:"先拿 3 条发圈文案", tasks:{ xhs:"朋友圈不会写的老板最需要什么", douyin:"发圈文案 1 分钟出稿演示", shipinhao:"发圈成交逻辑拆解", reach:"朋友圈模板赠送" }, review:"发圈文案互动复盘" },
+  { theme:"抖音脚本", cta:"先试脚本工具", tasks:{ xhs:"不会拍视频的人怎么用我赢AI", douyin:"口播脚本实时生成", shipinhao:"老板出镜也能拍的原因", reach:"私信送 30 秒脚本" }, review:"脚本工具转化复盘" },
+  { theme:"小红书笔记", cta:"先拿一篇笔记", tasks:{ xhs:"门店老板怎么做种草笔记", douyin:"笔记结构拆解", shipinhao:"创始人讲小红书价值", reach:"发送笔记模板" }, review:"笔记模板分发复盘" },
+  { theme:"促单话术", cta:"先拿 3 条促单话术", tasks:{ xhs:"客户犹豫时老板最缺的话术", douyin:"话术生成实拍", shipinhao:"视频号聊成交前最后一推", reach:"晚间私聊收口" }, review:"促单话术成效复盘" },
+  { theme:"周总结", cta:"先上体验", tasks:{ xhs:"一周 6 个功能合集", douyin:"一周生成结果合集", shipinhao:"直播式总结", reach:"第一波 49 转化" }, review:"第一周数据复盘" },
+  { theme:"行业适配", cta:"先试餐饮版", tasks:{ xhs:"餐饮老板怎么用", douyin:"餐饮案例快演示", shipinhao:"餐饮场景打法", reach:"餐饮群/好友触达" }, review:"餐饮渠道转化复盘" },
+  { theme:"行业适配", cta:"先试教培版", tasks:{ xhs:"教培校长怎么用", douyin:"教培招生活动出稿", shipinhao:"教培信任内容拆解", reach:"教培私域承接" }, review:"教培渠道转化复盘" },
+  { theme:"行业适配", cta:"先试美业版", tasks:{ xhs:"美业老板怎么用", douyin:"美业种草文案出稿", shipinhao:"美业转化内容表达", reach:"美业私聊脚本" }, review:"美业渠道转化复盘" },
+  { theme:"行业适配", cta:"先试服务版", tasks:{ xhs:"生活服务怎么用", douyin:"服务案例内容生成", shipinhao:"服务老板表达模板", reach:"服务同城商家承接" }, review:"生活服务渠道转化复盘" },
+  { theme:"老板 IP", cta:"先做人设内容", tasks:{ xhs:"为什么老板本人内容更容易成交", douyin:"老板 IP 生成演示", shipinhao:"创始人口播对比", reach:"发老板 IP 模板" }, review:"老板IP内容扩散复盘" },
+  { theme:"卖点提炼", cta:"先提炼卖点", tasks:{ xhs:"为什么客户听不懂你的服务", douyin:"卖点提炼过程", shipinhao:"视频号讲清包装逻辑", reach:"私信诊断卖点" }, review:"卖点诊断复盘" },
+  { theme:"周总结", cta:"先开体验", tasks:{ xhs:"四大行业案例合集", douyin:"行业出稿反差合集", shipinhao:"第二次直播答疑", reach:"第二波 49/99 转化" }, review:"第二周数据复盘" },
+  { theme:"活动文案", cta:"先拿活动文案", tasks:{ xhs:"周末活动不会写怎么办", douyin:"活动文案现场出稿", shipinhao:"门店活动怎么借 AI", reach:"送活动模板" }, review:"活动文案分发复盘" },
+  { theme:"成交场景", cta:"先拿成交话术", tasks:{ xhs:"客户说再考虑一下怎么办", douyin:"3 条催单话术演示", shipinhao:"成交阻力拆解", reach:"私信按话术跟进" }, review:"成交话术效果复盘" },
+  { theme:"老板省时", cta:"先省时间", tasks:{ xhs:"一天省 2 小时到底值不值", douyin:"老板省时前后对比", shipinhao:"时间价值换算", reach:"朋友圈发时间账本" }, review:"省时话题传播复盘" },
+  { theme:"结果复用", cta:"先看复用方案", tasks:{ xhs:"一次生成，多平台复用", douyin:"一稿三发演示", shipinhao:"内容复用逻辑", reach:"送复用清单" }, review:"内容复用效果复盘" },
+  { theme:"AI 对话", cta:"先聊一句试试", tasks:{ xhs:"不会写表单也能直接问", douyin:"语音输入现场演示", shipinhao:"老板像聊天一样出稿", reach:"私信送对话模板" }, review:"AI对话传播复盘" },
+  { theme:"历史与收藏", cta:"先把内容存起来", tasks:{ xhs:"好内容怎么积累成资产", douyin:"历史记录/收藏演示", shipinhao:"内容资产库价值", reach:"引导长期订阅" }, review:"留存引导复盘" },
+  { theme:"周总结", cta:"先升级会员", tasks:{ xhs:"这一周最值钱的 7 个功能", douyin:"7 个功能一屏看懂", shipinhao:"第三次直播答疑", reach:"第三波 99 转化" }, review:"第三周数据复盘" },
+  { theme:"会员价值", cta:"先开会员", tasks:{ xhs:"为什么会员比单次更值", douyin:"会员权益总览", shipinhao:"老板为什么该长期用", reach:"私信讲价值账" }, review:"会员传播复盘" },
+  { theme:"129 主推", cta:"先锁标准会员", tasks:{ xhs:"为什么我主推 129", douyin:"129 对比 149/99/49", shipinhao:"视频号讲价盘逻辑", reach:"定向收口 129" }, review:"129 主推转化复盘" },
+  { theme:"99 限时", cta:"先上 99", tasks:{ xhs:"什么人适合 99 进来", douyin:"限时福利倒计时", shipinhao:"视频号限时提醒", reach:"24 小时收口" }, review:"99 限时转化复盘" },
+  { theme:"49 裂变", cta:"先领 49 体验", tasks:{ xhs:"49 怎么做低门槛破冰", douyin:"裂变入口演示", shipinhao:"创始人讲 49 用法", reach:"拉新用户入场" }, review:"49 裂变复盘" },
+  { theme:"邀请返利", cta:"先拿推荐码", tasks:{ xhs:"为什么分享出去也能赚钱", douyin:"返利页演示", shipinhao:"老客户为什么愿意分享", reach:"老用户转介绍" }, review:"返利激活复盘" },
+  { theme:"真实场景", cta:"先让今天发出去", tasks:{ xhs:"一家门店一天能用几次我赢AI", douyin:"全天使用轨迹", shipinhao:"一天内容流演示", reach:"私域跟进复盘" }, review:"全场景复盘" },
+  { theme:"成交总攻", cta:"先开一个月", tasks:{ xhs:"哪些老板现在最适合开会员", douyin:"适合人群判断表", shipinhao:"视频号总结推荐", reach:"高频私聊收口" }, review:"成交总攻复盘" },
+  { theme:"成果复盘", cta:"先试再决定", tasks:{ xhs:"这 30 天哪些内容最能转化", douyin:"转化结果合集", shipinhao:"结果型视频", reach:"老客二次激活" }, review:"成果逆向复盘" },
+  { theme:"裂变冲刺", cta:"49/99/129 收口", tasks:{ xhs:"把这份 AI 增长工具转给老板朋友", douyin:"月度合集视频", shipinhao:"第四次直播收官", reach:"老带新冲刺" }, review:"30天终局复盘" }
+];
+
+// ── 常量 ──
+const LS_PROG = "woying-marketing-plan-v1-prog";
+const LS_FUNNEL = "woying-marketing-plan-v1-funnel";
+const TOTAL_TASKS = 120; // 30 days × 4 tasks
+const FUNNEL_TARGETS = { reach:150000, engage:9000, dm:3000, leads:1200, trial:600, paid:300 };
+const TASK_ICONS = { xhs:"📕", douyin:"🎵", shipinhao:"🎬", reach:"💬", review:"📋" };
+const TASK_LABELS = { xhs:"小红书", douyin:"抖音", shipinhao:"视频号", reach:"私域承接", review:"复盘" };
+const WEEKS = ["第 1 周 · 先证明快速出稿","第 2 周 · 先证明懂行业","第 3 周 · 先证明能转化","第 4 周 · 先证明会员值","第 5 周 · 裂变冲刺"];
+
+let prog = {}, funnel = { reach:0, engage:0, dm:0, leads:0, trial:0, paid:0 };
+let activeDay = 0;
+
+// ── 初始化 ──
+function init() {
+  loadData();
+  renderCalendar();
+  renderFunnel();
+  updateProgress();
+  bindEvents();
+  selectDay(1);
+}
+
+function loadData() {
+  try { prog = JSON.parse(localStorage.getItem(LS_PROG)) || {}; } catch(e) { prog = {}; }
+  try { funnel = JSON.parse(localStorage.getItem(LS_FUNNEL)) || { reach:0, engage:0, dm:0, leads:0, trial:0, paid:0 }; } catch(e) { funnel = { reach:0, engage:0, dm:0, leads:0, trial:0, paid:0 }; }
+  for (let k in FUNNEL_TARGETS) { if (funnel[k] === undefined) funnel[k] = 0; }
+}
+
+function saveData() {
+  localStorage.setItem(LS_PROG, JSON.stringify(prog));
+  localStorage.setItem(LS_FUNNEL, JSON.stringify(funnel));
+}
+
+// ── 日历 ──
+function renderCalendar() {
+  const grid = document.getElementById("calendar");
+  grid.innerHTML = "";
+  // 6 rows, 5 columns = 30 days; label rows where week boundaries fall
+  const weekBreaks = [1, 8, 15, 22, 29];
+  let weekIdx = 0;
+  for (let i = 0; i < 30; i++) {
+    if (weekBreaks.includes(i+1) && weekIdx < WEEKS.length) {
+      const lbl = document.createElement("div");
+      lbl.className = "week-label";
+      lbl.textContent = WEEKS[weekIdx];
+      grid.appendChild(lbl);
+      weekIdx++;
+    }
+    const day = i + 1;
+    const div = document.createElement("div");
+    div.className = "cal-day";
+    div.dataset.day = day;
+    const tasks = getDayTasks(day);
+    if (tasks && tasks.length === 4) {
+      div.classList.add("done");
+    }
+    if (activeDay === day) div.classList.add("active");
+    div.innerHTML = `${day}<div class="dot"></div>`;
+    div.addEventListener("click", () => selectDay(day));
+    grid.appendChild(div);
+  }
+}
+
+function getDayTasks(day) {
+  const key = String(day);
+  return prog[key] ? prog[key].tasks || [] : [];
+}
+
+function getDayNotes(day) {
+  const key = String(day);
+  return prog[key] ? prog[key].notes || {} : {};
+}
+
+function getDayMetrics(day) {
+  const key = String(day);
+  return prog[key] ? prog[key].metrics || {} : {};
+}
+
+function countDone() {
+  let c = 0;
+  for (let d = 1; d <= 30; d++) {
+    const tasks = getDayTasks(d);
+    tasks.forEach(t => { if (t.done) c++; });
+  }
+  return c;
+}
+
+// ── 进度 ──
+function updateProgress() {
+  const done = countDone();
+  const pct = Math.round((done / TOTAL_TASKS) * 100);
+  document.getElementById("prog-text").textContent = done + "/" + TOTAL_TASKS;
+  document.getElementById("prog-bar").style.width = pct + "%";
+}
+
+// ── 漏斗 ──
+function renderFunnel() {
+  for (let k in FUNNEL_TARGETS) {
+    if (document.getElementById("fv-" + k)) {
+      document.getElementById("fv-" + k).textContent = funnel[k];
+    }
+    if (document.getElementById("fb-" + k)) {
+      const pct = Math.min(100, Math.round((funnel[k] / FUNNEL_TARGETS[k]) * 100));
+      document.getElementById("fb-" + k).style.width = pct + "%";
+    }
+  }
+}
+
+function updateFunnel(key, val) {
+  const num = parseInt(val) || 0;
+  funnel[key] = num;
+  saveData();
+  renderFunnel();
+}
+
+// ── 选中日期 ──
+function selectDay(day) {
+  activeDay = day;
+  renderCalendar();
+  renderDayContent(day);
+  document.getElementById("center-empty").style.display = "none";
+  document.getElementById("center-content").style.display = "block";
+}
+
+function renderDayContent(day) {
+  const d = DAYS[day - 1];
+  document.getElementById("day-title").textContent = "Day " + day;
+  document.getElementById("day-theme").textContent = d.theme;
+  document.getElementById("day-cta").innerHTML = '<span class="cta-tag">' + d.cta + '</span>';
+
+  const list = document.getElementById("task-list");
+  list.innerHTML = "";
+
+  const taskKeys = ["xhs", "douyin", "shipinhao", "reach", "review"];
+  const savedTasks = getDayTasks(day);
+  const taskDoneMap = {};
+  savedTasks.forEach(t => { taskDoneMap[t.id] = t.done; });
+  const notes = getDayNotes(day);
+  const metrics = getDayMetrics(day);
+
+  taskKeys.forEach(tk => {
+    let content = "";
+    if (tk === "review") {
+      content = d.review || "当日数据复盘";
+    } else {
+      content = d.tasks[tk] || "";
+    }
+
+    const tId = tk;
+    const done = !!taskDoneMap[tId];
+    const icon = TASK_ICONS[tk] || "📋";
+    const label = TASK_LABELS[tk] || tk;
+
+    const card = document.createElement("div");
+    card.className = "task-card" + (done ? " open" : "");
+    card.innerHTML = `
+      <div class="task-head" onclick="this.parentElement.classList.toggle('open')">
+        <div class="task-icon ${tk}">${icon}</div>
+        <div class="task-title">${content}</div>
+        <div class="task-meta">
+          <span style="font-size:10px;color:var(--muted);margin-right:6px;">${label}</span>
+          <div class="task-check ${done ? 'done' : ''}" data-task="${tId}" onclick="event.stopPropagation();toggleTask(${day},'${tId}',this)">${done ? '✓' : ''}</div>
+        </div>
+      </div>
+      <div class="task-body">
+        <textarea placeholder="记笔记..." data-day="${day}" data-task="${tId}">${notes[tId] || ''}</textarea>
+        ${tk === 'reach' ? `<div style="margin-top:6px;font-size:10px;color:var(--muted);">
+          今日触达 <input type="number" value="${metrics.reachCount || ''}" placeholder="人数" style="width:64px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:11px;margin-right:8px;" data-metric="reachCount" data-day="${day}">
+          今日成交 <input type="number" value="${metrics.dealCount || ''}" placeholder="人数" style="width:64px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:11px;" data-metric="dealCount" data-day="${day}">
+        </div>` : ''}
+      </div>
+      <div class="task-foot">
+        <span>${d.cta}</span>
+        <span style="font-size:10px;color:var(--muted);">${done ? '已完成' : '待执行'}</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  // bind textarea inputs
+  setTimeout(() => {
+    list.querySelectorAll("textarea").forEach(ta => {
+      ta.addEventListener("input", function() {
+        const d = parseInt(this.dataset.day);
+        const t = this.dataset.task;
+        saveNote(d, t, this.value);
+      });
+    });
+    list.querySelectorAll("input[data-metric]").forEach(inp => {
+      inp.addEventListener("input", function() {
+        const d = parseInt(this.dataset.day);
+        const m = this.dataset.metric;
+        saveMetric(d, m, this.value);
+      });
+    });
+  }, 0);
+
+  // update day summary
+  const sumDiv = document.getElementById("day-summary");
+  sumDiv.innerHTML = `
+    <div style="font-weight:600;color:var(--text);">Day ${day} · ${d.theme}</div>
+    <div style="margin-top:4px;">${d.tasks.xhs.slice(0,20)}...</div>
+    <div class="weekly-tag">CTA: ${d.cta}</div>
+  `;
+}
+
+// ── 任务切换 ──
+function ensureDay(day) {
+  const key = String(day);
+  if (!prog[key]) prog[key] = { tasks: [], notes: {}, metrics: {} };
+}
+
+function toggleTask(day, taskId, el) {
+  ensureDay(day);
+  const tasks = prog[String(day)].tasks;
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx >= 0) {
+    tasks[idx].done = !tasks[idx].done;
+  } else {
+    tasks.push({ id: taskId, done: true });
+  }
+  const isDone = tasks.find(t => t.id === taskId)?.done;
+  if (isDone) {
+    el.classList.add("done");
+    el.textContent = "✓";
+  } else {
+    el.classList.remove("done");
+    el.textContent = "";
+  }
+  // update foot text
+  const foot = el.closest(".task-card").querySelector(".task-foot span:last-child");
+  if (foot) foot.textContent = isDone ? "已完成" : "待执行";
+  saveData();
+  updateProgress();
+  renderCalendar();
+}
+
+function saveNote(day, taskId, text) {
+  ensureDay(day);
+  prog[String(day)].notes[taskId] = text;
+  saveData();
+}
+
+function saveMetric(day, metric, val) {
+  ensureDay(day);
+  prog[String(day)].metrics[metric] = val;
+  saveData();
+}
+
+// ── 标记全天完成 ──
+function markAllDone() {
+  if (!activeDay) return;
+  const day = activeDay;
+  ensureDay(day);
+  const taskKeys = ["xhs", "douyin", "shipinhao", "reach", "review"];
+  taskKeys.forEach(tk => {
+    const tasks = prog[String(day)].tasks;
+    const idx = tasks.findIndex(t => t.id === tk);
+    if (idx >= 0) tasks[idx].done = true;
+    else tasks.push({ id: tk, done: true });
+  });
+  saveData();
+  updateProgress();
+  renderCalendar();
+  renderDayContent(day);
+  toast("全天任务已标记完成");
+}
+
+// ── 事件绑定 ──
+function bindEvents() {
+  document.getElementById("btn-mark-all").addEventListener("click", markAllDone);
+  document.getElementById("btn-prev-day").addEventListener("click", () => {
+    if (activeDay > 1) selectDay(activeDay - 1);
+  });
+  document.getElementById("btn-next-day").addEventListener("click", () => {
+    if (activeDay < 30) selectDay(activeDay + 1);
+  });
+}
+
+// ── Toast ──
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 1200);
+}
+
+// ── 复制文本 ──
+function copyText(el) {
+  const text = el.dataset.copy;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast("已复制到剪贴板"));
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("已复制到剪贴板");
+  }
+}
+
+// ── 导出 CSV ──
+function exportCSV() {
+  let csv = "Day,主题,小红书,抖音,视频号,私域承接,复盘,CTA,已完成\n";
+  for (let d = 0; d < 30; d++) {
+    const day = d + 1;
+    const data = DAYS[d];
+    const tasks = getDayTasks(day);
+    const doneMap = {};
+    tasks.forEach(t => { doneMap[t.id] = t.done; });
+    const row = [
+      day,
+      data.theme,
+      data.tasks.xhs,
+      data.tasks.douyin,
+      data.tasks.shipinhao,
+      data.tasks.reach,
+      data.review || "",
+      data.cta,
+      tasks.length === 5 ? (Object.values(doneMap).filter(Boolean).length === 5 ? "是" : "否") : "否"
+    ];
+    csv += row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",") + "\n";
+  }
+  // add funnel summary
+  csv += "\nFunnel,Target,Actual\n";
+  for (let k in FUNNEL_TARGETS) {
+    csv += k + "," + FUNNEL_TARGETS[k] + "," + funnel[k] + "\n";
+  }
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "woying-30day-progress.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("CSV 已导出");
+}
+
+// ── 复制摘要 ──
+function copySummary() {
+  const done = countDone();
+  const doneDays = [];
+  for (let d = 1; d <= 30; d++) {
+    const tasks = getDayTasks(d);
+    if (tasks.length === 5 && tasks.every(t => t.done)) doneDays.push("Day " + d);
+  }
+  let summary = "我赢AI 30 天推广指挥台 · 执行摘要\n\n";
+  summary += "总进度：" + done + "/" + TOTAL_TASKS + " (" + Math.round((done/TOTAL_TASKS)*100) + "%)\n";
+  summary += "已完成天：" + (doneDays.length > 0 ? doneDays.join(", ") : "无") + "\n\n";
+  summary += "--- 漏斗 ---\n";
+  for (let k in FUNNEL_TARGETS) {
+    const labels = { reach:"曝光", engage:"互动", dm:"私信", leads:"留资", trial:"49/99体验", paid:"129付费" };
+    summary += (labels[k] || k) + "：" + funnel[k] + " / " + FUNNEL_TARGETS[k] + "\n";
+  }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(summary).then(() => toast("摘要已复制到剪贴板"));
+  } else {
+    toast("复制失败，请手动复制");
+  }
+}
+
+// ── 键盘导航 ──
+document.addEventListener("keydown", function(e) {
+  if (e.key === "ArrowLeft" && activeDay > 1) selectDay(activeDay - 1);
+  if (e.key === "ArrowRight" && activeDay < 30) selectDay(activeDay + 1);
+});
+
+// ── 启动 ──
+window.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>

@@ -127,7 +127,13 @@ async function sendCode() {
   }
 
   try {
-    await apiSendCode(form.phone)
+    const res = await apiSendCode(form.phone)
+    if (res.code) {
+      form.code = res.code
+      error.value = '当前为模拟短信环境，验证码已自动填入'
+    } else {
+      error.value = ''
+    }
     countdown.value = 60
     const timer = setInterval(() => {
       countdown.value--

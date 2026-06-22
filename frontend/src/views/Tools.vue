@@ -3,9 +3,9 @@
     <div class="container">
       <div class="page-header">
         <div>
-          <p class="page-eyebrow">表格中心</p>
-          <h1>经营表格统一收口</h1>
-          <p class="page-desc">把输入模板、经营记录和输出报表放到同一入口，按行业快速找到能直接落地的数据表。</p>
+          <p class="page-eyebrow">所有工具</p>
+          <h1>所有工具</h1>
+          <p class="page-desc">智能体、计算器、表格模板。</p>
         </div>
         <div v-if="userStore.isLoggedIn && quotaStore.globalRemain !== null" class="quota-card card">
           <span>今日剩余</span>
@@ -38,7 +38,7 @@
           >
             <span v-if="industry.slug !== 'all'" class="entry-dot" :style="{ backgroundColor: industry.accent }"></span>
             <strong>{{ industry.shortName }}</strong>
-            <span>{{ industry.count }} 张</span>
+            <span>{{ industry.count }} 个</span>
           </button>
         </div>
       </section>
@@ -61,7 +61,7 @@
         <div class="section-head">
           <div>
             <h2>{{ sectionTitle }}</h2>
-            <p>{{ filteredTemplates.length }} 张表格可直接进入使用</p>
+            <p>{{ filteredTemplates.length }} 个工具可直接进入使用</p>
           </div>
           <router-link to="/membership" class="section-link">查看会员权限</router-link>
         </div>
@@ -100,7 +100,7 @@
               <span class="template-access" :class="canAccessTemplate(template) ? 'ready' : 'locked'">
                 {{ canAccessTemplate(template) ? '当前可用' : '升级后可用' }}
               </span>
-              <span class="template-enter">进入表格</span>
+              <span class="template-enter">进入工具</span>
             </div>
           </router-link>
         </div>

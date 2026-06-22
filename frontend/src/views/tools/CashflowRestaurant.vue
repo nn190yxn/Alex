@@ -118,6 +118,16 @@
           </div>
         </div>
 
+        <div v-if="result.diagnosis && result.diagnosis.length" class="result-card diagnosis">
+          <h3>经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, index) in result.diagnosis" :key="index" class="diagnosis-item">
+              <span class="diagnosis-index">{{ index + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 逐月预测表 -->
         <div class="result-card table-card">
           <h3>逐月现金流预测</h3>
@@ -165,6 +175,28 @@
           </ul>
         </div>
 
+        <div v-if="result.actions && result.actions.length" class="result-card actions">
+          <h3>落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, index) in result.actions" :key="index" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ action.priority }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes && result.riskNotes.length" class="result-card reference">
+          <h3>口径与风险</h3>
+          <ul>
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
+
         <!-- 行业参考 -->
         <div class="result-card reference">
           <h3>行业参考</h3>
@@ -182,6 +214,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api'
 
 const toolInfo = getToolByCode('cashflow-restaurant')
 
@@ -209,7 +242,7 @@ function removeExpense(index) {
   form.upcomingExpenses.splice(index, 1)
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.currentCash || !form.monthlyRevenue) {
     result.value = { error: '请填写当前可用现金和月均收入' }
     return
@@ -223,10 +256,8 @@ function handleSubmit() {
     return
   }
 
-  // 调用后端计算
-  const payload = {
-    calculator: 'cashflow-restaurant',
-    inputs: {
+  try {
+    const data = await generateTool('cashflow-restaurant', {
       currentCash: form.currentCash,
       monthlyRevenue: form.monthlyRevenue,
       rent: form.rent || 0,
@@ -238,96 +269,20 @@ function handleSubmit() {
       months: form.months,
       upcomingExpenses: form.upcomingExpenses,
       memberPrepay: form.memberPrepay || 0
-    }
-  }
-
-  // 这里走后端 API，暂时前端也保留一份计算逻辑用于展示
-  calculateLocally()
-}
-
-function calculateLocally() {
-  const totalFixed = (form.rent || 0) + (form.baseSalary || 0) + (form.utilities || 0) + (form.otherFixed || 0)
-  const foodCost = form.monthlyRevenue * (form.foodCostRate || 0) / 100
-  const marketing = form.monthlyRevenue * (form.marketingRate || 0) / 100
-  const totalVariable = foodCost + marketing
-  const monthlyNetFlow = form.monthlyRevenue - totalFixed - totalVariable
-  const safeReserve = totalFixed * 3
-
-  const projections = []
-  let cash = form.currentCash
-  let breakMonth = null
-  let minCash = cash
-  let minCashMonth = 0
-
-  for (let i = 1; i <= form.months; i++) {
-    let extraExpenses = 0
-    if (form.upcomingExpenses) {
-      for (const exp of form.upcomingExpenses) {
-        if (exp.month === i) extraExpenses += Number(exp.amount) || 0
-      }
-    }
-    let prepay = 0
-    if (i === 1) prepay = Number(form.memberPrepay) || 0
-
-    const net = form.monthlyRevenue - totalFixed - totalVariable - extraExpenses + prepay
-    cash += net
-
-    const isDanger = cash < 0
-    const isWarning = cash >= 0 && cash < safeReserve
-
-    projections.push({
-      month: i,
-      startCash: (cash - net).toFixed(0),
-      revenue: form.monthlyRevenue.toFixed(0),
-      fixed: totalFixed.toFixed(0),
-      variable: totalVariable.toFixed(0),
-      extra: extraExpenses.toFixed(0),
-      prepay: prepay.toFixed(0),
-      netFlow: net.toFixed(0),
-      endCash: cash.toFixed(0),
-      status: isDanger ? 'danger' : isWarning ? 'warning' : 'safe',
-      balanceClass: isDanger ? 'danger' : ''
     })
-
-    if (cash <= 0 && !breakMonth) breakMonth = i
-    if (cash < minCash) { minCash = cash; minCashMonth = i }
-  }
-
-  const suggestions = []
-  if (breakMonth) {
-    suggestions.push(`资金将在第 ${breakMonth} 个月断裂！`)
-    suggestions.push('紧急行动：1）与房东协商延期付租；2）暂停非必要开支（装修、设备升级）；3）加速应收账款回收；4）寻求短期周转资金')
-  } else if (minCash < safeReserve) {
-    suggestions.push(`第 ${minCashMonth} 个月余额触底（¥${minCash.toFixed(0)}），低于安全储备线（¥${safeReserve.toFixed(0)}）`)
-    suggestions.push(`建议：在第 ${Math.max(1, minCashMonth - 2)} 个月前提前准备周转资金，考虑推出储值活动预收现金`)
-  } else {
-    suggestions.push('现金流健康，当前余额充足')
-    suggestions.push('可适当考虑扩大经营投入或优化菜品结构')
-  }
-
-  const foodRate = form.foodCostRate || 0
-  const references = []
-  if (foodRate < 30) references.push('食材成本率偏低，需确认是否有未计入成本')
-  else if (foodRate <= 40) references.push('食材成本率健康（行业基准 30-40%）')
-  else references.push('食材成本率偏高，考虑优化供应链或调整菜单定价')
-  references.push('安全现金储备 >= 3个月固定支出')
-  references.push('快餐食材成本率 30-40%，正餐 35-45%')
-
-  result.value = {
-    fixedCost: totalFixed.toLocaleString(),
-    variableCost: totalVariable.toLocaleString(),
-    netFlow: monthlyNetFlow.toLocaleString(),
-    netFlowClass: monthlyNetFlow >= 0 ? 'positive' : 'negative',
-    safeReserve: safeReserve.toLocaleString(),
-    breakMonth,
-    minCash: minCash.toFixed(0),
-    minCashMonth,
-    finalCash: cash.toLocaleString(),
-    finalCashClass: cash >= 0 ? 'positive' : 'negative',
-    months: form.months,
-    projections,
-    suggestions,
-    references
+    result.value = {
+      ...data.extra,
+      summary: data.summary,
+      actions: data.actions || [],
+      riskNotes: data.riskNotes || [],
+      breakMonth: data.extra?.breakEvenMonth,
+      netFlow: data.extra?.netFlow || data.extra?.monthlyNetFlow,
+      diagnosis: data.extra?.diagnosis || [],
+      suggestions: data.extra?.suggestions || [],
+      references: data.extra?.references || []
+    }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -411,6 +366,17 @@ tr.warning td { background: #fffbeb; }
 
 .suggestions ul, .reference ul { list-style: disc; padding-left: var(--space-5); }
 .suggestions li, .reference li { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); margin-bottom: var(--space-1); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ccfbf1; color: #0f766e; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
 
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

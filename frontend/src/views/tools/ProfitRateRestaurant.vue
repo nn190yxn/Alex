@@ -63,6 +63,35 @@
           <h4>行业参考</h4>
           <p>{{ result.reference }}</p>
         </div>
+        <div v-if="result.diagnosis && result.diagnosis.length" class="result-section">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, index) in result.diagnosis" :key="index" class="diagnosis-item">
+              <span class="diagnosis-index">{{ index + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.actions && result.actions.length" class="result-section">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, index) in result.actions" :key="index" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ action.priority }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes && result.riskNotes.length" class="result-section">
+          <h4>口径与风险</h4>
+          <ul>
+            <li v-for="(note, index) in result.riskNotes" :key="index">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -73,6 +102,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api'
 
 const toolInfo = getToolByCode('profit-rate-restaurant')
 
@@ -86,7 +116,7 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.revenue || !form.ingredientCost || !form.rent || !form.labor || !form.utilities) {
     result.value = { error: '请填写所有字段' }
     return
@@ -96,46 +126,25 @@ function handleSubmit() {
     return
   }
 
-  const totalCost = form.ingredientCost + form.rent + form.labor + form.utilities
-  const netProfit = form.revenue - totalCost
-  const netRate = (netProfit / form.revenue) * 100
-
-  const costItems = [
-    { name: '食材成本', amount: form.ingredientCost, pct: ((form.ingredientCost / form.revenue) * 100).toFixed(1), class: 'blue' },
-    { name: '人工', amount: form.labor, pct: ((form.labor / form.revenue) * 100).toFixed(1), class: 'green' },
-    { name: '房租', amount: form.rent, pct: ((form.rent / form.revenue) * 100).toFixed(1), class: 'orange' },
-    { name: '水电杂费', amount: form.utilities, pct: ((form.utilities / form.revenue) * 100).toFixed(1), class: 'purple' }
-  ].sort((a, b) => parseFloat(b.pct) - parseFloat(a.pct))
-
-  const topOptimization = `当前最大成本项是 **${costItems[0].name}**（${costItems[0].pct}%），优化空间最大。建议从 ${costItems[0].name} 入手，每降1% = 省 ¥${(form.revenue * 0.01).toFixed(0)}。`
-
-  let status = 'warning'
-  let statusText = '及格'
-  let reference = '优质门店18-25%，10-18%及格，<10%需重点优化'
-
-  if (netRate >= 18) {
-    status = 'success'
-    statusText = '优秀'
-  } else if (netRate >= 10) {
-    status = 'success'
-    statusText = '及格'
-  } else if (netRate > 0) {
-    status = 'warning'
-    statusText = '偏低'
-  } else {
-    status = 'danger'
-    statusText = '亏损'
-  }
-
-  result.value = {
-    netRate: netRate.toFixed(1),
-    netProfit: netProfit.toFixed(0),
-    netProfitClass: netProfit >= 0 ? 'positive' : 'negative',
-    costItems,
-    topOptimization,
-    status,
-    statusText,
-    reference
+  try {
+    const data = await generateTool('profit-rate-restaurant', {
+      revenue: form.revenue,
+      ingredientCost: form.ingredientCost,
+      foodCost: form.ingredientCost,
+      rent: form.rent,
+      labor: form.labor,
+      laborCost: form.labor,
+      utilities: form.utilities,
+      otherCost: form.utilities
+    })
+    result.value = {
+      ...data.extra,
+      summary: data.summary,
+      actions: data.actions || [],
+      riskNotes: data.riskNotes || []
+    }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -174,5 +183,20 @@ function handleSubmit() {
 .result-reference { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
 .result-reference h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
 .result-reference p { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.result-section { margin-top: var(--space-4); padding: var(--space-3); border-radius: var(--radius-md); background: white; }
+.result-section h4 { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2); color: var(--text-primary); }
+.result-section ul { list-style: disc; padding-left: var(--space-5); }
+.result-section li { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); margin-bottom: var(--space-1); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #ccfbf1; color: #0f766e; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 </style>

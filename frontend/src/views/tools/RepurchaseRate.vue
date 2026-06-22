@@ -128,6 +128,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="result.extra?.diagnosis?.length" class="result-card">
+          <h3 class="card-title">经营结论</h3>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.extra.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.actions?.length" class="result-card">
+          <h3 class="card-title">落地动作</h3>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="result.riskNotes?.length" class="result-card">
+          <h3 class="card-title">口径与风险</h3>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
       <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
@@ -138,6 +170,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('repurchase-rate')
 
@@ -155,45 +188,24 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.totalCustomers || form.totalCustomers <= 0) { result.value = { error: '请填写总顾客数' }; return }
   if (form.repeatCustomers == null || form.repeatCustomers < 0) { result.value = { error: '请填写回头客数量' }; return }
   if (form.repeatCustomers > form.totalCustomers) { result.value = { error: '回头客不能超过总顾客数' }; return }
 
-  const rate = (form.repeatCustomers / form.totalCustomers * 100)
-  let statusClass = ''
-  let statusText = ''
-  let gaugeColor = ''
-  if (rate >= 40) { statusClass = 'good'; statusText = '复购优秀'; gaugeColor = '#22c55e' }
-  else if (rate >= 20) { statusClass = 'warn'; statusText = '正常'; gaugeColor = '#f59e0b' }
-  else { statusClass = 'danger'; statusText = '偏低'; gaugeColor = '#dc2626' }
-
-  const suggestions = []
-  if (rate < 20) {
-    suggestions.push('[紧急] 复购率低于 20%，顾客来了就走！建议：1）建立会员积分体系；2）做好口味一致性；3）增加消费后触达（短信/微信）。')
-  } else if (rate < 40) {
-    suggestions.push('[建议] 复购率有提升空间，建议推出储值优惠、会员日活动，增加顾客粘性。')
-  } else {
-    suggestions.push('[良好] 复购率优秀，说明顾客认可你的产品和服务。')
+  try {
+    const data = await generateTool('repurchase-rate', { ...form })
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
-
-  let ltvData = null
-  if (form.avgRepeatInterval > 0 && form.avgOrderValue > 0) {
-    const annualVisits = Math.round(365 / form.avgRepeatInterval)
-    const customerLTV = Math.round(form.avgOrderValue * annualVisits)
-    let cacRatio = null
-    let cacClass = ''
-    let cacText = ''
-    if (form.newCustomerCost > 0) {
-      cacRatio = (customerLTV / form.newCustomerCost).toFixed(1)
-      if (cacRatio >= 3) { cacClass = 'good'; cacText = '获客投入回报健康' }
-      else { cacClass = 'danger'; cacText = '获客成本偏高，需要优化' }
-      suggestions.push(`LTV/CAC = ${cacRatio}，${cacText}（健康值 >= 3）。`)
-    }
-    ltvData = { annualVisits, customerLTV: customerLTV.toLocaleString(), cacRatio, cacClass, cacText }
-  }
-
-  result.value = { rate: rate.toFixed(1), statusClass, statusText, gaugeColor, suggestions, ltvData }
 }
 </script>
 
@@ -247,6 +259,18 @@ function handleSubmit() {
 .suggestions { display: flex; flex-direction: column; gap: var(--space-3); }
 .suggestion-item { display: flex; gap: var(--space-3); align-items: flex-start; }
 .suggestion-text { font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: var(--bg-base); }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
 .result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
 @media (max-width: 640px) { .result-hero { grid-template-columns: 1fr; } .benchmark-grid { grid-template-columns: 1fr; } .ltv-grid { grid-template-columns: 1fr; } }
 </style>

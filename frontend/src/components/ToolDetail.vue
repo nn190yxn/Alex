@@ -19,7 +19,7 @@
           <svg viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
           </svg>
-          返回表格中心
+          返回所有工具
         </router-link>
          <h1>{{ resolvedToolInfo.name }}</h1>
          <p class="tool-desc">{{ resolvedToolInfo.description }}</p>
@@ -51,7 +51,7 @@
             解锁无限次
           </p>
           <p v-else-if="!quotaStore.isUnlimited && quotaStore.globalRemain === null && quotaStore.remain === null" class="quota-tip">
-            正在加载额度信息，请稍后再试
+            额度信息加载中，免费工具可直接使用
           </p>
         </div>
 
@@ -242,6 +242,7 @@ watch(
 
 const canSubmit = computed(() => {
   if (!hasAccess.value) return false
+  if (resolvedToolInfo.value.requiredLevel === MEMBER_LEVEL_FREE && quotaStore.globalRemain === null && quotaStore.remain === null) return true
   return quotaStore.canUse()
 })
 

@@ -1653,6 +1653,37 @@
       "maxTokensAnnual": 1000
     }
   },
+  "salary-cost-ratio-restaurant": {
+    "name": "人工成本占比智能体（餐饮版）",
+    "knowledgeFiles": [
+      {
+        "path": "02_行业知识库/餐饮行业/餐饮行业知识库_综合v3.0.md",
+        "sections": [
+          "人力成本",
+          "成本控制",
+          "效率分析"
+        ],
+        "purpose": "餐饮人工成本与人效分析参考",
+        "memberLevel": "free"
+      },
+      {
+        "path": "02_行业知识库/餐饮行业/行业特征与诊断/门店健康度评分.md",
+        "sections": [
+          "成本控制",
+          "人效坪效诊断方法"
+        ],
+        "purpose": "人工成本率、人效和成本控制诊断基准",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
   "delivery-profit": {
     "name": "外卖利润智能体",
     "knowledgeFiles": [
@@ -2341,6 +2372,27 @@
           "投放优化"
         ],
         "purpose": "ROI 计算与优化参考",
+        "memberLevel": "free"
+      }
+    ],
+    "aiConfig": {
+      "temperature": 0.3,
+      "maxTokensFree": 300,
+      "maxTokensStarter": 500,
+      "maxTokensPro": 800,
+      "maxTokensAnnual": 1000
+    }
+  },
+  "payback": {
+    "name": "回本周期计算器",
+    "knowledgeFiles": [
+      {
+        "path": "06_通用支撑库/财务管理/现金流管理指南.md",
+        "sections": [
+          "投资回收",
+          "现金流分析"
+        ],
+        "purpose": "回本周期、投资回收和现金流安全参考",
         "memberLevel": "free"
       }
     ],

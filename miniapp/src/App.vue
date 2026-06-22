@@ -1,16 +1,22 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { setLogoutHandler, initNetworkListener } from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
-// 存储分享参数，供注册页读取
 let globalRef = ''
 
 onLaunch((options) => {
-  // 处理扫码进入或分享链接进入
   const ref = options?.query?.ref || ''
   if (ref) {
     globalRef = ref
     uni.setStorageSync('ref_code', ref)
   }
+
+  setLogoutHandler(() => {
+    useUserStore().logout()
+  })
+
+  initNetworkListener()
 })
 
 onShow((options) => {

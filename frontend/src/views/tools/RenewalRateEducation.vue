@@ -23,7 +23,7 @@
       </div>
     </template>
     <template #result>
-      <div class="renewal-result" v-if="result">
+      <div class="renewal-result" v-if="result && !result.error">
         <div class="result-main">
           <div class="result-label">续费率</div>
           <div class="result-value numeral">{{ result.rate }}</div>
@@ -32,17 +32,17 @@
         <div class="result-details">
           <div class="detail-item">
             <span>到期学员</span>
-            <span class="numeral">{{ form.expiredStudents }} 人</span>
+            <span class="numeral">{{ result.expiredStudents }} 人</span>
           </div>
           <div class="detail-item">
             <span>续费学员</span>
-            <span class="numeral">{{ form.renewedStudents }} 人</span>
+            <span class="numeral">{{ result.renewedStudents }} 人</span>
           </div>
           <div class="detail-item" v-if="form.newStudents">
             <span>新增学员</span>
-            <span class="numeral">{{ form.newStudents }} 人</span>
+            <span class="numeral">{{ result.newStudents }} 人</span>
           </div>
-          <div class="detail-item">
+          <div class="detail-item" v-if="result.retentionRate">
             <span>总学员留存率</span>
             <span class="numeral">{{ result.retentionRate }}%</span>
           </div>
@@ -58,11 +58,45 @@
           <h4>优化建议</h4>
           <p>{{ result.suggestion }}</p>
         </div>
+        <div v-if="result.diagnosis?.length" class="result-reference">
+          <h4>经营结论</h4>
+          <div class="diagnosis-list">
+            <div v-for="(item, i) in result.diagnosis" :key="i" class="diagnosis-item">
+              <span class="diagnosis-index">{{ i + 1 }}</span>
+              <span>{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.suggestions?.length" class="result-reference">
+          <h4>跟进建议</h4>
+          <p v-for="(item, i) in result.suggestions" :key="i">{{ item }}</p>
+        </div>
         <div class="result-reference">
           <h4>行业参考</h4>
           <p>{{ result.reference }}</p>
         </div>
+        <div v-if="result.actions?.length" class="result-reference">
+          <h4>落地动作</h4>
+          <div class="action-grid">
+            <div v-for="(action, i) in result.actions" :key="i" class="action-card" :class="action.priority">
+              <div class="action-header">
+                <span>{{ getPriorityLabel(action.priority) }}</span>
+                <span>{{ action.timeline }}</span>
+              </div>
+              <div class="action-title">{{ action.title }}</div>
+              <div class="action-desc">{{ action.description }}</div>
+              <div class="action-owner">负责人：{{ action.owner }}</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="result.riskNotes?.length" class="result-reference">
+          <h4>口径与风险</h4>
+          <ul class="risk-list">
+            <li v-for="(note, i) in result.riskNotes" :key="i">{{ note }}</li>
+          </ul>
+        </div>
       </div>
+      <div v-else-if="result && result.error" class="result-error">{{ result.error }}</div>
     </template>
   </ToolDetail>
 </template>
@@ -71,6 +105,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateTool } from '@/api/index.js'
 
 const toolInfo = getToolByCode('renewal-rate-education')
 
@@ -83,7 +118,14 @@ const form = reactive({
 
 const result = ref(null)
 
-function handleSubmit() {
+function getPriorityLabel(priority) {
+  if (priority === 'critical') return '关键'
+  if (priority === 'high') return '高优先级'
+  if (priority === 'medium') return '中优先级'
+  return '常规'
+}
+
+async function handleSubmit() {
   if (!form.expiredStudents || !form.renewedStudents || form.expiredStudents <= 0) {
     result.value = { error: '请输入有效的到期学员数和续费学员数' }
     return
@@ -93,50 +135,11 @@ function handleSubmit() {
     return
   }
 
-  const rate = (form.renewedStudents / form.expiredStudents) * 100
-
-  let retentionRate = null
-  if (form.totalStudents && form.totalStudents > 0) {
-    retentionRate = ((form.totalStudents - form.expiredStudents + form.renewedStudents + (form.newStudents || 0)) / form.totalStudents * 100).toFixed(1)
-  }
-
-  let status = 'warning'
-  let statusText = '及格'
-  let suggestion = ''
-  let reference = '素质教育70-80%为健康线，K12学科类80-90%，早教/托育85%+'
-
-  if (rate >= 85) {
-    status = 'success'
-    statusText = '优秀'
-    suggestion = '续费率优秀，说明教学质量和学员满意度很高。建议：1）利用高续费率做口碑营销；2）适当调整价格；3）关注扩科转化。'
-  } else if (rate >= 70) {
-    status = 'success'
-    statusText = '达标'
-    suggestion = '续费率在合理范围内。建议：1）加强学员跟进和关怀；2）关注即将到期学员的续费意向；3）提升教学质量。'
-  } else if (rate >= 50) {
-    status = 'warning'
-    statusText = '偏低'
-    suggestion = '续费率偏低，学员流失较明显。建议：1）分析流失原因（师资/课程效果/服务）；2）提前3个月开始续费沟通；3）推出续费优惠。'
-  } else {
-    status = 'danger'
-    statusText = '严重'
-    suggestion = '续费率过低，大量学员流失！需要紧急排查：1）教学质量是否下滑；2）师资是否变动；3）竞品是否有价格优势。'
-  }
-
-  let revenueLoss = null
-  if (form.newStudents) {
-    const lost = form.expiredStudents - form.renewedStudents
-    revenueLoss = (lost * 2000).toLocaleString()
-  }
-
-  result.value = {
-    rate: rate.toFixed(1) + '%',
-    retentionRate: retentionRate,
-    status,
-    statusText,
-    suggestion,
-    reference,
-    revenueLoss
+  try {
+    const data = await generateTool('renewal-rate-education', form)
+    result.value = { ...data, ...(data.extra || {}) }
+  } catch (e) {
+    result.value = { error: e.message || '计算失败，请稍后重试' }
   }
 }
 </script>
@@ -277,4 +280,18 @@ function handleSubmit() {
   color: var(--text-secondary);
   line-height: var(--leading-body-lg);
 }
+.diagnosis-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.diagnosis-item { display: flex; gap: var(--space-2); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.diagnosis-index { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: #dcfce7; color: #166534; font-size: var(--text-caption); font-weight: var(--font-weight-semibold); flex-shrink: 0; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+.action-card { padding: var(--space-3); border: 1px solid var(--line-default); border-radius: var(--radius-md); background: white; }
+.action-card.critical { border-color: #fecaca; background: #fef2f2; }
+.action-card.high { border-color: #fed7aa; background: #fff7ed; }
+.action-header { display: flex; justify-content: space-between; font-size: var(--text-caption); color: var(--text-secondary); margin-bottom: var(--space-2); }
+.action-title { font-size: var(--text-body-sm); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin-bottom: var(--space-1); }
+.action-desc, .action-owner { font-size: var(--text-caption); color: var(--text-secondary); line-height: var(--leading-body); }
+.action-owner { margin-top: var(--space-2); }
+.risk-list { margin: 0; padding-left: var(--space-4); font-size: var(--text-body-sm); color: var(--text-secondary); line-height: var(--leading-body-lg); }
+.result-error { padding: var(--space-4); background-color: #fee2e2; color: #991b1b; border-radius: var(--radius-card); text-align: center; font-weight: var(--font-weight-medium); }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
 </style>
