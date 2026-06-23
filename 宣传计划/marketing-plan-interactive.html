@@ -470,6 +470,138 @@ body {
   align-items: center;
   gap: 4px;
 }
+
+/* Phone mockup */
+.phone-frame {
+  width: 180px;
+  height: 320px;
+  border-radius: 20px;
+  border: 3px solid #3f261b;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+  margin: 0 auto 8px;
+  box-shadow: 0 4px 16px rgba(63,38,27,0.1);
+}
+.phone-frame .phone-notch {
+  width: 60px;
+  height: 16px;
+  background: #3f261b;
+  border-radius: 0 0 12px 12px;
+  margin: 0 auto 6px;
+}
+.phone-frame .phone-status {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 12px;
+  font-size: 7px;
+  color: var(--muted);
+}
+.phone-frame .phone-nav {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  padding: 3px 0;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+}
+.phone-frame .phone-body {
+  padding: 8px;
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.phone-frame .phone-body .ph-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.phone-frame .phone-body .ph-btn {
+  display: block;
+  width: 100%;
+  padding: 5px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 6px;
+}
+.phone-frame .phone-body .ph-card {
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(203,111,63,0.06);
+  margin-bottom: 4px;
+}
+.phone-frame .phone-body .ph-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: rgba(203,111,63,0.1);
+  font-size: 7px;
+  color: var(--accent);
+  margin-right: 3px;
+}
+.phone-frame .phone-body .ph-tool {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  margin-bottom: 3px;
+}
+.phone-frame .phone-body .ph-tool-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(203,111,63,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  flex-shrink: 0;
+}
+
+.mockup-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(63,38,27,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+.mockup-modal.hidden { display: none; }
+.mockup-modal .mockup-big {
+  width: 240px;
+  height: 430px;
+  border-radius: 24px;
+  border: 4px solid #3f261b;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(63,38,27,0.25);
+}
+.mockup-modal .mockup-close {
+  padding: 6px 20px;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(63,38,27,0.7);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+.mockup-label {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -659,19 +791,25 @@ body {
     <div class="card">
       <div class="card-header">页面资产库</div>
       <div class="chip-row">
-        <span class="chip active">首页</span>
-        <span class="chip">AI 对话</span>
-        <span class="chip">工具页</span>
-        <span class="chip">生成页</span>
-        <span class="chip">历史</span>
-        <span class="chip">我的</span>
-        <span class="chip">登录</span>
-        <span class="chip">注册</span>
-        <span class="chip">会员</span>
-        <span class="chip">返利</span>
-        <span class="chip">收藏</span>
-        <span class="chip">隐私协议</span>
+        <span class="chip active" onclick="showMockup('home')">首页</span>
+        <span class="chip" onclick="showMockup('ai')">AI 对话</span>
+        <span class="chip" onclick="showMockup('tools')">工具页</span>
+        <span class="chip" onclick="showMockup('toolrun')">生成页</span>
+        <span class="chip" onclick="showMockup('user')">我的</span>
+        <span class="chip" onclick="showMockup('login')">登录</span>
+        <span class="chip" onclick="showMockup('register')">注册</span>
+        <span class="chip" onclick="showMockup('membership')">会员</span>
+        <span class="chip" onclick="showMockup('referral')">返利</span>
+        <span class="chip" onclick="showMockup('history')">历史</span>
+        <span class="chip" onclick="showMockup('favorites')">收藏</span>
       </div>
+      <div id="mockup-thumb" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="mockup-modal hidden" id="mockup-modal">
+      <div class="mockup-label" id="mockup-label"></div>
+      <div class="mockup-big" id="mockup-big"></div>
+      <button class="mockup-close" onclick="closeMockup()">关闭预览</button>
     </div>
 
     <div class="card">
@@ -739,6 +877,411 @@ const DAYS = [
   { theme:"裂变冲刺", cta:"49/99/129 收口", tasks:{ xhs:"把这份 AI 增长工具转给老板朋友", douyin:"月度合集视频", shipinhao:"第四次直播收官", reach:"老带新冲刺" }, review:"30天终局复盘" }
 ];
 
+// ── 30 天每日渠道示例内容 ──
+const CONTENT = [
+{ xhs:{title:"老板为什么需要一个当天出稿的AI",body:`如果你是门店老板，每天都要发朋友圈、团购文案、抖音脚本——
+你肯定经历过：打开编辑框发呆半小时，最后又发了张图配两个字"上新"。
+不是你不会写，是你的精力在管店、管人、管客户，到内容这件事上早就耗尽了。
+我赢AI就是给老板用的：打开说一句需求，标题、发圈、脚本、活动文案马上出稿。
+不讲理论，直接给结果。先试一次，让今天的内容先发出去。
+#门店老板 #内容营销 #AI工具 #老板日常`},
+douyin:{script:`【3秒】你是不是每天也要发朋友圈和抖音，但打开就不知道怎么开头？
+【10秒】先别硬想，看这个——我赢AI，一句需求马上出稿。
+【15秒】标题、朋友圈、抖音脚本、小红书笔记，直接生成。
+【结尾】先试一次，让今天的内容先发出去。链接在评论区。`},
+shipinhao:{script:`我为什么要做我赢AI？
+因为我见过太多门店老板，明明产品很好、服务很好，但卡在"发什么内容"这一步。
+他们不是不想发，是每天管店已经够累了，到晚上打开手机想发点东西，脑子一片空白。
+我赢AI想解决的就是这件事——让老板不费力地把内容发出去。
+先试一次，你就知道为什么那么多老板说"早该用了"。`} },
+{ xhs:{title:"10秒出5个标题，老板再也不用硬憋了",body:`你有没有算过，每次发团购/活动/上新，标题想了多久？
+我赢AI的爆款标题工具：把你的菜品名或活动主题输进去，10秒给你5个不同角度的标题。
+引流型、种草型、促销型、悬念型、口语型——不用再蹲在输入框前改来改去。
+先让我写3条，你对比一下和自己硬想的差距。
+#爆款标题 #门店引流 #餐饮老板 #营销工具`},
+douyin:{script:`【3秒】老板，你每次写标题想多久？
+【10秒】我赢AI，输入"周末烤鱼活动"，10秒出5条标题。
+【15秒】引流、种草、促销、悬念、口语——五种角度全给你。
+【结尾】评论"标题"，直接送你3条试试。`},
+shipinhao:{script:`做门店内容这么多年，我发现标题是最容易被低估的。
+一条好标题和一条普通标题，打开率能差3-5倍。
+但老板不是专业文案，不可能每天为标题花半小时。
+所以我把标题生成做成了我赢AI第一个核心功能——你只需要说今天推什么。
+先让我写3条，你拿去和你之前自己写的比一比。`} },
+{ xhs:{title:"朋友圈不会写的老板，少的就是一个出稿工具",body:`很多老板问我：为什么别人发圈有人问，自己发了像没发？
+不是你的产品不好，是你的发圈方式太像"通知"了。
+我赢AI的朋友圈文案工具——你说今天要发什么，它帮你按"吸引+价值+引导"的结构出稿。
+不是模板，是按你的行业和场景生成的专属发圈文案。
+先拿3条发圈文案试试，看看互动率有没有变化。
+#朋友圈文案 #门店运营 #老板发圈 #私域运营`},
+douyin:{script:`【3秒】老板，你的朋友圈是不是发了没人问？
+【10秒】不是产品不好，是发得太像"通知"了。
+【15秒】我赢AI朋友圈工具：按吸引+价值+引导结构，1分钟出稿。
+【结尾】评论"发圈"送你3条专属文案。`},
+shipinhao:{script:`朋友圈是老板离客户最近的地方。但你是不是经常：写了删删了写，最后只发了个"今日上新"？
+我赢AI的朋友圈工具专门解决这个问题。你把今天想发的内容说一句，它按成交逻辑帮你组织成3句话+引导。
+不是模板，是围绕你的行业生成的。先试一次，看看你今天的发圈长什么样。`} },
+{ xhs:{title:"不会拍视频的老板，先让AI给你写脚本",body:`你有没有发现：很多同行开始拍抖音了，你还在纠结第一句说什么。
+不是你不会拍，是你缺一个能用的脚本。
+我赢AI的抖音脚本工具——你说你做什么行业、想拍什么主题，它直接给你20-35秒口播脚本。
+有开头痛点、中间展示、结尾引导，拿了就能对着念。
+先试脚本工具，看看你的第一条内容长什么样。
+#抖音脚本 #门店老板 #短视频 #AI写脚本`},
+douyin:{script:`【3秒】老板，你是不是想拍视频但不知道怎么开口？
+【10秒】我赢AI脚本工具：告诉它你的行业和主题，30秒口播脚本直接出。
+【15秒】有开头痛点、有中间展示、有结尾引导——拿着就能录。
+【结尾】评论"脚本"送你一条30秒的口播脚本。`},
+shipinhao:{script:`我见过很多老板想拍视频，但第一关就卡住了：说什么？
+不是你不会说，是你没时间想结构。我赢AI把这一步省掉了。
+你只需要说"我是做餐饮的，想拍一道新菜"，它直接给你完整的口播脚本。
+开头抓人、中间展示、结尾引导——你拿着录就行。先试一条，你就知道为什么省时间。`} },
+{ xhs:{title:"门店老板的小红书种草笔记到底怎么写",body:`很多门店老板问我：小红书是不是只有美妆穿搭才能做？
+当然不是。餐饮探店、教培体验、美业种草、同城服务——小红书都有大量搜索流量。
+关键是你的内容结构对不对。我赢AI的小红书工具：按"痛点引入+场景展示+结果感知+引导互动"的结构帮你出稿。
+不是通用模板，是按你的行业生成的。先拿一篇笔记，看看你的店在小红书上怎么被更多人看到。
+#小红书运营 #门店种草 #同城流量 #实体店引流`},
+douyin:{script:`【3秒】老板，你的店做小红书了吗？
+【10秒】餐饮探店、教培体验、美业种草、同城服务——小红书上都有大量本地搜索。
+【15秒】我赢AI帮你按"痛点+场景+结果+引导"结构出小红书笔记。
+【结尾】评论"笔记"送你一篇专属种草内容。`},
+shipinhao:{script:`最近很多老板问我小红书值不值得做。答案是：同城搜索流量非常值得。
+但前提是你的笔记结构要对——不是发广告，是发能种草的内容。
+我赢AI的小红书工具就是帮老板解决这个结构问题。你说你是做什么的、想推什么，它按小红书逻辑帮你出稿。
+先拿一篇试试，看看你的店在小红书上长什么样。`} },
+{ xhs:{title:"客户说再考虑一下，老板最缺的是促单话术",body:`有没有遇到过：客户咨询了半天，最后说"我再考虑考虑"，然后就再也没有然后了。
+不是你的产品不够好，是你缺了最后那一句推动的话。
+我赢AI的促单话术工具——输入你的行业和客户犹豫点，直接出3条不同角度的促单话术。
+限时感、稀缺感、价值感、信任感——四种角度帮你收口。
+先拿3条促单话术，看看下次客户犹豫时你怎么说。
+#促单话术 #成交技巧 #门店销售 #老板必看`},
+douyin:{script:`【3秒】客户说"再考虑一下"，你怎么回？
+【10秒】我赢AI促单话术：输入你的行业和客户犹豫点，3条不同角度的话术直接出。
+【15秒】限时感、稀缺感、价值感、信任感——四种收口方式。
+【结尾】评论"话术"送你3条促单话术。`},
+shipinhao:{script:`做门店最可惜的一件事就是：客户已经问到价格了，最后因为一句话没跟上就流失了。
+我赢AI的促单话术工具专门解决这"最后一推"的问题。
+你说客户在犹豫什么，它给你不同角度的话术——有的打限时，有的打稀缺，有的打价值。
+先拿3条回去，下次客户犹豫的时候直接用。你会发现就一句话的事。`} },
+{ xhs:{title:"一周6个功能，一个老板的内容需求全解决了",body:`这一周我们分别看了：爆款标题、朋友圈文案、抖音脚本、小红书笔记、促单话术。
+一个门店老板需要的所有内容类型，我赢AI全部覆盖。
+而且不是通用AI，是懂餐饮、教培、美业、生活服务四个行业的专属版。
+一周下来最核心的结论：你不是不会写，你只是缺一个能让你"打开就用"的工具。
+先上49体验，把这周看到的功能都试一遍。
+#AI工具测评 #门店效率 #一周总结 #老板必备`},
+douyin:{script:`【3秒】这一周我赢AI展示了6个功能：标题、发圈、脚本、笔记、促单、活动。
+【10秒】一个门店老板需要的所有内容类型，全部覆盖。
+【15秒】餐饮、教培、美业、生活服务——四个行业都有专属版本。
+【结尾】评论"体验"，拿49体验价把这周功能都试一遍。`},
+shipinhao:{script:`第一周结束了。我们做了六件事：标题、朋友圈、抖音脚本、小红书笔记、促单话术、活动文案。
+这一周想传达的核心就是：我赢AI真的能马上出稿。
+不是让你学，是让你直接用。你打开说需求，它直接给结果。
+49体验入口已经开了，先把这周看到的功能都试一遍。`} },
+{ xhs:{title:"餐饮老板，你的内容不该是通用AI写的",body:`很多餐饮老板用通用AI写内容，结果出来的东西一股"机器味"，因为通用AI不懂餐饮。
+餐饮老板需要什么？团购文案要有引流钩子，朋友圈要有烟火气，抖音脚本要有食欲感。
+我赢AI的餐饮版：专门针对餐饮行业训练表达，从菜单到活动，从探店到发圈，都自带餐饮语感。
+先试餐饮版，看看什么叫"AI真的懂餐饮"。
+#餐饮老板 #餐饮营销 #团购文案 #餐饮AI`},
+douyin:{script:`【3秒】餐饮老板，你是不是用通用AI写的内容总觉得不对味？
+【10秒】因为通用AI不懂餐饮——团购文案要引流钩子，朋友圈要有烟火气，抖音脚本要有食欲感。
+【15秒】我赢AI餐饮版：专门针对餐饮训练表达，自带餐饮语感。
+【结尾】评论"餐饮"试一次专属餐饮版。`},
+shipinhao:{script:`餐饮老板用我赢AI和用通用AI最大的区别是什么？通用AI给你的是"一段文案"，我赢AI餐饮版给你的是"能发的营销内容"。
+因为它在餐饮场景下训练的，知道团购要引流、发圈要有烟火气、抖音要有食欲感。
+先试餐饮版，你看一眼就知道差别在哪。`} },
+{ xhs:{title:"教培校长，你的招生活动通知终于不用像广告了",body:`你是不是每次发招生活动通知，自己都感觉像群发广告？
+不是你的活动不好，是结构不对。教培招生活动需要的不是"通知"，是"家长想点开的内容"。
+我赢AI的教培版：按"家长痛点+活动方案+限时名额"结构生成招生活动文案。
+从试听邀约到转化跟单，每一步都有专属话术。
+先试教培版，看看你的下一场招生活动通知长什么样。
+#教培招生 #校长日常 #培训机构 #招生文案`},
+douyin:{script:`【3秒】教培校长，你的招生活动通知是不是总像群发广告？
+【10秒】因为你在写"通知"，家长需要看的是"内容"。结构完全不一样。
+【15秒】我赢AI教培版：按"家长痛点+活动方案+限时名额"结构出稿。
+【结尾】评论"招生"试一次教培专属版。`},
+shipinhao:{script:`教培校长最痛苦的事之一：每次写招生活动通知，写来写去都像广告。
+我赢AI教培版专门解决这个——它帮你把活动通知变成"家长想点开的内容"。
+不是加一堆感叹号，是用正确的结构：痛点→方案→限时→引导。
+先试教培版，看看你的下一场活动通知长什么样。`} },
+{ xhs:{title:"美业老板，你的项目介绍终于不用像价目表了",body:`有没有发现：你发项目介绍，客户看完只有一句"多少钱？"
+因为你的文案只是列出了项目和价格，没有种草。
+美业内容最重要的是"让客户想来"，不是"告诉客户有什么"。
+我赢AI的美业版：按"场景+效果+信任"结构生成种草文案，让项目说人话。
+先试美业版，看看你的王牌项目怎么说才能让人种草。
+#美业运营 #美业文案 #种草笔记 #美业老板`},
+douyin:{script:`【3秒】美业老板，你发的项目介绍是不是客户只问"多少钱"？
+【10秒】因为你列的是项目和价格，不是种草。美业内容核心是"让客户想来"。
+【15秒】我赢AI美业版：按"场景+效果+信任"结构出种草文案。
+【结尾】评论"美业"试一次美业专属版。`},
+shipinhao:{script:`做美业最怕的就是：明明项目很好，但写出来客户只看到价格。
+我赢AI的美业版就是帮你把项目说成"让人想来的理由"——从场景、效果、信任三个维度重新组织你的表达。
+先试美业版，看看你的王牌项目怎么说才能让人想种草。`} },
+{ xhs:{title:"同城服务商家，你的内容终于有人想约了",body:`你是不是发现：服务介绍写得再认真，发出去就是没人问？
+因为同城服务类内容最重要的是"信任感"和"专业感"，不是"服务清单"。
+我赢AI的生活服务版：从客户痛点切入→专业解决方案→真实案例背书→预约引导，帮你建立完整的信任链条。
+先试服务版，看看你的服务介绍怎么说才能让附近的人主动私信你。
+#同城服务 #本地商家 #服务引流 #同城运营`},
+douyin:{script:`【3秒】做同城服务的，你是不是内容发了没人约？
+【10秒】因为你在写"服务清单"，客户需要的是"你为什么值得信"。
+【15秒】我赢AI生活服务版：痛点→方案→案例→预约，建立信任链。
+【结尾】评论"同城"试一次专属服务版。`},
+shipinhao:{script:`做同城服务最容易忽略的就是内容里的"信任链"。
+你发了服务介绍但没人约，不是服务不好，是你没让陌生人在内容里先"信任你"。
+我赢AI的生活服务版就是帮你建立这个链条：痛点切入→专业方案→案例背书→引导预约。
+先试服务版，看看你的第一条信任内容长什么样。`} },
+{ xhs:{title:"为什么老板本人出镜的内容，更容易成交",body:`你有没有注意到：同行里那些老板本人出镜的内容，不管是发圈还是视频，互动和转化明显更高。
+因为客户买的不只是产品，还有对老板的信任。
+但大多数老板不会写"关于自己"的内容——不知道说什么，也不知道怎么说。
+我赢AI的老板IP工具：帮你把个人经历、专业态度、行业见解组织成能传播的内容。
+先做人设内容，让你的客户先认你这个人。
+#老板IP #个人品牌 #创始人内容 #老板人设`},
+douyin:{script:`【3秒】为什么老板本人出镜的内容转化更高？因为客户买的是信任。
+【10秒】但大多数老板不会写"关于自己"的内容。我赢AI老板IP工具帮你组织。
+【15秒】个人经历+专业态度+行业见解→一条能传播的老板IP内容。
+【结尾】评论"IP"送你一条老板IP内容模板。`},
+shipinhao:{script:`我今天想讲一件事：为什么老板本人出镜的内容更容易成交？
+因为客户最终买的是对一个人的信任，不是对一个店的信任。
+但老板不会写自己——这很正常，你不是做内容的。我赢AI的老板IP工具就是帮你说出你想说的话。
+先试一次，看看你作为老板的第一条IP内容是什么样。`} },
+{ xhs:{title:"客户为什么总说听不懂你的服务？因为你没提炼卖点",body:`很多老板跟我抱怨：我跟客户讲了半天，客户说"我再看看"。
+不是你的服务不好，是你没把卖点说清楚。客户听到的是"我们做什么"，但没听到"为什么选你"。
+我赢AI的卖点提炼工具：从你的服务描述中提取最能打动客户的3个卖点，按"利益点+证据+感受"的格式重新表达。
+先提炼卖点，下次客户问你"你们和别家有什么不同"时，你就知道怎么说了。
+#卖点提炼 #门店营销 #服务包装 #老板必备`},
+douyin:{script:`【3秒】客户总说"听不懂你的服务"？问题在卖点。
+【10秒】你说的是"我们做什么"，客户想听的是"为什么选你"。
+【15秒】我赢AI卖点提炼：从你的服务中提取3个最能打动客户的卖点。
+【结尾】评论"卖点"帮你提炼一次。`},
+shipinhao:{script:`客户说"我再看看"，往往不是不感兴趣，是没听出你和别家的区别。
+因为你一直在说"我们有什么"，但客户真正需要知道的是"为什么是你"。
+我赢AI的卖点提炼工具就是帮你完成这一跳——从服务描述变成购买理由。
+先试一次，看看你的服务最有杀伤力的三个卖点是什么。`} },
+{ xhs:{title:"四大行业案例合集：老板们用我赢AI是怎么出内容的",body:`第二周结束了。这周我们分别看了餐饮、教培、美业、生活服务四个行业怎么用我赢AI。
+结论很清晰：不是通用AI不好用，是通用AI不懂你的行业场景。
+我赢AI的行业版把"行业语感"做进了AI里——餐饮会写团购、教培会写招生、美业会写种草、服务会写信任。
+第二波49/99体验已开放，四大行业任选，先开体验。
+#行业AI #门店效率 #第二周总结 #老板工具`},
+douyin:{script:`【3秒】第二周：四大行业案例合集。餐饮、教培、美业、生活服务——全覆盖。
+【10秒】每个行业的表达方式完全不同，通用AI做不到。我赢AI把行业语感做进了AI。
+【15秒】团购、招生、种草、信任——四套专属表达。
+【结尾】评论你的行业，拿专属体验入口。`},
+shipinhao:{script:`第二周的核心结论就一句话：不同行业的内容表达方式完全不同。
+通用AI写出来的是"一段文字"，我赢AI写出来的是你行业里"能发的营销内容"。
+餐饮有餐饮的烟火气，教培有教培的信任感，美业有美业的种草力，服务有服务的专业感。
+49/99体验已经全部开放，选你的行业开始试。`} },
+{ xhs:{title:"周末活动文案，老板终于不用熬夜写了",body:`每到周末你是不是最头疼？想做个活动吸引客人，但文案从周五上午想到下午，最后又是草草发出去。
+我赢AI的活动文案工具：你说活动主题、优惠力度、目标人群，它按"吸引+紧迫+行动"的结构直接出完整活动方案。
+不只是标题，是整版可以发的活动内容。
+先拿活动文案，这个周末的活动别再用"最后一天"三个字凑合了。
+#活动文案 #门店活动 #周末促销 #营销工具`},
+douyin:{script:`【3秒】老板，周末活动文案又熬夜写了？
+【10秒】我赢AI活动文案：输入活动主题+优惠+人群，整版活动方案直接出。
+【15秒】不是只有标题，是"吸引+紧迫+行动"的完整结构。
+【结尾】评论"活动"送你一版周末活动文案。`},
+shipinhao:{script:`周末活动是门店最重要的收入窗口，但很多老板的活动文案是"周五下午临时凑的"。
+你想想：在最重要的时间窗口，用最差的内容去推——这个损失有多大？
+我赢AI的活动文案工具就是让你在3分钟内拿到一版专业的活动内容。
+先试一次，让这个周末的活动不只是"最后一天全场8折"。`} },
+{ xhs:{title:"客户说再考虑一下？3条成交话术帮你收口",body:`有没有这种经历：客户咨询了半小时，最后说"我再考虑考虑"，你就不知道怎么回了。
+成交最后一推往往是最关键的，但老板最容易卡在这一步。
+我赢AI的成交话术工具：针对最常见的5种客户犹豫场景（价格/对比/时间/信任/不需要），直接出3条收口话术。
+按话术跟进，你会发现很多"再考虑"的客户其实就差一句话。
+先拿成交话术，别再让到嘴的客户溜走。
+#成交话术 #销售技巧 #客户转化 #老板成长`},
+douyin:{script:`【3秒】客户说"再考虑一下"——你卡住了吗？
+【10秒】我赢AI成交话术：5种常见犹豫场景，每种3条收口话术。
+【15秒】价格顾虑、对比犹豫、时间拖延、信任不足、假性不需要——全覆盖。
+【结尾】评论"成交"送你3条收口话术。`},
+shipinhao:{script:`成交最可惜的不是客户说"不"，是客户已经心动了，但你最后一句话没跟上。
+我赢AI的成交话术工具覆盖了最常见的5种客户犹豫场景——每种3条不同角度的话术。
+你不需要全部背下来，只需要在客户犹豫时打开看一眼，找到最合适的那条发过去。
+先拿3条试试，看看下一次客户说"再考虑"时你怎么回。`} },
+{ xhs:{title:"一天省2小时，一个月省60小时，老板算算这笔账",body:`你有没有算过：每天花多少时间在想内容、写内容、改内容？
+如果平均每天2小时，一个月就是60小时——相当于7.5个工作日全部用来写内容。
+我赢AI把"想内容→写内容→改内容"这个过程压缩到"说需求→得结果"。
+一天省2小时，一个月多出60小时可以做更有价值的事——管店、见客户、陪家人。
+先省时间，再算值不值。
+#时间管理 #老板效率 #省时工具 #门店运营`},
+douyin:{script:`【3秒】老板，你每天花多少时间写内容？平均2小时？
+【10秒】一个月60小时——相当于7.5个工作日全用来写内容。
+【15秒】我赢AI把"想→写→改"压缩成"说→得"。一天省2小时。
+【结尾】先省时间，再决定值不值。评论"省时"试一次。`},
+shipinhao:{script:`今天不聊功能，聊一笔账。
+一个门店老板平均每天花2小时在内容上——想标题、写文案、改表达、纠结发不发。
+一个月60小时，一年720小时，相当于90个工作日。
+我赢AI把这个过程压缩到"说需求→拿结果"。你不需要学任何东西，打开就能用。
+先省一天时间，你自己算算值不值。`} },
+{ xhs:{title:"一次生成的内容，三个平台都能用——内容复用就是这么简单",body:`你有没有发现：今天写的小红书笔记，稍微改一下就能发朋友圈？朋友圈的文案，念出来就是视频号口播？
+内容不需要每次都重新写。我赢AI的复用逻辑：一份母稿→小红书图文→抖音口播→视频号深度版→朋友圈浓缩版。
+一套想法，多渠道分发。先看复用方案，让你今天的一份精力产生三份效果。
+#内容复用 #一稿多发 #全平台运营 #效率翻倍`},
+douyin:{script:`【3秒】你的小红书笔记是不是可以改成朋友圈？朋友圈可以念成视频？
+【10秒】我赢AI的复用公式：一份母稿→小红书→抖音→视频号→朋友圈。
+【15秒】一套想法多渠道分发，一份精力三份效果。
+【结尾】评论"复用"看看你的内容可以怎么改造。`},
+shipinhao:{script:`很多老板觉得做多平台内容很累，因为你在每个平台都重新写一遍。
+但其实不需要。正确的做法是：一份母稿，四个平台。
+我赢AI就是按这个逻辑设计的——你生成一次，拿到的是可以拆分到不同平台的完整内容包。
+先看复用方案，你会发现自己少干了多少重复活。`} },
+{ xhs:{title:"不会写表单的人也能直接用AI——说人话就行了",body:`你是不是以为用AI一定要会写提示词？要学各种指令和参数？
+我赢AI的AI对话模式：打开直接说人话——"帮我写一条朋友圈，今天上了新菜"——就行了。
+不需要学提示词、不需要填表单、不需要懂技术。还支持语音输入，边忙边说。
+先聊一句试试，你说需求，它出结果。就这么简单。
+#AI对话 #语音输入 #零门槛 #老板友好`},
+douyin:{script:`【3秒】你是不是以为用AI要学提示词？完全不用。
+【10秒】我赢AI打开直接说话——"帮我写条朋友圈，今天上了新菜"——出结果。
+【15秒】还支持语音输入，边忙边说，边开车边出内容。
+【结尾】评论"试试"先聊一句看看。`},
+shipinhao:{script:`很多人对AI的第一反应是"我不会用"。但我赢AI就是想打破这个门槛。
+你打开它，就像发微信一样说话："帮我给今天新上的菜写条发圈"——它直接给你。
+不需要学提示词，不需要填表单，甚至不需要打字——语音输入也可以。
+先聊一句试试，你会发现比想象中简单太多了。`} },
+{ xhs:{title:"好内容不是一次性的——老板的内容资产应该能积累",body:`你有没有这样的经历：之前写过一条发圈效果特别好，但过了两周想再用，找不到了。
+我赢AI的历史记录+收藏功能：你生成过的每一条内容都存在，可以随时回看、修改、再次生成。
+这意味着你花时间产出的内容不会消失，而是积累成你个人或门店的内容资产库。
+先把内容存起来，下次想发的时候不是从零开始，是从你的资产库里挑最好的。
+#内容资产 #历史记录 #收藏 #长期主义`},
+douyin:{script:`【3秒】之前写过一条效果好的发圈，两周后想再用，找不到了？
+【10秒】我赢AI的每一条生成结果都保存在历史里，可回看、修改、再生成。
+【15秒】你的内容会积累成资产库，越用越有价值。
+【结尾】先把内容存起来，下次发不是从零开始。`},
+shipinhao:{script:`老板们最容易忽略的是：你花时间产出的每一条内容，都是有价值的资产。
+但如果你每次都重新想、重新写，这些资产就流失了。
+我赢AI帮你把每一次生成的结果存下来——历史记录可回看、收藏夹可快速复用、详情页可再次生成。
+先把内容存起来。一个月后你的内容资产库就是你最大的差异化优势。`} },
+{ xhs:{title:"第三周最值钱的7个功能，一个老板的内容体系全了",body:`第三周我们覆盖了：活动文案、成交话术、老板省时、内容复用、AI对话、历史收藏。
+加上前两周的标题/发圈/脚本/笔记/促单/行业适配/老板IP/卖点提炼——一共15个功能模块。
+一个门店老板从"不知道发什么"到"内容稳定产出"，差的就是这一套。
+第三波99转化已开启。先升级会员，把这些功能变成每天的日常。
+#第三周总结 #内容体系 #门店效率 #会员升级`},
+douyin:{script:`【3秒】第三周：7个最值钱的功能全展示。加上前两周一共15个模块。
+【10秒】从"不知道发什么"到"内容稳定产出"，差的就是这一套。
+【15秒】活动文案、成交话术、省时、复用、对话、历史——内容体系完整了。
+【结尾】评论"升级"拿99会员入口，把这些功能变成日常。`},
+shipinhao:{script:`第三周结束了。我们这周证明了：我赢AI不只是帮你写东西，是帮你建立完整的内容产出体系。
+从标题到发圈，从脚本到笔记，从促单到复用到历史——一个老板需要的所有内容动作，这里都有。
+99会员入口已经开放。先升级，把这些功能变成你每天的肌肉记忆。`} },
+{ xhs:{title:"为什么会员比单次更值？老板你算算就知道了",body:`有人问：我赢AI的会员比单次买值在哪？
+单次用：一次生成一条内容，用完就没了。
+会员用：每天想发多少条发多少条，还能积累历史、收藏复用、行业切换。
+更重要的：会员是按月解锁持续产出能力——不是买一次，是买了"每天都发得出内容"的能力。
+先开会员，算算如果每天省2小时，一个月省出来的时间值多少钱。
+#会员价值 #长期主义 #内容持续 #老板投资`},
+douyin:{script:`【3秒】我赢AI会员和单次用的区别在哪？
+【10秒】单次=一次一条，会员=无限生成+历史积累+收藏复用。
+【15秒】你买的不只是功能，是"每天都发得出内容"的能力。
+【结尾】先开会员，算算省出来的时间值不值。`},
+shipinhao:{script:`有人问我赢AI会员到底值在哪——我的回答是：你买的不是功能，是"每天都能稳定发内容"的能力。
+单次用完就没了，明天还要再买。会员是把内容产出变成日常，变成习惯。
+而且有历史记录、收藏复用、行业切换——这些只有会员才能完整使用。
+先开一个月会员，你自己验证值不值。`} },
+{ xhs:{title:"为什么我主推129？一个老板的长期算账",body:`我赢AI有四个档：49/99/129/149。
+但我最推荐长期用户选129——不是因为中间价，是因为它最适合持续产出。
+49是体验，适合低门槛先试。99是限时，适合短期集中跑。129是标准，适合"每天都要发"的老板。
+按每天省2小时算，129一个月省60小时，相当于每小时2块钱——比请一个员工的零头都低。
+先锁129标准会员，把"每天发内容"这件事变成不费力的事。
+#会员定价 #129会员 #老板算账 #长期价值`},
+douyin:{script:`【3秒】为什么我主推129？不是因为中间价，是因为它最适合持续产出。
+【10秒】49=体验，99=限时跑量，129=每天稳定发。四个档的定位。
+【15秒】129一个月省60小时，每小时成本2块钱——比请员工零头都低。
+【结尾】先锁129标准会员，把内容变成日常。`},
+shipinhao:{script:`今天专门讲一下129这个价格。49是体验，99是限时，149是锚点，129才是真正适合长期用的。
+因为一个门店老板的正常节奏就是"每天都要发内容"——而这个频率，129的产出能力最匹配。
+你算一下：129一个月60小时，每小时2块钱。这不是买工具，是买时间。
+先锁129标准会员，你试过就知道为什么这个价格最稳。`} },
+{ xhs:{title:"99限时窗口开了，什么人最适合现在进来",body:`如果你最近正好有活动、促销、或者要集中跑一波内容矩阵，99限时是最适合你的档。
+它比49多的是连续产出的空间，比129更灵活——适合短期、高密度、集中跑内容的场景。
+99限时入口已开，24小时窗口。先上99，把这几天要发的内容一把跑出来。
+#限时福利 #99会员 #内容冲刺 #短期高效`},
+douyin:{script:`【3秒】99限时窗口开了——适合什么人？最近要集中跑内容的老板。
+【10秒】比49多产出空间，比129更灵活。短期高密度场景的最佳选择。
+【15秒】24小时窗口，先上99，把这几天的内容一把跑出来。
+【结尾】评论"99"拿限时入口。`},
+shipinhao:{script:`99限时窗口开了。如果你是最近正好要推活动、要做促销、要集中跑内容的老板——这个档最适合你。
+它和49、129的关系：49是初体验，129是长期，99是"我现在就要集中跑"。
+24小时内有效。先上99，把你要发的内容全跑出来。`} },
+{ xhs:{title:"49块钱能干什么？让一个从没试过的老板先进来",body:`49体验包——可能是你今年花的最值的49块钱。
+不限制生成次数，能用的功能和99/129基本一致。唯一的差别是没有长期积累的完整空间。
+但它足够让你验证一件事：我赢AI到底能不能帮你节省内容时间。
+49体验——3人助力可领、老用户可推荐、社群限时可抢。先领49，试了再说。
+#49体验 #低门槛 #裂变 #先试再说`},
+douyin:{script:`【3秒】49块钱能让你验证一件事：我赢AI到底能不能省你的内容时间。
+【10秒】不限制生成次数，功能和99/129基本一致，差的是长期积累空间。
+【15秒】3人助力可领、老用户推荐可得、社群限时抢。
+【结尾】评论"49"领体验入口，先试再说。`},
+shipinhao:{script:`有人问我49体验是不是阉割版。不是。49和129的功能几乎一样，只是少了长期积累的空间。
+它是为了让还没试过的老板用最低成本验证：这个工具到底能不能每天帮我省2小时？
+我建议不先想"要不要长期开"，先花49试一次。你觉得值，再升；觉得不值，就当喝了两杯咖啡。
+先领49体验。`} },
+{ xhs:{title:"为什么我赢AI的用户愿意推荐给朋友？因为有20%返利",body:`你有没有遇到过这种情况：用了一个好东西，想推荐给朋友，但又觉得"白推荐"？
+我赢AI的邀请返利系统：你的朋友通过你的推荐码开通会员，你直接拿20%返利。
+不是积分、不是优惠券，是真金白银可以提现的返利。
+先拿推荐码，看看你身边有多少做生意的朋友也需要这个工具。
+#邀请返利 #分享赚钱 #老带新 #被动收入`},
+douyin:{script:`【3秒】你推荐朋友用我赢AI，他开通你拿20%返利——真金白银。
+【10秒】不是积分、不是优惠券，是可以提现的返利。分享推荐码即可。
+【15秒】你身边做生意的朋友大概率也需要这个工具。
+【结尾】先拿推荐码，顺手就把自己的会员费赚回来。`},
+shipinhao:{script:`我赢AI的推荐返利逻辑很简单：你自己用的好，推荐给朋友，朋友开通你拿20%。
+不做积分、不做优惠券——就是真金白银的返利。
+很多老板的推荐返利已经能覆盖自己的会员费了，等于免费在用。
+先拿推荐码，看看你身边有多少需要的朋友。`} },
+{ xhs:{title:"一家门店一天能用我赢AI多少次？真实全场景展示",body:`很多人以为AI工具一天用一两次就够了。但真实情况是：
+早上发朋友圈用一次→中午出抖音脚本用一次→下午写小红书用一次→晚上做促单话术用一次→周末做活动文案用一次。
+一天至少3-5次，每次都是在省你本来要花半小时以上的时间。
+先让今天的内容发出去，你会发现我赢AI不是"偶尔用"的工具，是每天都要用的日常。
+#全场景 #每日使用 #门店日常 #高频工具`},
+douyin:{script:`【3秒】一家门店一天能用几次我赢AI？至少3-5次。
+【10秒】早上发圈、中午脚本、下午笔记、晚上促单、周末活动——全场景。
+【15秒】不是"偶尔用"的工具，是每天都要用的日常。
+【结尾】先让今天的内容发出去，看看一天能用几次。`},
+shipinhao:{script:`很多人用了一次AI就觉得"够了吧"。但你想想门店的内容需求：
+早上的发圈、中午的脚本、下午的小红书、晚上的促单话术、周末的活动文案——每个场景都能用。
+一天至少3-5次，每次省你半小时以上。这不是偶尔用的工具，是每天的高频刚需。
+先让今天的内容发出去，你会自然开始用第二次、第三次。`} },
+{ xhs:{title:"哪些老板现在最适合开会员？这张判断表看看你中了几条",body:`如果你符合以下任意3条，现在就应该开会员：
+1. 每天要发朋友圈但不知道该发什么
+2. 抖音/小红书想做但一直没开始
+3. 做活动的时候文案总是最后才凑
+4. 客户说"再考虑"的时候不知道怎么回
+5. 想把自己做成IP但不知道怎么说
+你中了几条？3条以上，先开一个月，30天验证。
+#会员判断 #老板自测 #该开了 #内容刚需`},
+douyin:{script:`【3秒】看看这张判断表，你中了几条？
+【10秒】5条判断标准：每天发圈/想做短视频/活动文案拖延/促单卡壳/不会做IP。
+【15秒】中3条以上，现在就适合开会员。先开一个月，30天验证。
+【结尾】评论你的条数，看看该不该开了。`},
+shipinhao:{script:`今天不推销，就做一件事：让你自己判断自己是不是该开会员。
+如果你每天要发圈但不知道发什么、想做短视频但没开始、每次活动文案都是最后才凑、客户犹豫时不知道说什么——你中了3条以上。
+那我的建议是：先开一个月，30天验证。值就续，不值就停。
+先开一个月，自己给自己一个验证的机会。`} },
+{ xhs:{title:"30天内容成果复盘：哪些类型转化最高",body:`30天快结束了，复盘一下这段时间的数据。
+我们发现：促单话术类的私信转化最高、行业场景类的收藏率最高、老板IP类的互动最多、活动文案类的到店率最高。
+这些结论的意思是：你需要一个能覆盖所有内容类型的工具，而不是在不同场景切换不同工具。
+先试再决定——看看你自己的30天，哪些内容类型对你最有效。
+#成果复盘 #数据说话 #内容类型 #转化率`},
+douyin:{script:`【3秒】30天复盘：促单话术私信转化最高、行业场景收藏最多、老板IP互动最强。
+【10秒】你需要一个能覆盖所有内容类型的工具，不是切来切去。
+【15秒】看看你自己的30天，哪种内容对你最有效？
+【结尾】先试再决定，数据不会骗人。`},
+shipinhao:{script:`快30天了，今天做一次成果复盘。
+我们发现一个规律：不同类型的内容适合不同转化阶段。促单话术适合收口、行业内容适合收藏、老板IP适合建立信任。
+这意味着你需要的是一个"全能"工具，不是一个"单功能"工具。
+先试再决定。让你自己的30天数据告诉你答案。`} },
+{ xhs:{title:"把这把AI增长工具转给一个也在做生意的朋友",body:`30天到了。如果你这30天确实感受到我赢AI帮你省了时间、出了内容、带来了转化——
+把这份工具转给一个也在做门店、教培、美业、同城服务的老板朋友。
+他开通你拿20%返利，他也能跟你一样省时间。
+最后48小时，49/99/129 全档开放。先转给朋友，让更多人知道老板发内容不用那么累。
+#裂变 #老带新 #老板推荐 #工具分享`},
+douyin:{script:`【3秒】30天到了。你觉得好用的话，转给一个也在做生意的朋友。
+【10秒】他开通你拿20%返利——等于你免费在用。他也能跟你一样省时间。
+【15秒】最后48小时，49/99/129全档开放。
+【结尾】先转给朋友，让更多老板知道发内容不用那么累。`},
+shipinhao:{script:`30天到了。最后我想说的是：如果你觉得好用，把它转给一个也在做门店的朋友。
+不是因为我想要更多用户——是因为我知道你身边肯定有也在为内容发愁的老板。
+你转给他，他也能每天省2小时；他开通，你拿20%返利覆盖你的会员费。双方都受益。
+先转给一个朋友，就当帮他一个忙。`} }
+];
+
 // ── 常量 ──
 const LS_PROG = "woying-marketing-plan-v1-prog";
 const LS_FUNNEL = "woying-marketing-plan-v1-funnel";
@@ -751,6 +1294,34 @@ const WEEKS = ["第 1 周 · 先证明快速出稿","第 2 周 · 先证明懂�
 let prog = {}, funnel = { reach:0, engage:0, dm:0, leads:0, trial:0, paid:0 };
 let activeDay = 0;
 
+// ── 页面 Mockup ──
+const MOCKUPS = {
+  home: { name:"首页", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span><span>我赢AI</span></div><div class="phone-nav">我赢AI</div><div class="phone-body"><div class="ph-title">一句需求，马上出稿</div><div style="font-size:8px;color:var(--muted);margin-bottom:8px;">老板当天就能发</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">${["探店标题","发圈文案","活动通知","抖音脚本","促单话术","卖点提炼","种草笔记","老板IP"].map(w=>'<span class="ph-chip">'+w+'</span>').join("")}</div><div class="ph-card"><div style="font-weight:700;font-size:9px;">最近生成</div><div class="ph-tool"><div class="ph-tool-icon">🔥</div><div style="font-size:8px;">周末烤鱼活动文案</div></div><div class="ph-tool"><div class="ph-tool-icon">📱</div><div style="font-size:8px;">今日上新发圈</div></div></div><div class="ph-btn">开始生成</div></div>` },
+  ai: { name:"AI对话", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span><span>AI对话</span></div><div class="phone-nav">AI 对话</div><div class="phone-body"><div style="display:flex;gap:3px;margin-bottom:8px;">${["餐饮","教培","美业","服务"].map(w=>'<span class="ph-chip">'+w+'</span>').join("")}</div><div style="font-size:8px;color:var(--muted);margin-bottom:6px;">快捷问题</div><div class="ph-card" style="font-size:8px;">帮我写一条今天新菜上新的朋友圈</div><div class="ph-card" style="font-size:8px;">周末烤鱼活动怎么推</div><div class="ph-card" style="font-size:8px;">客户说再考虑一下怎么回</div><div style="display:flex;gap:4px;margin-top:6px;"><input placeholder="说一句话..." style="flex:1;padding:4px 8px;border-radius:99px;border:1px solid #ddd;font-size:8px;"><span style="font-size:12px;">🎤</span></div></div>` },
+  tools: { name:"工具页", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span><span>工具</span></div><div class="phone-nav">高频工具</div><div class="phone-body"><div style="font-size:8px;color:var(--muted);margin-bottom:6px;">最近使用</div>${["爆款标题","朋友圈","抖音脚本","小红书"].map(w=>'<div class="ph-tool"><div class="ph-tool-icon">📋</div><div style="font-size:8px;">'+w+'</div></div>').join("")}<div style="font-size:8px;color:var(--muted);margin:8px 0 4px;">全部工具</div>${["促单话术","卖点提炼","活动文案","老板IP"].map(w=>'<div class="ph-tool"><div class="ph-tool-icon">⚡</div><div style="font-size:8px;">'+w+'</div></div>').join("")}</div>` },
+  toolrun: { name:"生成页", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span><span>生成</span></div><div class="phone-nav">爆款标题</div><div class="phone-body"><div style="font-size:8px;color:var(--muted);margin-bottom:4px;">行业</div><div style="display:flex;gap:3px;margin-bottom:6px;">${["餐饮","教培","美业","服务"].map(w=>'<span class="ph-chip">'+w+'</span>').join("")}</div><div style="font-size:8px;color:var(--muted);margin-bottom:2px;">输入内容主题</div><input placeholder="周末烤鱼活动..." style="width:100%;padding:4px;border-radius:6px;border:1px solid #ddd;font-size:8px;margin-bottom:6px;"><div class="ph-btn">生成</div><div class="ph-card" style="margin-top:6px;"><div style="font-size:8px;font-weight:700;">结果预览</div><div style="font-size:7px;color:var(--muted);">1. 周末限定！这道烤鱼，吃过的人都在约第二次</div></div></div>` },
+  user: { name:"我的", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span><span>我的</span></div><div class="phone-nav">我的</div><div class="phone-body"><div class="ph-card" style="text-align:center;"><div style="font-size:10px;font-weight:700;">老板用户</div><div style="font-size:8px;color:var(--muted);">标准会员 · 129/月</div></div>${[{icon:"📋",t:"历史记录"},{icon:"⭐",t:"我的收藏"},{icon:"👑",t:"会员中心"},{icon:"💰",t:"邀请返利"}].map(x=>'<div class="ph-tool"><div class="ph-tool-icon">'+x.icon+'</div><div style="font-size:8px;">'+x.t+'</div></div>').join("")}</div>` },
+  login: { name:"登录", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">登录</div><div class="phone-body"><div class="ph-title" style="text-align:center;">欢迎使用我赢AI</div><div style="text-align:center;font-size:8px;color:var(--muted);margin-bottom:12px;">一句需求，马上出稿</div><input placeholder="手机号" style="width:100%;padding:6px;border-radius:8px;border:1px solid #ddd;margin-bottom:6px;font-size:8px;"><input placeholder="验证码" style="width:100%;padding:6px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:8px;"><div class="ph-btn">登录</div><div style="text-align:center;font-size:7px;color:var(--muted);margin-top:6px;">登录即同意用户协议和隐私政策</div></div>` },
+  register: { name:"注册", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">注册</div><div class="phone-body"><div class="ph-title" style="text-align:center;">注册我赢AI</div><input placeholder="手机号" style="width:100%;padding:6px;border-radius:8px;border:1px solid #ddd;margin-bottom:6px;font-size:8px;"><input placeholder="验证码" style="width:100%;padding:6px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:8px;"><div class="ph-btn">注册</div><div style="text-align:center;font-size:7px;color:var(--muted);margin-top:4px;">已有账号？去登录</div></div>` },
+  membership: { name:"会员", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">会员中心</div><div class="phone-body"><div class="ph-card" style="text-align:center;"><div style="font-size:9px;color:var(--muted);">当前等级</div><div style="font-size:12px;font-weight:700;color:var(--accent);">标准会员</div></div><div style="font-size:8px;color:var(--muted);margin:8px 0 4px;">选择套餐</div>${[{p:"149",t:"原价锚点",d:"全部功能"},{p:"129",t:"标准主推",d:"持续产出"},{p:"99",t:"限时特惠",d:"短期集中"},{p:"49",t:"裂变体验",d:"低门槛试"}].map(x=>'<div class="ph-card" style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:10px;font-weight:700;">¥'+x.p+'<span style="font-size:7px;">/月</span></div><div style="font-size:7px;color:var(--muted);">'+x.t+'</div></div><div style="font-size:8px;color:var(--accent);">'+x.d+'</div></div>').join("")}</div>` },
+  referral: { name:"返利", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">邀请返利</div><div class="phone-body"><div class="ph-card" style="text-align:center;"><div style="font-size:9px;color:var(--muted);">累计返利</div><div style="font-size:14px;font-weight:700;color:var(--accent);">¥258.00</div></div><div class="ph-card" style="margin-top:6px;"><div style="font-size:8px;color:var(--muted);">你的推荐码</div><div style="font-size:11px;font-weight:700;">WOYING2024</div></div><div style="font-size:8px;color:var(--muted);margin:6px 0;">已邀请 3 人 · 返利比例 20%</div><div class="ph-btn">分享推荐码</div></div>` },
+  history: { name:"历史", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">历史记录</div><div class="phone-body"><div style="display:flex;gap:3px;margin-bottom:6px;">${["全部","餐饮","教培","美业"].map(w=>'<span class="ph-chip">'+w+'</span>').join("")}</div>${[{t:"周末烤鱼活动文案",d:"2天前 · 爆款标题",i:"🔥"},{t:"今日上新朋友圈",d:"3天前 · 朋友圈",i:"📱"},{t:"抖音探店脚本",d:"5天前 · 脚本",i:"🎬"}].map(x=>'<div class="ph-tool"><div class="ph-tool-icon">'+x.i+'</div><div><div style="font-size:8px;font-weight:600;">'+x.t+'</div><div style="font-size:7px;color:var(--muted);">'+x.d+'</div></div></div>').join("")}</div>` },
+  favorites: { name:"收藏", html: `<div class="phone-notch"></div><div class="phone-status"><span>9:41</span></div><div class="phone-nav">我的收藏</div><div class="phone-body">${[{t:"爆款标题模板",d:"收藏于3天前"},{t:"促单话术合集",d:"收藏于5天前"},{t:"老板IP文案",d:"收藏于1周前"}].map(x=>'<div class="ph-tool"><div class="ph-tool-icon">⭐</div><div><div style="font-size:8px;font-weight:600;">'+x.t+'</div><div style="font-size:7px;color:var(--muted);">'+x.d+'</div></div></div>').join("")}</div>` }
+};
+function showMockup(id) {
+  const m = MOCKUPS[id];
+  if (!m) return;
+  document.querySelectorAll("#mockup-modal").forEach(el => el.classList.remove("hidden"));
+  document.getElementById("mockup-label").textContent = "我赢AI · " + m.name;
+  document.getElementById("mockup-big").innerHTML = m.html;
+  document.body.style.overflow = "hidden";
+  document.querySelectorAll(".chip-row .chip").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll(".chip-row .chip").forEach(c => { if (c.textContent.trim() === m.name) c.classList.add("active"); });
+}
+function closeMockup() {
+  document.querySelectorAll("#mockup-modal").forEach(el => el.classList.add("hidden"));
+  document.body.style.overflow = "";
+}
 // ── 初始化 ──
 function init() {
   loadData();
@@ -866,7 +1437,7 @@ function selectDay(day) {
 // ── 行业角度数据 ──
 const IND_ANGLES = {
   restaurant: [
-    { range:[1,7], text:"本周证明快速出稿：重点打动"每天发朋友圈/团购/抖音但写不出来"的餐饮痛点。每条内容都展示从菜单到成品内容的过程。" },
+    { range:[1,7], text:"本周证明快速出稿：重点打动'每天发朋友圈/团购/抖音但写不出来'的餐饮痛点。每条内容都展示从菜单到成品内容的过程。" },
     { range:[8,14], text:"本周证明懂行业：餐饮版懂菜单、懂活动节奏、懂探店表达。让餐饮老板感觉'这个AI真的懂餐饮'而不是通用工具。" },
     { range:[15,21], text:"本周证明能转化：重点展示'发出去有人问、有人来'的结果。团购文案+引流标题+促单话术一条链。" },
     { range:[22,30], text:"本周推会员和裂变：让餐饮老板算账——一天发3条内容省2小时，一个月省60小时，129会员一天4块钱。" }
@@ -935,6 +1506,26 @@ function renderDayContent(day) {
     const icon = TASK_ICONS[tk] || "📋";
     const label = TASK_LABELS[tk] || tk;
 
+    // 获取当日示例内容
+    const dayContent = CONTENT[day - 1];
+    let sampleHTML = "";
+    if (tk === "xhs" && dayContent && dayContent.xhs) {
+      sampleHTML = `<div style="margin-top:8px;padding:10px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text);max-height:200px;overflow-y:auto;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">📕 示例标题：${dayContent.xhs.title}</div>
+        <div style="white-space:pre-wrap;">${dayContent.xhs.body}</div>
+      </div>`;
+    } else if (tk === "douyin" && dayContent && dayContent.douyin) {
+      sampleHTML = `<div style="margin-top:8px;padding:10px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text);max-height:200px;overflow-y:auto;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">🎵 示例口播脚本</div>
+        <div style="white-space:pre-wrap;">${dayContent.douyin.script}</div>
+      </div>`;
+    } else if (tk === "shipinhao" && dayContent && dayContent.shipinhao) {
+      sampleHTML = `<div style="margin-top:8px;padding:10px;background:rgba(255,255,255,0.6);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text);max-height:200px;overflow-y:auto;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">🎬 示例视频号稿</div>
+        <div style="white-space:pre-wrap;">${dayContent.shipinhao.script}</div>
+      </div>`;
+    }
+
     const card = document.createElement("div");
     card.className = "task-card" + (done ? " open" : "");
     card.innerHTML = `
@@ -947,6 +1538,7 @@ function renderDayContent(day) {
         </div>
       </div>
       <div class="task-body">
+        ${sampleHTML}
         <textarea placeholder="记笔记..." data-day="${day}" data-task="${tId}">${notes[tId] || ''}</textarea>
         ${tk === 'reach' ? `<div style="margin-top:6px;font-size:10px;color:var(--muted);">
           今日触达 <input type="number" value="${metrics.reachCount || ''}" placeholder="人数" style="width:64px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:11px;margin-right:8px;" data-metric="reachCount" data-day="${day}">
@@ -1060,6 +1652,9 @@ function bindEvents() {
   document.getElementById("btn-next-day").addEventListener("click", () => {
     if (activeDay < 30) selectDay(activeDay + 1);
   });
+  document.querySelectorAll("#mockup-modal").forEach(el => {
+    el.addEventListener("click", function(e) { if (e.target === el) closeMockup(); });
+  });
 }
 
 // ── Toast ──
@@ -1154,6 +1749,7 @@ function copySummary() {
 document.addEventListener("keydown", function(e) {
   if (e.key === "ArrowLeft" && activeDay > 1) selectDay(activeDay - 1);
   if (e.key === "ArrowRight" && activeDay < 30) selectDay(activeDay + 1);
+  if (e.key === "Escape") closeMockup();
 });
 
 // ── 行业筛选 ──
