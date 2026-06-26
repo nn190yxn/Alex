@@ -1,25 +1,12 @@
-const API_BASE = '/api'
-
-function getToken() {
-  return localStorage.getItem('token')
-}
+import request from './request'
 
 async function apiCall(path, options = {}) {
-  const token = getToken()
-  const res = await fetch(`${API_BASE}${path}`, {
+  return request({
+    url: path,
     method: options.method || 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined
+    data: options.body,
+    headers: options.headers
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: '请求失败' }))
-    throw new Error(err.message || `HTTP ${res.status}`)
-  }
-  return res.json()
 }
 
 // Generate tool result via backend
@@ -103,15 +90,7 @@ export async function flushEvents() {
     localStorage.removeItem('_track_events')
 
     // Batch send to server
-    const token = getToken()
-    await fetch(`${API_BASE}/analytics/batch`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ events })
-    })
+    await request.post('/analytics/batch', { events })
   } catch (e) {
     // Silently fail
   }
