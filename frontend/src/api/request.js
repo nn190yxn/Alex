@@ -18,15 +18,11 @@ request.interceptors.request.use(
 
 request.interceptors.response.use(
   (response) => response.data,
-  async (error) => {
+  (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      // 使用 router 跳转而非直接 location.href
-      const router = (await import('@/router')).default
-      if (router) {
-        router.push('/login')
-      } else {
-        window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
       }
     }
     // 错误规范化处理
