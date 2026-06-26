@@ -118,6 +118,7 @@ import {
   canAccessLevel
 } from '@/constants/membership'
 import { allTools, pricingPlans, standaloneCapabilities } from '@/constants/toolCatalog'
+import request from '@/api/request'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -166,22 +167,12 @@ async function submitFeedback() {
   }
   submitting.value = true
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/user-feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(feedbackForm.value)
-    })
-    if (res.ok) {
-      alert('反馈提交成功')
-      showModal.value = false
-      await loadMyFeedbacks()
-    } else {
-      const data = await res.json()
-      alert(data.message || '提交失败')
-    }
-  } catch (e) {
-    alert('网络异常，请重试')
+    await request.post('/user-feedback', feedbackForm.value)
+    alert('反馈提交成功')
+    showModal.value = false
+    await loadMyFeedbacks()
+  } catch (error) {
+    alert(error.message || '网络异常，请重试')
   } finally {
     submitting.value = false
   }
@@ -189,14 +180,8 @@ async function submitFeedback() {
 
 async function loadMyFeedbacks() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/user-feedback/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (res.ok) {
-      myFeedbacks.value = await res.json()
-    }
-  } catch (e) {}
+    myFeedbacks.value = await request.get('/user-feedback/my')
+  } catch (error) {}
 }
 
 function statusText(s) {

@@ -434,6 +434,7 @@
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { IconUsers, IconMembership, IconBox, IconCoin } from '@/icons'
+import request from '@/api/request'
 
 const activeTab = ref('users')
 const userSearch = ref('')
@@ -474,7 +475,6 @@ const config = ref({})
 
 // 导出
 function exportData(type) {
-  const token = localStorage.getItem('token')
   const url = `/api/admin/export/${type}`
   window.open(url, '_blank')
 }
@@ -532,17 +532,10 @@ function formatDateTime(date) {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
-function getAuthHeaders() {
-  return { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-}
-
 async function apiFetch(url, options = {}) {
-  const res = await fetch(`/api/admin${url}`, {
-    ...options,
-    headers: { ...getAuthHeaders(), ...(options.headers || {}) }
-  })
-  if (!res.ok) throw new Error(`API error: ${res.status}`)
-  return res.json()
+  const method = (options.method || 'GET').toLowerCase()
+  const data = options.body ? JSON.parse(options.body) : undefined
+  return request({ url: `/admin${url}`, method, data })
 }
 
 async function loadStats() {
