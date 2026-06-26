@@ -45,6 +45,12 @@
         <button class="generate-btn" :disabled="!canGenerate || loading" @click="generate">
           {{ loading ? '正在生成选题...' : '生成今日选题' }}
         </button>
+        <div v-if="errorMessage" class="error-state">
+          {{ errorMessage }}
+        </div>
+        <div v-if="upgradeHint" class="upgrade-hint">
+          {{ upgradeHint }}
+        </div>
       </div>
 
       <div v-if="topics.length" class="result-list">
@@ -74,10 +80,13 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import request from '@/api/request'
 
 const router = useRouter()
 const loading = ref(false)
 const topics = ref([])
+const errorMessage = ref('')
+const upgradeHint = ref('')
 
 const methods = [
   { value: 'formula', label: '爆款公式法' },
@@ -93,27 +102,37 @@ const form = reactive({
 
 const canGenerate = computed(() => form.industry && form.audience)
 
+const normalizeTopic = (topic, index) => ({
+  id: topic.id || index + 1,
+  title: topic.title || topic.topic || '待补充选题',
+  formula: topic.formula || topic.type || '爆款公式',
+  tags: Array.isArray(topic.tags) && topic.tags.length ? topic.tags : ['搜索', '互动', '收藏'],
+  searchVolume: Number(topic.searchVolume) || 10000,
+  competition: topic.competition || '中'
+})
+
 const generate = async () => {
   loading.value = true
-  await new Promise(r => setTimeout(r, 600))
-  const formulas = ['数字+结果型', '人群+痛点型', '悬念+揭秘型', '对比+反差型', '教程+步骤型', '清单+合集型', '避坑+警示型', '情绪共鸣型', '时效+热点型', '利益+福利型', '身份+认证型', '场景+解决方案型']
-  const examples = {
-    beauty: ['做了 5 年美容师，这 4 个坑千万别踩', '敏感肌千万别再乱用护肤品了', '做完前 vs 做完后，同事问我是不是去整容了'],
-    fashion: ['微胖女孩必看的 5 个显瘦穿搭法则', '小个子女生这样穿，显高 10cm 不是梦', '优衣库 vs ZARA，同价位谁更值得买？'],
-    food: ['本地人带路，这 3 家苍蝇馆子绝了', '人均 50 吃出米其林的感觉，这家店藏得太深', '千万别在饭点来这家店，排队 2 小时起'],
-    education: ['带过 300 个学生，总结出这 5 个提分技巧', '初二家长注意：这 3 个习惯不改，初三很难逆袭', '报班 3 万 vs 自学，成绩差距竟然...'],
-    home: ['装修过来人血泪总结：这 8 个地方别省钱', '花 2 万改造老破小，效果堪比换新房', '宜家这 5 件神器，让小家越住越大']
+  errorMessage.value = ''
+  upgradeHint.value = ''
+  topics.value = []
+  try {
+    const response = await request.post('/xhs/topic-generator', {
+      industry: form.industry,
+      audience: form.audience,
+      method: form.method
+    })
+    topics.value = (response.topics || []).map(normalizeTopic)
+    upgradeHint.value = response.upgradeHint || ''
+    if (!topics.value.length) {
+      throw new Error('后端未返回可展示的选题')
+    }
+  } catch (error) {
+    console.error('选题生成失败:', error)
+    errorMessage.value = error.message || '选题生成失败，请稍后重试'
+  } finally {
+    loading.value = false
   }
-  const data = (examples[form.industry] || examples.beauty).slice(0, 5).map((title, i) => ({
-    id: i + 1,
-    title,
-    formula: formulas[Math.floor(Math.random() * formulas.length)],
-    tags: ['搜索', '互动', '收藏'],
-    searchVolume: Math.floor(Math.random() * 50000) + 10000,
-    competition: ['低', '中', '高'][Math.floor(Math.random() * 3)]
-  }))
-  topics.value = data
-  loading.value = false
 }
 
 const useTopic = (topic) => {
@@ -123,4 +142,6 @@ const useTopic = (topic) => {
 
 <style scoped>
 @import '../agent-common.css';
+.error-state { margin-top: 16px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
+.upgrade-hint { margin-top: 16px; padding: 12px 16px; background: #fff7ed; color: #9a3412; border-radius: 8px; font-size: var(--text-body-sm); }
 </style>

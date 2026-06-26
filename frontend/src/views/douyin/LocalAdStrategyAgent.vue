@@ -41,6 +41,8 @@
         <button class="generate-btn" @click="generate" :disabled="!form.dailyBudget" style="width:100%; margin-top:20px;">
           生成投放策略
         </button>
+        <div v-if="errorMessage" class="error-state">{{ errorMessage }}</div>
+        <div v-if="upgradeHint" class="upgrade-hint">{{ upgradeHint }}</div>
 
         <div v-if="result" class="result-state">
           <div class="strategy-header">
@@ -97,49 +99,22 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import request from '@/api/request'
 const result = ref(null)
+const errorMessage = ref('')
+const upgradeHint = ref('')
 const form = reactive({ industry: 'restaurant', goal: 'store', dailyBudget: 0, range: '5km' })
 
-const generate = () => {
-  const industryMap = { restaurant: '餐饮', beauty: '美业', education: '教培' }
-  const goalMap = { store: '门店到店', leads: '表单留资', followers: '账号涨粉' }
-
-  result.value = {
-    title: `${industryMap[form.industry]}行业本地推${goalMap[form.goal]}策略`,
-    summary: `日预算 ${form.dailyBudget} 元，覆盖${form.range}范围，以下为详细投放方案。`,
-    targeting: [
-      `地域：门店${form.range}范围`,
-      form.industry === 'restaurant' ? '兴趣：美食探店、团购、同城生活' : form.industry === 'beauty' ? '兴趣：美容护肤、美甲美睫、个人护理' : '兴趣：教育培训、亲子、升学',
-      '年龄：25-45 岁（核心消费人群）',
-      '排除：同行账号、已转化用户',
-      form.goal === 'store' ? '行为：近期搜索过团购/门店相关' : form.goal === 'leads' ? '行为：近期填写过表单/咨询过服务' : '行为：关注过同类账号'
-    ],
-    creatives: [
-      '前 3 秒必须出现门店环境/产品特写',
-      '使用"同城限时福利"作为核心钩子',
-      '视频中必须出现价格锚点（原价 vs 现价）',
-      '结尾 5 秒明确引导行动（点击组件/留资）',
-      '准备 3-5 条不同素材轮播测试，避免素材疲劳'
-    ],
-    bidding: [
-      '前期（1-3 天）：使用系统智能出价，让算法学习',
-      '中期（4-7 天）：根据 CPA 数据手动微调，上下浮动 10-20%',
-      '成熟期（7 天后）：稳定出价，放量跑量',
-      `目标 CPA 建议：${form.goal === 'store' ? '30-50 元/单' : form.goal === 'leads' ? '50-80 元/条' : '2-5 元/粉丝'}`,
-      '如果 CPA 超标 30% 以上，暂停该计划重新定向'
-    ],
-    schedule: [
-      '投放时段：11:00-14:00（午间）+ 17:00-21:00（晚间高峰）',
-      '周一至周四：正常投放，预算分配 60%',
-      '周五至周日：加大投放，预算分配 40%（周末到店率高）',
-      '节假日前 3 天：提前布局，预算可提升 50%',
-      '每周末复盘数据，淘汰低效计划，复制高效计划'
-    ],
-    budgetAllocation: [
-      { name: '测试期素材', percent: 30, amount: Math.round(form.dailyBudget * 0.3), color: '#3b82f6' },
-      { name: '跑量素材加投', percent: 50, amount: Math.round(form.dailyBudget * 0.5), color: '#10b981' },
-      { name: '追投爆款', percent: 20, amount: Math.round(form.dailyBudget * 0.2), color: '#f59e0b' }
-    ]
+const generate = async () => {
+  errorMessage.value = ''
+  upgradeHint.value = ''
+  result.value = null
+  try {
+    const response = await request.post('/douyin/local-ad-strategy', form)
+    result.value = response.result || response
+    upgradeHint.value = response.upgradeHint || ''
+  } catch (error) {
+    errorMessage.value = error.message || '投放策略生成失败，请稍后重试'
   }
 }
 </script>
@@ -149,6 +124,8 @@ const generate = () => {
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .generate-btn { padding: 12px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: var(--font-weight-semibold); cursor: pointer; }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.error-state { margin-top: 16px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
+.upgrade-hint { margin-top: 16px; padding: 12px 16px; background: #fff7ed; color: #9a3412; border-radius: 8px; font-size: var(--text-body-sm); }
 .result-state { margin-top: 24px; }
 .strategy-header { margin-bottom: 20px; }
 .strategy-header h3 { font-size: var(--text-h4); margin-bottom: 8px; }

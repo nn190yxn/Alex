@@ -494,12 +494,20 @@ router.post('/generate', authMiddleware, async (req, res, next) => {
 
     // Generate poster content
     const maxTokens = getMaxTokensForLevel('poster', memberLevel)
-    const rawResult = await generateStructured({
-      systemPrompt,
-      userPrompt: `请根据以下提示词生成完整的海报文案内容：\n\n${prompt}`,
-      temperature: 0.8,
-      max_tokens: maxTokens
-    })
+    let rawResult
+    let isRuleFallback = false
+    try {
+      rawResult = await generateStructured({
+        systemPrompt,
+        userPrompt: `请根据以下提示词生成完整的海报文案内容：\n\n${prompt}`,
+        temperature: 0.8,
+        max_tokens: maxTokens
+      })
+    } catch (aiError) {
+      logger.error('poster-generate', `AI poster generation failed, using fallback: ${aiError.message}`)
+      rawResult = buildPosterFallbackContent(type, industry, formData, posterTypeConfig)
+      isRuleFallback = true
+    }
 
     const duration = Date.now() - startTime
     const inputEstimate = Math.ceil(JSON.stringify({ prompt, formData }).length / 3)
@@ -531,7 +539,8 @@ router.post('/generate', authMiddleware, async (req, res, next) => {
           duration,
           inputTokens: inputEstimate,
           outputTokens: outputEstimate,
-          model
+          model,
+          isRuleFallback
         }
       }
     })
@@ -734,6 +743,47 @@ function getIndustrySpecificRequirements(type, industry) {
   }
 
   return requirements[type]?.[industry] || `结合${industry}行业特点，确保内容贴合目标客户需求`
+}
+
+function buildPosterFallbackContent(type, industry, formData, typeConfig) {
+  const industryName = getIndustryName(industry)
+  const title = formData.title || formData.productName || formData.eventName || formData.brandName || typeConfig.name
+  const benefit = formData.discount || formData.offer || formData.benefit || formData.mainSellingPoint || '限时专属福利'
+  const target = formData.targetAudience || formData.customerGroup || '本地目标客户'
+  const cta = formData.cta || formData.action || '立即咨询预约'
+  const deadline = formData.deadline || formData.endTime || '名额有限，先到先得'
+
+  return `### 一、文案内容
+
+#### 主标题
+${title}
+
+#### 副标题
+${industryName}专属活动，面向${target}，突出${benefit}。
+
+#### 核心卖点
+- 适合人群：${target}
+- 主要福利：${benefit}
+- 行动理由：${deadline}
+
+#### 行动引导
+${cta}
+
+### 二、设计建议
+
+- 主色建议：使用高对比暖色系突出优惠信息，例如 #E74C3C 搭配 #FFF7ED。
+- 版式建议：顶部放主标题，中部放福利数字和核心卖点，底部放联系方式或二维码。
+- 字体建议：标题使用粗黑体，正文使用清晰易读的无衬线字体。
+
+### 三、图片建议
+
+- 使用真实门店、产品、服务场景或客户体验图作为主视觉。
+- 图片主体保留足够留白，方便叠加标题和 CTA。
+- 避免堆叠过多元素，每张海报聚焦一个转化动作。
+
+### 四、升级定制建议
+
+当前为规则兜底方案。升级会员可获得结合行业知识库、目标客群和活动目标的 AI 定制海报文案。`
 }
 
 // ============================================================

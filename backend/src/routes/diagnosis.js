@@ -33,6 +33,27 @@ async function getUserMemberLevel(userId) {
   return users[0]?.member_level || 'free'
 }
 
+function normalizeStage0(stage0) {
+  const cityInput = stage0.city
+  const cityName = typeof cityInput === 'object' && cityInput !== null
+    ? cityInput.name || cityInput.city || ''
+    : cityInput
+  const cityInfo = getCityTierInfo(cityName)
+  const teamSize = getTeamSizeTier(String(stage0.teamSize || '1-10人'))
+
+  return {
+    ...stage0,
+    city: cityInfo.city,
+    cityInfo: {
+      name: cityInfo.city,
+      tier: cityInfo.label,
+      tierKey: cityInfo.tier,
+      isDefault: cityInfo.isDefault || false
+    },
+    teamSize
+  }
+}
+
 // ===== 新版诊断流程（对齐 skill v4.0.0）=====
 
 // 获取阶段0问题列表
@@ -145,11 +166,12 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
   }
 
   try {
+    const normalizedStage0 = normalizeStage0(stage0)
     // 构建结构化诊断数据
-    const stage0Summary = buildStage0Summary(stage0)
+    const stage0Summary = buildStage0Summary(normalizedStage0)
 
     const founderAnalysis = founder ? {
-      stage: getFounderStage(stage0.teamSize),
+      stage: getFounderStage(normalizedStage0.teamSize),
       ...calculateFounderScore(founder.abilities || {}),
       indirectSymptoms: founder.symptoms || [],
       strongest: founder.strongest || '',
@@ -194,7 +216,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
 
     // 如果没有使用 AI 或 AI 失败，构建规则引擎报告
     const ruleBasedReport = {
-      summary: `${stage0.city.name}（${stage0.city.tier}）· ${stage0.industry} · ${stage0.teamSize}`,
+      summary: `${stage0Summary.city.name}（${stage0Summary.city.tier}）· ${stage0Summary.industry} · ${stage0Summary.teamSize}`,
       stage0: stage0Summary,
       founder: founderAnalysis,
       rent: rentAssessment,
@@ -205,7 +227,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
     }
 
     // 根据痛点推荐下一步
-    if (stage0.painPoint === '获客难') {
+    if (normalizedStage0.painPoint === '获客难') {
       ruleBasedReport.nextSteps.push({
         title: '搭建线上获客渠道',
         description: '从抖音/小红书/视频号中选择1个平台开始，每周输出3条内容',
@@ -213,7 +235,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
         lagWarning: LAG_EFFECTS.find(e => e.action.includes('渠道搭建'))
       })
     }
-    if (stage0.painPoint === '不赚钱') {
+    if (normalizedStage0.painPoint === '不赚钱') {
       ruleBasedReport.nextSteps.push({
         title: '优化盈利结构',
         description: '梳理收入构成，砍掉亏损业务，聚焦高毛利产品',
@@ -221,7 +243,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
         lagWarning: LAG_EFFECTS.find(e => e.action.includes('定价'))
       })
     }
-    if (stage0.painPoint === '复制不了') {
+    if (normalizedStage0.painPoint === '复制不了') {
       ruleBasedReport.nextSteps.push({
         title: '核心流程SOP化',
         description: '先做1-3个最关键岗位的SOP文档，让新人能快速上手',
@@ -229,7 +251,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
         lagWarning: LAG_EFFECTS.find(e => e.action.includes('SOP'))
       })
     }
-    if (stage0.painPoint === '团队跟不上') {
+    if (normalizedStage0.painPoint === '团队跟不上') {
       ruleBasedReport.nextSteps.push({
         title: '创始人角色转变',
         description: `从"${stage0Summary.founderStage.role}"进化为"${stage0Summary.founderStage.targetRole}"`,
@@ -237,7 +259,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
         lagWarning: LAG_EFFECTS.find(e => e.action.includes('角色转变'))
       })
     }
-    if (stage0.painPoint === '不知道往哪走') {
+    if (normalizedStage0.painPoint === '不知道往哪走') {
       ruleBasedReport.nextSteps.push({
         title: '聚焦战略方向',
         description: '如果只能保留一个业务线，你留哪个？砍掉非核心业务',
@@ -258,7 +280,7 @@ router.post('/v3/generate', authMiddleware, async (req, res) => {
     // 保存到数据库
     await query(
       'INSERT INTO diagnosis_reports (user_id, answers_json, analysis_json, created_at) VALUES (?, ?, ?, NOW())',
-      [userId, JSON.stringify({ stage0, founder, rent, scan, ip }), JSON.stringify(finalReport)]
+      [userId, JSON.stringify({ stage0: normalizedStage0, founder, rent, scan, ip }), JSON.stringify(finalReport)]
     )
 
     res.json({ success: true, analysis: finalReport, aiUsed })
@@ -277,8 +299,9 @@ router.post('/v3/quick-diagnosis', authMiddleware, async (req, res) => {
   }
 
   try {
+    const normalizedStage0 = normalizeStage0(stage0)
     const diagnosisData = {
-      stage0: buildStage0Summary(stage0),
+      stage0: buildStage0Summary(normalizedStage0),
       founder: founder ? calculateFounderScore(founder.abilities || {}) : null,
       scan: scan ? { scores: scan.scores || {}, loops: analyzeLoops(scan.scores || {}) } : null
     }

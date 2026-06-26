@@ -48,6 +48,8 @@
         <button class="generate-btn" @click="generate" style="width:100%; margin-top:20px;">
           生成 IP 定位方案
         </button>
+        <div v-if="errorMessage" class="error-state">{{ errorMessage }}</div>
+        <div v-if="upgradeHint" class="upgrade-hint">{{ upgradeHint }}</div>
 
         <div v-if="result" class="result-state">
           <div class="ip-profile">
@@ -94,33 +96,22 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import request from '@/api/request'
 const result = ref(null)
+const errorMessage = ref('')
+const upgradeHint = ref('')
 const form = reactive({ industry: 'restaurant', personality: 'professional', experience: '5-10', goal: 'trust' })
 
-const generate = () => {
-  const industryMap = { restaurant: '餐饮', beauty: '美业', education: '教培', service: '生活服务' }
-  const personalityMap = {
-    professional: { name: '专家型', slogan: '用专业说话，用数据证明', tags: ['技术流', '干货派', '行业权威'] },
-    friendly: { name: '暖心理', slogan: '做你身边最懂 XX 的朋友', tags: ['贴心', '耐心', '可信赖'] },
-    direct: { name: '真性情型', slogan: '敢说真话，敢揭行业内幕', tags: ['直率', '敢说', '反差萌'] },
-    humorous: { name: '段子手型', slogan: '笑着笑着就学到了', tags: ['搞笑', '接地气', '记忆点强'] },
-    storyteller: { name: '故事型', slogan: '每个顾客都有一个故事', tags: ['共情', '温暖', '真实'] }
-  }
-
-  const p = personalityMap[form.personality]
-  const ind = industryMap[form.industry]
-
-  result.value = {
-    ipName: `${ind}行业${p.name}IP`,
-    slogan: p.slogan,
-    tags: p.tags,
-    pillars: [
-      { name: '专业知识输出', desc: '分享行业干货、技术解析、避坑指南', example: `${ind}行业 90% 的人都不知道的 3 个真相` },
-      { name: '真实工作日常', desc: '展示幕后工作场景，建立真实感', example: `凌晨 4 点的${ind}人，你在做什么？` },
-      { name: '顾客故事/案例', desc: '用真实案例证明专业与价值', example: `这位顾客来了 3 次，终于明白...` }
-    ],
-    dos: ['保持固定更新频率（每周 3-5 条）', '统一视觉风格（封面/字幕/着装）', '回复评论区互动，建立粉丝连接', '定期分享个人成长与学习经历'],
-    donts: ['不要频繁更换人设风格', '不要过度营销，内容要大于广告', '不要与其他行业盲目对标', '不要忽视负面评论，要真诚回应']
+const generate = async () => {
+  errorMessage.value = ''
+  upgradeHint.value = ''
+  result.value = null
+  try {
+    const response = await request.post('/douyin/ip-positioning', form)
+    result.value = response.result || response
+    upgradeHint.value = response.upgradeHint || ''
+  } catch (error) {
+    errorMessage.value = error.message || 'IP 定位生成失败，请稍后重试'
   }
 }
 </script>
@@ -129,6 +120,8 @@ const generate = () => {
 @import './agent-common.css';
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .generate-btn { padding: 12px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+.error-state { margin-top: 16px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
+.upgrade-hint { margin-top: 16px; padding: 12px 16px; background: #fff7ed; color: #9a3412; border-radius: 8px; font-size: var(--text-body-sm); }
 .result-state { margin-top: 24px; }
 .ip-profile { text-align: center; padding: 24px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; margin-bottom: 20px; }
 .ip-profile h3 { font-size: var(--text-h4); margin-bottom: 12px; }

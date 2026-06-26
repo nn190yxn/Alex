@@ -76,6 +76,10 @@
           <p>AI 正在生成选题...</p>
         </div>
 
+        <div v-else-if="errorMessage" class="error-state">
+          {{ errorMessage }}
+        </div>
+
         <div v-else-if="topics.length" class="topics-list">
           <div v-for="(topic, index) in topics" :key="index" class="topic-card">
             <div class="topic-header">
@@ -98,9 +102,11 @@
 
 <script setup>
 import { reactive, ref, computed } from 'vue'
+import { generateWithAI } from '@/api/tool'
 
 const loading = ref(false)
 const topics = ref([])
+const errorMessage = ref('')
 
 const form = reactive({
   industry: '',
@@ -113,56 +119,98 @@ const form = reactive({
 
 const canGenerate = computed(() => form.industry && form.contentType)
 
-const topicTemplates = {
-  restaurant: [
-    { tag: '避坑指南', hook: '别再被 XX 骗了！', structure: '痛点场景 → 行业内幕 → 正确做法', saima: '结尾设置悬念评论引导收藏', tagClass: 'tag-warning' },
-    { tag: '价格揭秘', hook: '这道菜成本只要 X 元？', structure: '食材拆解 → 成本透明 → 价值说明', saima: '封面用对比图刺激转发', tagClass: 'tag-info' },
-    { tag: '顾客故事', hook: '今天遇到一个奇葩顾客...', structure: '冲突引入 → 反转结局 → 价值观输出', saima: '评论区引导讨论提升互动率', tagClass: 'tag-emotion' },
-    { tag: '后厨展示', hook: '你吃的 XX 是这样做出来的', structure: '干净环境 → 标准流程 → 安心承诺', saima: '突出完播率，节奏要快', tagClass: 'tag-trust' },
-    { tag: '限时福利', hook: '今天老板疯了，XX 只要 9.9！', structure: '超值展示 → 限量紧迫 → 行动引导', saima: '直接挂载团购组件提升转化', tagClass: 'tag-promo' }
-  ],
-  beauty: [
-    { tag: '效果对比', hook: '做之前 vs 做之后，差距太大了', structure: '问题展示 → 过程快剪 → 效果对比', saima: '收藏率 > 5% 为合格基准', tagClass: 'tag-result' },
-    { tag: '行业内幕', hook: '美容师不会告诉你的 3 个秘密', structure: '反常识观点 → 数据支撑 → 解决方案', saima: '引导截图收藏提升长效权重', tagClass: 'tag-warning' },
-    { tag: '避坑指南', hook: '做 XX 前一定要知道的 5 件事', structure: '痛点清单 → 避坑建议 → 专业背书', saima: '信息密度高，适合重收藏', tagClass: 'tag-info' },
-    { tag: '过程展示', hook: '沉浸式体验 XX 护理全过程', structure: '环境展示 → 手法细节 → 客户反馈', saima: 'ASMR 风格提升完播率', tagClass: 'tag-process' },
-    { tag: '老板 IP', hook: '我做美业 10 年，最大的感悟是...', structure: '个人故事 → 行业观察 → 价值主张', saima: '人设一致性检查关键内容', tagClass: 'tag-ip' }
-  ],
-  education: [
-    { tag: '家长焦虑', hook: '90% 的家长都在犯这个错', structure: '焦虑场景 → 数据分析 → 正确路径', saima: '收藏率 > 8% 为 A3 向合格基准', tagClass: 'tag-anxiety' },
-    { tag: '试听揭秘', hook: '试听课背后的转化套路', structure: '行业内幕 → 家长避坑 → 判断标准', saima: '引导私信领取《选课清单》', tagClass: 'tag-warning' },
-    { tag: '学员案例', hook: '从 XX 到 XX，他只做对了这件事', structure: '起点痛点 → 转变过程 → 成果展示', saima: '评论区置顶引导咨询', tagClass: 'tag-case' },
-    { tag: '干货分享', hook: '在家就能做的 3 个 XX 练习', structure: '方法清单 → 步骤演示 → 效果预期', saima: '适合截图收藏，提升 7 天长尾流量', tagClass: 'tag-dry' },
-    { tag: '政策解读', hook: '2026 年 XX 政策重大变化', structure: '政策摘要 → 影响分析 → 应对建议', saima: '时效性强，发布后 2 小时内投 DOU+', tagClass: 'tag-policy' }
-  ],
-  service: [
-    { tag: '避坑指南', hook: '选 XX 千万别只看价格', structure: '低价陷阱 → 隐性成本 → 选择标准', saima: '收藏率是核心指标', tagClass: 'tag-warning' },
-    { tag: '过程展示', hook: '一次专业的 XX 服务长什么样', structure: '标准流程 → 细节展示 → 客户好评', saima: '完播率 > 30% 为合格', tagClass: 'tag-process' },
-    { tag: '顾客故事', hook: '客户说：这是我遇到过最...', structure: '痛点引入 → 服务过程 → 感动瞬间', saima: '评论区引导共鸣', tagClass: 'tag-story' },
-    { tag: '知识科普', hook: '关于 XX 你必须知道的 3 件事', structure: '认知误区 → 正确知识 → 行动建议', saima: '信息密度高引导收藏', tagClass: 'tag-info' },
-    { tag: '限时体验', hook: '首次体验只要 XX 元，限前 50 名', structure: '价值展示 → 稀缺紧迫 → 立即行动', saima: '挂载留资组件直接转化', tagClass: 'tag-promo' }
-  ]
+const tagClasses = ['tag-warning', 'tag-info', 'tag-emotion', 'tag-trust', 'tag-promo', 'tag-result', 'tag-process', 'tag-story']
+
+const goalByAudience = {
+  A1: 'exposure',
+  A2: 'interaction',
+  A3: 'acquisition',
+  A4: 'conversion',
+  A5: 'repurchase'
+}
+
+const contentTypeMap = {
+  knowledge: 'tutorial',
+  story: 'drama',
+  process: 'real-shot',
+  promo: 'case',
+  emotion: 'talking'
+}
+
+const metricMap = {
+  save: '收藏率',
+  completion: '完播率',
+  interaction: '互动率',
+  conversion: '转化率'
+}
+
+const timeMap = { morning: '早高峰', noon: '午间', evening: '晚高峰' }
+
+const normalizeTopic = (item, index) => {
+  if (typeof item === 'string') {
+    return {
+      tag: 'AI 选题',
+      title: item,
+      hook: item,
+      structure: '痛点切入 → 行业解释 → 行动引导',
+      saima: `围绕${metricMap[form.metric]}优化开头和结尾`,
+      metrics: `${metricMap[form.metric]}优先 | 发布时段：${timeMap[form.publishTime]}`,
+      tagClass: tagClasses[index % tagClasses.length]
+    }
+  }
+
+  const tags = Array.isArray(item.tags) ? item.tags : []
+  return {
+    tag: item.tag || item.type || tags[0] || 'AI 选题',
+    title: item.title || item.topic || '待补充选题',
+    hook: item.hook || item.title || item.topic || '用痛点开头抓住前 3 秒',
+    structure: item.structure || item.reason || item.recommendation || '痛点切入 → 行业解释 → 行动引导',
+    saima: item.saima || item.optimization || `围绕${metricMap[form.metric]}优化开头和结尾`,
+    metrics: item.metrics || `${metricMap[form.metric]}优先 | 发布时段：${timeMap[form.publishTime]}`,
+    tagClass: tagClasses[index % tagClasses.length]
+  }
+}
+
+const extractTopics = (response) => {
+  if (Array.isArray(response)) return response
+  if (Array.isArray(response?.topics)) return response.topics
+  if (Array.isArray(response?.data)) return response.data
+  if (Array.isArray(response?.result)) return response.result
+  if (Array.isArray(response?.extra?.topics)) return response.extra.topics
+
+  const sectionItems = response?.sections?.flatMap(section => section.items || []) || []
+  if (sectionItems.length) return sectionItems
+
+  return []
 }
 
 const generate = async () => {
   loading.value = true
+  errorMessage.value = ''
   try {
-    const industryTopics = topicTemplates[form.industry] || topicTemplates.service
-    const metricMap = {
-      save: '收藏率',
-      completion: '完播率',
-      interaction: '互动率',
-      conversion: '转化率'
-    }
-    const timeMap = { morning: '早高峰', noon: '午间', evening: '晚高峰' }
+    const response = await generateWithAI('topic', {
+      industry: form.industry,
+      platform: 'douyin',
+      platforms: ['douyin'],
+      goals: [goalByAudience[form.audience5A] || 'interaction'],
+      contentTypes: [contentTypeMap[form.contentType] || 'talking'],
+      scenes: ['store'],
+      duration: form.metric === 'completion' ? '15s' : '30s',
+      count: 10,
+      audience5A: form.audience5A,
+      metric: form.metric,
+      presenter: form.presenter,
+      publishTime: form.publishTime
+    })
 
-    topics.value = industryTopics.map((t, i) => ({
-      ...t,
-      title: `${t.hook}${form.industry === 'restaurant' ? '——餐饮老板必看' : form.industry === 'beauty' ? '——美业人收藏' : form.industry === 'education' ? '——家长注意' : '——避坑指南'}`,
-      metrics: `${metricMap[form.metric]} > ${form.audience5A === 'A3' ? '5%' : form.audience5A === 'A4' ? '3%' : '35%'} | 发布时段：${timeMap[form.publishTime]}`
-    }))
+    const generatedTopics = extractTopics(response).slice(0, 10).map(normalizeTopic)
+    if (!generatedTopics.length) {
+      throw new Error('后端未返回可展示的选题')
+    }
+    topics.value = generatedTopics
   } catch (error) {
     console.error('生成失败:', error)
+    errorMessage.value = error.message || '生成失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -174,6 +222,7 @@ const generate = async () => {
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .generate-btn { padding: 12px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: var(--font-weight-semibold); cursor: pointer; }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.error-state { margin-top: 20px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
 .topics-list { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
 .topic-card { padding: 20px; background: var(--bg-subtle); border-radius: 12px; border-left: 4px solid var(--brand-primary); }
 .topic-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }

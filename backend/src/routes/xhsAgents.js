@@ -3,6 +3,7 @@ import { query } from '../models/db.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { generateStructured } from '../services/ai.js'
 
 const router = express.Router()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -62,6 +63,219 @@ const requireLevel = (requiredLevel) => (req, res, next) => {
   next()
 }
 
+const parseJsonValue = (text) => {
+  const trimmed = (text || '').trim()
+  if (!trimmed) return null
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    const match = trimmed.match(/(\{[\s\S]*\}|\[[\s\S]*\])/)
+    return match ? JSON.parse(match[0]) : null
+  }
+}
+
+const industryNameMap = {
+  restaurant: '餐饮探店',
+  beauty: '美妆护肤',
+  fashion: '穿搭时尚',
+  food: '美食探店',
+  education: '知识教育',
+  home: '家居家装',
+  service: '生活服务'
+}
+
+const audienceNameMap = {
+  beginner: '新手小白',
+  professional: '专业进阶人群',
+  bargain: '价格敏感人群',
+  quality: '品质追求人群'
+}
+
+const methodNameMap = {
+  formula: '爆款公式法',
+  search: '搜索意图法',
+  hotspot: '热点借势法'
+}
+
+const deterministicVolume = (seed, index) => {
+  const base = String(seed || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return 12000 + ((base + index * 7919) % 48000)
+}
+
+const normalizeCompetition = (index) => ['低', '中', '高'][index % 3]
+
+const getFormulaExample = (formula, industry, topic) => {
+  const example = formula.examples?.[industry] || formula.examples?.restaurant || formula.name
+  if (!topic) return example
+  return example.replace(/XX|xx/g, topic).replace(/这 3 /g, `这 3 个${topic}`)
+}
+
+const buildTopicFallback = ({ industry, audience, method, hotspot }) => {
+  const industryName = industryNameMap[industry] || industry || '小红书'
+  const audienceName = audienceNameMap[audience] || '目标用户'
+  const methodName = methodNameMap[method] || '爆款公式法'
+  const formulas = xhsKnowledge.titleFormulas || []
+
+  return formulas.slice(0, 5).map((formula, index) => ({
+    id: index + 1,
+    title: hotspot
+      ? `${hotspot}下，${audienceName}最想收藏的${industryName}清单`
+      : getFormulaExample(formula, industry),
+    formula: formula.name || methodName,
+    tags: [methodName, audienceName, industryName],
+    searchVolume: deterministicVolume(`${industry}-${audience}-${method}-${index}`, index),
+    competition: normalizeCompetition(index),
+    reason: `围绕${audienceName}的搜索意图，用${formula.name || methodName}提高点击和收藏。`,
+    isRuleFallback: true
+  }))
+}
+
+const buildTitleFallback = ({ industry, topic, formulaType }) => {
+  const formulas = xhsKnowledge.titleFormulas || []
+  const selected = formulaType ? formulas.filter(formula => formula.id === formulaType) : formulas
+  const source = selected.length ? selected : formulas
+
+  return source.slice(0, 6).map((formula, index) => ({
+    title: getFormulaExample(formula, industry, topic),
+    type: formula.name || '爆款公式',
+    ctr: `${8 + ((index * 3) % 12)}%`,
+    reason: `使用${formula.name || '爆款公式'}放大搜索关键词和点击动机。`,
+    isRuleFallback: true
+  }))
+}
+
+const buildQuickStartFallback = ({ industry, currentFollowers, monthlyGoal, dailyTime }) => {
+  const industryName = industryNameMap[industry] || industry || '小红书'
+  const targetFollowers = Math.min(Number(currentFollowers || 0) + Number(monthlyGoal || 1000), 10000)
+
+  return {
+    planName: `${industryName} 15 天起号计划`,
+    estimatedFollowers: targetFollowers,
+    weeklyPlan: [
+      { week: 1, phase: '账号基建与定位测试', tasks: ['完善头像、简介和置顶笔记', '确定 3 个内容栏目', '发布 3 篇不同角度测试内容', `每天投入${dailyTime || '1 小时'}做同赛道互动`] },
+      { week: 2, phase: '选题放量与爆款验证', tasks: ['复盘首周点击和收藏数据', '复制表现最好的标题结构', '发布 4 篇搜索型笔记', '建立 20 条可复用选题库'] },
+      { week: 3, phase: '转化承接与稳定更新', tasks: ['优化主页行动引导', '固定每周 4 篇发布节奏', '把高收藏笔记改成系列内容', '沉淀评论区高频问题'] }
+    ],
+    tips: ['新号前 15 天先测标签，再追求单篇爆发', '标题和封面保持同一赛道关键词', '每天固定互动同赛道优质笔记'],
+    isRuleFallback: true
+  }
+}
+
+const buildScriptFallback = ({ industry, topic, style, duration }) => {
+  const scriptDuration = Number(duration) || 60
+  const steps = xhsKnowledge.scriptTemplates?.[style] || xhsKnowledge.scriptTemplates?.vlog || ['开场 3 秒抓注意力', '提出问题/痛点', '展示解决方案', '结尾引导互动']
+
+  return {
+    topic: topic || `小红书${industryNameMap[industry] || industry || ''}种草脚本`,
+    duration: scriptDuration,
+    style: style || 'vlog',
+    script: steps.map((step, index) => ({
+      order: index + 1,
+      step,
+      duration: Math.round(scriptDuration / steps.length),
+      notes: `${step}，围绕「${topic || '核心主题'}」用真实体验和可收藏信息表达。`
+    })),
+    tips: ['前 3 秒直接给结论或痛点', '正文加入具体场景和真实细节', '结尾引导收藏、评论或私信'],
+    isRuleFallback: true
+  }
+}
+
+const buildCoverFallback = ({ industry, noteType, keywords }) => {
+  const colors = { restaurant: ['暖橙', '米黄', '深棕'], food: ['暖橙', '米黄', '深棕'], education: ['天蓝', '纯白', '深蓝'], beauty: ['粉白', '裸色', '金棕'], service: ['薄荷绿', '浅灰', '深绿'], fashion: ['黑白灰', '奶油色', '酒红'] }
+  const palette = colors[industry] || ['莫兰迪色', '奶油色', '高级灰']
+  const keyword = keywords || '核心主题'
+
+  return {
+    recommendedColors: palette,
+    layout: noteType === 'tutorial' ? '左右分栏：左侧放 6-8 字结论，右侧放步骤或产品图' : noteType === 'review' ? '上下结构：上方场景图，下方标题和对比卖点' : '中心构图：主体居中，标题压在上三分之一处',
+    fontStyle: '粗黑体标题 + 细黑体副标题，标题字号占画面宽度 35%-45%',
+    hooks: [`${keyword}避坑`, `${keyword}清单`, `${keyword}真实测评`, `${keyword}新手必看`],
+    tips: ['封面文字控制在 6-10 个字', '主标题只表达一个核心利益点', '人物或产品主体保持高亮', '标题关键词与正文首段保持一致'],
+    isRuleFallback: true
+  }
+}
+
+const normalizeTopics = (value, fallbackTopics) => {
+  const topics = Array.isArray(value) ? value : value?.topics
+  if (!Array.isArray(topics) || !topics.length) return fallbackTopics
+
+  return topics.slice(0, 8).map((topic, index) => ({
+    id: index + 1,
+    title: topic.title || topic.topic || fallbackTopics[index % fallbackTopics.length].title,
+    formula: topic.formula || topic.type || fallbackTopics[index % fallbackTopics.length].formula,
+    tags: Array.isArray(topic.tags) && topic.tags.length ? topic.tags.slice(0, 4) : fallbackTopics[index % fallbackTopics.length].tags,
+    searchVolume: Number(topic.searchVolume) || deterministicVolume(topic.title || topic.topic, index),
+    competition: topic.competition || normalizeCompetition(index),
+    reason: topic.reason || topic.recommendation || fallbackTopics[index % fallbackTopics.length].reason
+  }))
+}
+
+const normalizeTitles = (value, fallbackTitles) => {
+  const titles = Array.isArray(value) ? value : value?.titles
+  if (!Array.isArray(titles) || !titles.length) return fallbackTitles
+
+  return titles.slice(0, 8).map((title, index) => {
+    if (typeof title === 'string') {
+      return {
+        title,
+        type: fallbackTitles[index % fallbackTitles.length].type,
+        ctr: fallbackTitles[index % fallbackTitles.length].ctr,
+        reason: fallbackTitles[index % fallbackTitles.length].reason
+      }
+    }
+    return {
+      title: title.title || title.text || fallbackTitles[index % fallbackTitles.length].title,
+      type: title.type || title.formula || fallbackTitles[index % fallbackTitles.length].type,
+      ctr: title.ctr || title.estimatedCtr || fallbackTitles[index % fallbackTitles.length].ctr,
+      reason: title.reason || title.recommendation || fallbackTitles[index % fallbackTitles.length].reason
+    }
+  })
+}
+
+const normalizeQuickStartPlan = (value, fallbackPlan) => {
+  const plan = value?.result || value?.plan || value
+  if (!plan || !Array.isArray(plan.weeklyPlan)) return fallbackPlan
+  return {
+    planName: plan.planName || fallbackPlan.planName,
+    estimatedFollowers: Number(plan.estimatedFollowers) || fallbackPlan.estimatedFollowers,
+    weeklyPlan: plan.weeklyPlan.slice(0, 4).map((week, index) => ({
+      week: Number(week.week) || index + 1,
+      phase: week.phase || fallbackPlan.weeklyPlan[index % fallbackPlan.weeklyPlan.length].phase,
+      tasks: Array.isArray(week.tasks) && week.tasks.length ? week.tasks.slice(0, 5) : fallbackPlan.weeklyPlan[index % fallbackPlan.weeklyPlan.length].tasks
+    })),
+    tips: Array.isArray(plan.tips) && plan.tips.length ? plan.tips.slice(0, 5) : fallbackPlan.tips
+  }
+}
+
+const normalizeScript = (value, fallbackScript) => {
+  const script = value?.result || value?.scriptPlan || value
+  if (!script || !Array.isArray(script.script)) return fallbackScript
+  return {
+    topic: script.topic || fallbackScript.topic,
+    duration: Number(script.duration) || fallbackScript.duration,
+    style: script.style || fallbackScript.style,
+    script: script.script.slice(0, 6).map((step, index) => ({
+      order: Number(step.order) || index + 1,
+      step: step.step || step.title || fallbackScript.script[index % fallbackScript.script.length].step,
+      duration: Number(step.duration) || fallbackScript.script[index % fallbackScript.script.length].duration,
+      notes: step.notes || step.content || fallbackScript.script[index % fallbackScript.script.length].notes
+    })),
+    tips: Array.isArray(script.tips) && script.tips.length ? script.tips.slice(0, 5) : fallbackScript.tips
+  }
+}
+
+const normalizeCover = (value, fallbackCover) => {
+  const cover = value?.result || value?.cover || value
+  if (!cover) return fallbackCover
+  return {
+    recommendedColors: Array.isArray(cover.recommendedColors) && cover.recommendedColors.length ? cover.recommendedColors.slice(0, 5) : fallbackCover.recommendedColors,
+    layout: cover.layout || fallbackCover.layout,
+    fontStyle: cover.fontStyle || fallbackCover.fontStyle,
+    hooks: Array.isArray(cover.hooks) && cover.hooks.length ? cover.hooks.slice(0, 6) : fallbackCover.hooks,
+    tips: Array.isArray(cover.tips) && cover.tips.length ? cover.tips.slice(0, 5) : fallbackCover.tips
+  }
+}
+
 // 1. 账号体检表
 router.post('/account-diagnosis', checkAccess, requireLevel('free'), async (req, res) => {
   const { industry, verticalityPains, interactionPains, activityPains, violationStatus } = req.body
@@ -96,44 +310,94 @@ router.post('/account-diagnosis', checkAccess, requireLevel('free'), async (req,
 // 2. 爆款选题库
 router.post('/topic-generator', checkAccess, requireLevel('starter'), async (req, res) => {
   const { industry, audience, method, hotspot } = req.body
-  
-  const formulas = xhsKnowledge.titleFormulas
-  // 简单模拟根据行业生成
-  const examples = formulas.map(f => ({
-    title: f.examples[industry] || f.examples.restaurant,
-    formula: f.name,
-    tags: ['搜索', '互动', '收藏']
-  }))
+  const fallbackTopics = buildTopicFallback({ industry, audience, method, hotspot })
 
-  res.json({
-    agent: 'topic_generator',
-    topics: examples.slice(0, 5).map((t, i) => ({
-      ...t,
-      id: i + 1,
-      searchVolume: Math.floor(Math.random() * 50000) + 10000,
-      competition: ['低', '中', '高'][Math.floor(Math.random() * 3)]
-    }))
-  })
+  try {
+    const content = await generateStructured({
+      systemPrompt: '你是小红书内容选题策划专家，擅长把行业、受众和搜索意图转成可发布的爆款选题。你必须输出 JSON，不输出 Markdown。',
+      userPrompt: `行业：${industryNameMap[industry] || industry || '小红书'}
+目标受众：${audienceNameMap[audience] || audience || '目标用户'}
+选题方法：${methodNameMap[method] || method || '爆款公式法'}
+热点关键词：${hotspot || '无'}
+
+请生成 5 个小红书选题，JSON 对象格式：
+{
+  "topics": [
+    { "title": "选题标题", "formula": "使用的爆款公式", "tags": ["标签"], "searchVolume": 32000, "competition": "低", "reason": "推荐理由" }
+  ]
+}
+
+要求：
+1. 标题必须适合小红书搜索和收藏。
+2. 结合目标受众的痛点、决策顾虑和种草场景。
+3. searchVolume 使用 10000-60000 的整数估算。
+4. competition 只能是低、中、高。`,
+      temperature: 0.82,
+      max_tokens: 2200
+    })
+    const topics = normalizeTopics(parseJsonValue(content), fallbackTopics)
+
+    res.json({
+      agent: 'topic_generator',
+      status: 'success',
+      topics,
+      upgradeHint: '升级进阶会员可获得行业关键词库、竞品选题拆解和 30 天发布日历。'
+    })
+  } catch (error) {
+    res.json({
+      agent: 'topic_generator',
+      status: 'success',
+      topics: fallbackTopics,
+      isRuleFallback: true,
+      upgradeHint: '升级进阶会员可获得行业关键词库、竞品选题拆解和 30 天发布日历。'
+    })
+  }
 })
 
 // 3. 标题生成器
 router.post('/title-generator', checkAccess, requireLevel('starter'), async (req, res) => {
   const { industry, topic, formulaType } = req.body
-  const formulas = xhsKnowledge.titleFormulas
-  
-  let selected = formulas
-  if (formulaType) {
-    selected = formulas.filter(f => f.id === formulaType)
-  }
+  const fallbackTitles = buildTitleFallback({ industry, topic, formulaType })
 
-  res.json({
-    agent: 'title_generator',
-    titles: selected.slice(0, 6).map(f => ({
-      title: f.examples[industry] || f.examples.restaurant,
-      type: f.name,
-      ctr: Math.floor(Math.random() * 15) + 5 + '%'
-    }))
-  })
+  try {
+    const content = await generateStructured({
+      systemPrompt: '你是小红书标题生成专家，擅长用搜索关键词、痛点和爆款公式生成高点击标题。你必须输出 JSON，不输出 Markdown。',
+      userPrompt: `行业：${industryNameMap[industry] || industry || '小红书'}
+主题关键词：${topic || '行业核心主题'}
+标题公式：${formulaType || '系统自动匹配'}
+
+请生成 6 个小红书标题，JSON 对象格式：
+{
+  "titles": [
+    { "title": "标题内容", "type": "公式类型", "ctr": "12%", "reason": "点击率逻辑" }
+  ]
+}
+
+要求：
+1. 每个标题控制在 32 字以内。
+2. 标题必须自然包含主题关键词或强相关表达。
+3. 覆盖数字、痛点、悬念、教程、清单、避坑等方向。
+4. 避免虚假承诺和空泛口号。`,
+      temperature: 0.85,
+      max_tokens: 2200
+    })
+    const titles = normalizeTitles(parseJsonValue(content), fallbackTitles)
+
+    res.json({
+      agent: 'title_generator',
+      status: 'success',
+      titles,
+      upgradeHint: '升级进阶会员可获得标题 A/B 测试、关键词评分和封面联动建议。'
+    })
+  } catch (error) {
+    res.json({
+      agent: 'title_generator',
+      status: 'success',
+      titles: fallbackTitles,
+      isRuleFallback: true,
+      upgradeHint: '升级进阶会员可获得标题 A/B 测试、关键词评分和封面联动建议。'
+    })
+  }
 })
 
 // 4. 薯条投放计算器
@@ -159,23 +423,38 @@ router.post('/shutiao-calculator', checkAccess, requireLevel('free'), async (req
 // 5. 快速起号计划
 router.post('/quick-start-plan', checkAccess, requireLevel('pro'), async (req, res) => {
   const { industry, currentFollowers, monthlyGoal, dailyTime } = req.body
-  const basePlan = xhsKnowledge.startupPlan || {}
-  const weeklyPlan = [
-    { week: 1, phase: '账号基建', tasks: ['完善个人简介', '确定内容定位', '搭建素材库', '发布 3 篇测试内容'] },
-    { week: 2, phase: '内容测试', tasks: ['分析首周数据', '优化封面风格', '发布 4 篇内容', '测试 2 种标题公式'] },
-    { week: 3, phase: '互动引流', tasks: ['每日评论 10 条同赛道笔记', '发起 1 次投票互动', '发布 4 篇内容'] },
-    { week: 4, phase: '数据复盘', tasks: ['分析四周数据趋势', '确定爆款方向', '制定下月计划'] }
-  ]
-  const estimatedFollower = Math.min(Number(currentFollowers || 0) + 500, 5000)
-  res.json({
-    agent: 'quick_start_plan',
-    result: {
-      planName: `${industry || '通用'}行业 30 天起号计划`,
-      estimatedFollowers: estimatedFollower,
-      weeklyPlan,
-      tips: basePlan.startupTips || ['前两周重点测内容方向', '每天固定时间发布', '标题用"数字+痛点+解决方案"公式']
-    }
-  })
+  const fallbackPlan = buildQuickStartFallback({ industry, currentFollowers, monthlyGoal, dailyTime })
+
+  try {
+    const content = await generateStructured({
+      systemPrompt: '你是小红书账号冷启动增长顾问，擅长为新号制定可执行的起号计划。你必须输出 JSON，不输出 Markdown。',
+      userPrompt: `行业：${industryNameMap[industry] || industry || '小红书'}
+当前粉丝数：${currentFollowers || 0}
+月度涨粉目标：${monthlyGoal || 1000}
+每日可投入时间：${dailyTime || '1 小时'}
+
+请生成 15 天起号计划，JSON 对象格式：
+{
+  "planName": "计划名称",
+  "estimatedFollowers": 1200,
+  "weeklyPlan": [
+    { "week": 1, "phase": "阶段名称", "tasks": ["任务1", "任务2"] }
+  ],
+  "tips": ["关键提醒"]
+}
+
+要求：
+1. weeklyPlan 使用 3 周表达 15 天节奏。
+2. 每周 3-5 个任务，必须具体可执行。
+3. 结合行业、粉丝基础和每日投入时间。`,
+      temperature: 0.78,
+      max_tokens: 2200
+    })
+    const result = normalizeQuickStartPlan(parseJsonValue(content), fallbackPlan)
+    res.json({ agent: 'quick_start_plan', status: 'success', result, upgradeHint: '升级年度会员可获得 90 天账号增长路线图和投放节奏表。' })
+  } catch (error) {
+    res.json({ agent: 'quick_start_plan', status: 'success', result: fallbackPlan, isRuleFallback: true, upgradeHint: '升级年度会员可获得 90 天账号增长路线图和投放节奏表。' })
+  }
 })
 
 // 6. 增长策略
@@ -204,39 +483,74 @@ router.post('/growth-strategy', checkAccess, requireLevel('annual'), async (req,
 // 7. 脚本生成器
 router.post('/script-generator', checkAccess, requireLevel('starter'), async (req, res) => {
   const { industry, topic, style, duration } = req.body
-  const templates = xhsKnowledge.scriptTemplates || {}
-  const template = (templates[style] || templates.vlog || ['开场 3 秒抓注意力', '提出问题/痛点', '展示解决方案', '结尾引导互动']).map((step, i) => ({
-    order: i + 1,
-    step,
-    duration: Math.round((Number(duration) || 60) / 4),
-    notes: `${style || 'vlog'} 风格建议：自然口语化表达`
-  }))
-  res.json({
-    agent: 'script_generator',
-    result: {
-      topic: topic || `小红书${industry || ''}种草脚本`,
-      duration: Number(duration) || 60,
-      style: style || 'vlog',
-      script: template
-    }
-  })
+  const fallbackScript = buildScriptFallback({ industry, topic, style, duration })
+
+  try {
+    const content = await generateStructured({
+      systemPrompt: '你是小红书内容脚本策划专家，擅长生成真实、有细节、适合收藏和互动的图文/视频脚本。你必须输出 JSON，不输出 Markdown。',
+      userPrompt: `行业：${industryNameMap[industry] || industry || '小红书'}
+选题：${topic || '行业主题'}
+风格：${style || 'vlog'}
+时长：${duration || 60} 秒
+
+请生成正文脚本，JSON 对象格式：
+{
+  "topic": "脚本主题",
+  "duration": 60,
+  "style": "vlog",
+  "script": [
+    { "order": 1, "step": "开场", "duration": 8, "notes": "具体内容" }
+  ],
+  "tips": ["拍摄或发布建议"]
+}
+
+要求：
+1. script 生成 4-6 段。
+2. notes 必须是可直接照着拍或写的内容。
+3. 前段抓注意力，中段给细节，结尾引导收藏或评论。`,
+      temperature: 0.82,
+      max_tokens: 2200
+    })
+    const result = normalizeScript(parseJsonValue(content), fallbackScript)
+    res.json({ agent: 'script_generator', status: 'success', result, upgradeHint: '升级进阶会员可获得同选题多风格脚本和评论区引导话术。' })
+  } catch (error) {
+    res.json({ agent: 'script_generator', status: 'success', result: fallbackScript, isRuleFallback: true, upgradeHint: '升级进阶会员可获得同选题多风格脚本和评论区引导话术。' })
+  }
 })
 
 // 8. 封面助手
 router.post('/cover-helper', checkAccess, requireLevel('starter'), async (req, res) => {
   const { industry, noteType, keywords } = req.body
-  const coverTemplates = xhsKnowledge.coverTemplates || {}
-  const colors = { restaurant: ['暖橙', '米黄', '深棕'], education: ['天蓝', '纯白', '深蓝'], beauty: ['粉白', '裸色', '金棕'], service: ['薄荷绿', '浅灰', '深绿'] }
-  const palette = colors[industry] || ['莫兰迪色', '奶油色', '高级灰']
-  res.json({
-    agent: 'cover_helper',
-    result: {
-      recommendedColors: palette,
-      layout: noteType === 'tutorial' ? '左右分栏：左文字+右产品' : noteType === 'review' ? '上下结构：上场景图+下标题' : '中心构图：产品居中+大标题',
-      fontStyle: '粗宋体标题 + 细黑体副标题',
-      tips: ['封面文字不超过 8 个字', '颜色与品牌主色保持一致', '人物出镜笔记 CTR 更高']
-    }
-  })
+  const fallbackCover = buildCoverFallback({ industry, noteType, keywords })
+
+  try {
+    const content = await generateStructured({
+      systemPrompt: '你是小红书封面视觉和点击率优化专家，擅长设计封面标题、配色、版式和钩子词。你必须输出 JSON，不输出 Markdown。',
+      userPrompt: `行业：${industryNameMap[industry] || industry || '小红书'}
+笔记类型：${noteType || 'tutorial'}
+关键词：${keywords || '核心主题'}
+
+请生成封面方案，JSON 对象格式：
+{
+  "recommendedColors": ["颜色1", "颜色2"],
+  "layout": "版式建议",
+  "fontStyle": "字体建议",
+  "hooks": ["封面钩子词"],
+  "tips": ["执行提醒"]
+}
+
+要求：
+1. hooks 生成 4-6 个，每个控制在 10 字以内。
+2. layout 必须描述文字、主体、留白和视觉重心。
+3. tips 必须适合小红书 3:4 封面。`,
+      temperature: 0.8,
+      max_tokens: 1800
+    })
+    const result = normalizeCover(parseJsonValue(content), fallbackCover)
+    res.json({ agent: 'cover_helper', status: 'success', result, upgradeHint: '升级进阶会员可获得封面 A/B 测试和行业高点击模板库。' })
+  } catch (error) {
+    res.json({ agent: 'cover_helper', status: 'success', result: fallbackCover, isRuleFallback: true, upgradeHint: '升级进阶会员可获得封面 A/B 测试和行业高点击模板库。' })
+  }
 })
 
 // 9. 笔记诊断

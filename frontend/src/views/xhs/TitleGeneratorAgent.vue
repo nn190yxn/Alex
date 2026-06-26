@@ -40,6 +40,12 @@
         <button class="generate-btn" :disabled="!canGenerate || loading" @click="generate">
           {{ loading ? '正在生成标题...' : '生成爆款标题' }}
         </button>
+        <div v-if="errorMessage" class="error-state">
+          {{ errorMessage }}
+        </div>
+        <div v-if="upgradeHint" class="upgrade-hint">
+          {{ upgradeHint }}
+        </div>
       </div>
 
       <div v-if="titles.length" class="result-list">
@@ -61,9 +67,12 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import request from '@/api/request'
 
 const loading = ref(false)
 const titles = ref([])
+const errorMessage = ref('')
+const upgradeHint = ref('')
 
 const form = reactive({
   industry: '',
@@ -75,21 +84,26 @@ const canGenerate = computed(() => form.industry)
 
 const generate = async () => {
   loading.value = true
-  await new Promise(r => setTimeout(r, 500))
-  const formulas = [
-    { name: '数字+结果型', titles: ['做 XX 行业 5 年，这 3 个坑我踩遍了', '靠这个方法，3 个月涨粉 10 万'] },
-    { name: '人群+痛点型', titles: ['新手 XX 最容易犯的 3 个错', '敏感肌千万别再乱用 XX 了'] },
-    { name: '悬念+揭秘型', titles: ['为什么别人 XX 那么火？真相是...', '行业内不会告诉你的 3 个内幕'] },
-    { name: '对比+反差型', titles: ['成本 XX 卖 XX？凭什么这么火', '改造前 vs 改造后，效果堪比换新房'] },
-    { name: '教程+步骤型', titles: ['保姆级教程：如何 XX 月入 10 万', '在家就能做的 3 步 XX 法，建议收藏'] },
-    { name: '避坑+警示型', titles: ['XX 前必看！看完这篇再决定', '别再交智商税了！这些真的没用'] }
-  ]
-  titles.value = formulas.map(f => ({
-    type: f.name,
-    title: f.titles[Math.floor(Math.random() * f.titles.length)],
-    ctr: Math.floor(Math.random() * 15) + 5 + '%'
-  }))
-  loading.value = false
+  errorMessage.value = ''
+  upgradeHint.value = ''
+  titles.value = []
+  try {
+    const response = await request.post('/xhs/title-generator', {
+      industry: form.industry,
+      topic: form.topic,
+      formulaType: form.formulaType
+    })
+    titles.value = response.titles || []
+    upgradeHint.value = response.upgradeHint || ''
+    if (!titles.value.length) {
+      throw new Error('后端未返回可展示的标题')
+    }
+  } catch (error) {
+    console.error('标题生成失败:', error)
+    errorMessage.value = error.message || '标题生成失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
 }
 
 const copyTitle = (t) => {
@@ -99,4 +113,6 @@ const copyTitle = (t) => {
 
 <style scoped>
 @import '../agent-common.css';
+.error-state { margin-top: 16px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
+.upgrade-hint { margin-top: 16px; padding: 12px 16px; background: #fff7ed; color: #9a3412; border-radius: 8px; font-size: var(--text-body-sm); }
 </style>

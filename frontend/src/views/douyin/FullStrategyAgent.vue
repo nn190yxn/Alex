@@ -28,6 +28,8 @@
         <button class="generate-btn" @click="generate" style="width:100%; margin-top:20px;">
           查看 90 天战略框架
         </button>
+        <div v-if="errorMessage" class="error-state">{{ errorMessage }}</div>
+        <div v-if="upgradeHint" class="upgrade-hint">{{ upgradeHint }}</div>
 
         <div v-if="strategy" class="strategy-result">
           <div class="strategy-header">
@@ -78,76 +80,26 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import request from '@/api/request'
 const strategy = ref(null)
+const errorMessage = ref('')
+const upgradeHint = ref('')
 const form = reactive({ industry: 'restaurant', stage: 'new' })
 
-const generate = () => {
-  const industryMap = { restaurant: '餐饮', beauty: '美业', education: '教培' }
-  strategy.value = {
-    title: `${industryMap[form.industry]}行业 90 天周期倒推战略`,
-    summary: '本战略采用"蓄水-爆发-稳定"三阶段模型，配合 7 天长效赛马机制，逐步建立品牌同城影响力。',
-    phases: [
-      {
-        badge: 'Phase 1',
-        badgeClass: 'badge-phase-1',
-        name: '第 1-30 天：蓄水期（标签建立与流量积累）',
-        desc: '核心目标：让算法认识你，让同城用户刷到你',
-        tasks: [
-          '完成账号装修（头像/简介/背景图/置顶视频）',
-          '发布 15-20 条垂直内容，建立行业标签',
-          '测试 3-5 种内容模板，找到数据最优解',
-          '启动小额 DOU+ 测试（日预算 100-200 元）',
-          '建立基础私域导流路径（企微/社群）'
-        ],
-        metrics: [
-          { label: '粉丝增长', target: '+500-1000' },
-          { label: '月均播放', target: '5万+' },
-          { label: '团购/留资', target: '50+ 单' },
-          { label: '内容标签', target: '精准匹配' }
-        ],
-        locked: true
-      },
-      {
-        badge: 'Phase 2',
-        badgeClass: 'badge-phase-2',
-        name: '第 31-60 天：爆发期（赛马放大与转化收割）',
-        desc: '核心目标：放大跑量素材，提升转化效率',
-        tasks: [
-          '复制已验证的内容模板，提高更新频率',
-          '开启本地推投放，定向同城高意向人群',
-          '策划 1-2 场主题营销活动（限时/联名）',
-          '建立直播常态化（每周 2-3 场）',
-          '优化转化链路（团购页面/私信自动回复）'
-        ],
-        metrics: [
-          { label: '粉丝增长', target: '+2000-3000' },
-          { label: '月均播放', target: '20万+' },
-          { label: '团购/留资', target: '200+ 单' },
-          { label: 'ROI', target: '> 1:3' }
-        ],
-        locked: true
-      },
-      {
-        badge: 'Phase 3',
-        badgeClass: 'badge-phase-3',
-        name: '第 61-90 天：稳定期（品牌心智与复购体系）',
-        desc: '核心目标：从流量思维转向留量思维',
-        tasks: [
-          '建立会员体系与复购激励机制',
-          '策划老客专属活动（生日/纪念日）',
-          '打造老板 IP 人设，提升品牌信任度',
-          '探索多账号矩阵（主号+员工号）',
-          '沉淀 SOP，形成可复制的增长模型'
-        ],
-        metrics: [
-          { label: '粉丝增长', target: '+1000-1500' },
-          { label: '复购率', target: '> 30%' },
-          { label: '月均 GMV', target: '稳定增长' },
-          { label: '品牌搜索量', target: '提升 50%' }
-        ],
-        locked: true
-      }
-    ]
+const generate = async () => {
+  errorMessage.value = ''
+  upgradeHint.value = ''
+  strategy.value = null
+  try {
+    const response = await request.post('/douyin/full-strategy', form)
+    strategy.value = {
+      title: response.title || '90 天周期战略',
+      summary: response.summary || '',
+      phases: response.phases || []
+    }
+    upgradeHint.value = response.upgradePath?.description || ''
+  } catch (error) {
+    errorMessage.value = error.message || '战略框架生成失败，请稍后重试'
   }
 }
 </script>
@@ -156,6 +108,8 @@ const generate = () => {
 @import './agent-common.css';
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .generate-btn { padding: 12px; background: var(--brand-primary); color: white; border: none; border-radius: 8px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+.error-state { margin-top: 16px; padding: 12px 16px; background: #fef2f2; color: #b91c1c; border-radius: 8px; font-size: var(--text-body-sm); }
+.upgrade-hint { margin-top: 16px; padding: 12px 16px; background: #fff7ed; color: #9a3412; border-radius: 8px; font-size: var(--text-body-sm); }
 .strategy-result { margin-top: 24px; }
 .strategy-header { margin-bottom: 24px; text-align: center; }
 .strategy-header h3 { font-size: var(--text-h4); margin-bottom: 8px; }
