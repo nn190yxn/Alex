@@ -109,6 +109,7 @@
             <div class="loading-spinner"></div>
             <p>AI 正在基于知识库生成私域健康度诊断...</p>
           </div>
+          <div v-else-if="errorMessage" class="error-state">{{ errorMessage }}</div>
           <div v-else-if="result" class="result-state">
             <div class="result-header">
               <div class="industry-badge">{{ result.industry }}</div>
@@ -180,11 +181,13 @@
 <script setup>
 import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import request from '@/api/request'
 
 const router = useRouter()
 const currentStep = ref(0)
 const loading = ref(false)
 const result = ref(null)
+const errorMessage = ref('')
 
 const steps = [
   { label: '行业分轨' },
@@ -223,36 +226,27 @@ const canProceed = computed(() => {
 const generate = async () => {
   loading.value = true
   result.value = null
+  errorMessage.value = ''
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/private/diagnosis', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    const data = await request.post('/private/diagnosis', {
+      industry: form.industry,
+      mode: form.mode,
+      painPoints: {
+        traffic: form.trafficPains,
+        operation: form.operationPains,
+        conversion: form.conversionPains,
+        retention: form.retentionPains,
+        fission: form.fissionPains
       },
-      body: JSON.stringify({
-        industry: form.industry,
-        mode: form.mode,
-        painPoints: {
-          traffic: form.trafficPains,
-          operation: form.operationPains,
-          conversion: form.conversionPains,
-          retention: form.retentionPains,
-          fission: form.fissionPains
-        },
-        currentData: {
-          wechatFriends: form.wechatFriends,
-          communityCount: form.communityCount,
-          monthlyRevenue: form.monthlyRevenue,
-          monthlyNewFriends: form.monthlyNewFriends
-        }
-      })
+      currentData: {
+        wechatFriends: form.wechatFriends,
+        communityCount: form.communityCount,
+        monthlyRevenue: form.monthlyRevenue,
+        monthlyNewFriends: form.monthlyNewFriends
+      }
     })
-    const data = await res.json()
     if (data.status === 'success') {
       const r = data.result
-      const lowest = r.radar[0]
       r.radar = r.radar.map(d => ({
         ...d,
         color: getDimColor(d.key),
@@ -263,6 +257,8 @@ const generate = async () => {
     currentStep.value = 3
   } catch (error) {
     console.error('诊断失败:', error)
+    errorMessage.value = error.message || '私域体检生成失败，请稍后重试'
+    currentStep.value = 3
   } finally {
     loading.value = false
   }
@@ -313,6 +309,14 @@ const bookConsult = () => {
   background: linear-gradient(135deg, #f0f9ff, #e0e7ff);
   border-radius: 12px;
   margin-bottom: 24px;
+}
+
+.error-state {
+  padding: 12px 16px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: var(--text-body-sm);
 }
 
 .industry-badge {

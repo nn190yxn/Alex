@@ -73,6 +73,7 @@
 - `GrassConverterAgent.vue`、`JuguangStrategyAgent.vue`、`IPPositioningAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `IPConsistencyAgent.vue` 已从占位页改为可用页面，并调用 `/api/xhs/ip-consistency` 后端链路。
 - `AccountDiagnosisAgent.vue`、`ShutiaoCalculatorAgent.vue` 已从前端本地计算改为调用 `/api/xhs/*` 后端链路。
+- 私域 `PrivateDiagnosis.vue`、`CACvsLTV.vue`、`MemberDesign.vue`、`CommunitySop.vue`、`RetentionPlan.vue`、`FissionPlan.vue` 已统一使用 `request` 调用 `/api/private/*` 后端链路，并补齐错误态。
 
 ## 当前链路矩阵
 
@@ -119,10 +120,10 @@
 
 | 页面 | 当前分类 | 后端链路 | 处理状态 |
 | --- | --- | --- | --- |
-| `PrivateDiagnosis.vue` | 后端规则/知识库 | `/api/private/diagnosis` | 待验证 |
-| `CACvsLTV.vue` | 后端规则/知识库 | `/api/private/cac-ltv` | 待验证 |
-| `MemberDesign.vue` | 后端规则/知识库 | `/api/private/member-design` | 待验证 |
-| `CommunitySop.vue` | 后端规则/知识库 | `/api/private/community-sop` | 待验证 |
-| `RetentionPlan.vue` | 后端规则/知识库 | `/api/private/retention-plan` | 待验证 |
-| `FissionPlan.vue` | 后端规则/知识库 | `/api/private/fission-plan` | 待验证 |
+| `PrivateDiagnosis.vue` | 后端规则/知识库 | `/api/private/diagnosis` | 已接后端 |
+| `CACvsLTV.vue` | 后端规则/知识库 | `/api/private/cac-ltv` | 已接后端 |
+| `MemberDesign.vue` | 后端规则/知识库 | `/api/private/member-design` | 已接后端 |
+| `CommunitySop.vue` | 后端规则/知识库 | `/api/private/community-sop` | 已接后端 |
+| `RetentionPlan.vue` | 后端规则/知识库 | `/api/private/retention-plan` | 已接后端 |
+| `FissionPlan.vue` | 后端规则/知识库 | `/api/private/fission-plan` | 已接后端 |
 | 其他私域快捷页 | 后端规则/知识库 | 复用 `/api/private/*` | 待验证 |
