@@ -72,6 +72,7 @@
 - `GrowthStrategyAgent.vue`、`AccountReviewerAgent.vue`、`ConversionOptimizerAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `GrassConverterAgent.vue`、`JuguangStrategyAgent.vue`、`IPPositioningAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `IPConsistencyAgent.vue` 已从占位页改为可用页面，并调用 `/api/xhs/ip-consistency` 后端链路。
+- `AccountDiagnosisAgent.vue`、`ShutiaoCalculatorAgent.vue` 已从前端本地计算改为调用 `/api/xhs/*` 后端链路。
 
 ## 当前链路矩阵
 
@@ -97,8 +98,8 @@
 | --- | --- | --- | --- |
 | `TitleGeneratorAgent.vue` | 真实 AI + 规则兜底 | `/api/xhs/title-generator` | 已接后端 |
 | `TopicGeneratorAgent.vue` | 真实 AI + 规则兜底 | `/api/xhs/topic-generator` | 已接后端 |
-| `AccountDiagnosisAgent.vue` | 后端规则兜底 | `/api/xhs/account-diagnosis` | 待验证 |
-| `ShutiaoCalculatorAgent.vue` | 后端规则兜底 | `/api/xhs/shutiao-calculator` | 待验证 |
+| `AccountDiagnosisAgent.vue` | 后端规则兜底 | `/api/xhs/account-diagnosis` | 已接后端 |
+| `ShutiaoCalculatorAgent.vue` | 后端规则兜底 | `/api/xhs/shutiao-calculator` | 已接后端 |
 | `ScriptGeneratorAgent.vue` | 真实 AI + 规则兜底 | `/api/xhs/script-generator` | 已补强 |
 | `CoverHelperAgent.vue` | 真实 AI + 规则兜底 | `/api/xhs/cover-helper` | 已补强 |
 | `QuickStartPlanAgent.vue` | 真实 AI + 规则兜底 | `/api/xhs/quick-start-plan` | 已补强 |
