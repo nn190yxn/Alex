@@ -214,6 +214,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import request from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -484,13 +485,9 @@ function toggleFounderIndirect(label) {
 async function fetchCityTier(cityName) {
   if (!cityName || cityName.trim().length < 2) return
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`/api/diagnosis/v3/city-tier?city=${encodeURIComponent(cityName)}`, {
-      headers: { Authorization: `Bearer ${token}` }
+    cityTierPreview.value = await request.get('/diagnosis/v3/city-tier', {
+      params: { city: cityName }
     })
-    if (res.ok) {
-      cityTierPreview.value = await res.json()
-    }
   } catch (e) {
     // 忽略错误
   }
@@ -614,8 +611,6 @@ async function submit() {
   loadingText.value = 'AI 正在生成诊断报告...'
 
   try {
-    const token = localStorage.getItem('token')
-
     const diagnosisData = {
       stage0: { ...stage0Answers.value },
       founder: {
@@ -628,21 +623,7 @@ async function submit() {
       ip: ipAnswers.value && Object.keys(ipAnswers.value).length > 0 ? { scores: { ...ipAnswers.value } } : null
     }
 
-    const res = await fetch('/api/diagnosis/v3/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(diagnosisData)
-    })
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.message || '诊断报告生成失败')
-    }
-
-    const data = await res.json()
+    const data = await request.post('/diagnosis/v3/generate', diagnosisData)
     router.push({
       name: 'DiagnosisReport',
       state: { result: data.analysis, title: '企业增长全景顾问报告', aiUsed: data.aiUsed }

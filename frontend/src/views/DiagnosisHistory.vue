@@ -154,6 +154,7 @@
 import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { IconCalendar, IconClipboard } from '@/icons'
+import request from '@/api/request'
 
 const loading = ref(true)
 const reports = ref([])
@@ -164,16 +165,12 @@ const pageSize = 10
 async function loadReports(pageNum = 1) {
   loading.value = true
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch(`/api/diagnosis/history?page=${pageNum}&pageSize=${pageSize}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+    reports.value = await request.get('/diagnosis/history', {
+      params: { page: pageNum, pageSize }
     })
-    if (res.ok) {
-      reports.value = await res.json()
-      page.value = pageNum
-    }
-  } catch (e) {
-    console.error('Failed to load reports:', e)
+    page.value = pageNum
+  } catch (error) {
+    console.error('Failed to load reports:', error)
   } finally {
     loading.value = false
   }
