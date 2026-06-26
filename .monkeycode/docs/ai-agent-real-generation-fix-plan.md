@@ -71,6 +71,7 @@
 - `CompetitorAnalyzerAgent.vue`、`NoteDiagnoserAgent.vue`、`SeoOptimizerAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `GrowthStrategyAgent.vue`、`AccountReviewerAgent.vue`、`ConversionOptimizerAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `GrassConverterAgent.vue`、`JuguangStrategyAgent.vue`、`IPPositioningAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
+- `IPConsistencyAgent.vue` 已从占位页改为可用页面，并调用 `/api/xhs/ip-consistency` 后端链路。
 
 ## 当前链路矩阵
 
@@ -110,7 +111,8 @@
 | `GrassConverterAgent.vue` | 后端规则兜底 | `/api/xhs/grass-converter` | 已接后端 |
 | `JuguangStrategyAgent.vue` | 后端规则兜底 | `/api/xhs/juguang-strategy` | 已接后端 |
 | `IPPositioningAgent.vue` | 后端规则兜底 | `/api/xhs/ip-positioning` | 已接后端 |
-| 其他小红书智能体 | 占位/未实现风险 | `/api/xhs/*` 部分存在 | 待逐项审计 |
+| `IPConsistencyAgent.vue` | 后端规则兜底 | `/api/xhs/ip-consistency` | 已接后端 |
+| 其他小红书智能体 | 待复测风险 | `/api/xhs/*` 部分存在 | 待逐项审计 |
 
 ### 私域独立智能体
 
