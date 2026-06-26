@@ -19,5 +19,22 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('/node_modules/echarts/')) return 'vendor-echarts'
+            if (id.includes('/node_modules/zrender/')) return 'vendor-zrender'
+            if (id.includes('vue') || id.includes('pinia')) return 'vendor-vue'
+            if (id.includes('axios') || id.includes('dayjs')) return 'vendor-utils'
+            return 'vendor'
+          }
+          if (id.includes('/src/constants/toolCatalog')) return 'tool-catalog'
+        }
+      }
+    }
   }
 })

@@ -123,7 +123,6 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick } from 'vue'
-import * as echarts from 'echarts'
 import request from '@/api/request'
 
 const steps = [
@@ -193,7 +192,18 @@ const nextStep = async () => {
 const renderRadar = async (radarData) => {
   await new Promise(r => setTimeout(r, 50))
   if (!radarChart.value) return
-  const chart = echarts.init(radarChart.value)
+  const [echartsCore, charts, components, renderers] = await Promise.all([
+    import('echarts/core'),
+    import('echarts/lib/chart/radar'),
+    import('echarts/lib/component/radar'),
+    import('echarts/renderers')
+  ])
+  echartsCore.use([
+    charts.RadarChart,
+    components.RadarComponent,
+    renderers.CanvasRenderer
+  ])
+  const chart = echartsCore.init(radarChart.value)
   chart.setOption({
     radar: {
       indicator: radarData.map(d => ({ name: d.name, max: 100 })),
