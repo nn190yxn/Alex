@@ -184,6 +184,7 @@
 import { ref, reactive } from 'vue'
 import ToolDetail from '@/components/ToolDetail.vue'
 import { getToolByCode } from '@/constants/toolCatalog'
+import { generateWithAI } from '@/api/tool'
 
 const toolInfo = getToolByCode('schedule')
 
@@ -230,30 +231,25 @@ async function handleSubmit() {
     return
   }
   try {
-    const res = await fetch('/api/generate/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        openTime: form.openTime,
-        closeTime: form.closeTime,
-        morningStart: form.morningStart,
-        morningEnd: form.morningEnd,
-        afternoonStart: form.afternoonStart,
-        afternoonEnd: form.afternoonEnd,
-        eveningStart: form.eveningStart,
-        eveningEnd: form.eveningEnd,
-        employees: form.employees,
-        constraints: form.constraints
-      })
+    const data = await generateWithAI('schedule', {
+      openTime: form.openTime,
+      closeTime: form.closeTime,
+      morningStart: form.morningStart,
+      morningEnd: form.morningEnd,
+      afternoonStart: form.afternoonStart,
+      afternoonEnd: form.afternoonEnd,
+      eveningStart: form.eveningStart,
+      eveningEnd: form.eveningEnd,
+      employees: form.employees,
+      constraints: form.constraints
     })
-    const data = await res.json()
     if (data.error) {
       result.value = { error: data.error }
     } else {
       result.value = data
     }
-  } catch (e) {
-    result.value = { error: '生成失败，请稍后重试' }
+  } catch (error) {
+    result.value = { error: error.message || '生成失败，请稍后重试' }
   }
 }
 </script>

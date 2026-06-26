@@ -75,6 +75,8 @@
 - `AccountDiagnosisAgent.vue`、`ShutiaoCalculatorAgent.vue` 已从前端本地计算改为调用 `/api/xhs/*` 后端链路。
 - 私域 `PrivateDiagnosis.vue`、`CACvsLTV.vue`、`MemberDesign.vue`、`CommunitySop.vue`、`RetentionPlan.vue`、`FissionPlan.vue` 已统一使用 `request` 调用 `/api/private/*` 后端链路，并补齐错误态。
 - 私域其他快捷页已统一使用 `request` 调用复用的 `/api/private/*` 后端链路，并补齐错误态。
+- 小红书 17 个前端页面已核对到后端 17 个 `/api/xhs/*` 路由，当前均使用 `request.post('/xhs/*')` 调用。
+- `ScheduleGenerator.vue` 已从裸 `fetch('/api/generate/schedule')` 改为 `generateWithAI('schedule', payload)`，统一走 `/api/generate/:toolCode` 请求封装。
 
 ## 当前链路矩阵
 
@@ -115,7 +117,7 @@
 | `JuguangStrategyAgent.vue` | 后端规则兜底 | `/api/xhs/juguang-strategy` | 已接后端 |
 | `IPPositioningAgent.vue` | 后端规则兜底 | `/api/xhs/ip-positioning` | 已接后端 |
 | `IPConsistencyAgent.vue` | 后端规则兜底 | `/api/xhs/ip-consistency` | 已接后端 |
-| 其他小红书智能体 | 待复测风险 | `/api/xhs/*` 部分存在 | 待逐项审计 |
+| 其他小红书智能体 | 后端规则/知识库 | `/api/xhs/*` | 已核对路由与请求封装 |
 
 ### 私域独立智能体
 
