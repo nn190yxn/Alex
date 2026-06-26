@@ -69,6 +69,8 @@
 - `ScriptGeneratorAgent.vue`、`CoverHelperAgent.vue`、`QuickStartPlanAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 - `xhsAgents.js` 的 `script-generator`、`cover-helper`、`quick-start-plan` 已补 AI 结构化生成与规则兜底。
 - `CompetitorAnalyzerAgent.vue`、`NoteDiagnoserAgent.vue`、`SeoOptimizerAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
+- `GrowthStrategyAgent.vue`、`AccountReviewerAgent.vue`、`ConversionOptimizerAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
+- `GrassConverterAgent.vue`、`JuguangStrategyAgent.vue`、`IPPositioningAgent.vue` 已从占位页改为可用页面，并统一调用 `/api/xhs/*` 后端链路。
 
 ## 当前链路矩阵
 
@@ -102,6 +104,12 @@
 | `NoteDiagnoserAgent.vue` | 后端规则兜底 | `/api/xhs/note-diagnoser` | 已接后端 |
 | `SeoOptimizerAgent.vue` | 后端规则兜底 | `/api/xhs/seo-optimizer` | 已接后端 |
 | `CompetitorAnalyzerAgent.vue` | 后端规则兜底 | `/api/xhs/competitor-analyzer` | 已接后端 |
+| `GrowthStrategyAgent.vue` | 后端规则兜底 | `/api/xhs/growth-strategy` | 已接后端 |
+| `AccountReviewerAgent.vue` | 后端规则兜底 | `/api/xhs/account-reviewer` | 已接后端 |
+| `ConversionOptimizerAgent.vue` | 后端规则兜底 | `/api/xhs/conversion-optimizer` | 已接后端 |
+| `GrassConverterAgent.vue` | 后端规则兜底 | `/api/xhs/grass-converter` | 已接后端 |
+| `JuguangStrategyAgent.vue` | 后端规则兜底 | `/api/xhs/juguang-strategy` | 已接后端 |
+| `IPPositioningAgent.vue` | 后端规则兜底 | `/api/xhs/ip-positioning` | 已接后端 |
 | 其他小红书智能体 | 占位/未实现风险 | `/api/xhs/*` 部分存在 | 待逐项审计 |
 
 ### 私域独立智能体
