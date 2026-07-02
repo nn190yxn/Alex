@@ -2,6 +2,21 @@
   "$schema": "../.schema/skills_manifest.json",
   "skills": [
     {
+      "skill_id": "commercial-planning-expert",
+      "name": {
+        "en": "Commercial Planning Expert",
+        "zh": "商业策划专家"
+      },
+      "description": {
+        "en": "Reviews and optimizes commercial real estate reports, positioning proposals, leasing strategies, operation plans, and cooperation presentations across structure, logic, evidence, terminology, and execution.",
+        "zh": "面向商业地产与商业综合体报告，完成结构审查、逻辑补强、语言升级、定位优化、招商与运营方案改写，以及合作模式与资产视角校正。"
+      },
+      "categories": ["diagnosis", "business", "real-estate", "planning"],
+      "tags": ["商业地产", "报告审查", "提案优化", "项目定位", "招商策略"],
+      "skill_md_path": "商业策划专家/SKILL.md",
+      "is_enabled": true
+    },
+    {
       "skill_id": "enterprise-growth-diagnosis",
       "name": {
         "en": "Enterprise Growth Diagnosis",
