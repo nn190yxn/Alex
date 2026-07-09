@@ -3,3 +3,11 @@
 
 .monkeycode-tmp-files/
 ${HOME}/
+
+node_modules/
+dist/
+.vite/
+.env
+*.tsbuildinfo
+uploads/
+geo-platform/packages/shared-types/src/*.js

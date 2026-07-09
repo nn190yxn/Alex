@@ -103,13 +103,15 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 写字楼、公寓、底商、酒店、物业私域等复合项目，应按混合业态资产激活来组织方案，讲清各资产单元定位、客流联动、权益互通、运营机制和收益假设。
   - 操盘型方案允许保留有经营含义的强判断、命名和适度生活化表达，但必须落到客群、空间、业态、运营、收益和分阶段目标。
 
-[当前仓库为文档型起始项目]
-- Date: 2026-04-16
-- Context: Agent 在执行"个人成长看板/个人仪表盘"需求分析时发现
-- Category: 代码结构
+[GEO 管理平台验证流程]
+- Date: 2026-07-09
+- Context: Agent 在执行 GEO 管理平台自动化运营闭环最终验证时更新
+- Category: 构建方法
 - Instructions:
-  - 仓库根目录当前只有 `README.md`、`LICENSE`、`skills/` 和 `.monkeycode/`，没有现成的前端或后端应用目录。
-  - 当前项目适合按新项目方式初始化个人网站或仪表盘。
+  - GEO 管理平台工程位于 `geo-platform/`，最终交付门禁优先运行 `npm run verify`。
+  - `npm run verify` 覆盖 `npm audit`、workspace 类型检查、workspace 测试、workspace 构建、Prisma schema 校验和 Prisma Client 生成。
+  - 排查单项问题时分别运行 `npm run test --workspace @geo-platform/api`、`npm run test --workspace @geo-platform/web`、`npm run build --workspace @geo-platform/api`、`npm run build --workspace @geo-platform/web`、`npm run prisma:validate` 和 `npm run prisma:generate`。
+  - `npm run prisma:validate` 脚本自带占位 `DATABASE_URL`；直接调用 `npx prisma validate --schema apps/api/prisma/schema.prisma` 时需要手动提供 `DATABASE_URL`。
 
 [追光小牛 · 服务器连接信息]
 - Date: 2026-06-25
