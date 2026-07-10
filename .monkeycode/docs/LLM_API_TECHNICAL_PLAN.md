@@ -18,6 +18,7 @@
 - 平台配置：`PlatformConfig` 已支持 endpoint、model、mode、rateLimit、hasCredential 和脱敏状态
 - 平台适配器：已有 `AIPlatformAdapter`、`OpenAICompatibleAdapter`、`MockAdapter`、`ManualInputAdapter`
 - 默认平台：豆包、Kimi、DeepSeek、通义千问
+- 已烟测平台：SenseNova，endpoint 为 `https://token.sensenova.cn/v1/chat/completions`，模型为 `sensenova-6.7-flash-lite`，走 OpenAI-compatible fallback；密钥只保存在运行态配置或目标环境变量中，文档不记录真实值
 - 测试计划：已有测试主题、测试问题、测试计划和执行编排
 - 监测运行：已有 `MonitoringRun`、`AIResponse`、`AnalysisResult`
 - 异步任务：已有 `AsyncJob`，当前支持 `monitoring` 和 `content_generation`

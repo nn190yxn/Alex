@@ -113,6 +113,15 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 排查单项问题时分别运行 `npm run test --workspace @geo-platform/api`、`npm run test --workspace @geo-platform/web`、`npm run build --workspace @geo-platform/api`、`npm run build --workspace @geo-platform/web`、`npm run prisma:validate` 和 `npm run prisma:generate`。
   - `npm run prisma:validate` 脚本自带占位 `DATABASE_URL`；直接调用 `npx prisma validate --schema apps/api/prisma/schema.prisma` 时需要手动提供 `DATABASE_URL`。
 
+[GEO 管理平台 SenseNova 接入]
+- Date: 2026-07-10
+- Context: Agent 在执行真实模型配置烟测时发现
+- Category: 环境配置
+- Instructions:
+  - SenseNova 可作为 OpenAI-compatible 平台配置接入，platformCode 使用 `sensenova`，endpoint 使用 `https://token.sensenova.cn/v1/chat/completions`，modelName 使用 `sensenova-6.7-flash-lite`。
+  - 不要把真实 API Key 写入文档或提交到仓库；仅保存到运行态平台配置、目标环境变量或被 `.gitignore` 忽略的本地文件。
+  - 该模型响应会包含 `message.reasoning`，低 `max_tokens` 可能无法产出 `message.content`；项目 LLM 编排默认 `maxTokens: 1600` 可用于正式任务。
+
 [追光小牛 · 服务器连接信息]
 - Date: 2026-06-25
 - Context: Agent 在执行制度文件同步和网页部署时确认

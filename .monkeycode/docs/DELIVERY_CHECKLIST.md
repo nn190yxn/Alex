@@ -49,6 +49,7 @@ npm run db:prepare
 - 前端入口检查通过：`http://localhost:5173` 返回 200。
 - 公开预览检查通过：`https://5173-af4ce582db267302.monkeycode-ai.online` 返回 200。
 - 提交前清理检查通过：`.gitignore` 已过滤测试上传产物 `uploads/` 和 `geo-platform/packages/shared-types/src/*.js` 编译残留，关键源码文件仍可进入待提交列表。
+- SenseNova 接入烟测通过：`brand_demo` 已在当前 memory 运行态保存 `sensenova` 平台配置，endpoint 为 `https://token.sensenova.cn/v1/chat/completions`，模型为 `sensenova-6.7-flash-lite`，平台校验返回“标准 API 配置可用”；真实短请求返回 200，较低 `max_tokens` 会被 reasoning 占用，项目 LLM 编排默认 `maxTokens: 1600` 可获得标准 `message.content`。
 - 默认 memory repository 下 `brand_demo` 追光小牛闭环接口复测通过：品牌工作区、测试主题、候选问法、测试计划、平台配置、增长优化、内容生成、发布中心、任务看板、报告中心和顾问记录均返回可展示数据。
 - 端到端写链路烟测通过：增长优化计划创建、确认拆任务、内容任务生成、内容版本保存、发布入口生成、发布账号创建、发布记录创建与发布状态更新、有效监测任务复测创建和复测完成均通过。
 - 冷启动验证通过：重启 `npm run dev` 后 seed 默认数据恢复，临时内存烟测数据清空，前端、API 和公开预览恢复 200。
@@ -106,7 +107,7 @@ npm run db:prepare
 
 ## 后续交付关注点
 
-- 真实 AI 平台接入：补充豆包、Kimi、DeepSeek 和通义千问的平台密钥、endpoint、model name 与 provider 配置，并设置 `GEO_AI_PLATFORM_CONFIGURED`。
+- 真实 AI 平台接入：当前运行态已补充 SenseNova 配置；后续补充豆包、Kimi、DeepSeek 和通义千问的平台密钥、endpoint、model name 与 provider 配置，并设置 `GEO_AI_PLATFORM_CONFIGURED`。
 - 数据库交付：当前已通过 Prisma schema 校验和 Client 生成；`apps/api/prisma/migrations/` 仍只有 `.gitkeep`，生产或 Prisma 演示环境需要根据目标数据库基线补充受控 migration，或在明确允许的环境中执行 schema 同步流程。
 - 生产部署：补充数据库、环境变量、构建产物、进程管理和健康检查方案。
 - 持续迭代：基于真实试点反馈、行业规则变化或生产试运行问题建立下一轮规格文档，并按持续迭代机制执行复盘和验证。
