@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Descriptions, Drawer, Progress, Space, Steps, Tag, Typography, message } from 'antd';
+import { Alert, Button, Card, Collapse, Descriptions, Drawer, Progress, Space, Steps, Tag, Typography, message } from 'antd';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -260,24 +260,52 @@ function ConfirmationRewriteList({ confirmation }: { confirmation: AutomationCon
   if (rewrites.length === 0) return null;
 
   return (
-    <Space direction="vertical" size={6} className="page-stack">
+    <Space direction="vertical" size={8} className="page-stack">
       <Typography.Text strong>平台改写版本</Typography.Text>
-      <ol className="automation-question-list">
-        {rewrites.map((item, index) => (
-          <li key={`${item.rewriteId}-${index}`}>
-            <Typography.Text>{item.targetPlatform}：{item.title}</Typography.Text>
-            {item.complianceNotes.length > 0 ? <Typography.Text type="secondary"> · 合规：{item.complianceNotes.join('、')}</Typography.Text> : null}
-          </li>
-        ))}
-      </ol>
+      <Collapse
+        size="small"
+        items={rewrites.map((item, index) => ({
+          key: `${item.rewriteId}-${index}`,
+          label: `${item.targetPlatformLabel}：${item.title}`,
+          children: <ConfirmationRewriteDetail rewrite={item} />
+        }))}
+      />
     </Space>
   );
+}
+
+function ConfirmationRewriteDetail({ rewrite }: { rewrite: ConfirmationRewrite }) {
+  return (
+    <Space direction="vertical" size={8} className="page-stack">
+      <Typography.Paragraph copyable={{ text: getRewriteCopyText(rewrite) }} strong>
+        {rewrite.title}
+      </Typography.Paragraph>
+      {rewrite.body ? (
+        <Typography.Paragraph copyable className="automation-rewrite-body">
+          {rewrite.body}
+        </Typography.Paragraph>
+      ) : <Typography.Text type="secondary">暂无正文，请回到内容生成步骤重新生成。</Typography.Text>}
+      {rewrite.tags.length > 0 ? <Typography.Text type="secondary">标签：{rewrite.tags.join('、')}</Typography.Text> : null}
+      {rewrite.rewriteNotes.length > 0 ? <Typography.Text type="secondary">改写说明：{rewrite.rewriteNotes.join('、')}</Typography.Text> : null}
+      {rewrite.complianceNotes.length > 0 ? <Typography.Text type="secondary">合规提示：{rewrite.complianceNotes.join('、')}</Typography.Text> : null}
+    </Space>
+  );
+}
+
+function getRewriteCopyText(rewrite: ConfirmationRewrite): string {
+  return [rewrite.title, rewrite.body, rewrite.tags.length > 0 ? `标签：${rewrite.tags.join('、')}` : '']
+    .filter((item) => item.trim().length > 0)
+    .join('\n\n');
 }
 
 type ConfirmationRewrite = {
   rewriteId: string;
   targetPlatform: string;
+  targetPlatformLabel: string;
   title: string;
+  body: string;
+  tags: string[];
+  rewriteNotes: string[];
   complianceNotes: string[];
 };
 
@@ -290,12 +318,31 @@ export function getConfirmationRewrites(confirmation: Pick<AutomationConfirmatio
     return [{
       rewriteId: item.rewriteId,
       targetPlatform: typeof item.targetPlatform === 'string' && item.targetPlatform.trim().length > 0 ? item.targetPlatform : '未知平台',
+      targetPlatformLabel: getPublishingPlatformLabel(typeof item.targetPlatform === 'string' ? item.targetPlatform : undefined),
       title: item.title,
-      complianceNotes: Array.isArray(item.complianceNotes)
-        ? item.complianceNotes.filter((note): note is string => typeof note === 'string' && note.trim().length > 0).slice(0, 2)
-        : []
+      body: typeof item.body === 'string' ? item.body.trim() : '',
+      tags: getStringList(item.tags),
+      rewriteNotes: getStringList(item.rewriteNotes),
+      complianceNotes: getStringList(item.complianceNotes)
     }];
-  }).slice(0, 10);
+  }).slice(0, 20);
+}
+
+function getPublishingPlatformLabel(platform?: string): string {
+  if (!platform || platform.trim().length === 0) return '未知平台';
+
+  const labels: Record<string, string> = {
+    zhihu: '知乎',
+    baijiahao: '百家号',
+    xiaohongshu: '小红书',
+    wechat_official: '公众号',
+    official_site_faq: '官网 FAQ'
+  };
+  return labels[platform] ?? platform;
+}
+
+function getStringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
 }
 
 function ConfirmationAnalysisReview({ confirmation }: { confirmation: AutomationConfirmation }) {

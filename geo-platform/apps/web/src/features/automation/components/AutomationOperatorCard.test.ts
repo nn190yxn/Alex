@@ -101,12 +101,20 @@ describe('AutomationOperatorCard helpers', () => {
         rewriteId: 'rewrite_1',
         targetPlatform: 'xiaohongshu',
         title: '追光小牛家长选择清单',
-        complianceNotes: ['避免制造焦虑', '避免承诺具体成长结果']
+        targetPlatformLabel: '小红书',
+        body: '很多家长会问：追光小牛适合几岁孩子？\n\n正文可直接复制发布。',
+        tags: ['贵阳儿童运动', '儿童体能'],
+        rewriteNotes: ['改为小红书笔记标题', '追加话题标签'],
+        complianceNotes: ['避免制造焦虑', '避免承诺具体成长结果', '第三条会被保留']
       },
       {
         rewriteId: 'rewrite_2',
         targetPlatform: '未知平台',
+        targetPlatformLabel: '未知平台',
         title: 'FAQ：追光小牛',
+        body: '',
+        tags: [],
+        rewriteNotes: [],
         complianceNotes: []
       }
     ]);
@@ -236,7 +244,10 @@ function createRewriteConfirmation(): AutomationConfirmation {
           rewriteId: 'rewrite_1',
           targetPlatform: 'xiaohongshu',
           title: '追光小牛家长选择清单',
-          complianceNotes: ['避免制造焦虑', '避免承诺具体成长结果', '第三条会被折叠']
+          body: '很多家长会问：追光小牛适合几岁孩子？\n\n正文可直接复制发布。',
+          tags: ['贵阳儿童运动', '儿童体能'],
+          rewriteNotes: ['改为小红书笔记标题', '追加话题标签'],
+          complianceNotes: ['避免制造焦虑', '避免承诺具体成长结果', '第三条会被保留']
         },
         {
           rewriteId: 'rewrite_2',

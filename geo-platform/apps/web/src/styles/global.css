@@ -136,3 +136,7 @@ body {
 .canvas-node-label .ant-typography {
   white-space: normal;
 }
+
+.automation-rewrite-body {
+  white-space: pre-wrap;
+}
