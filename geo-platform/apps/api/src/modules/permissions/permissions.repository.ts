@@ -844,8 +844,7 @@ publishingRecords.push({
   title: '贵阳家长如何选择儿童运动成长课',
   platform: 'wechat_official',
   accountName: '追光小牛公众号',
-  status: 'published',
-  publishedUrl: 'https://example.com/supercalf/wechat/children-sports-guide',
+  status: 'draft',
   createdAt: now,
   updatedAt: now
 });
@@ -865,7 +864,7 @@ optimizationTasks.push({
   sourceRunId: 'run_demo_weekly_mock',
   dueDate: '2026-07-20T00:00:00.000Z',
   priority: 'high',
-  contentLink: 'https://example.com/supercalf/wechat/children-sports-guide',
+  contentLink: 'draft://brand_demo/generation_demo_gap/version_demo_gap_v1',
   retestRecords: [],
   createdAt: now,
   updatedAt: now

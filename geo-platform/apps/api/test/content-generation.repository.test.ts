@@ -61,6 +61,7 @@ describe('content generation repository', () => {
     const contentWorkspace = repository.getContentGenerationWorkspace('user_demo', 'brand_demo');
     const generationTask = contentWorkspace?.tasks.find((task) => task.id === 'generation_demo_gap');
     const publishingDashboard = repository.getPublishingDashboard('user_demo', 'brand_demo');
+    const demoPublishingRecord = publishingDashboard?.records.find((record) => record.id === 'publishing_record_demo_gap');
 
     expect(plan).toMatchObject({
       status: 'in_progress',
@@ -95,12 +96,14 @@ describe('content generation repository', () => {
       platform: 'wechat_official',
       accountName: '追光小牛公众号'
     }));
-    expect(publishingDashboard?.records).toContainEqual(expect.objectContaining({
+    expect(demoPublishingRecord).toEqual(expect.objectContaining({
       id: 'publishing_record_demo_gap',
       platform: 'wechat_official',
-      publishedUrl: 'https://example.com/supercalf/wechat/children-sports-guide'
+      status: 'draft'
     }));
+    expect(demoPublishingRecord?.publishedUrl).toBeUndefined();
     expect(growthWorkspace?.relatedTasks.filter((task) => task.growthOptimizationPlanId === 'growth_plan_demo_supercalf')).toHaveLength(5);
+    expect(growthWorkspace?.relatedTasks.find((task) => task.id === 'task_demo_content_gap')?.contentLink).toBe('draft://brand_demo/generation_demo_gap/version_demo_gap_v1');
   });
 
   it('creates completed generation tasks with steps and first editable version', () => {
