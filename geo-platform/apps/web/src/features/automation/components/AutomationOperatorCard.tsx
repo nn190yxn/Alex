@@ -80,7 +80,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
 
       return apiPost<AutomationPackageDetail>(`/brands/${brandId}/automation/packages/${packageId}/confirmations/${confirmation.confirmationId}`, {
         action: 'approve',
-        decision: '确认继续'
+        decision: confirmation.type === 'manual_test_required' ? '已录入测试回答，继续分析' : '确认继续'
       });
     },
     onSuccess: handleResponse('确认事项已处理')
@@ -166,7 +166,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
                   loading={resolveConfirmationMutation.isPending}
                   onClick={() => activePackage && resolveConfirmationMutation.mutate({ packageId: activePackage.packageId, confirmation })}
                 >
-                  确认继续
+                  {confirmation.type === 'manual_test_required' ? '已录入回答，继续分析' : '确认继续'}
                 </Button>
               </Space>
             </Card>
@@ -526,6 +526,15 @@ function ConfirmationBlockingStepList({ confirmation }: { confirmation: Automati
   return (
     <Space direction="vertical" size={6} className="page-stack">
       <Typography.Text strong>需要人工处理的测试项</Typography.Text>
+      {confirmation.type === 'manual_test_required' ? (
+        <Alert
+          type="info"
+          showIcon
+          message="先录入真实 AI 回答，再继续分析"
+          description="当前浏览器自动执行没有真实回答回填。请到 AI 测试页面复制问题、粘贴平台真实回答；录入完成后再回到这里继续分析。"
+          action={<Button href="/monitoring" size="small">去 AI 测试录入</Button>}
+        />
+      ) : null}
       <ol className="automation-question-list">
         {blockingSteps.map((item, index) => (
           <li key={`${item.question}-${item.platformCode}-${index}`}>

@@ -99,6 +99,10 @@ export class ConfirmationQueueService {
       throw new BadRequestException('确认事项已经处理');
     }
 
+    if (confirmation.type === 'manual_test_required' && input.action !== 'regenerate') {
+      this.assertManualTestResultsReady(userId, brandId, confirmation);
+    }
+
     const now = new Date().toISOString();
     const resolved = this.automationRepository.updateConfirmation(brandId, packageId, confirmationId, {
       ...confirmation,
@@ -224,6 +228,15 @@ export class ConfirmationQueueService {
 
       this.permissionsRepository.updateTestQuestionCandidate(userId, brandId, candidateId, { promptId: prompt.id });
     });
+  }
+
+  private assertManualTestResultsReady(userId: string, brandId: BrandId, confirmation: AutomationConfirmation): void {
+    const testPlanId = typeof confirmation.payload.testPlanId === 'string' ? confirmation.payload.testPlanId : '';
+    const testPlan = this.permissionsRepository.listTestPlans(userId, brandId)?.find((plan) => plan.id === testPlanId);
+
+    if (!testPlan || testPlan.monitoringRunIds.length === 0) {
+      throw new BadRequestException('本轮测试还没有真实回答结果。请先到“AI 测试”页面手动录入回答，或接入真实浏览器回填后再继续分析。');
+    }
   }
 }
 

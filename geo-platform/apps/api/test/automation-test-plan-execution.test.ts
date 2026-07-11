@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 import { AutomationOrchestratorService } from '../src/modules/automation/automation-orchestrator.service';
 import { AutomationRepository } from '../src/modules/automation/automation.repository';
@@ -147,6 +147,10 @@ describe('Automation test plan execution', () => {
       expect.objectContaining({ code: 'answer_analysis', status: 'pending' })
     );
     expect(harness.permissionsRepository.listTestPlans('user_demo', 'brand_demo')?.find((item) => item.id === plan?.id)?.monitoringRunIds).toEqual([]);
+    expect(() => harness.confirmationQueue.resolveConfirmation('user_demo', 'brand_demo', executed.packageId, executed.confirmations[0]?.confirmationId ?? '', {
+      action: 'approve',
+      decision: '确认继续'
+    })).toThrow(BadRequestException);
   });
 
   it('requires a related test plan before executing', () => {
@@ -161,6 +165,7 @@ function createHarness(): {
   service: AutomationOrchestratorService;
   automationRepository: AutomationRepository;
   permissionsRepository: PermissionsRepository;
+  confirmationQueue: ConfirmationQueueService;
 } {
   const automationRepository = new AutomationRepository();
   const permissionsRepository = new PermissionsRepository();
@@ -176,6 +181,7 @@ function createHarness(): {
   return {
     service: new AutomationOrchestratorService(automationRepository, permissionsRepository, confirmationQueue, questionPoolService),
     automationRepository,
-    permissionsRepository
+    permissionsRepository,
+    confirmationQueue
   };
 }
