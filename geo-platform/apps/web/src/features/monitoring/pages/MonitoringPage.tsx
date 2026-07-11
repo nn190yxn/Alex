@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Card, Space, Typography } from 'antd';
+import { useLocation } from 'react-router-dom';
 import { useBrandContextStore } from '../../../stores/brandContextStore';
 import { AutomationOperatorCard } from '../../automation/components/AutomationOperatorCard';
 import { GeoMetricDashboardCard } from '../components/GeoMetricDashboardCard';
@@ -9,9 +11,18 @@ import { TestQuestionCandidateCard } from '../components/TestQuestionCandidateCa
 
 export function MonitoringPage() {
   const activeBrandId = useBrandContextStore((state) => state.activeBrandId);
+  const location = useLocation();
   const scrollToMonitoringRuns = () => {
     document.getElementById('monitoring-runs-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  useEffect(() => {
+    if (location.hash === '#manual-test-entry') {
+      requestAnimationFrame(() => {
+        document.getElementById('manual-test-entry')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [location.hash]);
 
   return (
     <Space direction="vertical" size={16} className="page-stack">

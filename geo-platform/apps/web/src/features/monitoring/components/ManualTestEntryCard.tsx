@@ -102,7 +102,7 @@ export function ManualTestEntryCard({ brandId }: Props) {
   const missingAnswerCount = getMissingAnswerCount(rows, parsedBatchAnswers);
 
   return (
-    <Card title="手动测试录入">
+    <Card id="manual-test-entry" title="手动测试录入">
       {contextHolder}
       <Space direction="vertical" size={16} className="page-stack">
         <PageErrorAlert response={plansQuery.data} />

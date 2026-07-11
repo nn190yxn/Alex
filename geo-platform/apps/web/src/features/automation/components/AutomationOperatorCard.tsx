@@ -157,7 +157,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
                 <Typography.Text type="secondary">{confirmation.recommendation}</Typography.Text>
                 <Alert type="info" showIcon message={confirmation.evidenceSummary} />
                 <ConfirmationQuestionList confirmation={confirmation} />
-                <ConfirmationBlockingStepList confirmation={confirmation} />
+                <ConfirmationBlockingStepList confirmation={confirmation} onGoToManualEntry={goToManualTestEntry} />
                 <ConfirmationAnalysisReview confirmation={confirmation} />
                 <ConfirmationRewriteList confirmation={confirmation} />
                 <ConfirmationPublishingSuggestionList confirmation={confirmation} />
@@ -175,6 +175,11 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
       </Drawer>
     </Card>
   );
+}
+
+function goToManualTestEntry() {
+  window.history.pushState(null, '', '/monitoring#manual-test-entry');
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 function AutomationCapabilityAlert({ summary }: { summary: AutomationCapabilitySummary }) {
@@ -518,7 +523,7 @@ function toNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-function ConfirmationBlockingStepList({ confirmation }: { confirmation: AutomationConfirmation }) {
+function ConfirmationBlockingStepList({ confirmation, onGoToManualEntry }: { confirmation: AutomationConfirmation; onGoToManualEntry: () => void }) {
   const blockingSteps = getConfirmationBlockingSteps(confirmation);
 
   if (blockingSteps.length === 0) return null;
@@ -532,7 +537,7 @@ function ConfirmationBlockingStepList({ confirmation }: { confirmation: Automati
           showIcon
           message="先录入真实 AI 回答，再继续分析"
           description="当前浏览器自动执行没有真实回答回填。请到 AI 测试页面复制问题、粘贴平台真实回答；录入完成后再回到这里继续分析。"
-          action={<Button href="/monitoring" size="small">去 AI 测试录入</Button>}
+          action={<Button size="small" onClick={onGoToManualEntry}>去 AI 测试录入</Button>}
         />
       ) : null}
       <ol className="automation-question-list">
