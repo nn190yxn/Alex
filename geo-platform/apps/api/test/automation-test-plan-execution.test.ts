@@ -85,18 +85,18 @@ describe('Automation test plan execution', () => {
             expect.objectContaining({ platformCode: 'unconfigured_ai', status: 'needs_configuration' })
           ]),
           manualRequiredCount: 1,
+          browserPendingCount: 1,
           configurationItemCount: 1
         })
       })
     );
-    expect(executed.stepSummaries).toContainEqual(
-      expect.objectContaining({
-        code: 'test_plan_execution',
-        status: 'waiting_confirmation',
-        message: expect.stringContaining('手动处理 1 个'),
-        relatedConfirmationIds: [executed.confirmations[0]?.confirmationId]
-      })
-    );
+    const executionStep = executed.stepSummaries.find((step) => step.code === 'test_plan_execution');
+    expect(executionStep).toEqual(expect.objectContaining({
+      status: 'waiting_confirmation',
+      relatedConfirmationIds: [executed.confirmations[0]?.confirmationId]
+    }));
+    expect(executionStep?.message).toContain('浏览器待处理 1 个');
+    expect(executionStep?.message).toContain('手动处理 1 个');
   });
 
   it('requires confirmation instead of generating fake browser answers', () => {

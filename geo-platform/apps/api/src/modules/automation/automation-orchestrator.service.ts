@@ -198,6 +198,7 @@ export class AutomationOrchestratorService {
           blockingSteps: blockingSteps.map(toExecutionStepPayload),
           apiRunCount: result.apiRuns.length,
           browserQueuedCount: result.browserSteps.filter((step) => step.status === 'queued').length,
+          browserPendingCount: result.browserSteps.filter((step) => step.status !== 'queued').length,
           manualRequiredCount: result.manualSteps.length,
           configurationItemCount: result.configurationItems.length
         },
@@ -1331,6 +1332,7 @@ function getExecutionMessage(result: TestPlanExecutionResult): string {
   return [
     `API 运行 ${result.apiRuns.length} 个`,
     `浏览器队列 ${result.browserSteps.filter((step) => step.status === 'queued').length} 个`,
+    `浏览器待处理 ${result.browserSteps.filter((step) => step.status !== 'queued').length} 个`,
     `手动处理 ${result.manualSteps.length} 个`,
     `配置处理 ${result.configurationItems.length} 个`
   ].join('，');
