@@ -109,8 +109,8 @@ export function ManualTestEntryCard({ brandId }: Props) {
         <Alert
           type="info"
           showIcon
-          message="把问题复制到 AI 平台，再把回答粘贴回来"
-          description="适用于未填写平台密钥、浏览器需要你确认或平台暂时限制自动测试的情况。系统会按测试计划、问题和平台匹配回答。"
+          message="同一道题会分别发送到多个 AI 平台"
+          description="这是为了比较豆包、Kimi、DeepSeek 等平台的真实回答差异。请按“题号 + 平台”逐条粘贴原始回答，系统会按测试计划、问题和平台匹配结果。"
         />
         <Select
           className="full-width"
@@ -132,6 +132,7 @@ export function ManualTestEntryCard({ brandId }: Props) {
           pagination={{ pageSize: 6 }}
           locale={{ emptyText: <EmptyState description="暂无可手动录入的测试问题，请先保存测试计划。" /> }}
           columns={[
+            { title: '题号', dataIndex: 'questionNumber', width: 72, render: (value: number) => <Tag color="blue">第 {value} 题</Tag> },
             { title: '目标平台', dataIndex: 'platformLabel', render: (value: string) => <Tag>{value}</Tag> },
             { title: '测试问题', dataIndex: 'question' },
             { title: '平台入口说明', render: (_, record) => <Typography.Text type="secondary">打开 {record.platformLabel}，粘贴该问题并复制 AI 回答。</Typography.Text> },
@@ -141,7 +142,7 @@ export function ManualTestEntryCard({ brandId }: Props) {
         <Card size="small" title="单条粘贴">
           <Form form={singleForm} layout="vertical" onFinish={submitSingleAnswer}>
             <Form.Item name="rowKey" label="选择要录入的问题" rules={[{ required: true, message: '请选择测试问题' }]}>
-              <Select options={rows.map((row) => ({ value: row.key, label: `${row.platformLabel}｜${row.question}` }))} />
+              <Select options={rows.map((row) => ({ value: row.key, label: `第 ${row.questionNumber} 题｜${row.platformLabel}｜${row.question}` }))} />
             </Form.Item>
             <Form.Item name="rawText" label="AI 回答" rules={[{ required: true, message: '请粘贴 AI 回答' }]}>
               <Input.TextArea rows={5} />

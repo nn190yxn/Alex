@@ -188,21 +188,30 @@ function selectRoundQuestions(pool: TestQuestionCandidate[], limit: number): Tes
   const sorted = [...pool].sort((first, second) => priorityScore(second.priority) - priorityScore(first.priority) || first.createdAt.localeCompare(second.createdAt));
   const selected: TestQuestionCandidate[] = [];
   const usedThemes = new Set<string>();
+  const usedQuestions = new Set<string>();
 
   for (const candidate of sorted) {
     if (selected.length >= limit) break;
     if (usedThemes.has(candidate.themeId)) continue;
+    if (usedQuestions.has(normalizeQuestionText(candidate.question))) continue;
     selected.push(candidate);
     usedThemes.add(candidate.themeId);
+    usedQuestions.add(normalizeQuestionText(candidate.question));
   }
 
   for (const candidate of sorted) {
     if (selected.length >= limit) break;
     if (selected.some((item) => item.id === candidate.id)) continue;
+    if (usedQuestions.has(normalizeQuestionText(candidate.question))) continue;
     selected.push(candidate);
+    usedQuestions.add(normalizeQuestionText(candidate.question));
   }
 
   return selected;
+}
+
+function normalizeQuestionText(question: string): string {
+  return question.trim().replace(/[\s，,。？?！!：:；;、]+/g, '').toLowerCase();
 }
 
 function priorityScore(priority: TestQuestionCandidate['priority']): number {

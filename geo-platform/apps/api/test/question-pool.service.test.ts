@@ -30,6 +30,39 @@ describe('QuestionPoolService', () => {
         })
       })
     );
+    const selectedQuestions = getSelectedQuestionTexts(confirmation?.payload);
+    expect(new Set(selectedQuestions).size).toBe(selectedQuestions.length);
+  });
+
+  it('does not select duplicate question text from different themes', async () => {
+    const { automationService, permissionsRepository } = createServices();
+    permissionsRepository.createTestQuestionCandidate('user_demo', 'brand_demo', {
+      themeId: 'theme_duplicate_a',
+      question: '如果要选择追光小牛，需要重点了解哪些信息？',
+      purposes: ['brand_mentioned'],
+      targetPlatforms: ['doubao'],
+      priority: 'high',
+      estimatedValue: '验证购买决策问题。',
+      editable: true,
+      selected: false
+    });
+    permissionsRepository.createTestQuestionCandidate('user_demo', 'brand_demo', {
+      themeId: 'theme_duplicate_b',
+      question: '如果要选择追光小牛，需要重点了解哪些信息?',
+      purposes: ['value_prop_accuracy'],
+      targetPlatforms: ['kimi'],
+      priority: 'high',
+      estimatedValue: '验证重复问题去重。',
+      editable: true,
+      selected: false
+    });
+    const automationPackage = automationService.createPackage('user_demo', 'brand_demo');
+
+    const started = await automationService.startPackage('user_demo', 'brand_demo', automationPackage.packageId);
+    const confirmation = started.confirmations.find((item) => item.type === 'test_questions');
+    const selectedQuestions = getSelectedQuestionTexts(confirmation?.payload);
+
+    expect(selectedQuestions.filter((question) => question === '如果要选择追光小牛，需要重点了解哪些信息？')).toHaveLength(1);
   });
 
   it('selects newly generated questions when a brand starts without candidates', async () => {
@@ -87,4 +120,14 @@ function createServices() {
   const automationService = new AutomationOrchestratorService(automationRepository, permissionsRepository, confirmationQueue, questionPoolService);
 
   return { automationService, confirmationQueue, permissionsRepository };
+}
+
+function getSelectedQuestionTexts(payload: unknown): string[] {
+  if (!payload || typeof payload !== 'object' || !('selectedQuestions' in payload) || !Array.isArray(payload.selectedQuestions)) {
+    return [];
+  }
+
+  return payload.selectedQuestions
+    .map((item) => (item && typeof item === 'object' && 'question' in item ? item.question : null))
+    .filter((question): question is string => typeof question === 'string');
 }

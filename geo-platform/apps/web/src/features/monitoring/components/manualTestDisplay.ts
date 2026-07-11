@@ -3,6 +3,7 @@ import { getPlatformPreview } from './testQuestionDisplay';
 
 export type ManualTestQuestionRow = {
   key: string;
+  questionNumber: number;
   question: string;
   platformCode: string;
   platformLabel: string;
@@ -17,6 +18,7 @@ export function getManualTestRows(plan?: TestPlan): ManualTestQuestionRow[] {
 
   return plan.questions.flatMap((question, questionIndex) => question.targetPlatforms.map((platformCode) => ({
     key: `${questionIndex}_${platformCode}`,
+    questionNumber: questionIndex + 1,
     question: question.question,
     platformCode,
     platformLabel: getPlatformPreview([platformCode])
