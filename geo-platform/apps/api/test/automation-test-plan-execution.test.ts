@@ -99,6 +99,43 @@ describe('Automation test plan execution', () => {
     );
   });
 
+  it('keeps packages in test execution while browser runs are queued', () => {
+    const harness = createHarness();
+    const plan = harness.permissionsRepository.createTestPlan('user_demo', 'brand_demo', {
+      name: '浏览器队列执行计划',
+      questions: [
+        {
+          promptId: 'prompt_demo_comparison',
+          question: '贵阳儿童运动机构怎么选？',
+          purposes: ['brand_mentioned'],
+          targetPlatforms: ['kimi']
+        }
+      ]
+    });
+    const automationPackage = harness.service.createPackage('user_demo', 'brand_demo');
+    harness.automationRepository.updatePackage('brand_demo', automationPackage.packageId, {
+      ...automationPackage,
+      status: 'running',
+      currentStep: 'test_plan_execution',
+      relatedTestPlanId: plan?.id
+    });
+
+    const executed = harness.service.executeTestPlan('user_demo', 'brand_demo', automationPackage.packageId);
+
+    expect(executed).toEqual(expect.objectContaining({ status: 'running', currentStep: 'test_plan_execution' }));
+    expect(executed.confirmations).toEqual([]);
+    expect(executed.stepSummaries).toContainEqual(
+      expect.objectContaining({
+        code: 'test_plan_execution',
+        status: 'running',
+        message: expect.stringContaining('等待浏览器队列执行完成')
+      })
+    );
+    expect(executed.stepSummaries).toContainEqual(
+      expect.objectContaining({ code: 'answer_analysis', status: 'pending' })
+    );
+  });
+
   it('requires a related test plan before executing', () => {
     const harness = createHarness();
     const automationPackage = harness.service.createPackage('user_demo', 'brand_demo');

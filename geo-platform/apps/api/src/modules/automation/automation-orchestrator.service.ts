@@ -669,8 +669,10 @@ function updateExecutionStep(
     ...result.browserSteps.map((step) => step.runId).filter((runId): runId is string => Boolean(runId))
   ];
   const hasRuns = runIds.length > 0;
+  const queuedBrowserCount = result.browserSteps.filter((step) => step.status === 'queued').length;
+  const isWaitingForBrowserQueue = queuedBrowserCount > 0;
   const status = blockingSteps.length > 0 ? 'waiting_confirmation' : 'running';
-  const currentStep = blockingSteps.length > 0 ? 'test_plan_execution' : 'answer_analysis';
+  const currentStep = blockingSteps.length > 0 || isWaitingForBrowserQueue ? 'test_plan_execution' : 'answer_analysis';
   return {
     ...automationPackage,
     status,
@@ -680,15 +682,15 @@ function updateExecutionStep(
       if (step.code === 'test_plan_execution') {
         return {
           ...step,
-          status: blockingSteps.length > 0 ? 'waiting_confirmation' : 'completed',
-          message,
+          status: blockingSteps.length > 0 ? 'waiting_confirmation' : isWaitingForBrowserQueue ? 'running' : 'completed',
+          message: isWaitingForBrowserQueue ? `${message}，等待浏览器队列执行完成后再进入分析。` : message,
           startedAt: step.startedAt ?? now,
-          completedAt: blockingSteps.length === 0 ? now : step.completedAt,
+          completedAt: blockingSteps.length === 0 && !isWaitingForBrowserQueue ? now : step.completedAt,
           relatedEntityIds: Array.from(new Set([...step.relatedEntityIds, result.plan.id, ...runIds]))
         };
       }
 
-      if (step.code === 'answer_analysis' && hasRuns && blockingSteps.length === 0) {
+      if (step.code === 'answer_analysis' && hasRuns && blockingSteps.length === 0 && !isWaitingForBrowserQueue) {
         return {
           ...step,
           status: 'running',
