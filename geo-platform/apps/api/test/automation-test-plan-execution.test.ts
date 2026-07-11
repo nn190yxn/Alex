@@ -99,10 +99,10 @@ describe('Automation test plan execution', () => {
     );
   });
 
-  it('keeps packages in test execution while browser runs are queued', () => {
+  it('requires confirmation instead of generating fake browser answers', () => {
     const harness = createHarness();
     const plan = harness.permissionsRepository.createTestPlan('user_demo', 'brand_demo', {
-      name: '浏览器队列执行计划',
+      name: '浏览器真实回填计划',
       questions: [
         {
           promptId: 'prompt_demo_comparison',
@@ -122,18 +122,31 @@ describe('Automation test plan execution', () => {
 
     const executed = harness.service.executeTestPlan('user_demo', 'brand_demo', automationPackage.packageId);
 
-    expect(executed).toEqual(expect.objectContaining({ status: 'running', currentStep: 'test_plan_execution' }));
-    expect(executed.confirmations).toEqual([]);
+    expect(executed).toEqual(expect.objectContaining({ status: 'waiting_confirmation', currentStep: 'test_plan_execution' }));
+    expect(executed.confirmations).toContainEqual(
+      expect.objectContaining({
+        type: 'manual_test_required',
+        status: 'pending',
+        payload: expect.objectContaining({
+          blockingSteps: [expect.objectContaining({
+            platformCode: 'kimi',
+            status: 'needs_confirmation',
+            message: expect.stringContaining('尚未接入真实回答回填')
+          })]
+        })
+      })
+    );
     expect(executed.stepSummaries).toContainEqual(
       expect.objectContaining({
         code: 'test_plan_execution',
-        status: 'running',
-        message: expect.stringContaining('等待浏览器队列执行完成')
+        status: 'waiting_confirmation',
+        message: expect.stringContaining('浏览器队列 0 个')
       })
     );
     expect(executed.stepSummaries).toContainEqual(
       expect.objectContaining({ code: 'answer_analysis', status: 'pending' })
     );
+    expect(harness.permissionsRepository.listTestPlans('user_demo', 'brand_demo')?.find((item) => item.id === plan?.id)?.monitoringRunIds).toEqual([]);
   });
 
   it('requires a related test plan before executing', () => {

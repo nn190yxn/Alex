@@ -21,7 +21,7 @@ describe('supported browser connectors', () => {
     expect(() => registry.requireConnector('unknown')).toThrow(BrowserConnectorSelectionError);
   });
 
-  it('supports login detection, question sending and answer extraction for all default platforms', async () => {
+  it('supports login and question sending without fabricating extracted answers', async () => {
     const connectors = createDefaultBrowserConnectors();
 
     for (const connector of connectors) {
@@ -33,10 +33,10 @@ describe('supported browser connectors', () => {
       await expect(connector.sendQuestion(questionInput)).resolves.toMatchObject({ status: 'ready', loginDetected: true });
       await expect(connector.waitForAnswer(questionInput)).resolves.toMatchObject({ status: 'ready', loginDetected: true });
       await expect(connector.extractAnswer(questionInput)).resolves.toMatchObject({
-        status: 'ready',
-        loginDetected: true,
-        rawText: expect.stringContaining('贵阳哪里有适合 3-5 岁孩子的体能馆？'),
-        modelName: `${connector.platformCode}-browser`
+        status: 'needs_confirmation',
+        loginDetected: false,
+        message: expect.stringContaining('尚未接入真实回答回填'),
+        manualTestPath: `/monitoring?platform=${connector.platformCode}&mode=manual`
       });
       await expect(connector.stopSession(input)).resolves.toMatchObject({ status: 'stopped', manualTestPath: `/monitoring?platform=${connector.platformCode}&mode=manual` });
     }

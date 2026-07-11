@@ -48,15 +48,11 @@ abstract class SupportedBrowserConnector implements BrowserConnector {
       return createNeedsUserConfirmationResult({ platformCode: input.platformCode, issueType: this.issueType });
     }
 
-    return {
-      status: 'ready',
-      loginDetected: true,
-      message: `已读取${this.metadata.displayName}回答。`,
-      rawText: `${this.metadata.displayName} browser response: ${input.question}`,
-      modelName: this.metadata.modelName,
-      respondedAt: new Date().toISOString(),
-      lastAvailableAt: new Date().toISOString()
-    };
+    return createNeedsUserConfirmationResult({
+      platformCode: input.platformCode,
+      issueType: 'unknown',
+      message: `${this.metadata.displayName}浏览器自动执行尚未接入真实回答回填，请连接真实浏览器或改用手动录入后再分析。`
+    });
   }
 
   async stopSession(input: BrowserConnectorSessionInput): Promise<BrowserConnectorOperationResult> {

@@ -3842,38 +3842,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
       };
     }
 
-    const browserAnswer = buildMemoryBrowserAnswer(platformCode, question.question);
-    if (!browserAnswer.rawText) {
-      return {
-        status: 'needs_confirmation',
-        message: browserAnswer.message
-      };
-    }
-
-    const run = this.createMonitoringRun(userId, brandId, { promptId: question.promptId, platformCode });
-    if (!run) {
-      return {
-        status: 'needs_confirmation',
-        message: '浏览器测试运行创建失败，请确认 Prompt 与平台连接。'
-      };
-    }
-
-    const storedRun = monitoringRuns.find((item) => item.id === run.id);
-    if (storedRun) {
-      (storedRun as MonitoringRun & { testPlanId?: string }).testPlanId = testPlanId;
-    }
-
-    this.addManualResponse(userId, brandId, run.id, {
-      rawText: browserAnswer.rawText,
-      modelName: browserAnswer.modelName
-    });
-    this.parseAnalysisResult(userId, brandId, run.id);
-
-    return {
-      status: 'queued',
-      message: browserAnswer.message,
-      run: this.getMonitoringRun(userId, brandId, run.id) ?? run
-    };
+    return buildMemoryBrowserPendingResult(platformCode);
   }
 
   private executeApiTestPlanStep(
@@ -5606,22 +5575,15 @@ type BrowserTestPlanStepResult = {
   run?: MonitoringRunDetail;
 };
 
-type MemoryBrowserAnswer = {
-  message: string;
-  rawText?: string;
-  modelName?: string;
-};
-
-function buildMemoryBrowserAnswer(platformCode: string, question: string): MemoryBrowserAnswer {
+function buildMemoryBrowserPendingResult(platformCode: string): BrowserTestPlanStepResult {
   const platform = supportedBrowserPlatformMetadata[platformCode];
   if (!platform) {
-    return { message: '这个平台暂时不能用浏览器测试，请改用手动测试。' };
+    return { status: 'needs_confirmation', message: '这个平台暂时不能用浏览器测试，请改用手动测试。' };
   }
 
   return {
-    message: `已通过${platform.displayName}浏览器获取回答。`,
-    rawText: `${platform.displayName} browser response: ${question}`,
-    modelName: platform.modelName
+    status: 'needs_confirmation',
+    message: `${platform.displayName}浏览器自动执行尚未接入真实回答回填，请连接真实浏览器或改用手动录入后再分析。`
   };
 }
 

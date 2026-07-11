@@ -145,22 +145,14 @@ describe('test plan repository', () => {
     expect(result?.browserSteps).toEqual([expect.objectContaining({
       platformCode: 'doubao',
       method: 'browser',
-      status: 'queued',
-      question: '贵阳有哪些适合儿童的运动成长机构？'
+      status: 'needs_confirmation',
+      question: '贵阳有哪些适合儿童的运动成长机构？',
+      message: expect.stringContaining('尚未接入真实回答回填')
     })]);
-    expect(result?.browserSteps[0]?.runId).toBeTruthy();
-    expect(repository.getMonitoringRun('user_demo', 'brand_demo', result?.browserSteps[0]?.runId ?? '')).toMatchObject({
-      brandId: 'brand_demo',
-      promptId: 'prompt_demo_comparison',
-      platformCode: 'doubao',
-      promptText: expect.stringContaining('追光小牛'),
-      status: 'completed',
-      response: expect.objectContaining({ rawText: expect.stringContaining('豆包 browser response') }),
-      analysis: expect.objectContaining({ brandId: 'brand_demo' })
-    });
+    expect(result?.browserSteps[0]?.runId).toBeUndefined();
     expect(result?.manualSteps).toEqual([expect.objectContaining({ platformCode: 'manual_input', method: 'manual', status: 'manual_required' })]);
     expect(result?.configurationItems).toEqual([expect.objectContaining({ platformCode: 'unconfigured_ai', status: 'needs_configuration' })]);
-    expect(result?.plan.monitoringRunIds).toEqual(expect.arrayContaining([result?.apiRuns[0]?.id, result?.browserSteps[0]?.runId]));
+    expect(result?.plan.monitoringRunIds).toEqual([result?.apiRuns[0]?.id]);
     expect(repository.listTestPlans('user_demo', 'brand_demo')?.find((item) => item.id === plan?.id)).toMatchObject({ status: 'running' });
   });
 
