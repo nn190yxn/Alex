@@ -51,6 +51,8 @@ describe('Automation publishing and retest flow', () => {
     expect(publishingDashboard?.records.filter((record) => confirmed.relatedPublishingRecordIds.includes(record.id))).toEqual(expect.arrayContaining([
       expect.objectContaining({ status: 'pending', platform: 'wechat_official' })
     ]));
+    const publishingRecords = publishingDashboard?.records.filter((record) => confirmed.relatedPublishingRecordIds.includes(record.id)) ?? [];
+    assertPublishingRecordsReady(publishingRecords);
 
     const retestSuggested = harness.service.generateRetestSuggestions('user_demo', 'brand_demo', confirmed.packageId);
     const taskBoard = harness.permissionsRepository.getTaskBoard('user_demo', 'brand_demo');
@@ -221,4 +223,20 @@ function createHistoricalPublishingRecord(harness: ReturnType<typeof createHarne
     targetKeywords: workspace.currentTask.targetKeywords,
     status: 'published'
   });
+}
+
+function assertPublishingRecordsReady(records: Array<{ platform: string; title: string; body?: string }>): void {
+  expect(records.length).toBeGreaterThan(0);
+  for (const record of records) {
+    expect(record.title).toBeTruthy();
+    expect(record.body).toBeTruthy();
+    expect(stripText(record.body).length).toBeGreaterThan(record.platform === 'wechat_official' ? 700 : 280);
+    expect(record.body).toContain('追光小牛');
+    expect(record.body).toContain('合规');
+    expect(record.body).not.toMatch(/保证长高|治疗感统失调|包过中考体育|monitoring_run:/);
+  }
+}
+
+function stripText(body = ''): string {
+  return body.replace(/```[\s\S]*?```/g, '').replace(/[#>*_`\-\s]/g, '').trim();
 }

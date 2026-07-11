@@ -69,7 +69,7 @@ describe('test question display helpers', () => {
     expect(toQuestionCandidateUpdateInput({
       question: ' 贵阳儿童运动机构推荐哪家？ ',
       purposesText: 'brand_mentioned、rank_first',
-      targetPlatformsText: 'doubao、qianwen',
+      targetPlatformsText: '豆包、通义千问',
       priority: 'high',
       estimatedValue: ' 验证本地推荐排名 '
     })).toEqual({

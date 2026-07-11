@@ -58,6 +58,9 @@ function createPrismaMock() {
   const contentExportRecords: any[] = [];
   const publishingAccounts: any[] = [];
   const publishingRecords: any[] = [];
+  const competitors: any[] = [];
+  const competitorDiscoveryRuns: any[] = [];
+  const competitorCandidates: any[] = [];
   const optimizationTasks: any[] = [];
   const reports: any[] = [];
   const advisorRecords: any[] = [];
@@ -204,7 +207,64 @@ function createPrismaMock() {
         return Promise.resolve(brandPrompts[index]);
       })
     },
-    competitor: { count: vi.fn().mockResolvedValue(5) },
+    competitor: {
+      count: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitors.filter((competitor) => competitor.brandId === where.brandId).length || 5)),
+      findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitors.filter((competitor) => competitor.brandId === where.brandId))),
+      findFirst: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitors.find((competitor) => {
+        if (competitor.brandId !== where.brandId) return false;
+        if (where.id && competitor.id !== where.id) return false;
+        if (where.OR) {
+          return where.OR.some((condition: any) => (
+            (condition.sourceCandidateId && competitor.sourceCandidateId === condition.sourceCandidateId) ||
+            (condition.name && competitor.name === condition.name)
+          ));
+        }
+        return true;
+      }) ?? null)),
+      create: vi.fn().mockImplementation(({ data }) => {
+        const competitor = { id: `competitor_${competitors.length + 1}`, ...data, createdAt: now, updatedAt: now };
+        competitors.unshift(competitor);
+        return Promise.resolve(competitor);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        const index = competitors.findIndex((competitor) => competitor.id === where.id);
+        competitors[index] = { ...competitors[index], ...data, updatedAt: now };
+        return Promise.resolve(competitors[index]);
+      })
+    },
+    competitorDiscoveryRun: {
+      create: vi.fn().mockImplementation(({ data }) => {
+        const run = { id: `discovery_run_${competitorDiscoveryRuns.length + 1}`, ...data, createdAt: now, completedAt: data.completedAt ?? null };
+        competitorDiscoveryRuns.unshift(run);
+        return Promise.resolve(run);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        const index = competitorDiscoveryRuns.findIndex((run) => run.id === where.id);
+        competitorDiscoveryRuns[index] = { ...competitorDiscoveryRuns[index], ...data };
+        return Promise.resolve(competitorDiscoveryRuns[index]);
+      }),
+      findFirst: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitorDiscoveryRuns.find((run) => run.id === where.id && run.brandId === where.brandId) ?? null))
+    },
+    competitorCandidate: {
+      findFirst: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitorCandidates.find((candidate) => {
+        return candidate.brandId === where.brandId &&
+          (!where.runId || candidate.runId === where.runId) &&
+          (!where.id || candidate.id === where.id) &&
+          (!where.name || candidate.name === where.name) &&
+          (!where.address || candidate.address === where.address);
+      }) ?? null)),
+      findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(competitorCandidates.filter((candidate) => candidate.brandId === where.brandId && candidate.runId === where.runId))),
+      create: vi.fn().mockImplementation(({ data }) => {
+        const candidate = { ...data, createdAt: now, updatedAt: now };
+        competitorCandidates.unshift(candidate);
+        return Promise.resolve(candidate);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        const index = competitorCandidates.findIndex((candidate) => candidate.id === where.id);
+        competitorCandidates[index] = { ...competitorCandidates[index], ...data, updatedAt: now };
+        return Promise.resolve(competitorCandidates[index]);
+      })
+    },
     contentAsset: {
       count: vi.fn().mockImplementation(({ where }) => Promise.resolve(contentAssets.filter((asset) => asset.brandId === where.brandId).length)),
       findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(contentAssets.filter((asset) => asset.brandId === where.brandId))),
@@ -325,7 +385,7 @@ function createPrismaMock() {
       findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(publishingRecords.filter((record) => record.brandId === where.brandId))),
       findFirst: vi.fn().mockImplementation(({ where }) => Promise.resolve(publishingRecords.find((record) => record.id === where.id && record.brandId === where.brandId) ?? null)),
       create: vi.fn().mockImplementation(({ data }) => {
-        const record = { id: `pub_record_${publishingRecords.length + 1}`, ...data, publishedUrl: null, errorMessage: null, createdAt: now, updatedAt: now };
+        const record = { id: `pub_record_${publishingRecords.length + 1}`, ...data, body: data.body ?? '', publishedUrl: null, errorMessage: null, createdAt: now, updatedAt: now };
         publishingRecords.unshift(record);
         return Promise.resolve(record);
       }),
@@ -618,6 +678,113 @@ describe('PrismaPermissionsRepository', () => {
     ]);
   });
 
+  it('uses configured Amap POI provider without exposing server API keys', async () => {
+    const prisma = createPrismaMock();
+    const repository = new PrismaPermissionsRepository(prisma as never);
+    const apiKey = 'amap-secret-for-test';
+    vi.stubEnv('GEO_AMAP_API_KEY', apiKey);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [
+          {
+            id: 'amap_real_001',
+            name: '真实地图儿童体能馆',
+            address: '贵阳市观山湖区儿童运动中心',
+            cityname: '贵阳',
+            type: '儿童体适能',
+            location: '106.640,26.650'
+          },
+          {
+            id: 'amap_unrelated_001',
+            name: 'XDS喜德盛自行车',
+            address: '金朱东路190号',
+            cityname: '贵阳',
+            type: '购物服务;专卖店;自行车专卖店',
+            location: '106.637,26.655'
+          },
+          {
+            id: 'amap_unrelated_002',
+            name: '大米和小米儿童成长中心',
+            address: '飞山街祥源大厦',
+            cityname: '贵阳',
+            type: '科教文化服务;科教文化场所',
+            location: '106.706,26.579'
+          }
+        ]
+      })
+    }));
+
+    try {
+      const run = await repository.createCompetitorDiscoveryRun('user_demo', 'brand_prisma', {
+        city: '贵阳',
+        keywords: ['儿童体能'],
+        forceRefresh: true
+      });
+      const candidates = await repository.listCompetitorDiscoveryCandidates('user_demo', 'brand_prisma', run?.runId ?? '');
+      const publicPayload = JSON.stringify({ run, candidates });
+
+      expect(run).toMatchObject({ providerStatus: 'configured', candidateCount: 1 });
+      expect(candidates).toMatchObject([
+        expect.objectContaining({ sourcePoiId: 'amap_real_001', name: '真实地图儿童体能馆', distanceToNearestCampusKm: 0 })
+      ]);
+      expect(candidates?.some((candidate) => candidate.sourcePoiId === 'amap_unrelated_001')).toBe(false);
+      expect(candidates?.some((candidate) => candidate.sourcePoiId === 'amap_unrelated_002')).toBe(false);
+      expect(publicPayload).not.toContain(apiKey);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reuses Prisma discovery cache with candidates attached to each run', async () => {
+    const prisma = createPrismaMock();
+    const repository = new PrismaPermissionsRepository(prisma as never);
+    vi.stubEnv('GEO_AMAP_API_KEY', 'amap-cache-test-key');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: '1',
+        pois: [
+          {
+            id: 'amap_cache_001',
+            name: '缓存地图儿童体能馆',
+            address: '贵阳市观山湖区缓存运动中心',
+            cityname: '贵阳',
+            type: '儿童体适能',
+            location: '106.640,26.650'
+          }
+        ]
+      })
+    }));
+
+    try {
+      const firstRun = await repository.createCompetitorDiscoveryRun('user_demo', 'brand_prisma', {
+        city: '贵阳',
+        keywords: ['缓存儿童体能'],
+        forceRefresh: true
+      });
+      const secondRun = await repository.createCompetitorDiscoveryRun('user_demo', 'brand_prisma', {
+        city: '贵阳',
+        keywords: ['缓存儿童体能']
+      });
+      const firstCandidates = await repository.listCompetitorDiscoveryCandidates('user_demo', 'brand_prisma', firstRun?.runId ?? '');
+      const secondCandidates = await repository.listCompetitorDiscoveryCandidates('user_demo', 'brand_prisma', secondRun?.runId ?? '');
+
+      expect(firstRun).toMatchObject({ providerStatus: 'configured', cacheHit: false, candidateCount: 1 });
+      expect(secondRun).toMatchObject({ providerStatus: 'configured', cacheHit: true, candidateCount: 1 });
+      expect(firstCandidates).toHaveLength(firstRun?.candidateCount ?? 0);
+      expect(secondCandidates).toHaveLength(secondRun?.candidateCount ?? 0);
+      expect(secondCandidates?.[0]).toMatchObject({ name: '缓存地图儿童体能馆', runId: secondRun?.runId });
+      expect(fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('persists monitoring runs, manual responses and analysis updates', async () => {
     const prisma = createPrismaMock();
     const repository = new PrismaPermissionsRepository(prisma as never);
@@ -794,12 +961,12 @@ describe('PrismaPermissionsRepository', () => {
       contentType: 'article',
       targetKeywords: ['geo']
     });
-    expect(record).toMatchObject({ title: 'Publish Title', accountName: 'Brand Account', status: 'draft' });
+    expect(record).toMatchObject({ title: 'Publish Title', body: 'Publish Body', accountName: 'Brand Account', status: 'draft' });
     await expect(repository.updatePublishingRecordStatus('user_demo', 'brand_prisma', record?.id ?? '', { status: 'published', publishedUrl: ' https://example.com/published ' })).resolves.toMatchObject({
       status: 'published',
       publishedUrl: 'https://example.com/published'
     });
-    await expect(repository.getPublishingDashboard('user_demo', 'brand_prisma')).resolves.toMatchObject({ accounts: [{ id: account?.id }], records: [{ id: record?.id }] });
+    await expect(repository.getPublishingDashboard('user_demo', 'brand_prisma')).resolves.toMatchObject({ accounts: [{ id: account?.id }], records: [{ id: record?.id, body: 'Publish Body' }] });
   });
 
   it('persists optimization tasks, reports and advisor records', async () => {

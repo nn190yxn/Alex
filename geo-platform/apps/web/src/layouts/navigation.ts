@@ -51,6 +51,7 @@ export const navigationGroups: NavigationGroup[] = [
     label: '运营闭环',
     items: [
       { key: '/tasks', label: '任务跟进', description: '跟踪谁负责、做到哪一步、什么时候再测', requiresBrand: true },
+      { key: '/feedback', label: '内测反馈', description: '记录内测页面问题、模块问题和处理状态', requiresBrand: true },
       { key: '/advisor', label: '顾问跟进', description: '记录诊断结论、服务动作和给客户看的说明', requiresBrand: true },
       { key: '/reports', label: '报告导出', description: '生成单品牌、多品牌和客户交付报告', requiresBrand: true }
     ]
@@ -67,6 +68,7 @@ export const operationWorkflow = [
   { key: '/publishing', label: '发布记录' },
   { key: '/model-settings', label: '模型设置' },
   { key: '/tasks', label: '再次测试' },
+  { key: '/feedback', label: '内测反馈' },
   { key: '/advisor', label: '顾问跟进' },
   { key: '/reports', label: '报告导出' }
 ];
@@ -88,6 +90,7 @@ export const workspaceRouteAliases: Record<string, string> = {
   publishing: '/publishing',
   'model-settings': '/model-settings',
   tasks: '/tasks',
+  feedback: '/feedback',
   reports: '/reports',
   advisor: '/advisor'
 };

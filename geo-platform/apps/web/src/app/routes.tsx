@@ -18,6 +18,7 @@ const ContentGenerationPage = lazy(() => import('../features/content-generation/
 const PublishingCenterPage = lazy(() => import('../features/publishing/pages/PublishingCenterPage').then((module) => ({ default: module.PublishingCenterPage })));
 const ModelSettingsPage = lazy(() => import('../features/model-settings/pages/ModelSettingsPage').then((module) => ({ default: module.ModelSettingsPage })));
 const TaskRetestPage = lazy(() => import('../features/tasks/pages/TaskRetestPage').then((module) => ({ default: module.TaskRetestPage })));
+const InnerTestFeedbackPage = lazy(() => import('../features/feedback/pages/InnerTestFeedbackPage').then((module) => ({ default: module.InnerTestFeedbackPage })));
 const ReportCenterPage = lazy(() => import('../features/reports/pages/ReportCenterPage').then((module) => ({ default: module.ReportCenterPage })));
 const AdvisorWorkspacePage = lazy(() => import('../features/advisor/pages/AdvisorWorkspacePage').then((module) => ({ default: module.AdvisorWorkspacePage })));
 
@@ -34,6 +35,7 @@ export const firstVersionRoutes: AppRoute[] = [
   { path: '/publishing', Component: PublishingCenterPage },
   { path: '/model-settings', Component: ModelSettingsPage },
   { path: '/tasks', Component: TaskRetestPage },
+  { path: '/feedback', Component: InnerTestFeedbackPage },
   { path: '/reports', Component: ReportCenterPage },
   { path: '/advisor', Component: AdvisorWorkspacePage }
 ];

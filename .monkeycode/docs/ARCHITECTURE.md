@@ -37,7 +37,7 @@ geo-platform/
 - `src/features/canvas/pages/GeoCanvasPage.tsx`：GEO 画布工作台，使用 ReactFlow 渲染优化单元、用户意图、数据表现和内容策略节点，支持节点详情抽屉、创建用户意图、创建内容策略和创建优化任务
 - `src/features/monitoring/pages/MonitoringPage.tsx`：AI 监测页面，承载 GEO 指数、测试主题、测试问法候选、测试记录和连接 AI 平台入口
 - `src/features/growth-optimization/pages/GrowthOptimizationPage.tsx`：增长优化计划页面，展示计划摘要、原因分析、优先级、负责人、截止时间、发布平台、复测时间、内容建议和关联任务，支持从首轮测试生成计划、确认拆任务、生成内容任务、标记任务完成和发起复测计划
-- `src/features/competitors/pages/CompetitorAnalysisPage.tsx`：竞品分析页面，维护竞品档案，展示竞品提及率、压制率、平均排名差、高风险意图和对比明细
+- `src/features/competitors/pages/CompetitorAnalysisPage.tsx`：竞品分析页面，维护竞品档案，展示竞品提及率、压制率、平均排名差、高风险意图和对比明细，并提供“地图发现竞品”抽屉用于生成本地线下候选、查看匹配理由、确认标签或排除候选
 - `src/features/citations/pages/CitationAnalysisPage.tsx`：引用分析页面，展示引用总数、内容引用率、官网引用率、权威来源占比、来源类型分布、趋势和明细操作
 - `src/features/evaluations/pages/EvaluationAnalysisPage.tsx`：评价分析页面，展示正向、中性、负向和准确表达率，支持查看表达问题、创建修正策略和更新品牌知识库
 - `src/features/content/pages/ContentCenterPage.tsx`：内容策略中心页面，展示关键词覆盖率、未覆盖关键词、已发布资产、复用资产、内容资产列表、策略建议和内容策略列表，支持创建/编辑内容资产和生成策略
@@ -88,7 +88,7 @@ Vite 配置位于 `当前工作区/geo-platform/apps/web/vite.config.ts` 和实�
 - `src/modules/monitoring/`：GEO 监测运行接口，支持创建运行记录、查看运行详情、录入人工回答、触发解析、查询解析结果和保存人工复核修正
 - `src/modules/metrics/`：GEO 指数接口，支持单品牌指标看板和多品牌排行
 - `src/modules/canvas/`：GEO 画布接口，支持画布数据读取、内容策略创建和优化任务创建
-- `src/modules/competitors/`：竞品接口，支持竞品档案维护、同场景对比和压制分析
+- `src/modules/competitors/`：竞品接口，支持竞品档案维护、同场景对比、压制分析、竞品发现任务、候选列表查询、候选确认和候选排除
 - `src/modules/citations/`：引用分析接口，支持引用看板、内容资产绑定和引用增强策略创建
 - `src/modules/evaluations/`：评价分析接口，支持评价看板、修正策略创建和品牌知识库更新
 - `src/modules/content/`：内容接口，支持内容资产 CRUD、筛选、内容覆盖率、策略建议、策略批量生成、内容生成任务、增长优化计划内容任务批量生成、编辑版本、Markdown 导出和发布入口参数
@@ -126,7 +126,7 @@ Prisma schema 位于 `当前工作区/geo-platform/apps/api/prisma/schema.prisma
 - `AIResponse`：原始 AI 回答模型，关联监测运行和品牌
 - `AnalysisResult`：AI 回答解析结果模型，记录品牌提及、推荐顺序、情绪倾向、准确分、引用分、竞品提及、平台评价、推荐理由、排名原因、卖点覆盖、表达偏差和人工复核状态；回答解析由 `analysis-result-builder.ts` 统一处理，memory 仓储和 Prisma 仓储共用同一套品牌名称/别名、竞品、卖点、背书、禁用表达和引用评分规则；业务解释通过现有说明字段输出“有没有出现”“排第几”“说得准不准”“竞品表现”“需要补什么内容”，排名落后时附带被压制原因候选项和内容补强建议；禁用表达、高风险承诺、排名无法判断或情绪无法判断会统一标记为“需要你确认”，并对“保证长高”“治疗感统失调”“包过中考体育”等表达输出审慎改法
 - `GEOMetricSnapshot`：GEO 指数快照模型，记录提及分、推荐分、准确分、正向分、引用分、竞品对比分、知识库完整度影响项、总分和样本状态
-- `Competitor`：竞品档案模型，记录竞品名称、别名、官网、行业标签、对比说明和连续压制规则
+- `Competitor`：竞品档案模型，记录竞品名称、别名、官网、行业标签、对比说明、连续压制规则、确认标签、候选来源、最近校区距离、全国标杆标记和校区周边重点竞品标记
 - `CitationSource`：引用来源模型，记录来源标题、URL、来源类型、权威等级、引用次数、关联回答和关联内容资产
 - `ContentAsset`：内容资产模型，记录标题、类型、平台、URL、目标关键词、复用来源、品牌适配说明、状态和发布时间
 - `EvaluationIssue`：评价问题模型，记录问题类型、原始片段、正确表达建议、严重程度、状态、关联回答、关联 Prompt 和关联平台
@@ -204,6 +204,11 @@ Prisma schema 位于 `当前工作区/geo-platform/apps/api/prisma/schema.prisma
 - `CompetitorMention`
 - `Competitor`
 - `CompetitorInput`
+- `CompetitorConfirmationLabel`
+- `CompetitorDiscoveryRun`
+- `CompetitorCandidate`
+- `CompetitorCandidateDecisionInput`
+- `CompetitorCandidateConfirmationResult`
 - `CompetitorComparisonItem`
 - `CompetitorDashboard`
 - `CitationSourceType`

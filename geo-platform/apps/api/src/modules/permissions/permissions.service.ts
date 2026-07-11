@@ -4,6 +4,10 @@ import type {
   AdvisorDashboard,
   AdvisorRecord,
   AdvisorRecordInput,
+  InnerTestFeedback,
+  InnerTestFeedbackDashboard,
+  InnerTestFeedbackInput,
+  InnerTestFeedbackUpdateInput,
   AIPlatformCallAudit,
   AIPlatformCallAuditInput,
   AIPlatformCallAuditUpdateInput,
@@ -21,7 +25,13 @@ import type {
   BrandMetricDashboard,
   BrandMetricRankingItem,
   Competitor,
+  CompetitorCandidate,
+  CompetitorCandidateConfirmationResult,
+  CompetitorCandidateDecisionInput,
   CompetitorDashboard,
+  CompetitorDiscoveryCandidatesQuery,
+  CompetitorDiscoveryRun,
+  CompetitorDiscoveryRunInput,
   CompetitorInput,
   CitationDashboard,
   ContentAsset,
@@ -395,20 +405,32 @@ export class PermissionsService {
     return this.permissionsRepository.listBrandMetricRanking(userId, sortBy);
   }
 
-  listCompetitors(userId: string, brandId: BrandId): Competitor[] | null {
+  listCompetitors(userId: string, brandId: BrandId): Competitor[] | Promise<Competitor[] | null> | null {
     return this.permissionsRepository.listCompetitors(userId, brandId);
   }
 
-  createCompetitor(userId: string, brandId: BrandId, input: CompetitorInput): Competitor | null {
+  createCompetitor(userId: string, brandId: BrandId, input: CompetitorInput): Competitor | Promise<Competitor | null> | null {
     return this.permissionsRepository.createCompetitor(userId, brandId, input);
   }
 
-  updateCompetitor(userId: string, brandId: BrandId, competitorId: string, input: Partial<CompetitorInput>): Competitor | null {
+  updateCompetitor(userId: string, brandId: BrandId, competitorId: string, input: Partial<CompetitorInput>): Competitor | Promise<Competitor | null> | null {
     return this.permissionsRepository.updateCompetitor(userId, brandId, competitorId, input);
   }
 
-  getCompetitorDashboard(userId: string, brandId: BrandId): CompetitorDashboard | null {
+  getCompetitorDashboard(userId: string, brandId: BrandId): CompetitorDashboard | Promise<CompetitorDashboard | null> | null {
     return this.permissionsRepository.getCompetitorDashboard(userId, brandId);
+  }
+
+  createCompetitorDiscoveryRun(userId: string, brandId: BrandId, input?: CompetitorDiscoveryRunInput): CompetitorDiscoveryRun | Promise<CompetitorDiscoveryRun | null> | null {
+    return this.permissionsRepository.createCompetitorDiscoveryRun(userId, brandId, input);
+  }
+
+  listCompetitorDiscoveryCandidates(userId: string, brandId: BrandId, runId: string, query?: CompetitorDiscoveryCandidatesQuery): CompetitorCandidate[] | Promise<CompetitorCandidate[] | null> | null {
+    return this.permissionsRepository.listCompetitorDiscoveryCandidates(userId, brandId, runId, query);
+  }
+
+  decideCompetitorCandidate(userId: string, brandId: BrandId, candidateId: string, input: CompetitorCandidateDecisionInput): CompetitorCandidateConfirmationResult | Promise<CompetitorCandidateConfirmationResult | null> | null {
+    return this.permissionsRepository.decideCompetitorCandidate(userId, brandId, candidateId, input);
   }
 
   getCitationDashboard(userId: string, brandId: BrandId): CitationDashboard | null {
@@ -569,6 +591,18 @@ export class PermissionsService {
 
   createAdvisorRecord(userId: string, brandId: BrandId, input: AdvisorRecordInput): AdvisorRecord | null {
     return this.permissionsRepository.createAdvisorRecord(userId, brandId, input);
+  }
+
+  async getInnerTestFeedbackDashboard(userId: string, brandId: BrandId): Promise<InnerTestFeedbackDashboard | null> {
+    return this.permissionsRepository.getInnerTestFeedbackDashboard(userId, brandId);
+  }
+
+  async createInnerTestFeedback(userId: string, brandId: BrandId, input: InnerTestFeedbackInput): Promise<InnerTestFeedback | null> {
+    return this.permissionsRepository.createInnerTestFeedback(userId, brandId, input);
+  }
+
+  async updateInnerTestFeedback(userId: string, brandId: BrandId, feedbackId: string, input: InnerTestFeedbackUpdateInput): Promise<InnerTestFeedback | null> {
+    return this.permissionsRepository.updateInnerTestFeedback(userId, brandId, feedbackId, input);
   }
 
   createMonitoringRun(userId: string, brandId: BrandId, input: MonitoringRunInput): MonitoringRunDetail | null {

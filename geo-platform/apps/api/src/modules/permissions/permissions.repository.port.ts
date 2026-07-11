@@ -3,6 +3,10 @@ import type {
   AdvisorDashboard,
   AdvisorRecord,
   AdvisorRecordInput,
+  InnerTestFeedback,
+  InnerTestFeedbackDashboard,
+  InnerTestFeedbackInput,
+  InnerTestFeedbackUpdateInput,
   AIPlatformCallAudit,
   AIPlatformCallAuditInput,
   AIPlatformCallAuditUpdateInput,
@@ -33,7 +37,13 @@ import type {
   BrowserConnectionStatusInput,
   CitationDashboard,
   Competitor,
+  CompetitorCandidate,
+  CompetitorCandidateConfirmationResult,
+  CompetitorCandidateDecisionInput,
   CompetitorDashboard,
+  CompetitorDiscoveryCandidatesQuery,
+  CompetitorDiscoveryRun,
+  CompetitorDiscoveryRunInput,
   CompetitorInput,
   ContentAsset,
   ContentAssetFilter,
@@ -113,6 +123,8 @@ import type { AIPlatformRuntimeConfig } from '../platforms/adapters/ai-platform.
 
 export const PERMISSIONS_REPOSITORY = Symbol('PERMISSIONS_REPOSITORY');
 
+type MaybePromise<T> = T | Promise<T>;
+
 export interface PermissionsRepositoryPort {
   findUser(userId: string): UserSummary | null;
   listOrganizationMemberships(userId: string): OrganizationMember[];
@@ -183,10 +195,13 @@ export interface PermissionsRepositoryPort {
   createGrowthOptimizationPlan(userId: string, brandId: BrandId, input: GrowthOptimizationPlanInput): GrowthOptimizationPlan | null;
   confirmGrowthOptimizationPlan(userId: string, brandId: BrandId, planId: string, input?: GrowthOptimizationPlanConfirmInput): GrowthOptimizationPlanConfirmationResult | null;
   listBrandMetricRanking(userId: string, sortBy?: keyof Pick<BrandMetricRankingItem, 'totalScore' | 'mentionRate' | 'top3Rate' | 'positiveRate' | 'periodChange'>): BrandMetricRankingItem[];
-  listCompetitors(userId: string, brandId: BrandId): Competitor[] | null;
-  createCompetitor(userId: string, brandId: BrandId, input: CompetitorInput): Competitor | null;
-  updateCompetitor(userId: string, brandId: BrandId, competitorId: string, input: Partial<CompetitorInput>): Competitor | null;
-  getCompetitorDashboard(userId: string, brandId: BrandId): CompetitorDashboard | null;
+  listCompetitors(userId: string, brandId: BrandId): MaybePromise<Competitor[] | null>;
+  createCompetitor(userId: string, brandId: BrandId, input: CompetitorInput): MaybePromise<Competitor | null>;
+  updateCompetitor(userId: string, brandId: BrandId, competitorId: string, input: Partial<CompetitorInput>): MaybePromise<Competitor | null>;
+  getCompetitorDashboard(userId: string, brandId: BrandId): MaybePromise<CompetitorDashboard | null>;
+  createCompetitorDiscoveryRun(userId: string, brandId: BrandId, input?: CompetitorDiscoveryRunInput): MaybePromise<CompetitorDiscoveryRun | null>;
+  listCompetitorDiscoveryCandidates(userId: string, brandId: BrandId, runId: string, query?: CompetitorDiscoveryCandidatesQuery): MaybePromise<CompetitorCandidate[] | null>;
+  decideCompetitorCandidate(userId: string, brandId: BrandId, candidateId: string, input: CompetitorCandidateDecisionInput): MaybePromise<CompetitorCandidateConfirmationResult | null>;
   getCitationDashboard(userId: string, brandId: BrandId): CitationDashboard | null;
   bindCitationContentAsset(userId: string, brandId: BrandId, citationId: string, input: ContentAssetInput): ContentAsset | null;
   createCitationEnhancementStrategy(userId: string, brandId: BrandId, citationId: string): ContentStrategy | null;
@@ -227,6 +242,9 @@ export interface PermissionsRepositoryPort {
   getReport(userId: string, brandId: BrandId, reportId: string): ReportRecord | null;
   getAdvisorDashboard(userId: string, brandId: BrandId): AdvisorDashboard | null;
   createAdvisorRecord(userId: string, brandId: BrandId, input: AdvisorRecordInput): AdvisorRecord | null;
+  getInnerTestFeedbackDashboard(userId: string, brandId: BrandId): MaybePromise<InnerTestFeedbackDashboard | null>;
+  createInnerTestFeedback(userId: string, brandId: BrandId, input: InnerTestFeedbackInput): MaybePromise<InnerTestFeedback | null>;
+  updateInnerTestFeedback(userId: string, brandId: BrandId, feedbackId: string, input: InnerTestFeedbackUpdateInput): MaybePromise<InnerTestFeedback | null>;
   createMonitoringRun(userId: string, brandId: BrandId, input: MonitoringRunInput): MonitoringRunDetail | null;
   updateMonitoringRunExecution(userId: string, brandId: BrandId, runId: string, input: MonitoringRunExecutionUpdateInput): MonitoringRunDetail | null;
   addManualResponse(userId: string, brandId: BrandId, runId: string, input: ManualResponseInput): MonitoringRunDetail | null;

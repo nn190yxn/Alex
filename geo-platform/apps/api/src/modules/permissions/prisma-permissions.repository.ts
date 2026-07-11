@@ -48,6 +48,17 @@ import type {
   AdvisorRecord,
   AdvisorRecordInput,
   AdvisorRecordType,
+  Competitor,
+  CompetitorCandidate,
+  CompetitorCandidateConfirmationResult,
+  CompetitorCandidateDecisionInput,
+  CompetitorCandidateSourceProvider,
+  CompetitorConfirmationLabel,
+  CompetitorDashboard,
+  CompetitorDiscoveryCandidatesQuery,
+  CompetitorDiscoveryRun,
+  CompetitorDiscoveryRunInput,
+  CompetitorInput,
   CompetitorMention,
   ContentAsset,
   ContentAssetFilter,
@@ -71,6 +82,11 @@ import type {
   GrowthOptimizationPlanInput,
   GrowthOptimizationReason,
   GrowthOptimizationWorkspace,
+  InnerTestFeedback,
+  InnerTestFeedbackDashboard,
+  InnerTestFeedbackInput,
+  InnerTestFeedbackStatus,
+  InnerTestFeedbackUpdateInput,
   ContentStrategy,
   ContentStrategyFilter,
   ContentStrategyInput,
@@ -536,6 +552,70 @@ type PrismaContentStrategy = {
   updatedAt: Date;
 };
 
+type PrismaCompetitor = {
+  id: string;
+  brandId: string;
+  name: string;
+  aliases: unknown;
+  website: string | null;
+  industryTags: unknown;
+  comparisonNote: string;
+  suppressionRule: unknown;
+  confirmationLabel: string | null;
+  sourceCandidateId: string | null;
+  sourceProvider: string | null;
+  nearestCampusDistanceKm: number | null;
+  isNationalBenchmark: boolean;
+  isCampusFocus: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type PrismaCompetitorDiscoveryRun = {
+  id: string;
+  brandId: string;
+  city: string;
+  campusRadiusKm: number;
+  keywords: unknown;
+  status: string;
+  candidateCount: number;
+  missingFields: unknown;
+  sourceProvider: string;
+  providerStatus: string;
+  providerMessage: string;
+  cacheHit: boolean;
+  createdBy: string;
+  failureReason: string | null;
+  createdAt: Date;
+  completedAt: Date | null;
+};
+
+type PrismaCompetitorCandidate = {
+  id: string;
+  runId: string;
+  brandId: string;
+  sourceProvider: string;
+  sourcePoiId: string | null;
+  name: string;
+  address: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  category: string | null;
+  distanceToNearestCampusKm: number | null;
+  matchedKeywords: unknown;
+  score: number;
+  suggestedLabel: string;
+  confirmedLabel: string | null;
+  matchReasons: unknown;
+  confidence: string;
+  isCampusFocus: boolean;
+  decisionStatus: string;
+  excludedReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type PrismaContentGenerationTask = {
   id: string;
   brandId: string;
@@ -619,6 +699,7 @@ type PrismaPublishingRecord = {
   generationTaskId: string | null;
   versionId: string | null;
   title: string;
+  body: string;
   platform: string;
   accountName: string | null;
   status: string;
@@ -680,6 +761,20 @@ type PrismaAdvisorRecord = {
   createdAt: Date;
 };
 
+type PrismaInnerTestFeedback = {
+  id: string;
+  brandId: string;
+  page: string;
+  module: string;
+  type: string;
+  description: string;
+  status: string;
+  reporterId: string;
+  resolutionNote: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type GrowthAnalysisSample = {
   analysis: AnalysisResult;
   runId: string;
@@ -691,6 +786,13 @@ type GrowthAnalysisSample = {
   responseText: string;
   profile: BrandProfile;
 };
+
+type PrismaCompetitorCandidateCacheEntry = {
+  candidates: CompetitorCandidate[];
+  providerState: Pick<CompetitorDiscoveryRun, 'providerStatus' | 'providerMessage'>;
+};
+
+const prismaCompetitorCandidateCache = new Map<string, PrismaCompetitorCandidateCacheEntry>();
 
 @Injectable()
 export class PrismaPermissionsRepository {
@@ -2483,6 +2585,228 @@ export class PrismaPermissionsRepository {
     return items.sort((a, b) => b[sortBy] - a[sortBy]);
   }
 
+  async listCompetitors(userId: string, brandId: BrandId): Promise<Competitor[] | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const competitors = await this.prisma.competitor.findMany({ where: { brandId }, orderBy: { createdAt: 'desc' } });
+    return competitors.map((competitor) => toCompetitor(competitor as PrismaCompetitor));
+  }
+
+  async createCompetitor(userId: string, brandId: BrandId, input: CompetitorInput): Promise<Competitor | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const normalized = normalizeCompetitorInput(input);
+    const competitor = await this.prisma.competitor.create({
+      data: {
+        brandId,
+        ...normalized
+      }
+    });
+    return toCompetitor(competitor as PrismaCompetitor);
+  }
+
+  async updateCompetitor(userId: string, brandId: BrandId, competitorId: string, input: Partial<CompetitorInput>): Promise<Competitor | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const existing = await this.prisma.competitor.findFirst({ where: { id: competitorId, brandId } });
+    if (!existing) {
+      return null;
+    }
+
+    const normalized = normalizePartialCompetitorInput(input);
+    const competitor = await this.prisma.competitor.update({
+      where: { id: competitorId },
+      data: normalized
+    });
+    return toCompetitor(competitor as PrismaCompetitor);
+  }
+
+  async getCompetitorDashboard(userId: string, brandId: BrandId): Promise<CompetitorDashboard | null> {
+    const competitors = await this.listCompetitors(userId, brandId);
+    if (!competitors) {
+      return null;
+    }
+
+    return {
+      brandId,
+      competitors,
+      mentionRate: 0,
+      suppressionRate: 0,
+      averageRankGap: 0,
+      highRiskIntents: [],
+      comparisons: []
+    };
+  }
+
+  async createCompetitorDiscoveryRun(userId: string, brandId: BrandId, input: CompetitorDiscoveryRunInput = {}): Promise<CompetitorDiscoveryRun | null> {
+    const brand = await this.findAccessibleBrandDetail(userId, brandId);
+    if (!brand) {
+      return null;
+    }
+
+    const profile = await this.getBrandProfile(userId, brandId);
+    const city = input.city?.trim() || brand.targetCities[0] || '';
+    const inputKeywords = normalizeStringList(input.keywords);
+    const keywords = inputKeywords.length > 0 ? inputKeywords : buildPrismaCompetitorDiscoveryKeywords(brand, profile ?? undefined);
+    const campusRadiusKm = clampPrismaCampusRadius(input.campusRadiusKm ?? 5);
+    const sourceProvider = normalizePrismaCompetitorSourceProvider(input.sourceProvider);
+    const cacheKey = buildPrismaCompetitorCandidateCacheKey(brandId, city, campusRadiusKm, keywords, sourceProvider);
+    const cachedEntry = input.forceRefresh ? undefined : prismaCompetitorCandidateCache.get(cacheKey);
+    const missingFields = [city ? '' : '经营城市', brand.targetCities.length > 0 ? '' : '校区或服务城市'].filter(Boolean);
+    const status = missingFields.length > 0 ? 'failed' : 'completed';
+    const now = new Date();
+    const providerResult = status === 'completed' && !cachedEntry
+      ? await fetchPrismaProviderPoiCandidates(sourceProvider, city, keywords)
+      : { providerState: cachedEntry?.providerState ?? resolvePrismaMapProviderState(sourceProvider), pois: undefined };
+    const providerState = providerResult.providerState;
+
+    const run = await this.prisma.competitorDiscoveryRun.create({
+      data: {
+        brandId,
+        city: city || '待补充城市',
+        campusRadiusKm,
+        keywords,
+        status,
+        candidateCount: 0,
+        missingFields,
+        sourceProvider,
+        providerStatus: providerState.providerStatus,
+        providerMessage: providerState.providerMessage,
+        cacheHit: Boolean(cachedEntry),
+        createdBy: userId,
+        failureReason: missingFields.length > 0 ? `需要先补充：${missingFields.join('、')}` : undefined,
+        completedAt: now
+      }
+    });
+
+    if (status === 'completed') {
+      const mappedRun = toCompetitorDiscoveryRun(run as PrismaCompetitorDiscoveryRun);
+      const candidates = cachedEntry
+        ? clonePrismaCompetitorCandidatesForRun(cachedEntry.candidates, mappedRun.runId, now.toISOString())
+        : dedupePrismaCompetitorCandidates(buildPrismaLocalCompetitorCandidates(brand, mappedRun, profile ?? undefined, providerResult.pois));
+      for (const candidate of candidates) {
+        const exists = await this.prisma.competitorCandidate.findFirst({
+          where: {
+            brandId,
+            runId: candidate.runId,
+            name: candidate.name,
+            address: candidate.address
+          }
+        });
+        if (exists) continue;
+        await this.prisma.competitorCandidate.create({
+          data: toCompetitorCandidateCreateData(candidate)
+        });
+      }
+      await this.prisma.competitorDiscoveryRun.update({ where: { id: run.id }, data: { candidateCount: candidates.length } });
+      if (!cachedEntry) {
+        prismaCompetitorCandidateCache.set(cacheKey, { candidates, providerState });
+      }
+      return { ...toCompetitorDiscoveryRun(run as PrismaCompetitorDiscoveryRun), candidateCount: candidates.length };
+    }
+
+    return toCompetitorDiscoveryRun(run as PrismaCompetitorDiscoveryRun);
+  }
+
+  async listCompetitorDiscoveryCandidates(userId: string, brandId: BrandId, runId: string, query: CompetitorDiscoveryCandidatesQuery = {}): Promise<CompetitorCandidate[] | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const run = await this.prisma.competitorDiscoveryRun.findFirst({ where: { id: runId, brandId } });
+    if (!run) {
+      return null;
+    }
+
+    const candidates = await this.prisma.competitorCandidate.findMany({ where: { brandId, runId }, orderBy: { score: 'desc' } });
+    return candidates
+      .map((candidate) => toCompetitorCandidate(candidate as PrismaCompetitorCandidate))
+      .filter((candidate) => matchesPrismaCompetitorCandidateFilter(candidate, query.filter));
+  }
+
+  async decideCompetitorCandidate(userId: string, brandId: BrandId, candidateId: string, input: CompetitorCandidateDecisionInput): Promise<CompetitorCandidateConfirmationResult | null> {
+    const brand = await this.findAccessibleBrandDetail(userId, brandId);
+    if (!brand) {
+      return null;
+    }
+
+    const existingCandidate = await this.prisma.competitorCandidate.findFirst({ where: { id: candidateId, brandId } });
+    if (!existingCandidate) {
+      return null;
+    }
+
+    const label = normalizePrismaCompetitorConfirmationLabel(input.label);
+    const candidate = await this.prisma.competitorCandidate.update({
+      where: { id: candidateId },
+      data: {
+        confirmedLabel: label,
+        decisionStatus: label === 'excluded' ? 'excluded' : 'confirmed',
+        excludedReason: label === 'excluded' ? input.excludedReason?.trim() || '用户排除' : null
+      }
+    });
+    const mappedCandidate = toCompetitorCandidate(candidate as PrismaCompetitorCandidate);
+
+    await this.createAuditLog(userId, {
+      brandId,
+      actorUserId: userId,
+      action: label === 'excluded' ? 'competitor_candidate.exclude' : 'competitor_candidate.confirm',
+      resourceType: 'competitor_candidate',
+      resourceId: candidateId,
+      result: 'success',
+      metadata: {
+        label,
+        candidateName: mappedCandidate.name,
+        runId: mappedCandidate.runId,
+        sourceProvider: mappedCandidate.sourceProvider,
+        excludedReason: mappedCandidate.excludedReason
+      }
+    });
+
+    if (label === 'excluded') {
+      return { candidate: mappedCandidate };
+    }
+
+    const competitorInput: CompetitorInput = {
+      name: mappedCandidate.name,
+      aliases: [],
+      website: undefined,
+      industryTags: mergeStringLists(mappedCandidate.matchedKeywords, mappedCandidate.category ? [mappedCandidate.category] : []),
+      comparisonNote: mappedCandidate.matchReasons.join('；'),
+      suppressionRule: { consecutiveThreshold: 2 },
+      confirmationLabel: label,
+      sourceCandidateId: mappedCandidate.candidateId,
+      sourceProvider: mappedCandidate.sourceProvider,
+      nearestCampusDistanceKm: mappedCandidate.distanceToNearestCampusKm,
+      isNationalBenchmark: label === 'national_benchmark',
+      isCampusFocus: mappedCandidate.isCampusFocus
+    };
+    const existingCompetitor = await this.prisma.competitor.findFirst({
+      where: {
+        brandId,
+        OR: [
+          { sourceCandidateId: mappedCandidate.candidateId },
+          { name: mappedCandidate.name }
+        ]
+      }
+    });
+    const competitor = existingCompetitor
+      ? await this.updateCompetitor(userId, brandId, existingCompetitor.id, competitorInput)
+      : await this.createCompetitor(userId, brandId, competitorInput);
+
+    if (competitor) {
+      await this.createPrismaCompetitorLinkedTestQuestions(brand, mappedCandidate, label);
+      await this.createPrismaNationalBenchmarkContentStrategy(brand, competitor, label);
+    }
+
+    return { candidate: mappedCandidate, competitor: competitor ?? undefined };
+  }
+
   async getContentCenterDashboard(userId: string, brandId: BrandId): Promise<ContentCenterDashboard | null> {
     if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
       return null;
@@ -3173,6 +3497,7 @@ export class PrismaPermissionsRepository {
         generationTaskId: task?.id,
         versionId: version?.id,
         title: input.title?.trim() || version?.title || asset.title,
+        body: input.body?.trim() || (version as PrismaContentVersion | null)?.body || '',
         platform: input.targetPlatform?.trim() || account?.platform || asset.platform,
         accountName: account?.accountName,
         status: input.status ? normalizePublishingRecordStatus(input.status) : 'draft'
@@ -3606,6 +3931,78 @@ export class PrismaPermissionsRepository {
     return toAdvisorRecord(record, reports);
   }
 
+  async getInnerTestFeedbackDashboard(userId: string, brandId: BrandId): Promise<InnerTestFeedbackDashboard | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const records = await this.prisma.innerTestFeedback.findMany({ where: { brandId }, orderBy: { createdAt: 'desc' } });
+    const mappedRecords = records.map((record) => toInnerTestFeedback(record as PrismaInnerTestFeedback));
+    return {
+      brandId,
+      records: mappedRecords,
+      statusCounts: countInnerTestFeedbackStatuses(mappedRecords)
+    };
+  }
+
+  async createInnerTestFeedback(userId: string, brandId: BrandId, input: InnerTestFeedbackInput): Promise<InnerTestFeedback | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const normalized = normalizeInnerTestFeedbackInput(input);
+    const record = await this.prisma.innerTestFeedback.create({
+      data: {
+        brandId,
+        page: normalized.page,
+        module: normalized.module,
+        type: normalized.type,
+        description: normalized.description,
+        reporterId: userId
+      }
+    });
+    const mappedRecord = toInnerTestFeedback(record as PrismaInnerTestFeedback);
+    await this.createAuditLog(userId, {
+      brandId,
+      actorUserId: userId,
+      action: 'inner_test_feedback.create',
+      resourceType: 'inner_test_feedback',
+      resourceId: mappedRecord.id,
+      result: 'success',
+      metadata: { page: mappedRecord.page, module: mappedRecord.module, type: mappedRecord.type }
+    });
+    return mappedRecord;
+  }
+
+  async updateInnerTestFeedback(userId: string, brandId: BrandId, feedbackId: string, input: InnerTestFeedbackUpdateInput): Promise<InnerTestFeedback | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const existing = await this.prisma.innerTestFeedback.findFirst({ where: { id: feedbackId, brandId } });
+    if (!existing) return null;
+
+    const normalized = normalizeInnerTestFeedbackUpdateInput(input);
+    const record = await this.prisma.innerTestFeedback.update({
+      where: { id: feedbackId },
+      data: {
+        ...(normalized.status ? { status: normalized.status } : {}),
+        ...(normalized.resolutionNote !== undefined ? { resolutionNote: normalized.resolutionNote } : {})
+      }
+    });
+    const mappedRecord = toInnerTestFeedback(record as PrismaInnerTestFeedback);
+    await this.createAuditLog(userId, {
+      brandId,
+      actorUserId: userId,
+      action: 'inner_test_feedback.update',
+      resourceType: 'inner_test_feedback',
+      resourceId: mappedRecord.id,
+      result: 'success',
+      metadata: { status: mappedRecord.status }
+    });
+    return mappedRecord;
+  }
+
   async recordDeniedAccess(log: DeniedAccessLog): Promise<void> {
     await this.prisma.deniedAccessLog.create({
       data: {
@@ -3650,6 +4047,115 @@ export class PrismaPermissionsRepository {
         status: 'draft'
       }
     });
+  }
+
+  private async createPrismaCompetitorLinkedTestQuestions(brand: BrandDetail, candidate: CompetitorCandidate, label: CompetitorConfirmationLabel): Promise<void> {
+    const theme = await this.ensurePrismaCompetitorTestTheme(brand, label);
+    const questions = buildPrismaCompetitorLinkedQuestions(brand, candidate, label);
+    for (const question of questions) {
+      const exists = await this.prisma.testQuestionCandidate.findFirst({ where: { brandId: brand.brandId, question: question.question } });
+      if (exists) continue;
+      await this.prisma.testQuestionCandidate.create({
+        data: {
+          brandId: brand.brandId,
+          themeId: theme.id,
+          question: question.question,
+          purposes: question.purposes,
+          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+          priority: question.priority,
+          estimatedValue: question.estimatedValue,
+          editable: true,
+          selected: false
+        }
+      });
+    }
+  }
+
+  private async ensurePrismaCompetitorTestTheme(brand: BrandDetail, label: CompetitorConfirmationLabel): Promise<PrismaTestTheme> {
+    const themeName = label === 'national_benchmark' ? '全国标杆品牌对标' : '本地竞品推荐对比';
+    const existing = await this.prisma.testTheme.findFirst({ where: { brandId: brand.brandId, type: 'competitor', name: themeName } });
+    if (existing) return existing as PrismaTestTheme;
+
+    const theme = await this.prisma.testTheme.create({
+      data: {
+        brandId: brand.brandId,
+        type: 'competitor',
+        name: themeName,
+        businessExplanation: label === 'national_benchmark'
+          ? '验证 AI 在行业标杆对比中如何理解品牌定位和表达差异。'
+          : '验证 AI 在本地到店选择场景中是否会推荐品牌，并识别竞品压制风险。',
+        priority: 'high',
+        estimatedValue: label === 'national_benchmark'
+          ? '用于优化品牌表达和全国标杆对标内容。'
+          : '用于发现本地家长真实选择场景下的推荐排名和竞品压制。',
+        enabled: true,
+        sourceProfileFields: ['competitors']
+      }
+    });
+    return theme as PrismaTestTheme;
+  }
+
+  private async createPrismaNationalBenchmarkContentStrategy(brand: BrandDetail, competitor: Competitor, label: CompetitorConfirmationLabel): Promise<ContentStrategy | null> {
+    if (label !== 'national_benchmark') return null;
+
+    const unit = await this.ensurePrismaNationalBenchmarkOptimizationUnit(brand, competitor);
+    const intent = await this.ensurePrismaNationalBenchmarkIntent(brand, unit, competitor);
+    const existing = await this.prisma.contentStrategy.findFirst({
+      where: { brandId: brand.brandId, intentId: intent.id, type: 'competitor_response', suggestedTitle: { contains: competitor.name } }
+    });
+    if (existing) return toContentStrategy(existing as PrismaContentStrategy);
+
+    const strategy = await this.prisma.contentStrategy.create({
+      data: {
+        brandId: brand.brandId,
+        optimizationUnitId: unit.id,
+        intentId: intent.id,
+        type: 'competitor_response',
+        priority: 'medium',
+        suggestedTitle: `${brand.name}对标${competitor.name}的品牌表达优化`,
+        targetPlatform: 'wechat_official',
+        targetKeywords: mergeStringLists([brand.name, competitor.name, '儿童运动成长课', '品牌对标'], competitor.industryTags),
+        relatedPromptIds: [],
+        status: 'draft'
+      }
+    });
+    return toContentStrategy(strategy as PrismaContentStrategy);
+  }
+
+  private async ensurePrismaNationalBenchmarkOptimizationUnit(brand: BrandDetail, competitor: Competitor): Promise<PrismaOptimizationUnit> {
+    const unitName = '全国标杆品牌对标';
+    const existing = await this.prisma.optimizationUnit.findFirst({ where: { brandId: brand.brandId, type: 'competitor', name: unitName } });
+    if (existing) return existing as PrismaOptimizationUnit;
+
+    const unit = await this.prisma.optimizationUnit.create({
+      data: {
+        brandId: brand.brandId,
+        name: unitName,
+        type: 'competitor',
+        targetKeywords: mergeStringLists([brand.name, competitor.name, '儿童运动成长课', '全国标杆品牌'], competitor.industryTags),
+        priority: 'medium',
+        enabled: true
+      }
+    });
+    return unit as PrismaOptimizationUnit;
+  }
+
+  private async ensurePrismaNationalBenchmarkIntent(brand: BrandDetail, unit: PrismaOptimizationUnit, competitor: Competitor): Promise<PrismaUserIntent> {
+    const intentText = `家长如何理解${brand.name}和${competitor.name}的儿童运动课程差异？`;
+    const existing = await this.prisma.userIntent.findFirst({ where: { brandId: brand.brandId, optimizationUnitId: unit.id, text: intentText } });
+    if (existing) return existing as PrismaUserIntent;
+
+    const intent = await this.prisma.userIntent.create({
+      data: {
+        brandId: brand.brandId,
+        optimizationUnitId: unit.id,
+        category: 'competitor_compare',
+        text: intentText,
+        monitoringFrequency: 'manual',
+        enabled: true
+      }
+    });
+    return intent as PrismaUserIntent;
   }
 
   private async buildSingleBrandReportSnapshot(userId: string, brand: BrandDetail): Promise<SingleBrandReportSnapshot> {
@@ -4901,6 +5407,464 @@ function mergeStringLists(...lists: string[][]): string[] {
   return [...new Set(lists.flat().map((item) => item.trim()).filter(Boolean))];
 }
 
+function normalizeCompetitorInput(input: CompetitorInput): Omit<Competitor, 'id' | 'brandId' | 'createdAt' | 'updatedAt'> {
+  return {
+    name: input.name.trim(),
+    aliases: normalizeStringList(input.aliases),
+    website: input.website?.trim(),
+    industryTags: normalizeStringList(input.industryTags),
+    comparisonNote: input.comparisonNote?.trim() ?? '',
+    suppressionRule: {
+      consecutiveThreshold: Math.max(2, Math.round(input.suppressionRule?.consecutiveThreshold ?? 2))
+    },
+    confirmationLabel: input.confirmationLabel ? normalizePrismaCompetitorConfirmationLabel(input.confirmationLabel) : undefined,
+    sourceCandidateId: input.sourceCandidateId?.trim(),
+    sourceProvider: input.sourceProvider,
+    nearestCampusDistanceKm: input.nearestCampusDistanceKm,
+    isNationalBenchmark: input.isNationalBenchmark ?? false,
+    isCampusFocus: input.isCampusFocus ?? false
+  };
+}
+
+function normalizePartialCompetitorInput(input: Partial<CompetitorInput>): Partial<Omit<Competitor, 'id' | 'brandId' | 'createdAt' | 'updatedAt'>> {
+  return {
+    name: input.name?.trim(),
+    aliases: input.aliases ? normalizeStringList(input.aliases) : undefined,
+    website: input.website?.trim(),
+    industryTags: input.industryTags ? normalizeStringList(input.industryTags) : undefined,
+    comparisonNote: input.comparisonNote?.trim(),
+    suppressionRule: input.suppressionRule ? {
+      consecutiveThreshold: Math.max(2, Math.round(input.suppressionRule.consecutiveThreshold ?? 2))
+    } : undefined,
+    confirmationLabel: input.confirmationLabel ? normalizePrismaCompetitorConfirmationLabel(input.confirmationLabel) : undefined,
+    sourceCandidateId: input.sourceCandidateId?.trim(),
+    sourceProvider: input.sourceProvider,
+    nearestCampusDistanceKm: input.nearestCampusDistanceKm,
+    isNationalBenchmark: input.isNationalBenchmark,
+    isCampusFocus: input.isCampusFocus
+  };
+}
+
+function toCompetitor(competitor: PrismaCompetitor): Competitor {
+  return {
+    id: competitor.id,
+    brandId: competitor.brandId,
+    name: competitor.name,
+    aliases: toStringArray(competitor.aliases),
+    website: competitor.website ?? undefined,
+    industryTags: toStringArray(competitor.industryTags),
+    comparisonNote: competitor.comparisonNote,
+    suppressionRule: toCompetitorSuppressionRule(competitor.suppressionRule),
+    confirmationLabel: competitor.confirmationLabel as CompetitorConfirmationLabel | undefined,
+    sourceCandidateId: competitor.sourceCandidateId ?? undefined,
+    sourceProvider: competitor.sourceProvider as Competitor['sourceProvider'],
+    nearestCampusDistanceKm: competitor.nearestCampusDistanceKm ?? undefined,
+    isNationalBenchmark: competitor.isNationalBenchmark,
+    isCampusFocus: competitor.isCampusFocus,
+    createdAt: competitor.createdAt.toISOString(),
+    updatedAt: competitor.updatedAt.toISOString()
+  };
+}
+
+function toCompetitorSuppressionRule(value: unknown): Competitor['suppressionRule'] {
+  const record = toRecord(value);
+  return { consecutiveThreshold: Math.max(2, Math.round(Number(record.consecutiveThreshold ?? 2))) };
+}
+
+function toCompetitorDiscoveryRun(run: PrismaCompetitorDiscoveryRun): CompetitorDiscoveryRun {
+  return {
+    runId: run.id,
+    brandId: run.brandId,
+    city: run.city,
+    campusRadiusKm: run.campusRadiusKm,
+    keywords: toStringArray(run.keywords),
+    status: run.status as CompetitorDiscoveryRun['status'],
+    candidateCount: run.candidateCount,
+    missingFields: toStringArray(run.missingFields),
+    sourceProvider: run.sourceProvider as CompetitorDiscoveryRun['sourceProvider'],
+    providerStatus: run.providerStatus as CompetitorDiscoveryRun['providerStatus'],
+    providerMessage: run.providerMessage,
+    cacheHit: run.cacheHit,
+    createdBy: run.createdBy,
+    failureReason: run.failureReason ?? undefined,
+    createdAt: run.createdAt.toISOString(),
+    completedAt: dateToIso(run.completedAt)
+  };
+}
+
+function toCompetitorCandidate(candidate: PrismaCompetitorCandidate): CompetitorCandidate {
+  return {
+    candidateId: candidate.id,
+    runId: candidate.runId,
+    brandId: candidate.brandId,
+    sourceProvider: candidate.sourceProvider as CompetitorCandidate['sourceProvider'],
+    sourcePoiId: candidate.sourcePoiId ?? undefined,
+    name: candidate.name,
+    address: candidate.address ?? '',
+    city: candidate.city ?? '',
+    latitude: candidate.latitude ?? undefined,
+    longitude: candidate.longitude ?? undefined,
+    category: candidate.category ?? undefined,
+    distanceToNearestCampusKm: candidate.distanceToNearestCampusKm ?? undefined,
+    matchedKeywords: toStringArray(candidate.matchedKeywords),
+    score: candidate.score,
+    suggestedLabel: candidate.suggestedLabel as CompetitorConfirmationLabel,
+    confirmedLabel: candidate.confirmedLabel as CompetitorConfirmationLabel | undefined,
+    matchReasons: toStringArray(candidate.matchReasons),
+    confidence: candidate.confidence as CompetitorCandidate['confidence'],
+    isCampusFocus: candidate.isCampusFocus,
+    decisionStatus: candidate.decisionStatus as CompetitorCandidate['decisionStatus'],
+    excludedReason: candidate.excludedReason ?? undefined,
+    createdAt: candidate.createdAt.toISOString(),
+    updatedAt: candidate.updatedAt.toISOString()
+  };
+}
+
+function toCompetitorCandidateCreateData(candidate: CompetitorCandidate) {
+  return {
+    id: candidate.candidateId,
+    runId: candidate.runId,
+    brandId: candidate.brandId,
+    sourceProvider: candidate.sourceProvider,
+    sourcePoiId: candidate.sourcePoiId,
+    name: candidate.name,
+    address: candidate.address,
+    city: candidate.city,
+    latitude: candidate.latitude,
+    longitude: candidate.longitude,
+    category: candidate.category,
+    distanceToNearestCampusKm: candidate.distanceToNearestCampusKm,
+    matchedKeywords: candidate.matchedKeywords,
+    score: candidate.score,
+    suggestedLabel: candidate.suggestedLabel,
+    confirmedLabel: candidate.confirmedLabel,
+    matchReasons: candidate.matchReasons,
+    confidence: candidate.confidence,
+    isCampusFocus: candidate.isCampusFocus,
+    decisionStatus: candidate.decisionStatus,
+    excludedReason: candidate.excludedReason
+  };
+}
+
+function buildPrismaCompetitorDiscoveryKeywords(brand: BrandDetail, profile?: BrandProfile): string[] {
+  return mergeStringLists(
+    ['儿童体能', '少儿跑酷', '儿童运动', '体适能', '快乐体操', '篮球培训', '儿童运动馆'],
+    brand.targetCities.map((city) => `${city}儿童运动`),
+    profile?.offerings ?? [],
+    profile?.competitors ?? []
+  ).slice(0, 12);
+}
+
+function clampPrismaCampusRadius(value: number): number {
+  return Math.min(8, Math.max(3, Math.round(value)));
+}
+
+function normalizePrismaCompetitorSourceProvider(provider?: CompetitorCandidateSourceProvider): CompetitorCandidateSourceProvider {
+  const providers: CompetitorCandidateSourceProvider[] = ['amap', 'tencent', 'baidu', 'manual'];
+  return provider && providers.includes(provider) ? provider : 'amap';
+}
+
+function resolvePrismaMapProviderState(provider: CompetitorCandidateSourceProvider): Pick<CompetitorDiscoveryRun, 'providerStatus' | 'providerMessage'> {
+  if (provider !== 'amap') {
+    return { providerStatus: 'fallback', providerMessage: '当前 provider 暂使用内测候选源，接口已保留真实地图接入字段。' };
+  }
+  if (process.env.GEO_AMAP_POI_RATE_LIMITED === 'true') {
+    return { providerStatus: 'rate_limited', providerMessage: '高德地图配额暂不可用，已使用缓存或内测候选源继续完成发现。' };
+  }
+  if (process.env.GEO_AMAP_POI_DISABLED === 'true') {
+    return { providerStatus: 'disabled', providerMessage: '高德地图服务当前已停用，已切换为内测候选源。' };
+  }
+  if (process.env.GEO_AMAP_API_KEY || process.env.AMAP_API_KEY) {
+    return { providerStatus: 'configured', providerMessage: '已检测到高德地图服务端配置，候选结果可接入真实 POI provider。' };
+  }
+  return { providerStatus: 'fallback', providerMessage: '未配置高德地图服务端 API Key，当前使用内测候选源。' };
+}
+
+function buildPrismaCompetitorCandidateCacheKey(brandId: BrandId, city: string, campusRadiusKm: number, keywords: string[], sourceProvider: CompetitorCandidateSourceProvider): string {
+  return [brandId, sourceProvider, city || '待补充城市', campusRadiusKm, [...keywords].sort().join(',')].join('|');
+}
+
+function clonePrismaCompetitorCandidatesForRun(candidates: CompetitorCandidate[], runId: string, timestamp: string): CompetitorCandidate[] {
+  return candidates.map((candidate, index) => ({
+    ...candidate,
+    candidateId: `competitor_candidate_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`,
+    runId,
+    decisionStatus: 'pending',
+    confirmedLabel: undefined,
+    excludedReason: undefined,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  }));
+}
+
+function normalizePrismaCompetitorConfirmationLabel(label: CompetitorConfirmationLabel): CompetitorConfirmationLabel {
+  const labels: CompetitorConfirmationLabel[] = ['direct_competitor', 'indirect_competitor', 'local_alternative', 'national_benchmark', 'excluded'];
+  return labels.includes(label) ? label : 'direct_competitor';
+}
+
+function matchesPrismaCompetitorCandidateFilter(candidate: CompetitorCandidate, filter?: CompetitorDiscoveryCandidatesQuery['filter']): boolean {
+  if (!filter || filter === 'all') return true;
+  if (filter === 'campus_focus') return candidate.isCampusFocus;
+  if (filter === 'direct_competitor') return candidate.suggestedLabel === 'direct_competitor';
+  if (filter === 'national_benchmark') return candidate.suggestedLabel === 'national_benchmark';
+  if (filter === 'excluded') return candidate.decisionStatus === 'excluded';
+  if (filter === 'pending') return candidate.decisionStatus === 'pending';
+  if (filter === 'confirmed') return candidate.decisionStatus === 'confirmed';
+  return true;
+}
+
+function dedupePrismaCompetitorCandidates(candidates: CompetitorCandidate[]): CompetitorCandidate[] {
+  const seen = new Set<string>();
+  return candidates.filter((candidate) => {
+    const key = [candidate.name, candidate.address, candidate.latitude?.toFixed(4), candidate.longitude?.toFixed(4)].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildPrismaLocalCompetitorCandidates(brand: BrandDetail, run: CompetitorDiscoveryRun, profile?: BrandProfile, providerPois?: PrismaLocalPoiCandidate[]): CompetitorCandidate[] {
+  const timestamp = new Date().toISOString();
+  const city = run.city === '待补充城市' ? brand.targetCities[0] ?? '贵阳' : run.city;
+  const campusCoordinates = resolvePrismaBrandCampusCoordinates(brand, profile, city);
+  const pois = (providerPois && providerPois.length > 0 ? providerPois : getPrismaDefaultLocalPoiCandidates(city))
+    .filter((poi) => !isPrismaOwnBrandPoi(brand, poi.name));
+  return pois.map((poi, index) => {
+    const matchedKeywords = run.keywords.filter((keyword) => poi.searchText.includes(keyword)).slice(0, 4);
+    const isNationalBenchmark = poi.kind === 'national';
+    const nearestCampusDistanceKm = calculatePrismaNearestCampusDistanceKm(poi, campusCoordinates);
+    const isCampusFocus = typeof nearestCampusDistanceKm === 'number' && nearestCampusDistanceKm <= run.campusRadiusKm;
+    const categoryScore = matchedKeywords.length >= 2 ? 25 : matchedKeywords.length === 1 ? 16 : 8;
+    const cityScore = poi.city === city ? 20 : 8;
+    const distanceScore = typeof nearestCampusDistanceKm !== 'number' ? 8 : isCampusFocus ? 25 : 12;
+    const audienceScore = /儿童|少儿|体能|体适能|跑酷|体操|篮球/.test(poi.searchText) ? 20 : 8;
+    const profileScore = profile?.offerings.some((offering) => poi.searchText.includes(offering.slice(0, 2))) ? 10 : 4;
+    const score = Math.min(100, Math.max(0, cityScore + distanceScore + categoryScore + audienceScore + profileScore));
+    const suggestedLabel: CompetitorConfirmationLabel = isNationalBenchmark
+      ? 'national_benchmark'
+      : score >= 78 ? 'direct_competitor' : score >= 60 ? 'indirect_competitor' : 'local_alternative';
+    const matchReasons = [
+      `${poi.city}线下机构`,
+      typeof nearestCampusDistanceKm === 'number' ? `距最近校区约 ${nearestCampusDistanceKm} 公里` : '全城候选机构',
+      matchedKeywords.length > 0 ? `命中 ${matchedKeywords.join('、')}` : '需人工确认课程品类',
+      isNationalBenchmark ? '全国连锁或知名品牌，可作为内容对标' : '面向儿童家庭运动成长需求'
+    ];
+
+    return {
+      candidateId: `competitor_candidate_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`,
+      runId: run.runId,
+      brandId: brand.brandId,
+      sourceProvider: run.sourceProvider,
+      sourcePoiId: poi.sourcePoiId,
+      name: poi.name,
+      address: poi.address,
+      city: poi.city,
+      latitude: poi.latitude,
+      longitude: poi.longitude,
+      category: poi.category,
+      distanceToNearestCampusKm: nearestCampusDistanceKm,
+      matchedKeywords,
+      score,
+      suggestedLabel,
+      matchReasons,
+      confidence: score >= 78 ? 'high' : score >= 60 ? 'medium' : 'low',
+      isCampusFocus,
+      decisionStatus: 'pending',
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+  });
+}
+
+type PrismaLocalPoiCandidate = { sourcePoiId: string; name: string; address: string; city: string; latitude: number; longitude: number; category: string; kind: 'local' | 'national'; searchText: string };
+
+function getPrismaDefaultLocalPoiCandidates(city: string): PrismaLocalPoiCandidate[] {
+  return [
+    { sourcePoiId: 'amap_gymkids_001', name: '贵阳星动儿童体能馆', address: `${city}观山湖区长岭北路儿童运动中心`, city, latitude: 26.647, longitude: 106.630, category: '儿童体适能', kind: 'local', searchText: '儿童体能 儿童运动 体适能 儿童运动馆 贵阳' },
+    { sourcePoiId: 'amap_parkour_002', name: '跃动少儿跑酷训练中心', address: `${city}南明区花果园购物中心`, city, latitude: 26.563, longitude: 106.695, category: '少儿跑酷', kind: 'local', searchText: '少儿跑酷 儿童运动 体能 体适能 贵阳' },
+    { sourcePoiId: 'amap_gymnastics_003', name: '童跃快乐体操馆', address: `${city}云岩区北京路校区`, city, latitude: 26.597, longitude: 106.713, category: '快乐体操', kind: 'local', searchText: '快乐体操 少儿体操 儿童运动 儿童体能 贵阳' },
+    { sourcePoiId: 'amap_basketball_004', name: '小飞侠少儿篮球成长中心', address: `${city}花溪区溪北路体育公园`, city, latitude: 26.414, longitude: 106.670, category: '篮球培训', kind: 'local', searchText: '篮球培训 少儿篮球 儿童运动 体能训练 贵阳' },
+    { sourcePoiId: 'amap_national_005', name: '万国少儿体适能贵阳中心', address: `${city}观山湖区会展城商圈`, city, latitude: 26.651, longitude: 106.642, category: '全国连锁儿童体适能', kind: 'national', searchText: '儿童体适能 全国连锁 儿童运动 体能 贵阳' },
+    { sourcePoiId: 'amap_art_006', name: '童画艺术成长中心', address: `${city}云岩区未来方舟`, city, latitude: 26.618, longitude: 106.751, category: '艺术培训', kind: 'local', searchText: '艺术培训 儿童成长 贵阳' }
+  ];
+}
+
+async function fetchPrismaProviderPoiCandidates(sourceProvider: CompetitorCandidateSourceProvider, city: string, keywords: string[]): Promise<{
+  providerState: Pick<CompetitorDiscoveryRun, 'providerStatus' | 'providerMessage'>;
+  pois?: PrismaLocalPoiCandidate[];
+}> {
+  if (sourceProvider !== 'amap') {
+    return { providerState: resolvePrismaMapProviderState(sourceProvider) };
+  }
+
+  const apiKey = process.env.GEO_AMAP_API_KEY || process.env.AMAP_API_KEY;
+  if (!apiKey || process.env.GEO_AMAP_POI_DISABLED === 'true' || process.env.GEO_AMAP_POI_RATE_LIMITED === 'true') {
+    return { providerState: resolvePrismaMapProviderState(sourceProvider) };
+  }
+
+  try {
+    const pois = await fetchPrismaAmapTextPois(apiKey, city, keywords);
+    if (pois.length === 0) {
+      return {
+        providerState: { providerStatus: 'fallback', providerMessage: '高德地图未返回匹配 POI，已使用内测候选源继续完成发现。' }
+      };
+    }
+    return {
+      providerState: { providerStatus: 'configured', providerMessage: '已通过高德地图服务端 POI provider 获取候选机构。' },
+      pois
+    };
+  } catch {
+    return {
+      providerState: { providerStatus: 'failed', providerMessage: '高德地图 POI 请求失败，已切换为内测候选源。' }
+    };
+  }
+}
+
+async function fetchPrismaAmapTextPois(apiKey: string, city: string, keywords: string[]): Promise<PrismaLocalPoiCandidate[]> {
+  const searchKeywords = keywords.length > 0 ? keywords.slice(0, 5) : ['儿童体能', '儿童运动', '少儿跑酷'];
+  const results: PrismaLocalPoiCandidate[] = [];
+  for (const keyword of searchKeywords) {
+    const url = new URL('https://restapi.amap.com/v3/place/text');
+    url.searchParams.set('key', apiKey);
+    url.searchParams.set('keywords', keyword);
+    url.searchParams.set('city', city);
+    url.searchParams.set('citylimit', 'true');
+    url.searchParams.set('children', '0');
+    url.searchParams.set('offset', '20');
+    url.searchParams.set('page', '1');
+    url.searchParams.set('extensions', 'base');
+
+    const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!response.ok) {
+      throw new Error('amap_poi_http_error');
+    }
+    const payload = await response.json() as { status?: string; info?: string; pois?: unknown[] };
+    if (payload.status !== '1') {
+      throw new Error('amap_poi_status_error');
+    }
+    results.push(...parsePrismaAmapPois(payload.pois, city, keyword));
+  }
+  return dedupePrismaLocalPoiCandidates(results).slice(0, 30);
+}
+
+function parsePrismaAmapPois(pois: unknown[] | undefined, fallbackCity: string, keyword: string): PrismaLocalPoiCandidate[] {
+  return (pois ?? []).map((item) => {
+    const record = toRecord(item);
+    const location = typeof record.location === 'string' ? record.location.split(',') : [];
+    const longitude = Number(location[0]);
+    const latitude = Number(location[1]);
+    const name = typeof record.name === 'string' ? record.name.trim() : '';
+    if (!name || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null;
+    }
+    const address = Array.isArray(record.address) ? record.address.join('') : typeof record.address === 'string' ? record.address : '';
+    const city = typeof record.cityname === 'string' ? record.cityname : fallbackCity;
+    const category = typeof record.type === 'string' ? record.type : '地图 POI';
+    if (!isPrismaRelevantChildrenSportsPoi(name, category, address)) {
+      return null;
+    }
+    const sourcePoiId = typeof record.id === 'string' ? record.id : `amap_${name}_${latitude}_${longitude}`;
+    const searchText = [name, category, keyword, address, city].join(' ');
+    return {
+      sourcePoiId,
+      name,
+      address,
+      city,
+      latitude,
+      longitude,
+      category,
+      kind: isPrismaNationalBenchmarkPoi(name, category) ? 'national' : 'local',
+      searchText
+    } satisfies PrismaLocalPoiCandidate;
+  }).filter((item): item is PrismaLocalPoiCandidate => Boolean(item));
+}
+
+function isPrismaNationalBenchmarkPoi(name: string, category: string): boolean {
+  return /万国|乐刻|全国|连锁|金宝贝|美吉姆|东方启明星/.test(`${name} ${category}`);
+}
+
+function isPrismaRelevantChildrenSportsPoi(name: string, category: string, address: string): boolean {
+  const searchable = `${name} ${category} ${address}`;
+  const hasSportsTerm = /体能|体适能|跑酷|运动|体育|体操|篮球|足球|武术|轮滑|击剑|游泳/.test(searchable);
+  const hasChildTrainingTerm = /儿童|少儿/.test(searchable) && /培训机构|运动场馆|体育休闲/.test(category);
+  const positive = hasSportsTerm || hasChildTrainingTerm;
+  const negative = /言语|社交|康复|医疗|诊所|医院|自行车|电动车|专卖店|购物|器材|成人健身/.test(searchable);
+  return positive && !negative;
+}
+
+function isPrismaOwnBrandPoi(brand: BrandDetail, poiName: string): boolean {
+  const names = [brand.name, ...brand.aliases].map((name) => name.trim()).filter(Boolean);
+  return names.some((name) => poiName.includes(name));
+}
+
+function dedupePrismaLocalPoiCandidates(pois: PrismaLocalPoiCandidate[]): PrismaLocalPoiCandidate[] {
+  const seen = new Set<string>();
+  return pois.filter((poi) => {
+    const key = [poi.sourcePoiId, poi.name, poi.address, poi.latitude.toFixed(4), poi.longitude.toFixed(4)].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+type PrismaCampusCoordinate = { name: string; latitude: number; longitude: number };
+
+function resolvePrismaBrandCampusCoordinates(brand: BrandDetail, profile: BrandProfile | undefined, city: string): PrismaCampusCoordinate[] {
+  const hasGuiyangCampusProof = profile?.proofPoints.some((point) => point.includes('贵阳') && point.includes('校区'));
+  if (brand.brandId === 'brand_demo' || city.includes('贵阳') || hasGuiyangCampusProof) {
+    return [
+      { name: '观山湖校区', latitude: 26.650, longitude: 106.640 },
+      { name: '花果园校区', latitude: 26.565, longitude: 106.694 },
+      { name: '北京路校区', latitude: 26.597, longitude: 106.713 },
+      { name: '花溪校区', latitude: 26.414, longitude: 106.670 },
+      { name: '未来方舟校区', latitude: 26.618, longitude: 106.751 }
+    ];
+  }
+
+  const center = getPrismaCityCenterCoordinate(city || brand.targetCities[0]);
+  return center ? [{ name: `${city || brand.targetCities[0]}城市中心`, ...center }] : [];
+}
+
+function getPrismaCityCenterCoordinate(city?: string): Omit<PrismaCampusCoordinate, 'name'> | null {
+  if (!city) return null;
+  if (city.includes('深圳')) return { latitude: 22.543, longitude: 114.057 };
+  if (city.includes('广州')) return { latitude: 23.129, longitude: 113.264 };
+  if (city.includes('贵阳')) return { latitude: 26.647, longitude: 106.630 };
+  return null;
+}
+
+function calculatePrismaNearestCampusDistanceKm(poi: { latitude?: number; longitude?: number }, campuses: PrismaCampusCoordinate[]): number | undefined {
+  if (typeof poi.latitude !== 'number' || typeof poi.longitude !== 'number' || campuses.length === 0) {
+    return undefined;
+  }
+  const nearest = Math.min(...campuses.map((campus) => haversinePrismaDistanceKm(poi.latitude as number, poi.longitude as number, campus.latitude, campus.longitude)));
+  return Math.round(nearest * 10) / 10;
+}
+
+function haversinePrismaDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const radiusKm = 6371;
+  const dLat = prismaDegreesToRadians(lat2 - lat1);
+  const dLon = prismaDegreesToRadians(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(prismaDegreesToRadians(lat1)) * Math.cos(prismaDegreesToRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * radiusKm * Math.asin(Math.sqrt(a));
+}
+
+function prismaDegreesToRadians(value: number): number {
+  return value * Math.PI / 180;
+}
+
+function buildPrismaCompetitorLinkedQuestions(brand: BrandDetail, candidate: CompetitorCandidate, label: CompetitorConfirmationLabel): Array<{ question: string; purposes: TestQuestionPurpose[]; priority: OptimizationUnitPriority; estimatedValue: string }> {
+  const city = candidate.city || brand.targetCities[0] || '本地';
+  if (label === 'national_benchmark') {
+    return [{ question: `${brand.name}和${candidate.name}在儿童运动成长课上有什么区别？`, purposes: ['brand_mentioned', 'value_prop_accuracy', 'competitor_presence'], priority: 'medium', estimatedValue: '验证 AI 是否能把全国标杆品牌作为对标对象，同时说清本品牌差异。' }];
+  }
+
+  return [
+    { question: `${city}儿童运动机构推荐，${brand.name}和${candidate.name}怎么选？`, purposes: ['brand_mentioned', 'rank_first', 'competitor_presence', 'value_prop_accuracy'], priority: 'high', estimatedValue: '验证本地推荐场景下品牌是否能排在重点竞品前面。' },
+    { question: `${candidate.name}附近还有哪些适合孩子的运动成长课？`, purposes: ['brand_mentioned', 'competitor_presence', 'value_prop_accuracy'], priority: candidate.isCampusFocus ? 'high' : 'medium', estimatedValue: '验证校区周边到店选择场景中品牌是否会被自然提及。' }
+  ];
+}
+
 const optimizationTaskStatuses: OptimizationTaskStatus[] = ['todo', 'doing', 'review', 'retest', 'done', 'reopened'];
 
 function dateToIso(value: Date | null | undefined): string | undefined {
@@ -5046,6 +6010,7 @@ function toPublishingRecord(record: PrismaPublishingRecord): PublishingRecord {
     generationTaskId: record.generationTaskId ?? undefined,
     versionId: record.versionId ?? undefined,
     title: record.title,
+    body: record.body,
     platform: record.platform,
     accountName: record.accountName ?? undefined,
     status: record.status as PublishingRecordStatus,
@@ -5124,6 +6089,22 @@ function toAdvisorRelatedReport(report: PrismaReport): NonNullable<AdvisorRecord
     type: report.type as ReportType,
     periodStart: report.periodStart.toISOString().slice(0, 10),
     periodEnd: report.periodEnd.toISOString().slice(0, 10)
+  };
+}
+
+function toInnerTestFeedback(record: PrismaInnerTestFeedback): InnerTestFeedback {
+  return {
+    id: record.id,
+    brandId: record.brandId,
+    page: record.page,
+    module: record.module,
+    type: record.type as InnerTestFeedback['type'],
+    description: record.description,
+    status: record.status as InnerTestFeedbackStatus,
+    reporterId: record.reporterId,
+    resolutionNote: record.resolutionNote ?? undefined,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString()
   };
 }
 
@@ -5208,6 +6189,32 @@ function normalizeAdvisorRecordInput(input: AdvisorRecordInput): AdvisorRecordIn
       status: followUpStatuses.includes(item.status) ? item.status : 'todo'
     })).filter((item) => item.title)
   };
+}
+
+const innerTestFeedbackTypes: InnerTestFeedback['type'][] = ['usability', 'bug', 'copy', 'data', 'workflow', 'configuration', 'other'];
+const innerTestFeedbackStatuses: InnerTestFeedbackStatus[] = ['open', 'triaged', 'in_progress', 'resolved'];
+
+function normalizeInnerTestFeedbackInput(input: InnerTestFeedbackInput): InnerTestFeedbackInput {
+  return {
+    page: input.page.trim(),
+    module: input.module.trim(),
+    type: innerTestFeedbackTypes.includes(input.type) ? input.type : 'other',
+    description: input.description.trim()
+  };
+}
+
+function normalizeInnerTestFeedbackUpdateInput(input: InnerTestFeedbackUpdateInput): InnerTestFeedbackUpdateInput {
+  return {
+    status: input.status && innerTestFeedbackStatuses.includes(input.status) ? input.status : undefined,
+    resolutionNote: input.resolutionNote?.trim()
+  };
+}
+
+function countInnerTestFeedbackStatuses(records: InnerTestFeedback[]): Record<InnerTestFeedbackStatus, number> {
+  return records.reduce<Record<InnerTestFeedbackStatus, number>>((counts, record) => {
+    counts[record.status] += 1;
+    return counts;
+  }, { open: 0, triaged: 0, in_progress: 0, resolved: 0 });
 }
 
 function buildPrismaContentStrategySuggestions(

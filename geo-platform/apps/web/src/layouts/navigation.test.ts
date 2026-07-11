@@ -18,6 +18,7 @@ describe('operation navigation config', () => {
       '/publishing',
       '/model-settings',
       '/tasks',
+      '/feedback',
       '/reports',
       '/advisor'
     ]));
@@ -35,6 +36,7 @@ describe('operation navigation config', () => {
       '/publishing',
       '/model-settings',
       '/tasks',
+      '/feedback',
       '/advisor',
       '/reports'
     ]);
@@ -53,6 +55,7 @@ describe('operation navigation config', () => {
     expect(workspaceRouteAliases['growth-optimization']).toBe('/growth-optimization');
     expect(workspaceRouteAliases['content/generation']).toBe('/content-generation');
     expect(workspaceRouteAliases['model-settings']).toBe('/model-settings');
+    expect(workspaceRouteAliases.feedback).toBe('/feedback');
     expect(workspaceRouteAliases.reports).toBe('/reports');
   });
 });

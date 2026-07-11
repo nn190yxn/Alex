@@ -69,6 +69,12 @@
 
 - `tasklist.md`：统一 LLM 调用基础、自动生成测试问题、回答解读、内容生成和优化计划增强的实施任务清单
 
+竞品地图发现规格位于 `当前工作区/.monkeycode/specs/competitor-map-discovery/`。
+
+- `requirements.md`：地图 POI 辅助发现、候选评分、人工确认和竞品监控衔接需求
+- `design.md`：发现 API、候选评分、候选仓储、竞品档案扩展和前端评审界面设计
+- `tasklist.md`：竞品地图发现第一版内测闭环、地图 Provider 接入和后续工作流联动任务
+
 ## 现有历史文档
 
 - `当前工作区/.monkeycode/docs/商业地产报告案例语言结构与去AI化总结.md`

@@ -30,6 +30,8 @@ describe('Automation platform rewrite', () => {
     expect(rewritten).toEqual(expect.objectContaining({ status: 'waiting_confirmation', currentStep: 'platform_rewrite' }));
     expect(rewrites).toHaveLength(5);
     expect(rewrites.map((rewrite) => rewrite.targetPlatform)).toEqual(expect.arrayContaining(['zhihu', 'baijiahao', 'xiaohongshu', 'wechat_official', 'official_site_faq']));
+    assertWechatRewriteReady(rewrites.find((rewrite) => rewrite.targetPlatform === 'wechat_official'));
+    assertXiaohongshuRewriteReady(rewrites.find((rewrite) => rewrite.targetPlatform === 'xiaohongshu'));
     expect(rewritten.stepSummaries).toContainEqual(expect.objectContaining({
       code: 'platform_rewrite',
       status: 'waiting_confirmation',
@@ -106,4 +108,30 @@ function createGrowthPlan(repository: PermissionsRepository): string {
   }
 
   return plan.id;
+}
+
+function assertWechatRewriteReady(rewrite: { title: string; body: string } | undefined): void {
+  expect(rewrite?.title).toMatch(/追光小牛|儿童运动|贵阳/);
+  expect(stripText(rewrite?.body).length).toBeGreaterThan(700);
+  expect(rewrite?.body).toContain('## 为什么这个问题值得关注');
+  expect(rewrite?.body).toContain('## 品牌观点');
+  expect(rewrite?.body).toContain('## 给家长的行动建议');
+  expect(rewrite?.body).toContain('## 合规说明');
+  expect(rewrite?.body).toContain('追光小牛');
+  expect(rewrite?.body).toContain('ACE');
+  expect(rewrite?.body).not.toMatch(/保证长高|治疗感统失调|包过中考体育|monitoring_run:/);
+}
+
+function assertXiaohongshuRewriteReady(rewrite: { title: string; body: string } | undefined): void {
+  expect(rewrite?.title).toMatch(/清单|家长|儿童运动|贵阳/);
+  expect(stripText(rewrite?.body).length).toBeGreaterThan(550);
+  expect(rewrite?.body).toContain('家长可以重点看：');
+  expect(rewrite?.body).toContain('#贵阳儿童运动');
+  expect(rewrite?.body).toContain('追光小牛');
+  expect(rewrite?.body).toContain('ACE');
+  expect(rewrite?.body).not.toMatch(/保证长高|治疗感统失调|包过中考体育|monitoring_run:/);
+}
+
+function stripText(body = ''): string {
+  return body.replace(/```[\s\S]*?```/g, '').replace(/[#>*_`\-\s]/g, '').trim();
 }

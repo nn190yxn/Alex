@@ -27,6 +27,7 @@ export type HealthCheck = {
     database: 'ready' | 'not_configured';
     queue: 'in_memory' | 'external_configured';
     aiPlatforms: 'configured' | 'not_configured';
+    mapProvider: 'configured' | 'fallback' | 'rate_limited' | 'disabled';
     logging: 'console' | 'external_configured';
   };
   missingConfiguration: string[];
@@ -1060,6 +1061,12 @@ export type Competitor = {
   suppressionRule: {
     consecutiveThreshold: number;
   };
+  confirmationLabel?: CompetitorConfirmationLabel;
+  sourceCandidateId?: string;
+  sourceProvider?: CompetitorCandidateSourceProvider;
+  nearestCampusDistanceKm?: number;
+  isNationalBenchmark?: boolean;
+  isCampusFocus?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -1073,6 +1080,89 @@ export type CompetitorInput = {
   suppressionRule?: {
     consecutiveThreshold?: number;
   };
+  confirmationLabel?: CompetitorConfirmationLabel;
+  sourceCandidateId?: string;
+  sourceProvider?: CompetitorCandidateSourceProvider;
+  nearestCampusDistanceKm?: number;
+  isNationalBenchmark?: boolean;
+  isCampusFocus?: boolean;
+};
+
+export type CompetitorConfirmationLabel = 'direct_competitor' | 'indirect_competitor' | 'local_alternative' | 'national_benchmark' | 'excluded';
+
+export type CompetitorCandidateSourceProvider = 'amap' | 'tencent' | 'baidu' | 'manual';
+
+export type CompetitorCandidateDecisionStatus = 'pending' | 'confirmed' | 'excluded';
+
+export type CompetitorDiscoveryRunStatus = 'running' | 'completed' | 'failed';
+
+export type CompetitorMapProviderStatus = 'configured' | 'fallback' | 'rate_limited' | 'disabled' | 'failed';
+
+export type CompetitorDiscoveryRun = {
+  runId: string;
+  brandId: BrandId;
+  city: string;
+  campusRadiusKm: number;
+  keywords: string[];
+  status: CompetitorDiscoveryRunStatus;
+  candidateCount: number;
+  missingFields: string[];
+  sourceProvider: CompetitorCandidateSourceProvider;
+  providerStatus: CompetitorMapProviderStatus;
+  providerMessage: string;
+  cacheHit: boolean;
+  createdBy: string;
+  createdAt: string;
+  completedAt?: string;
+  failureReason?: string;
+};
+
+export type CompetitorDiscoveryRunInput = {
+  city?: string;
+  campusRadiusKm?: number;
+  keywords?: string[];
+  sourceProvider?: CompetitorCandidateSourceProvider;
+  forceRefresh?: boolean;
+};
+
+export type CompetitorCandidate = {
+  candidateId: string;
+  runId: string;
+  brandId: BrandId;
+  sourceProvider: CompetitorCandidateSourceProvider;
+  sourcePoiId?: string;
+  name: string;
+  address: string;
+  city: string;
+  latitude?: number;
+  longitude?: number;
+  category?: string;
+  distanceToNearestCampusKm?: number;
+  matchedKeywords: string[];
+  score: number;
+  suggestedLabel: CompetitorConfirmationLabel;
+  matchReasons: string[];
+  confidence: 'high' | 'medium' | 'low';
+  isCampusFocus: boolean;
+  decisionStatus: CompetitorCandidateDecisionStatus;
+  confirmedLabel?: CompetitorConfirmationLabel;
+  excludedReason?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CompetitorCandidateDecisionInput = {
+  label: CompetitorConfirmationLabel;
+  excludedReason?: string;
+};
+
+export type CompetitorDiscoveryCandidatesQuery = {
+  filter?: 'all' | 'campus_focus' | 'direct_competitor' | 'national_benchmark' | 'excluded' | 'pending' | 'confirmed';
+};
+
+export type CompetitorCandidateConfirmationResult = {
+  candidate: CompetitorCandidate;
+  competitor?: Competitor;
 };
 
 export type CompetitorComparisonItem = {
@@ -1528,6 +1618,7 @@ export type PublishingRecord = {
   generationTaskId?: string;
   versionId?: string;
   title: string;
+  body: string;
   platform: string;
   accountName?: string;
   status: PublishingRecordStatus;
@@ -1841,6 +1932,42 @@ export type AdvisorDashboard = {
   latestDiagnosis?: AdvisorRecord;
   pendingFollowUps: AdvisorFollowUpItem[];
   relatedReports: Pick<ReportRecord, 'id' | 'title' | 'type' | 'periodStart' | 'periodEnd'>[];
+};
+
+export type InnerTestFeedbackType = 'usability' | 'bug' | 'copy' | 'data' | 'workflow' | 'configuration' | 'other';
+
+export type InnerTestFeedbackStatus = 'open' | 'triaged' | 'in_progress' | 'resolved';
+
+export type InnerTestFeedback = {
+  id: string;
+  brandId: BrandId;
+  page: string;
+  module: string;
+  type: InnerTestFeedbackType;
+  description: string;
+  status: InnerTestFeedbackStatus;
+  reporterId: string;
+  resolutionNote?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InnerTestFeedbackInput = {
+  page: string;
+  module: string;
+  type: InnerTestFeedbackType;
+  description: string;
+};
+
+export type InnerTestFeedbackUpdateInput = {
+  status?: InnerTestFeedbackStatus;
+  resolutionNote?: string;
+};
+
+export type InnerTestFeedbackDashboard = {
+  brandId: BrandId;
+  records: InnerTestFeedback[];
+  statusCounts: Record<InnerTestFeedbackStatus, number>;
 };
 
 export type GeoCanvasNodeType = 'optimization_unit' | 'user_intent' | 'metric' | 'content_strategy';

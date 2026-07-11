@@ -15,6 +15,7 @@ import type {
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
 import { getConfirmationReviewItems, getMonitoringResultSummary, type MonitoringResultLine } from './monitoringResultDisplay';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 type Props = {
   brandId: string;
@@ -163,7 +164,7 @@ export function MonitoringRunsCard({ brandId }: Props) {
         scroll={{ x: 1080 }}
         columns={[
           { title: '测试问题', dataIndex: 'promptText', render: (value: string) => <Typography.Text ellipsis>{value || '-'}</Typography.Text> },
-          { title: '平台', dataIndex: 'platformCode' },
+          { title: '平台', dataIndex: 'platformCode', render: (value: string) => getPlatformDisplayName(value) },
           { title: '状态', dataIndex: 'status', render: (value: MonitoringRunStatus) => <Tag color={statusColors[value]}>{statusLabels[value]}</Tag> },
           { title: '测试进度', render: (_, record) => <RunExecutionState run={record} /> },
           { title: '结果解读', render: (_, record) => <MonitoringResultExplanation run={record} /> },
@@ -227,7 +228,7 @@ export function MonitoringRunsCard({ brandId }: Props) {
             <Input.TextArea rows={5} />
           </Form.Item>
           <Form.Item name="modelName" label="平台或模型名称">
-            <Input placeholder="例如：manual" />
+            <Input placeholder="例如：豆包、Kimi、DeepSeek" />
           </Form.Item>
           <Form.Item name="citationsText" label="引用来源">
             <Input.TextArea rows={3} placeholder="一行一个引用来源" />

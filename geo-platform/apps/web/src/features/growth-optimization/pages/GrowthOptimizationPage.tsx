@@ -18,7 +18,7 @@ import type {
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
 import { useBrandContextStore } from '../../../stores/brandContextStore';
-import { getContentTypeDisplay, getPlatformDisplay } from '../../../utils/displayLabels';
+import { getContentTypeDisplay, getOwnerDisplayName, getPlatformDisplay } from '../../../utils/displayLabels';
 import { AutomationOperatorCard } from '../../automation/components/AutomationOperatorCard';
 
 type PlanFormValues = GrowthOptimizationPlanConfirmInput & {
@@ -252,7 +252,7 @@ export function GrowthOptimizationPage() {
             <Space direction="vertical" size={16} className="page-stack">
               <Descriptions size="small" column={{ xs: 1, sm: 2, lg: 4 }}>
                 <Descriptions.Item label="优先级">{priorityLabels[plan.priority]}</Descriptions.Item>
-                <Descriptions.Item label="负责人">{plan.ownerId || '待分配'}</Descriptions.Item>
+                <Descriptions.Item label="负责人">{getOwnerDisplayName(plan.ownerId)}</Descriptions.Item>
                 <Descriptions.Item label="截止时间">{plan.dueDate}</Descriptions.Item>
                 <Descriptions.Item label="再次测试时间">{plan.retestAt}</Descriptions.Item>
                 <Descriptions.Item label="发布平台">{formatList(plan.publishingPlatforms)}</Descriptions.Item>
@@ -273,7 +273,7 @@ export function GrowthOptimizationPage() {
 
       <Modal title="确认优化计划" open={Boolean(confirmingPlan)} okText="确认并生成待办" cancelText="取消" onCancel={() => setConfirmingPlan(undefined)} onOk={() => confirmForm.submit()} confirmLoading={confirmMutation.isPending}>
         <Form form={confirmForm} layout="vertical" onFinish={handleConfirmPlan}>
-          <Form.Item name="ownerId" label="负责人"><Input placeholder="负责人姓名或用户 ID" /></Form.Item>
+          <Form.Item name="ownerId" label="负责人"><Input placeholder="负责人姓名" /></Form.Item>
           <Form.Item name="dueDate" label="截止时间" rules={[{ required: true, message: '请输入截止时间' }]}><Input placeholder="2026-07-10" /></Form.Item>
           <Form.Item name="publishingPlatformsText" label="发布平台" rules={[{ required: true, message: '请输入发布平台' }]}><Input placeholder="公众号、小红书、官网 FAQ" /></Form.Item>
           <Form.Item name="retestAt" label="再次测试时间" rules={[{ required: true, message: '请输入再次测试时间' }]}><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
@@ -292,8 +292,8 @@ export function GrowthOptimizationPage() {
 
       <Modal title="安排再次测试" open={Boolean(retestTask)} okText="保存" cancelText="取消" onCancel={() => setRetestTask(undefined)} onOk={() => retestForm.submit()} confirmLoading={retestMutation.isPending}>
         <Form form={retestForm} layout="vertical" onFinish={(values) => retestTask && retestMutation.mutate({ taskId: retestTask.id, values })}>
-          <Form.Item name="sourceRunId" label="原测试记录 ID" rules={[{ required: true, message: '请输入原测试记录 ID' }]}><Input /></Form.Item>
-          <Form.Item name="retestRunId" label="再次测试记录 ID"><Input placeholder="默认使用原测试记录 ID" /></Form.Item>
+          <Form.Item name="sourceRunId" label="原测试记录" rules={[{ required: true, message: '请输入原测试记录引用' }]}><Input /></Form.Item>
+          <Form.Item name="retestRunId" label="再次测试记录"><Input placeholder="默认使用原测试记录" /></Form.Item>
           <Form.Item name="plannedAt" label="计划再次测试时间"><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
           <Form.Item name="targetScore" label="目标分"><Input type="number" min={0} max={100} /></Form.Item>
           <Form.Item name="notes" label="测试说明"><Input.TextArea rows={3} /></Form.Item>
@@ -356,9 +356,9 @@ function TaskTable({ tasks, onComplete, onRetest }: { tasks: OptimizationTask[];
         columns={[
           { title: '任务', dataIndex: 'title' },
           { title: '状态', render: (_, record) => <Tag>{taskStatusLabels[record.status]}</Tag> },
-          { title: '负责人', dataIndex: 'ownerId', render: (value) => value || '-' },
+          { title: '负责人', dataIndex: 'ownerId', render: (value) => getOwnerDisplayName(value) },
           { title: '截止时间', dataIndex: 'dueDate', render: (value) => value || '-' },
-          { title: '发布内容', dataIndex: 'contentLink', render: (value) => value || '-' },
+          { title: '发布内容', dataIndex: 'contentLink', render: (value) => getContentLinkDisplay(value) },
           {
             title: '操作',
             render: (_, record) => (
@@ -400,4 +400,10 @@ export function splitPlatformText(value?: string): string[] {
 
 export function formatList(values: string[]): string {
   return values.length > 0 ? values.join('、') : '-';
+}
+
+export function getContentLinkDisplay(value?: string): string {
+  if (!value || value.trim().length === 0) return '-';
+  if (/^https?:\/\//.test(value)) return value;
+  return '已生成内容草稿';
 }

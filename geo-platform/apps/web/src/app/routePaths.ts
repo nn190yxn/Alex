@@ -11,6 +11,7 @@ export const firstVersionRoutePaths = [
   '/publishing',
   '/model-settings',
   '/tasks',
+  '/feedback',
   '/reports',
   '/advisor'
 ] as const;

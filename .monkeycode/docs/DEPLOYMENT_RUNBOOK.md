@@ -31,6 +31,9 @@ npm run prisma:generate
 # 校验 Prisma schema
 npm run prisma:validate
 
+# 执行受控数据库迁移
+npm run prisma:migrate:deploy
+
 # 构建所有 workspace
 npm run build
 ```
@@ -45,7 +48,7 @@ npm run db:prepare
 npm run prisma:seed
 ```
 
-生产迁移接入前，先使用 `prisma:validate` 校验 schema，再由运维流程执行受控迁移。
+生产试运行使用 `当前工作区/geo-platform/apps/api/prisma/migrations/` 下的受控迁移文件，执行前先确认 `DATABASE_URL` 指向目标数据库。
 
 ## 启动
 
@@ -71,6 +74,7 @@ node -e 'fetch("http://localhost:3001/api/v1/health").then(async r => { console.
 - `dependencies.database`: 数据库配置状态
 - `dependencies.queue`: 队列配置状态
 - `dependencies.aiPlatforms`: AI 平台配置状态
+- `dependencies.mapProvider`: 地图 POI provider 状态，取值为 `configured`、`fallback`、`rate_limited` 或 `disabled`
 - `dependencies.logging`: 日志配置状态
 - `missingConfiguration`: 缺失配置项名称，不包含密钥值
 
@@ -85,6 +89,7 @@ node -e 'fetch("http://localhost:3001/api/v1/health").then(async r => { console.
 ## 排障
 
 - 健康检查返回 `degraded`: 查看 `missingConfiguration`，补齐对应环境变量。
+- `dependencies.mapProvider` 为 `fallback`: 检查 `GEO_AMAP_API_KEY` 是否已配置，并重新触发竞品地图发现验证。
 - `repositoryDriver` 为 `memory`: 检查 `GEO_REPOSITORY_DRIVER` 是否设置为 `prisma`。
 - Prisma schema 校验失败: 先修正 `当前工作区/geo-platform/apps/api/prisma/schema.prisma`，再运行 `npm run prisma:validate`。
 - API 返回权限错误: 检查用户状态、组织成员状态、品牌授权角色和 `GET /api/v1/permissions/audit-logs` 审计记录。

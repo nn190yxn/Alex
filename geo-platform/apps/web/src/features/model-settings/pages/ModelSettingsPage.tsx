@@ -13,6 +13,8 @@ export function ModelSettingsPage() {
   const [form] = Form.useForm<ModelFormValues>();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<PlatformConfig | null>(null);
+  const watchedPlatformCode = Form.useWatch('platformCode', form);
+  const activeGuide = getModelSetupGuide(watchedPlatformCode);
   const modelsQuery = useQuery({
     queryKey: ['model-settings'],
     queryFn: () => apiGet<PlatformConfig[]>('/platforms')
@@ -87,6 +89,27 @@ export function ModelSettingsPage() {
         />
       </Card>
 
+      <Card title="接入向导">
+        <Space direction="vertical" size={12} className="page-stack">
+          <Typography.Paragraph>
+            先从供应商后台准备 API Key、接口地址和模型名称，再在新增模型里填写。页面会保存密钥状态，后续通过“检查连接”确认是否可用。
+          </Typography.Paragraph>
+          <Table
+            rowKey="platformCode"
+            size="small"
+            pagination={false}
+            dataSource={modelSetupGuides}
+            columns={[
+              { title: '平台', dataIndex: 'displayName' },
+              { title: '需要准备', render: (_, record) => record.requiredItems.join('、') },
+              { title: '接口地址', dataIndex: 'endpointUrl' },
+              { title: '模型名称示例', dataIndex: 'modelName' },
+              { title: '建议', dataIndex: 'nextAction' }
+            ]}
+          />
+        </Space>
+      </Card>
+
       <Card title="已接入模型" loading={modelsQuery.isLoading}>
         <Table
           rowKey="id"
@@ -125,7 +148,8 @@ export function ModelSettingsPage() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={(values) => saveMutation.mutate(values)}>
-          <Form.Item name="platformCode" label={<FieldLabel text="模型标识" help="用于系统内部识别这个模型，建议用英文小写，例如 deepseek、kimi、xiaomi。" />} rules={[{ required: true, message: '请输入模型标识' }]}>
+          {activeGuide ? <Alert type="info" showIcon message={`${activeGuide.displayName} 接入提示`} description={`准备 ${activeGuide.requiredItems.join('、')}，接口地址可填 ${activeGuide.endpointUrl}，模型名称可先填 ${activeGuide.modelName}。`} style={{ marginBottom: 16 }} /> : null}
+          <Form.Item name="platformCode" label={<FieldLabel text="平台识别名" help="用于区分不同平台，建议用英文小写，例如 deepseek、kimi、xiaomi。" />} rules={[{ required: true, message: '请输入平台识别名' }]}>
             <Input placeholder="例如：deepseek" />
           </Form.Item>
           <Form.Item name="name" label={<FieldLabel text="显示名称" help="给运营人员看的名称，例如 DeepSeek、Kimi、小米大模型。" />} rules={[{ required: true, message: '请输入显示名称' }]}>
@@ -179,6 +203,64 @@ function toModelPayload(values: ModelFormValues, editing: boolean): PlatformConf
     rateLimitPerMinute: values.rateLimitPerMinute ?? 0,
     enabled: values.enabled ?? true
   };
+}
+
+export type ModelSetupGuide = {
+  platformCode: string;
+  displayName: string;
+  requiredItems: string[];
+  endpointUrl: string;
+  modelName: string;
+  nextAction: string;
+};
+
+export const modelSetupGuides: ModelSetupGuide[] = [
+  {
+    platformCode: 'deepseek',
+    displayName: 'DeepSeek',
+    requiredItems: ['API Key', '接口地址', '模型名称'],
+    endpointUrl: 'https://api.deepseek.com/chat/completions',
+    modelName: 'deepseek-chat',
+    nextAction: '保存后检查连接，成功后可用于自动测试'
+  },
+  {
+    platformCode: 'kimi',
+    displayName: 'Kimi',
+    requiredItems: ['API Key', '接口地址', '模型名称'],
+    endpointUrl: 'https://api.moonshot.cn/v1/chat/completions',
+    modelName: 'moonshot-v1-8k',
+    nextAction: '没有 API Key 时可先用浏览器或手动测试'
+  },
+  {
+    platformCode: 'qianwen',
+    displayName: '通义千问',
+    requiredItems: ['API Key', '接口地址', '模型名称'],
+    endpointUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    modelName: 'qwen-plus',
+    nextAction: '确认账号额度后再提高每分钟调用上限'
+  },
+  {
+    platformCode: 'xiaomi',
+    displayName: '小米模型',
+    requiredItems: ['OpenAI-compatible 地址', 'API Key', '模型名称'],
+    endpointUrl: '填写供应商提供的 Chat Completions 地址',
+    modelName: '填写供应商提供的 model 名称',
+    nextAction: '按 OpenAI-compatible 方式接入并检查连接'
+  },
+  {
+    platformCode: 'stepfun',
+    displayName: '阶跃星辰',
+    requiredItems: ['API Key', '接口地址', '模型名称'],
+    endpointUrl: 'https://api.stepfun.com/v1/chat/completions',
+    modelName: 'step-1-8k',
+    nextAction: '保存后先跑少量问题验证回答格式'
+  }
+];
+
+export function getModelSetupGuide(platformCode?: string): ModelSetupGuide | undefined {
+  const normalized = platformCode?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return modelSetupGuides.find((guide) => guide.platformCode === normalized);
 }
 
 const modeLabels: Record<PlatformMode, string> = {

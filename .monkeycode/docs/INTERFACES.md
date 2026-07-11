@@ -75,6 +75,7 @@ GET /api/v1/health
       "database": "not_configured",
       "queue": "in_memory",
       "aiPlatforms": "not_configured",
+      "mapProvider": "configured",
       "logging": "console"
     },
     "missingConfiguration": ["GEO_AI_PLATFORM_CONFIGURED"]
@@ -82,7 +83,7 @@ GET /api/v1/health
 }
 ```
 
-`status` 为 `ok` 或 `degraded`。健康检查只返回缺失配置项名称，不返回密钥值。
+`status` 为 `ok` 或 `degraded`。`dependencies.mapProvider` 返回 `configured`、`fallback`、`rate_limited` 或 `disabled`。健康检查只返回缺失配置项名称和依赖状态，不返回密钥值。
 
 ### 当前品牌摘要
 
@@ -1349,6 +1350,9 @@ GET /api/v1/brands/:brandId/competitors
 POST /api/v1/brands/:brandId/competitors
 PATCH /api/v1/brands/:brandId/competitors/:competitorId
 GET /api/v1/brands/:brandId/competitors/analysis
+POST /api/v1/brands/:brandId/competitors/discovery-runs
+GET /api/v1/brands/:brandId/competitors/discovery-runs/:runId/candidates?filter=all
+PATCH /api/v1/brands/:brandId/competitors/candidates/:candidateId/decision
 x-brand-id: brand_demo
 ```
 
@@ -1368,6 +1372,8 @@ x-brand-id: brand_demo
 ```
 
 竞品分析响应返回 `CompetitorDashboard`，包含竞品档案列表、竞品提及率、竞品压制率、平均排名差、高风险意图和对比明细。对比明细按同 Prompt、同平台、同用户意图和同优化单元聚合，记录品牌排名、竞品排名、排名差、压制状态、推荐理由和引用来源。连续压制达到竞品规则阈值时，后端会生成高优先级 `competitor_response` 内容策略。
+
+竞品发现支持创建发现任务、查询候选和保存人工决策。创建发现任务可传 `city`、`campusRadiusKm`、`keywords`、`sourceProvider` 和 `forceRefresh`；`sourceProvider` 第一版默认 `amap`，服务端只返回配置状态，不返回地图 API Key。发现任务响应包含 `providerStatus`、`providerMessage` 和 `cacheHit`，用于提示高德地图配置状态、配额或故障兜底，以及是否复用缓存候选。未配置真实地图服务时，系统使用内测候选源生成贵阳本地儿童运动线下候选，候选包含来源平台、POI ID、名称、地址、城市、类目、最近校区距离、命中关键词、匹配分、建议标签、匹配理由、置信度和确认状态。候选保存决策时传入 `label`，可选值为 `direct_competitor`、`indirect_competitor`、`local_alternative`、`national_benchmark` 和 `excluded`；确认后的候选会写入竞品档案，排除候选只保留排除原因并写入审计记录。
 
 ### 引用分析
 

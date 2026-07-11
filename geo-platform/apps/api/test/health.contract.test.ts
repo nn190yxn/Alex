@@ -14,6 +14,7 @@ describe('health contract', () => {
           database: 'not_configured',
           queue: 'in_memory',
           aiPlatforms: 'not_configured',
+          mapProvider: 'fallback',
           logging: 'console'
         },
         missingConfiguration: ['GEO_AI_PLATFORM_CONFIGURED']

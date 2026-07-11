@@ -1,6 +1,17 @@
-import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
-import type { ApiResponse, Competitor, CompetitorDashboard, CompetitorInput } from '@geo-platform/shared-types';
+import type {
+  ApiResponse,
+  Competitor,
+  CompetitorCandidate,
+  CompetitorCandidateConfirmationResult,
+  CompetitorCandidateDecisionInput,
+  CompetitorDashboard,
+  CompetitorDiscoveryCandidatesQuery,
+  CompetitorDiscoveryRun,
+  CompetitorDiscoveryRunInput,
+  CompetitorInput
+} from '@geo-platform/shared-types';
 import { PermissionsService } from '../permissions/permissions.service';
 
 @Controller('brands/:brandId/competitors')
@@ -58,6 +69,62 @@ export class CompetitorsController {
     return {
       success: true,
       data: competitor
+    };
+  }
+
+  @Post('discovery-runs')
+  async createDiscoveryRun(
+    @Req() request: Request,
+    @Param('brandId') brandId: string,
+    @Body() input: CompetitorDiscoveryRunInput = {}
+  ): Promise<ApiResponse<CompetitorDiscoveryRun>> {
+    const run = await this.permissionsService.createCompetitorDiscoveryRun(request.context.userId, brandId, input);
+
+    if (!run) {
+      throw new NotFoundException('品牌不存在或当前用户无权访问');
+    }
+
+    return {
+      success: true,
+      data: run
+    };
+  }
+
+  @Get('discovery-runs/:runId/candidates')
+  async listDiscoveryCandidates(
+    @Req() request: Request,
+    @Param('brandId') brandId: string,
+    @Param('runId') runId: string,
+    @Query('filter') filter?: CompetitorDiscoveryCandidatesQuery['filter']
+  ): Promise<ApiResponse<CompetitorCandidate[]>> {
+    const candidates = await this.permissionsService.listCompetitorDiscoveryCandidates(request.context.userId, brandId, runId, { filter });
+
+    if (!candidates) {
+      throw new NotFoundException('发现任务不存在或当前用户无权访问');
+    }
+
+    return {
+      success: true,
+      data: candidates
+    };
+  }
+
+  @Patch('candidates/:candidateId/decision')
+  async decideCandidate(
+    @Req() request: Request,
+    @Param('brandId') brandId: string,
+    @Param('candidateId') candidateId: string,
+    @Body() input: CompetitorCandidateDecisionInput
+  ): Promise<ApiResponse<CompetitorCandidateConfirmationResult>> {
+    const result = await this.permissionsService.decideCompetitorCandidate(request.context.userId, brandId, candidateId, input);
+
+    if (!result) {
+      throw new NotFoundException('候选机构不存在或当前用户无权访问');
+    }
+
+    return {
+      success: true,
+      data: result
     };
   }
 

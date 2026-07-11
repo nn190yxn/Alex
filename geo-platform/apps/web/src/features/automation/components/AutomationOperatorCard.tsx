@@ -10,6 +10,7 @@ import type {
   AutomationStepStatus
 } from '@geo-platform/shared-types';
 import { apiGet, apiPost } from '../../../api/http';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 type AutomationPackageDetail = AutomationPackage & {
   confirmations?: AutomationConfirmation[];
@@ -41,6 +42,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
   const packages = packagesQuery.data?.success ? packagesQuery.data.data : [];
   const activePackage = useMemo(() => selectActivePackage(packages), [packages]);
   const pendingConfirmations = activePackage?.confirmations?.filter((item) => item.status === 'pending') ?? [];
+  const capabilitySummary = activePackage ? getAutomationCapabilitySummary(activePackage, pendingConfirmations) : null;
   const completedStepCount = activePackage?.stepSummaries.filter((step) => step.status === 'completed').length ?? 0;
   const progress = activePackage ? Math.round((completedStepCount / activePackage.stepSummaries.length) * 100) : 0;
 
@@ -123,6 +125,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
             <Descriptions.Item label="问题池">{activePackage.context?.questionPoolSize ?? 0} 个</Descriptions.Item>
             <Descriptions.Item label="测试计划">{activePackage.context?.testPlanCount ?? 0} 个</Descriptions.Item>
           </Descriptions>
+          {capabilitySummary ? <AutomationCapabilityAlert summary={capabilitySummary} /> : null}
           {!compact ? (
             <Steps
               size="small"
@@ -172,6 +175,82 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
       </Drawer>
     </Card>
   );
+}
+
+function AutomationCapabilityAlert({ summary }: { summary: AutomationCapabilitySummary }) {
+  return (
+    <Alert
+      type={summary.type}
+      showIcon
+      message="本轮能力状态"
+      description={(
+        <Space direction="vertical" size={2}>
+          <Typography.Text>本轮还能测试：{summary.testableText}</Typography.Text>
+          <Typography.Text>可准备发布：{summary.publishingText}</Typography.Text>
+          <Typography.Text>需要补充配置：{summary.configurationText}</Typography.Text>
+        </Space>
+      )}
+    />
+  );
+}
+
+type AutomationCapabilitySummary = {
+  type: 'info' | 'warning';
+  testableText: string;
+  publishingText: string;
+  configurationText: string;
+};
+
+type AutomationCapabilityIssue = {
+  platformCode: string;
+  message?: string;
+};
+
+export function getAutomationCapabilitySummary(
+  automationPackage: Pick<AutomationPackage, 'targetPlatforms' | 'targetPublishingPlatforms'>,
+  pendingConfirmations: Array<Pick<AutomationConfirmation, 'type' | 'payload'>>
+): AutomationCapabilitySummary {
+  const configurationIssues = getAutomationConfigurationIssues(pendingConfirmations);
+  const configurationText = configurationIssues.length > 0
+    ? configurationIssues.map((issue) => formatCapabilityIssue(issue)).join('；')
+    : '当前配置可继续推进';
+
+  return {
+    type: configurationIssues.length > 0 ? 'warning' : 'info',
+    testableText: formatDisplayList(automationPackage.targetPlatforms.map(getPlatformDisplayName), '待选择 AI 平台'),
+    publishingText: formatDisplayList(automationPackage.targetPublishingPlatforms.map(getPlatformDisplayName), '待选择发布平台'),
+    configurationText
+  };
+}
+
+function getAutomationConfigurationIssues(confirmations: Array<Pick<AutomationConfirmation, 'type' | 'payload'>>): AutomationCapabilityIssue[] {
+  return confirmations.flatMap((confirmation) => {
+    if (confirmation.type !== 'manual_test_required') return [];
+
+    const blockingSteps = Array.isArray(confirmation.payload.blockingSteps) ? confirmation.payload.blockingSteps : [];
+    const configurationItems = Array.isArray(confirmation.payload.configurationItems) ? confirmation.payload.configurationItems : [];
+    return [...blockingSteps, ...configurationItems].flatMap((item) => {
+      if (!isRecord(item)) return [];
+
+      const platformCode = typeof item.platformCode === 'string' && item.platformCode.trim().length > 0 ? item.platformCode.trim() : '未知平台';
+      const message = typeof item.message === 'string' && item.message.trim().length > 0 ? item.message.trim() : undefined;
+      const method = typeof item.method === 'string' ? item.method : '';
+      const status = typeof item.status === 'string' ? item.status : '';
+      const needsConfiguration = confirmation.payload.configurationItems === configurationItems || method === 'configuration' || status === 'needs_configuration' || Boolean(message?.includes('配置'));
+
+      return needsConfiguration ? [{ platformCode, message }] : [];
+    });
+  }).slice(0, 6);
+}
+
+function formatCapabilityIssue(issue: AutomationCapabilityIssue): string {
+  const platform = getPlatformDisplayName(issue.platformCode);
+  return issue.message ? `${platform}（${issue.message}）` : platform;
+}
+
+function formatDisplayList(values: string[], fallback: string): string {
+  const normalized = Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+  return normalized.length > 0 ? normalized.join('、') : fallback;
 }
 
 function ConfirmationAlert({ confirmation, onOpen }: { confirmation: AutomationConfirmation; onOpen: () => void }) {
@@ -245,7 +324,7 @@ export function getConfirmationPublishingSuggestions(confirmation: Pick<Automati
       rewriteId: item.rewriteId,
       targetPlatformLabel: typeof item.targetPlatformLabel === 'string' && item.targetPlatformLabel.trim().length > 0
         ? item.targetPlatformLabel
-        : typeof item.targetPlatform === 'string' && item.targetPlatform.trim().length > 0 ? item.targetPlatform : '未知平台',
+        : getPlatformDisplayName(typeof item.targetPlatform === 'string' ? item.targetPlatform : undefined),
       title: item.title,
       complianceNotes: Array.isArray(item.complianceNotes)
         ? item.complianceNotes.filter((note): note is string => typeof note === 'string' && note.trim().length > 0).slice(0, 2)
@@ -375,7 +454,7 @@ function ConfirmationAnalysisReview({ confirmation }: { confirmation: Automation
           <ol className="automation-question-list">
             {review.reviewItems.map((item, index) => (
               <li key={`${item.runId}-${index}`}>
-                <Typography.Text>{item.platformCode}：{item.platformEvaluation}</Typography.Text>
+                <Typography.Text>{getPlatformDisplayName(item.platformCode)}：{item.platformEvaluation}</Typography.Text>
                 {item.suggestedAction ? <Typography.Text type="secondary"> · {item.suggestedAction}</Typography.Text> : null}
               </li>
             ))}
@@ -451,7 +530,7 @@ function ConfirmationBlockingStepList({ confirmation }: { confirmation: Automati
         {blockingSteps.map((item, index) => (
           <li key={`${item.question}-${item.platformCode}-${index}`}>
             <Typography.Text>{item.question}</Typography.Text>
-            <Typography.Text type="secondary"> · 平台：{item.platformCode}</Typography.Text>
+            <Typography.Text type="secondary"> · 平台：{getPlatformDisplayName(item.platformCode)}</Typography.Text>
             {item.message ? <Typography.Text type="secondary"> · {item.message}</Typography.Text> : null}
           </li>
         ))}
@@ -480,7 +559,7 @@ export function getConfirmationQuestions(confirmation: Pick<AutomationConfirmati
     return [{
       question: item.question.trim(),
       targetPlatforms: Array.isArray(item.targetPlatforms)
-        ? item.targetPlatforms.filter((platform): platform is string => typeof platform === 'string' && platform.trim().length > 0)
+        ? item.targetPlatforms.filter((platform): platform is string => typeof platform === 'string' && platform.trim().length > 0).map(getPlatformDisplayName)
         : []
     }];
   });

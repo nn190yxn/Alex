@@ -30,8 +30,19 @@ function dependencyReadiness(): HealthCheck['dependencies'] {
     database: process.env.DATABASE_URL ? 'ready' : 'not_configured',
     queue: process.env.GEO_QUEUE_DRIVER && process.env.GEO_QUEUE_DRIVER !== 'memory' ? 'external_configured' : 'in_memory',
     aiPlatforms: process.env.GEO_AI_PLATFORM_CONFIGURED === 'true' ? 'configured' : 'not_configured',
+    mapProvider: mapProviderReadiness(),
     logging: process.env.GEO_LOGGING_DRIVER && process.env.GEO_LOGGING_DRIVER !== 'console' ? 'external_configured' : 'console'
   };
+}
+
+function mapProviderReadiness(): HealthCheck['dependencies']['mapProvider'] {
+  if (process.env.GEO_AMAP_POI_RATE_LIMITED === 'true') {
+    return 'rate_limited';
+  }
+  if (process.env.GEO_AMAP_POI_DISABLED === 'true') {
+    return 'disabled';
+  }
+  return process.env.GEO_AMAP_API_KEY || process.env.AMAP_API_KEY ? 'configured' : 'fallback';
 }
 
 function missingConfiguration(): string[] {

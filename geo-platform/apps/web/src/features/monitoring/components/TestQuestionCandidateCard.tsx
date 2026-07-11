@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TestAssetGenerationResult, TestPlanCreationResult, TestPlanExecutionResult, TestQuestionCandidate, TestTheme } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 import { getConnectionSummaryLabel, getDefaultQuestionCandidates, getDurationLabel, getExecutionResultSummary, getPlatformPreview, getQuestionCandidateCountLabel, getThemeCandidateIds, priorityColors, priorityLabels, questionPurposeLabels, themeTypeLabels, toQuestionCandidateUpdateInput } from './testQuestionDisplay';
 
 type Props = {
@@ -132,7 +133,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
     editForm.setFieldsValue({
       question: candidate.question,
       purposesText: candidate.purposes.join('、'),
-      targetPlatformsText: candidate.targetPlatforms.join('、'),
+      targetPlatformsText: candidate.targetPlatforms.map(getPlatformDisplayName).join('、'),
       priority: candidate.priority,
       estimatedValue: candidate.estimatedValue
     });
@@ -283,7 +284,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           <Form form={editForm} layout="vertical" onFinish={(values) => editCandidateMutation.mutate(values)}>
             <Form.Item name="question" label="测试问题" rules={[{ required: true, message: '请输入测试问题' }]}><Input.TextArea rows={3} /></Form.Item>
             <Form.Item name="purposesText" label="测试目的" rules={[{ required: true, message: '请输入测试目的' }]}><Input placeholder="brand_mentioned、rank_first" /></Form.Item>
-            <Form.Item name="targetPlatformsText" label="目标平台" rules={[{ required: true, message: '请输入目标平台' }]}><Input placeholder="doubao、kimi、deepseek、qianwen" /></Form.Item>
+            <Form.Item name="targetPlatformsText" label="目标平台" rules={[{ required: true, message: '请输入目标平台' }]}><Input placeholder="豆包、Kimi、DeepSeek、通义千问" /></Form.Item>
             <Form.Item name="priority" label="推荐优先级" rules={[{ required: true, message: '请选择推荐优先级' }]}><Select options={[{ value: 'high', label: '高优先级' }, { value: 'medium', label: '中优先级' }, { value: 'low', label: '低优先级' }]} /></Form.Item>
             <Form.Item name="estimatedValue" label="预计测试价值" rules={[{ required: true, message: '请输入预计测试价值' }]}><Input.TextArea rows={2} /></Form.Item>
           </Form>

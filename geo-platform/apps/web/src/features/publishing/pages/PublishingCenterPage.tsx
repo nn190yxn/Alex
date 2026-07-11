@@ -14,12 +14,27 @@ const authStatusLabels: Record<PublishingAccount['authStatus'], string> = {
   disconnected: '未接入'
 };
 
-const recordStatusLabels: Record<PublishingRecord['status'], string> = {
+export const recordStatusLabels: Record<PublishingRecord['status'], string> = {
   draft: '草稿',
-  pending: '待发布',
+  pending: '待人工发布',
   published: '已发布',
   failed: '发布失败'
 };
+
+export function getPublishingRecordStatusColor(status: PublishingRecord['status']): string | undefined {
+  if (status === 'failed') return 'red';
+  if (status === 'published') return 'green';
+  if (status === 'pending') return 'orange';
+  return undefined;
+}
+
+export function getPublishingUrlDisplay(record: Pick<PublishingRecord, 'status' | 'publishedUrl'>): string {
+  if (record.publishedUrl) return record.publishedUrl;
+  if (record.status === 'draft') return '草稿，暂未发布';
+  if (record.status === 'pending') return '等待人工发布';
+  if (record.status === 'published') return '已发布，待补充链接';
+  return '-';
+}
 
 const loginModeLabels: Record<string, string> = {
   oauth: '平台授权',
@@ -97,6 +112,19 @@ export function PublishingCenterPage() {
     }
   });
 
+  const copyRecordBody = async (record: PublishingRecord) => {
+    await navigator.clipboard.writeText(`# ${record.title}\n\n${record.body}`);
+    void messageApi.success('正文已复制');
+  };
+
+  const markRecordPublished = (record: PublishingRecord) => {
+    if (!record.publishedUrl) {
+      void messageApi.warning('请先补充真实发布链接，再标记为已发布');
+      return;
+    }
+    updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'published', publishedUrl: record.publishedUrl } });
+  };
+
   return (
     <Space direction="vertical" size={16} className="page-stack">
       {contextHolder}
@@ -123,9 +151,9 @@ export function PublishingCenterPage() {
                   { title: '内容标题', dataIndex: 'title' },
                   { title: '发布平台', dataIndex: 'platform', render: (value) => getPlatformDisplay(value) },
                   { title: '发布账号', dataIndex: 'accountName', render: (value) => value || '-' },
-                  { title: '发布状态', render: (_, record) => <Tag color={record.status === 'failed' ? 'red' : record.status === 'published' ? 'green' : undefined}>{recordStatusLabels[record.status]}</Tag> },
-                  { title: '发布链接', dataIndex: 'publishedUrl', render: (value) => value || '-' },
-                  { title: '操作', render: (_, record) => <Space><Button size="small" onClick={() => updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'pending' } })}>待发布</Button><Button size="small" onClick={() => updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'published', publishedUrl: record.publishedUrl || `https://example.com/${record.id}` } })}>标记发布</Button><Button size="small" danger onClick={() => updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'failed', errorMessage: '平台账号授权异常' } })}>标记失败</Button></Space> }
+                  { title: '发布状态', render: (_, record) => <Tag color={getPublishingRecordStatusColor(record.status)}>{recordStatusLabels[record.status]}</Tag> },
+                  { title: '发布链接', render: (_, record) => getPublishingUrlDisplay(record) },
+                  { title: '操作', render: (_, record) => <Space wrap><Button size="small" onClick={() => void copyRecordBody(record)}>复制正文</Button><Button size="small" onClick={() => updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'pending' } })}>待人工发布</Button><Button size="small" disabled={!record.publishedUrl} onClick={() => markRecordPublished(record)}>标记已发布</Button><Button size="small" danger onClick={() => updateRecordStatusMutation.mutate({ recordId: record.id, input: { status: 'failed', errorMessage: '平台账号授权异常' } })}>标记失败</Button></Space> }
                 ]}
               />
             )

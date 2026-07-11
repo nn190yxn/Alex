@@ -1,60 +1,77 @@
-export function getContentTypeDisplay(value?: string): string {
-  if (!value) return '-';
-  return contentTypeLabels[value] ?? value;
+export function getPlatformDisplayName(value?: string): string {
+  if (!value || value.trim().length === 0) return '未知平台';
+
+  const labels: Record<string, string> = {
+    doubao: '豆包',
+    kimi: 'Kimi',
+    deepseek: 'DeepSeek',
+    qianwen: '通义千问',
+    sensenova: 'SenseNova',
+    manual_input: '人工录入',
+    mock_ai: '演示 AI',
+    wechat_official: '公众号',
+    xiaohongshu: '小红书',
+    zhihu: '知乎',
+    baijiahao: '百家号',
+    official_site: '官网',
+    official_site_faq: '官网 FAQ',
+    douyin: '短视频平台'
+  };
+
+  return labels[value] ?? value;
 }
 
 export function getPlatformDisplay(value?: string): string {
-  if (!value) return '-';
-  return platformLabels[value] ?? value;
+  return getPlatformDisplayName(value);
+}
+
+export function getContentTypeDisplay(value?: string): string {
+  if (!value || value.trim().length === 0) return '内容';
+
+  const labels: Record<string, string> = {
+    wechat_article: '公众号推文',
+    wechat_official: '公众号推文',
+    xiaohongshu_note: '小红书图文',
+    xiaohongshu_post: '小红书图文',
+    website_faq: '官网 FAQ',
+    short_video_script: '短视频脚本',
+    platform_profile_copy: '平台介绍文案',
+    image_creative_brief: '图片创意需求',
+    generated_content: '生成内容',
+    article: '文章',
+    post: '图文'
+  };
+
+  return labels[value] ?? value;
 }
 
 export function getStatusDisplay(value?: string): string {
-  if (!value) return '-';
-  return statusLabels[value] ?? value;
+  if (!value || value.trim().length === 0) return '未知状态';
+
+  const labels: Record<string, string> = {
+    draft: '草稿',
+    pending: '待处理',
+    published: '已发布',
+    failed: '失败',
+    active: '启用',
+    inactive: '停用',
+    completed: '已完成',
+    processing: '处理中',
+    uploaded: '已上传',
+    parsed: '已解析',
+    error: '异常'
+  };
+
+  return labels[value] ?? value;
 }
 
-const contentTypeLabels: Record<string, string> = {
-  wechat_article: '公众号推文',
-  wechat_official: '公众号推文',
-  xiaohongshu_note: '小红书图文',
-  xiaohongshu: '小红书图文',
-  website_faq: '官网 FAQ',
-  official_site: '官网 FAQ',
-  short_video_script: '短视频脚本',
-  douyin: '短视频脚本',
-  platform_profile_copy: '平台介绍文案',
-  ai_platform_profile: 'AI 平台介绍资料',
-  image_creative_brief: '图片创意需求',
-  creative_brief: '图片创意需求',
-  article: '通用文章',
-  official_page: '官网页面',
-  case_article: '案例文章',
-  social_post: '社交平台图文',
-  media_article: '媒体文章'
-};
+export function getOwnerDisplayName(value?: string): string {
+  if (!value || value.trim().length === 0) return '未分配';
 
-const platformLabels: Record<string, string> = {
-  wechat: '公众号',
-  wechat_official: '公众号',
-  xiaohongshu: '小红书',
-  official_site: '官网',
-  website: '官网',
-  media: '媒体平台',
-  douyin: '短视频平台',
-  ai_platform_profile: 'AI 平台介绍资料',
-  creative_brief: '图片创意需求'
-};
+  const labels: Record<string, string> = {
+    user_demo: '内测负责人',
+    advisor_demo: '服务顾问'
+  };
 
-const statusLabels: Record<string, string> = {
-  draft: '草稿',
-  published: '已发布',
-  archived: '已归档',
-  pending: '待处理',
-  running: '进行中',
-  completed: '已完成',
-  failed: '未成功',
-  confirmed: '已确认',
-  in_progress: '进行中',
-  ready_for_retest: '等待再次测试',
-  done: '已完成'
-};
+  return labels[value] ?? value;
+}

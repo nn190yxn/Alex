@@ -19,9 +19,10 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AdvisorModule } from './modules/advisor/advisor.module';
 import { LLMModule } from './modules/llm/llm.module';
 import { AutomationModule } from './modules/automation/automation.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
-  imports: [PrismaModule, HealthModule, BrandsModule, PermissionsModule, PlatformsModule, MonitoringModule, MetricsModule, CanvasModule, CompetitorsModule, CitationsModule, EvaluationsModule, ContentModule, PublishingModule, TasksModule, ReportsModule, AdvisorModule, LLMModule, AutomationModule],
+  imports: [PrismaModule, HealthModule, BrandsModule, PermissionsModule, PlatformsModule, MonitoringModule, MetricsModule, CanvasModule, CompetitorsModule, CitationsModule, EvaluationsModule, ContentModule, PublishingModule, TasksModule, ReportsModule, AdvisorModule, LLMModule, AutomationModule, FeedbackModule],
   providers: [BrandContextMiddleware, BrandAccessMiddleware]
 })
 export class AppModule implements NestModule {

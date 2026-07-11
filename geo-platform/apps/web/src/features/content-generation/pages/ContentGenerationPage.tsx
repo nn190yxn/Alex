@@ -30,7 +30,10 @@ export function ContentGenerationPage() {
   const strategies = strategiesQuery.data?.success ? strategiesQuery.data.data : [];
   const completedSteps = workspace?.currentTask?.steps.filter((step) => step.status === 'completed').length ?? 0;
   const progress = workspace?.currentTask ? Math.round((completedSteps / workspace.currentTask.steps.length) * 100) : 0;
-  const reviewNotes = getDraftReviewNotes(workspace?.currentVersion?.body);
+  const watchedBody = Form.useWatch('body', editorForm);
+  const draftBody = typeof watchedBody === 'string' ? watchedBody : workspace?.currentVersion?.body;
+  const reviewNotes = getDraftReviewNotes(draftBody);
+  const qualityCheck = getDraftQualityCheck(draftBody, workspace?.currentTask?.contentType);
   const strategyOptions = useMemo(() => strategies.map((strategy) => ({
     value: strategy.id,
     label: `${strategy.suggestedTitle}（${strategy.targetPlatform}）`
@@ -110,6 +113,16 @@ export function ContentGenerationPage() {
     void messageApi.success('内容已复制');
   };
 
+  const openPublishEntry = () => {
+    const currentBody = editorForm.getFieldValue('body') as string | undefined;
+    const result = getDraftQualityCheck(currentBody, workspace?.currentTask?.contentType);
+    if (!result.publishable) {
+      void messageApi.warning('正文质量检查未通过，请先补全草稿再进入发布准备');
+      return;
+    }
+    publishEntryMutation.mutate();
+  };
+
   return (
     <Space direction="vertical" size={16} className="page-stack">
       {contextHolder}
@@ -162,7 +175,7 @@ export function ContentGenerationPage() {
             <Space>
               <Button onClick={() => exportMutation.mutate()}>导出</Button>
               <Button onClick={() => void copyContent()}>复制内容</Button>
-              <Button onClick={() => publishEntryMutation.mutate()}>去发布</Button>
+              <Button onClick={openPublishEntry}>去发布</Button>
               <Button type="primary" onClick={() => editorForm.submit()}>保存</Button>
             </Space>
           ) : null}
@@ -170,6 +183,7 @@ export function ContentGenerationPage() {
           {workspace?.currentTask ? (
             <Form form={editorForm} layout="vertical" onFinish={(values) => saveVersionMutation.mutate(values)}>
               {reviewNotes.visible ? <DraftReviewAlert notes={reviewNotes} /> : null}
+              <DraftQualityAlert result={qualityCheck} />
               <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}><Input /></Form.Item>
               <Form.Item name="body" label="正文" rules={[{ required: true, message: '请输入正文' }]}><Input.TextArea rows={18} /></Form.Item>
             </Form>
@@ -215,6 +229,22 @@ function DraftReviewAlert({ notes }: { notes: DraftReviewNotes }) {
   return <Alert type={notes.reviewRequired ? 'warning' : 'info'} showIcon message={notes.reviewRequired ? '发布前需要你确认' : '发布前检查'} description={description} style={{ marginBottom: 16 }} />;
 }
 
+function DraftQualityAlert({ result }: { result: DraftQualityCheckResult }) {
+  if (result.publishable) {
+    return <Alert type="success" showIcon message="正文质量检查已通过" description="正文长度和关键审稿章节满足发布准备要求。" style={{ marginBottom: 16 }} />;
+  }
+
+  return (
+    <Alert
+      type="warning"
+      showIcon
+      message="正文质量检查未通过"
+      description={`进入发布准备前需要补齐：${result.issues.join('；')}`}
+      style={{ marginBottom: 16 }}
+    />
+  );
+}
+
 function Overview({ workspace, onSelect }: { workspace: ContentGenerationWorkspace | null; onSelect: (taskId: string) => void }) {
   const task = workspace?.currentTask;
   return (
@@ -222,7 +252,7 @@ function Overview({ workspace, onSelect }: { workspace: ContentGenerationWorkspa
       <Card>
         {task ? (
           <Descriptions size="small" column={{ xs: 1, sm: 2, lg: 3 }}>
-            <Descriptions.Item label="当前内容">{task.id}</Descriptions.Item>
+            <Descriptions.Item label="当前内容">{getContentTaskDisplayName(task)}</Descriptions.Item>
             <Descriptions.Item label="状态"><Tag color={taskStatusColors[task.status]}>{taskStatusLabels[task.status]}</Tag></Descriptions.Item>
             <Descriptions.Item label="内容类型">{getContentTypeLabel(task.contentType)}</Descriptions.Item>
             <Descriptions.Item label="建议发布平台">{getPlatformDisplay(task.targetPlatform)}</Descriptions.Item>
@@ -250,7 +280,7 @@ function TaskTable({ tasks, onSelect }: { tasks: ContentGenerationTask[]; onSele
         pagination={false}
         locale={{ emptyText: <EmptyState description="还没有内容待办，可从优化计划或内容策略生成。" /> }}
         columns={[
-          { title: '内容主题', dataIndex: 'contentTopic', render: (value, record) => value || record.id },
+          { title: '内容主题', render: (_, record) => getContentTaskDisplayName(record) },
           { title: '内容类型', dataIndex: 'contentType', render: (value) => getContentTypeLabel(value) },
           { title: '建议发布平台', dataIndex: 'targetPlatform', render: (value) => getPlatformDisplay(value) },
           { title: '目标关键词', dataIndex: 'targetKeywords', render: (values) => formatList(values) },
@@ -305,6 +335,12 @@ export function getContentTypeLabel(contentType?: GrowthContentType | string): s
   return getContentTypeDisplay(contentType);
 }
 
+export function getContentTaskDisplayName(task: Pick<ContentGenerationTask, 'contentTopic' | 'contentType' | 'targetPlatform'>): string {
+  if (task.contentTopic && task.contentTopic.trim().length > 0) return task.contentTopic;
+
+  return getContentTypeLabel(task.contentType);
+}
+
 export function formatList(values?: string[]): string {
   return values && values.length > 0 ? values.join('、') : '-';
 }
@@ -314,6 +350,34 @@ type DraftReviewNotes = {
   reviewRequired: boolean;
   complianceNotes: string[];
   retestSuggestions: string[];
+};
+
+type DraftQualityCheckResult = {
+  publishable: boolean;
+  bodyLength: number;
+  matchedSections: string[];
+  missingSections: string[];
+  issues: string[];
+};
+
+const defaultMinimumPublishableBodyLength = 260;
+
+const contentTypeMinimumPublishableBodyLength: Partial<Record<GrowthContentType, number>> = {
+  wechat_article: 650,
+  xiaohongshu_note: 500
+};
+
+const blockedDraftExpressions = ['保证长高', '治疗感统失调', '包过中考体育'];
+
+const commonDraftQualitySections = ['合规说明', '复测建议'];
+
+const contentTypeDraftQualitySections: Partial<Record<GrowthContentType, string[]>> = {
+  wechat_article: ['品牌事实', '家长行动建议'],
+  xiaohongshu_note: ['品牌事实', '话题标签'],
+  website_faq: ['官网 FAQ', '合规说明'],
+  short_video_script: ['短视频脚本', '复测建议'],
+  platform_profile_copy: ['品牌事实', '建议发布平台'],
+  image_creative_brief: ['图片创意需求', '复测建议']
 };
 
 export function getDraftReviewNotes(body?: string): DraftReviewNotes {
@@ -327,6 +391,51 @@ export function getDraftReviewNotes(body?: string): DraftReviewNotes {
     complianceNotes,
     retestSuggestions
   };
+}
+
+export function getDraftQualityCheck(body?: string, contentType?: GrowthContentType | string): DraftQualityCheckResult {
+  const normalizedBody = stripMarkdownSyntax(body ?? '');
+  const bodyLength = normalizedBody.length;
+  const requiredSections = getRequiredDraftQualitySections(contentType);
+  const minimumPublishableBodyLength = getMinimumPublishableBodyLength(contentType);
+  const matchedSections = requiredSections.filter((section) => hasDraftSection(body, section));
+  const missingSections = requiredSections.filter((section) => !matchedSections.includes(section));
+  const blockedExpressions = blockedDraftExpressions.filter((expression) => body?.includes(expression));
+  const issues = [
+    bodyLength < minimumPublishableBodyLength ? `正文至少 ${minimumPublishableBodyLength} 字，当前约 ${bodyLength} 字` : '',
+    missingSections.length > 0 ? `缺少 ${missingSections.join('、')}` : '',
+    blockedExpressions.length > 0 ? `包含高风险表达 ${blockedExpressions.join('、')}` : ''
+  ].filter(Boolean);
+
+  return {
+    publishable: issues.length === 0,
+    bodyLength,
+    matchedSections,
+    missingSections,
+    issues
+  };
+}
+
+function getMinimumPublishableBodyLength(contentType?: GrowthContentType | string): number {
+  const typedContentType = contentType as GrowthContentType | undefined;
+  return contentTypeMinimumPublishableBodyLength[typedContentType as GrowthContentType] ?? defaultMinimumPublishableBodyLength;
+}
+
+function getRequiredDraftQualitySections(contentType?: GrowthContentType | string): string[] {
+  const typedContentType = contentType as GrowthContentType | undefined;
+  return [...new Set([...(contentTypeDraftQualitySections[typedContentType as GrowthContentType] ?? ['品牌事实']), ...commonDraftQualitySections])];
+}
+
+function hasDraftSection(body: string | undefined, section: string): boolean {
+  if (!body) return false;
+  return body.split('\n').some((line) => {
+    const trimmed = line.trim().replace(/^#+\s*/, '').replace(/^[-*]\s*/, '');
+    return trimmed === section || trimmed.startsWith(`${section}：`) || trimmed.startsWith(`${section}:`);
+  });
+}
+
+function stripMarkdownSyntax(body: string): string {
+  return body.replace(/```[\s\S]*?```/g, '').replace(/[#>*_`\-\s]/g, '').trim();
 }
 
 function extractMarkdownSection(body: string | undefined, heading: string): string[] {

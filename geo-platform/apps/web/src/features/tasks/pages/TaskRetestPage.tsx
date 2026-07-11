@@ -5,6 +5,7 @@ import type { OptimizationTask, OptimizationTaskInput, OptimizationTaskUpdateInp
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { useBrandContextStore } from '../../../stores/brandContextStore';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
+import { getOwnerDisplayName, getPlatformDisplayName } from '../../../utils/displayLabels';
 
 const statusLabels: Record<OptimizationTask['status'], string> = {
   todo: '待处理',
@@ -120,10 +121,10 @@ export function TaskRetestPage() {
           { title: '任务标题', dataIndex: 'title' },
           { title: '状态', render: (_, record) => <Tag color={statusColors[record.status]}>{statusLabels[record.status]}</Tag> },
           { title: '优先级', dataIndex: 'priority', render: (value) => value || '-' },
-          { title: '关联平台', dataIndex: 'relatedPlatformCode', render: (value) => value || '-' },
-          { title: '负责人', dataIndex: 'ownerId', render: (value) => value || '-' },
+          { title: '关联平台', dataIndex: 'relatedPlatformCode', render: (value) => value ? getPlatformDisplayName(value) : '-' },
+          { title: '负责人', dataIndex: 'ownerId', render: (value) => getOwnerDisplayName(value) },
           { title: '截止日期', dataIndex: 'dueDate', render: (value) => value || '-' },
-          { title: '原测试记录', dataIndex: 'sourceRunId', render: (value) => value || '-' },
+          { title: '测试来源', dataIndex: 'sourceRunId', render: (value) => value ? '已关联首轮测试' : '-' },
           { title: '再次测试记录', render: (_, record) => record.retestRecords.length },
           {
             title: '操作',
@@ -146,11 +147,11 @@ export function TaskRetestPage() {
           <Form.Item name="title" label="任务标题" rules={[{ required: true, message: '请输入任务标题' }]}><Input /></Form.Item>
           <Form.Item name="type" label="任务类型"><Select options={taskTypeOptions} /></Form.Item>
           <Form.Item name="priority" label="优先级"><Select options={priorityOptions} /></Form.Item>
-          <Form.Item name="sourceRunId" label="原测试记录 ID"><Input /></Form.Item>
-          <Form.Item name="relatedPromptId" label="关联测试问题 ID"><Input /></Form.Item>
-          <Form.Item name="relatedPlatformCode" label="关联平台"><Input placeholder="doubao / deepseek / kimi" /></Form.Item>
-          <Form.Item name="optimizationUnitId" label="关联测试主题 ID"><Input /></Form.Item>
-          <Form.Item name="ownerId" label="负责人"><Input placeholder="user_demo" /></Form.Item>
+          <Form.Item name="sourceRunId" label="原测试记录"><Input placeholder="选择或粘贴测试记录引用" /></Form.Item>
+          <Form.Item name="relatedPromptId" label="关联测试问题"><Input placeholder="选择或粘贴测试问题引用" /></Form.Item>
+          <Form.Item name="relatedPlatformCode" label="关联平台"><Input placeholder="豆包 / DeepSeek / Kimi" /></Form.Item>
+          <Form.Item name="optimizationUnitId" label="关联测试主题"><Input placeholder="选择或粘贴测试主题引用" /></Form.Item>
+          <Form.Item name="ownerId" label="负责人"><Input placeholder="内测负责人" /></Form.Item>
           <Form.Item name="dueDate" label="截止日期"><Input placeholder="2026-07-10" /></Form.Item>
         </Form>
       </Modal>
@@ -168,8 +169,8 @@ export function TaskRetestPage() {
 
       <Modal title="安排再次测试" open={Boolean(retestTask)} okText="保存" cancelText="取消" onCancel={() => setRetestTask(undefined)} onOk={() => retestForm.submit()} confirmLoading={retestMutation.isPending}>
         <Form form={retestForm} layout="vertical" initialValues={{ sourceRunId: retestTask?.sourceRunId, retestRunId: retestTask?.sourceRunId, targetScore: 80 }} onFinish={(values) => retestTask && retestMutation.mutate({ taskId: retestTask.id, values })}>
-          <Form.Item name="sourceRunId" label="原测试记录 ID" rules={[{ required: true, message: '请输入原测试记录 ID' }]}><Input /></Form.Item>
-          <Form.Item name="retestRunId" label="再次测试记录 ID"><Input placeholder="默认使用原测试记录 ID" /></Form.Item>
+          <Form.Item name="sourceRunId" label="原测试记录" rules={[{ required: true, message: '请输入原测试记录引用' }]}><Input /></Form.Item>
+          <Form.Item name="retestRunId" label="再次测试记录"><Input placeholder="默认使用原测试记录" /></Form.Item>
           <Form.Item name="plannedAt" label="计划再次测试时间"><Input placeholder="2026-07-10T00:00:00.000Z" /></Form.Item>
           <Form.Item name="targetScore" label="目标分"><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="notes" label="测试说明"><Input.TextArea rows={3} /></Form.Item>

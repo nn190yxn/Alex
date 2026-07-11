@@ -41,6 +41,8 @@ model Brand {
   brandPrompts   BrandPrompt[]
   optimizationTasks OptimizationTask[]
   competitors Competitor[]
+  competitorDiscoveryRuns CompetitorDiscoveryRun[]
+  competitorCandidates CompetitorCandidate[]
   citationSources CitationSource[]
   contentAssets ContentAsset[]
   contentStrategies ContentStrategy[]
@@ -57,6 +59,7 @@ model Brand {
   testQuestionSourceRecords TestQuestionSourceRecord[]
   reports Report[]
   advisorRecords AdvisorRecord[]
+  innerTestFeedback InnerTestFeedback[]
   auditLogs AuditLog[]
 
   @@index([status])
@@ -636,6 +639,12 @@ model Competitor {
   industryTags Json @default("[]") @map("industry_tags")
   comparisonNote String @default("") @map("comparison_note")
   suppressionRule Json @default("{}") @map("suppression_rule")
+  confirmationLabel String? @map("confirmation_label")
+  sourceCandidateId String? @map("source_candidate_id")
+  sourceProvider String? @map("source_provider")
+  nearestCampusDistanceKm Float? @map("nearest_campus_distance_km")
+  isNationalBenchmark Boolean @default(false) @map("is_national_benchmark")
+  isCampusFocus Boolean @default(false) @map("is_campus_focus")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -643,7 +652,74 @@ model Competitor {
 
   @@index([brandId])
   @@index([name])
+  @@index([confirmationLabel])
+  @@index([sourceCandidateId])
   @@map("competitors")
+}
+
+model CompetitorDiscoveryRun {
+  id String @id @default(cuid())
+  brandId String @map("brand_id")
+  city String
+  campusRadiusKm Int @map("campus_radius_km")
+  keywords Json @default("[]")
+  status String
+  candidateCount Int @default(0) @map("candidate_count")
+  missingFields Json @default("[]") @map("missing_fields")
+  sourceProvider String @map("source_provider")
+  providerStatus String @default("fallback") @map("provider_status")
+  providerMessage String @default("") @map("provider_message")
+  cacheHit Boolean @default(false) @map("cache_hit")
+  createdBy String @map("created_by")
+  failureReason String? @map("failure_reason")
+  createdAt DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  candidates CompetitorCandidate[]
+
+  @@index([brandId])
+  @@index([status])
+  @@index([sourceProvider])
+  @@index([providerStatus])
+  @@index([createdAt])
+  @@map("competitor_discovery_runs")
+}
+
+model CompetitorCandidate {
+  id String @id @default(cuid())
+  runId String @map("run_id")
+  brandId String @map("brand_id")
+  sourceProvider String @map("source_provider")
+  sourcePoiId String? @map("source_poi_id")
+  name String
+  address String?
+  city String?
+  latitude Float?
+  longitude Float?
+  category String?
+  distanceToNearestCampusKm Float? @map("distance_to_nearest_campus_km")
+  matchedKeywords Json @default("[]") @map("matched_keywords")
+  score Int
+  suggestedLabel String @map("suggested_label")
+  confirmedLabel String? @map("confirmed_label")
+  matchReasons Json @default("[]") @map("match_reasons")
+  confidence String
+  isCampusFocus Boolean @default(false) @map("is_campus_focus")
+  decisionStatus String @default("pending") @map("decision_status")
+  excludedReason String? @map("excluded_reason")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  run CompetitorDiscoveryRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([runId])
+  @@index([sourceProvider, sourcePoiId])
+  @@index([suggestedLabel])
+  @@index([decisionStatus])
+  @@map("competitor_candidates")
 }
 
 model CitationSource {
@@ -1014,6 +1090,7 @@ model PublishingRecord {
   generationTaskId String? @map("generation_task_id")
   versionId String? @map("version_id")
   title String
+  body String @default("")
   platform String
   accountName String? @map("account_name")
   status String @default("draft")
@@ -1115,4 +1192,25 @@ model AdvisorRecord {
   @@index([type])
   @@index([relatedReportId])
   @@map("advisor_records")
+}
+
+model InnerTestFeedback {
+  id String @id @default(cuid())
+  brandId String @map("brand_id")
+  page String
+  module String
+  type String
+  description String
+  status String @default("open")
+  reporterId String @map("reporter_id")
+  resolutionNote String? @map("resolution_note")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+
+  @@index([brandId])
+  @@index([status])
+  @@index([type])
+  @@map("inner_test_feedback")
 }

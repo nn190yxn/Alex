@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AutomationConfirmation, AutomationPackage } from '@geo-platform/shared-types';
-import { getConfirmationAnalysisReview, getConfirmationBlockingSteps, getConfirmationPublishingSuggestions, getConfirmationQuestions, getConfirmationRewrites, getPrimaryAutomationAction, selectActivePackage } from './AutomationOperatorCard';
+import { getAutomationCapabilitySummary, getConfirmationAnalysisReview, getConfirmationBlockingSteps, getConfirmationPublishingSuggestions, getConfirmationQuestions, getConfirmationRewrites, getPrimaryAutomationAction, selectActivePackage } from './AutomationOperatorCard';
 
 describe('AutomationOperatorCard helpers', () => {
   it('starts draft packages from the primary action', () => {
@@ -39,11 +39,27 @@ describe('AutomationOperatorCard helpers', () => {
     expect(selectActivePackage([older, newer])?.packageId).toBe('pkg_new');
   });
 
+  it('summarizes testable platforms and configuration needs', () => {
+    expect(getAutomationCapabilitySummary(createPackage('pkg_1', '2026-07-08T00:00:00.000Z'), [createConfigurationConfirmation()])).toEqual({
+      type: 'warning',
+      testableText: '豆包',
+      publishingText: '公众号',
+      configurationText: '豆包（需要补充 API Key 后继续自动测试）'
+    });
+  });
+
+  it('shows a ready configuration summary when no configuration work is pending', () => {
+    expect(getAutomationCapabilitySummary(createPackage('pkg_1', '2026-07-08T00:00:00.000Z'), [])).toMatchObject({
+      type: 'info',
+      configurationText: '当前配置可继续推进'
+    });
+  });
+
   it('extracts selected question details from confirmation payload', () => {
     expect(getConfirmationQuestions(createQuestionConfirmation())).toEqual([
       {
         question: '贵阳 4 岁孩子适合上什么运动成长课？',
-        targetPlatforms: ['doubao', 'kimi']
+        targetPlatforms: ['豆包', 'Kimi']
       },
       {
         question: '追光小牛和普通体能课有什么区别？',
@@ -130,7 +146,7 @@ describe('AutomationOperatorCard helpers', () => {
       },
       {
         rewriteId: 'rewrite_2',
-        targetPlatformLabel: 'xiaohongshu',
+        targetPlatformLabel: '小红书',
         title: '追光小牛家长选择清单',
         complianceNotes: []
       }
@@ -180,6 +196,30 @@ function createManualTestConfirmation(): AutomationConfirmation {
         },
         {
           platformCode: 'kimi'
+        }
+      ]
+    }
+  };
+}
+
+function createConfigurationConfirmation(): AutomationConfirmation {
+  return {
+    confirmationId: 'confirmation_config_1',
+    packageId: 'pkg_1',
+    brandId: 'brand_demo',
+    type: 'manual_test_required',
+    status: 'pending',
+    title: '请补充平台配置',
+    impact: '缺少配置的平台会进入人工处理。',
+    recommendation: '建议补齐配置后继续自动测试。',
+    evidenceSummary: '豆包需要补充 API Key。',
+    payload: {
+      configurationItems: [
+        {
+          platformCode: 'doubao',
+          method: 'configuration',
+          status: 'needs_configuration',
+          message: '需要补充 API Key 后继续自动测试'
         }
       ]
     }

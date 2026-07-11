@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GrowthOptimizationPlan, OptimizationTask } from '@geo-platform/shared-types';
-import { getPlanProgress, getPlanStatusCounts, getPlanTasks, splitPlatformText } from './GrowthOptimizationPage';
+import { getContentLinkDisplay, getPlanProgress, getPlanStatusCounts, getPlanTasks, splitPlatformText } from './GrowthOptimizationPage';
 
 describe('GrowthOptimizationPage helpers', () => {
   it('splits publishing platforms from common separators', () => {
@@ -27,6 +27,12 @@ describe('GrowthOptimizationPage helpers', () => {
 
     expect(getPlanTasks(plan, tasks).map((task) => task.id)).toEqual(['task_1', 'task_2']);
     expect(getPlanProgress(plan, tasks)).toEqual({ total: 2, done: 1 });
+  });
+
+  it('hides internal content draft references in task lists', () => {
+    expect(getContentLinkDisplay('draft_task_001')).toBe('已生成内容草稿');
+    expect(getContentLinkDisplay('https://example.com/article')).toBe('https://example.com/article');
+    expect(getContentLinkDisplay()).toBe('-');
   });
 
   it('keeps ready-for-retest plans tied to source runs for retest entry', () => {

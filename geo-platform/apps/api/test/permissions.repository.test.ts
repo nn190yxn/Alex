@@ -36,7 +36,7 @@ describe('PermissionsRepository', () => {
       expect.objectContaining({ status: 'completed' })
     );
     expect(repository.getPublishingDashboard('user_demo', 'brand_demo')?.records).toContainEqual(
-      expect.objectContaining({ status: 'published' })
+      expect.objectContaining({ status: 'draft' })
     );
     expect(repository.getAdvisorDashboard('user_demo', 'brand_demo')?.pendingFollowUps).toContainEqual(
       expect.objectContaining({ title: '收集客户反馈' })

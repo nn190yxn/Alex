@@ -1,4 +1,5 @@
 import type { AIConnectionMethod, AIConnectionStatus, BeginnerFriendlyPlatform, OptimizationUnitPriority, PlatformConnectionSummary, TestPlanExecutionResult, TestQuestionCandidate, TestQuestionCandidateUpdateInput, TestQuestionPurpose, TestThemeType } from '@geo-platform/shared-types';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 export const themeTypeLabels: Record<TestThemeType, string> = {
   brand: '品牌词',
@@ -67,7 +68,7 @@ export function getQuestionCandidateCountLabel(total: number, shown: number): st
 }
 
 export function getPlatformPreview(platforms: string[]): string {
-  return platforms.map((platform) => platformLabels[platform as BeginnerFriendlyPlatform] ?? platform).join('、');
+  return platforms.map(getPlatformDisplayName).join('、');
 }
 
 export function getDurationLabel(minutes: number): string {
@@ -114,10 +115,26 @@ export function toQuestionCandidateUpdateInput(values: {
   return {
     question: values.question.trim(),
     purposes: splitList(values.purposesText) as TestQuestionPurpose[],
-    targetPlatforms: splitList(values.targetPlatformsText),
+    targetPlatforms: splitList(values.targetPlatformsText).map(normalizePlatformInput),
     priority: values.priority,
     estimatedValue: values.estimatedValue.trim()
   };
+}
+
+function normalizePlatformInput(value: string): string {
+  const aliases: Record<string, string> = {
+    豆包: 'doubao',
+    Kimi: 'kimi',
+    kimi: 'kimi',
+    DeepSeek: 'deepseek',
+    deepseek: 'deepseek',
+    通义千问: 'qianwen',
+    千问: 'qianwen',
+    SenseNova: 'sensenova',
+    人工录入: 'manual_input'
+  };
+
+  return aliases[value] ?? value;
 }
 
 function splitList(value: string): string[] {

@@ -43,6 +43,11 @@ describe('Automation content generation', () => {
       expect(workspace?.currentVersion?.body).toContain('## 复测建议');
     }
 
+    const wechatDraft = getDraftByContentType(harness.permissionsRepository, generated.relatedContentTaskIds, 'wechat_article');
+    const xiaohongshuDraft = getDraftByContentType(harness.permissionsRepository, generated.relatedContentTaskIds, 'xiaohongshu_note');
+    assertWechatDraftReady(wechatDraft);
+    assertXiaohongshuDraftReady(xiaohongshuDraft);
+
     expect(harness.permissionsRepository.listAuditLogs('user_demo', { action: 'automation.content.generate' })).toContainEqual(
       expect.objectContaining({ brandId: 'brand_demo', resourceId: automationPackage.packageId, result: 'success' })
     );
@@ -74,6 +79,41 @@ describe('Automation content generation', () => {
     }));
   });
 });
+
+function getDraftByContentType(repository: PermissionsRepository, taskIds: string[], contentType: string) {
+  const workspace = taskIds
+    .map((taskId) => repository.getContentGenerationWorkspace('user_demo', 'brand_demo', taskId))
+    .find((item) => item?.currentTask?.contentType === contentType);
+  return workspace?.currentVersion;
+}
+
+function assertWechatDraftReady(draft: { title: string; body: string } | undefined): void {
+  expect(draft?.title).toMatch(/公众号|家长|儿童运动|选课/);
+  expect(stripText(draft?.body).length).toBeGreaterThan(650);
+  expect(draft?.body).toContain('## 品牌事实');
+  expect(draft?.body).toContain('## 家长行动建议');
+  expect(draft?.body).toContain('## 合规说明');
+  expect(draft?.body).toContain('## 复测建议');
+  expect(draft?.body).toContain('追光小牛');
+  expect(draft?.body).toContain('ACE');
+  expect(draft?.body).toContain('预约体验');
+  expect(draft?.body).not.toMatch(/保证长高|治疗感统失调|包过中考体育|monitoring_run:/);
+}
+
+function assertXiaohongshuDraftReady(draft: { title: string; body: string } | undefined): void {
+  expect(draft?.title).toMatch(/清单|参考|孩子|家长/);
+  expect(stripText(draft?.body).length).toBeGreaterThan(500);
+  expect(draft?.body).toContain('品牌事实：');
+  expect(draft?.body).toContain('家长行动建议：');
+  expect(draft?.body).toContain('话题标签：');
+  expect(draft?.body).toContain('#贵阳体能');
+  expect(draft?.body).toContain('追光小牛');
+  expect(draft?.body).not.toMatch(/保证长高|治疗感统失调|包过中考体育|monitoring_run:/);
+}
+
+function stripText(body = ''): string {
+  return body.replace(/```[\s\S]*?```/g, '').replace(/[#>*_`\-\s]/g, '').trim();
+}
 
 function createHarness(): {
   service: AutomationOrchestratorService;

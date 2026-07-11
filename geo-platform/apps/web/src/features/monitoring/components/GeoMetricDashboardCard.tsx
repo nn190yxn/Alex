@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { BrandMetricDashboard, BrandMetricRankingItem, GEOMetricSnapshot } from '@geo-platform/shared-types';
 import { apiGet } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 type Props = {
   brandId: string;
@@ -95,7 +96,7 @@ const scoreItems: Array<{ key: keyof Pick<GEOMetricSnapshot, 'mentionScore' | 'r
 ];
 
 const metricColumns = [
-  { title: '维度', render: (_: unknown, record: GEOMetricSnapshot) => record.platformCode ?? record.optimizationUnitId ?? record.intentId ?? '整体' },
+  { title: '维度', render: (_: unknown, record: GEOMetricSnapshot) => getMetricDimensionLabel(record) },
   { title: '样本', dataIndex: 'sampleCount' },
   { title: '总分', dataIndex: 'totalScore' },
   { title: '提及分', dataIndex: 'mentionScore' },
@@ -113,6 +114,22 @@ const rankingColumns = [
   { title: '环比变化', dataIndex: 'periodChange' },
   { title: '样本', dataIndex: 'sampleCount' }
 ];
+
+export function getMetricDimensionLabel(record: Pick<GEOMetricSnapshot, 'platformCode' | 'optimizationUnitId' | 'intentId' | 'category'>): string {
+  if (record.platformCode) return getPlatformDisplayName(record.platformCode);
+  if (record.category) return intentCategoryLabels[record.category] ?? '测试意图';
+  if (record.optimizationUnitId) return '测试主题';
+  if (record.intentId) return '测试问题';
+  return '整体';
+}
+
+const intentCategoryLabels: Record<string, string> = {
+  category_recommendation: '品类推荐',
+  local_decision: '本地决策',
+  pain_solution: '需求解决',
+  brand_awareness: '品牌认知',
+  price_decision: '价格决策'
+};
 
 const rankingSortOptions: Array<{ value: RankingSortKey; label: string }> = [
   { value: 'totalScore', label: '总分' },

@@ -92,10 +92,18 @@ describe('ContentGenerationWorker', () => {
 
     await worker.processJob('user_demo', 'brand_demo', job.id);
 
-    expect(service.completeContentGenerationTask).toHaveBeenCalledWith('user_demo', 'brand_demo', job.entityId, {
-      title: '贵阳儿童运动怎么选｜公众号内容草稿',
-      body: '# 贵阳儿童运动怎么选\n\n这篇内容面向 公众号，内容类型为 公众号推文。\n\n正文建议直接回答用户问题，再补充品牌事实、适用人群、服务价值和可验证依据。\n\n关键词：儿童运动'
-    });
+    expect(service.completeContentGenerationTask).toHaveBeenCalledWith('user_demo', 'brand_demo', job.entityId, expect.objectContaining({
+      title: '贵阳儿童运动怎么选｜公众号推文',
+      body: expect.stringContaining('## 家长为什么会关心这个问题')
+    }));
+    const draft = vi.mocked(service.completeContentGenerationTask).mock.calls[0][3];
+    expect(draft.body).toContain('## 品牌事实');
+    expect(draft.body).toContain('## 家长行动建议');
+    expect(draft.body).toContain('## 引用依据');
+    expect(draft.body).toContain('## 合规说明');
+    expect(draft.body).toContain('## 建议发布平台');
+    expect(draft.body).toContain('## 复测建议');
+    expect(draft.body.length).toBeGreaterThan(450);
   });
 
   it('ignores non-content-generation jobs and missing workspaces', async () => {
