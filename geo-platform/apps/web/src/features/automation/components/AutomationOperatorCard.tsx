@@ -595,16 +595,17 @@ function handlePrimaryAction(
     return;
   }
 
-  next({ packageId: automationPackage.packageId, stepCode: automationPackage.currentStep });
+  next({ packageId: automationPackage.packageId, stepCode: action.stepCode ?? automationPackage.currentStep });
 }
 
 type AutomationPrimaryAction = {
   kind: 'start' | 'continue' | 'blocked' | 'done';
   label: string;
   enabled: boolean;
+  stepCode?: AutomationStepCode;
 };
 
-export function getPrimaryAutomationAction(automationPackage: Pick<AutomationPackage, 'status' | 'currentStep'>, pendingConfirmationCount: number): AutomationPrimaryAction {
+export function getPrimaryAutomationAction(automationPackage: Pick<AutomationPackage, 'status' | 'currentStep' | 'stepSummaries'>, pendingConfirmationCount: number): AutomationPrimaryAction {
   if (pendingConfirmationCount > 0 || automationPackage.status === 'waiting_confirmation') {
     return { kind: 'blocked', label: '先处理确认事项', enabled: false };
   }
@@ -617,10 +618,21 @@ export function getPrimaryAutomationAction(automationPackage: Pick<AutomationPac
     return { kind: 'done', label: '本轮已完成', enabled: false };
   }
 
+  if (isWaitingForBrowserQueue(automationPackage)) {
+    return { kind: 'continue', label: '检查测试结果', enabled: true, stepCode: 'answer_analysis' };
+  }
+
   const actionLabel = stepActionLabels[automationPackage.currentStep];
   return actionLabel
     ? { kind: 'continue', label: actionLabel, enabled: true }
     : { kind: 'blocked', label: '等待下一步', enabled: false };
+}
+
+function isWaitingForBrowserQueue(automationPackage: Pick<AutomationPackage, 'currentStep' | 'stepSummaries'>): boolean {
+  if (automationPackage.currentStep !== 'test_plan_execution') return false;
+
+  const executionStep = automationPackage.stepSummaries.find((step) => step.code === 'test_plan_execution');
+  return executionStep?.status === 'running' && Boolean(executionStep.message?.includes('等待浏览器队列执行完成'));
 }
 
 export function selectActivePackage(packages: AutomationPackageDetail[]): AutomationPackageDetail | undefined {

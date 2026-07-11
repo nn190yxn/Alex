@@ -4,7 +4,7 @@ import { getAutomationCapabilitySummary, getConfirmationAnalysisReview, getConfi
 
 describe('AutomationOperatorCard helpers', () => {
   it('starts draft packages from the primary action', () => {
-    expect(getPrimaryAutomationAction({ status: 'draft', currentStep: 'context_collection' }, 0)).toEqual({
+    expect(getPrimaryAutomationAction({ status: 'draft', currentStep: 'context_collection', stepSummaries: [] }, 0)).toEqual({
       kind: 'start',
       label: '开始本轮自动运营',
       enabled: true
@@ -12,7 +12,7 @@ describe('AutomationOperatorCard helpers', () => {
   });
 
   it('blocks primary action when confirmation is pending', () => {
-    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'test_plan_execution' }, 1)).toEqual({
+    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'test_plan_execution', stepSummaries: [] }, 1)).toEqual({
       kind: 'blocked',
       label: '先处理确认事项',
       enabled: false
@@ -20,15 +20,35 @@ describe('AutomationOperatorCard helpers', () => {
   });
 
   it('continues package by current automation step', () => {
-    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'platform_rewrite' }, 0)).toEqual({
+    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'platform_rewrite', stepSummaries: [] }, 0)).toEqual({
       kind: 'continue',
       label: '生成平台改写',
       enabled: true
     });
-    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'publishing_suggestion' }, 0)).toEqual({
+    expect(getPrimaryAutomationAction({ status: 'running', currentStep: 'publishing_suggestion', stepSummaries: [] }, 0)).toEqual({
       kind: 'continue',
       label: '生成发布建议',
       enabled: true
+    });
+  });
+
+  it('checks results when browser queue is waiting to be analyzed', () => {
+    expect(getPrimaryAutomationAction({
+      status: 'running',
+      currentStep: 'test_plan_execution',
+      stepSummaries: [{
+        code: 'test_plan_execution',
+        status: 'running',
+        title: '执行 AI 测试',
+        message: 'API 运行 0 个，浏览器队列 24 个，手动处理 0 个，配置处理 0 个，等待浏览器队列执行完成后再进入分析。',
+        relatedConfirmationIds: [],
+        relatedEntityIds: []
+      }]
+    }, 0)).toEqual({
+      kind: 'continue',
+      label: '检查测试结果',
+      enabled: true,
+      stepCode: 'answer_analysis'
     });
   });
 
