@@ -111,8 +111,8 @@ export function InnerTestFeedbackPage() {
 
       <Modal title="记录内测反馈" open={createOpen} okText="保存" cancelText="取消" onCancel={() => setCreateOpen(false)} onOk={() => createForm.submit()} confirmLoading={createMutation.isPending}>
         <Form form={createForm} layout="vertical" initialValues={{ type: 'usability' }} onFinish={(values) => createMutation.mutate(values)}>
-          <Form.Item name="page" label="页面" rules={[{ required: true, message: '请输入页面' }]}><Input placeholder="例如：写内容、AI 测试、发布记录" /></Form.Item>
-          <Form.Item name="module" label="模块" rules={[{ required: true, message: '请输入模块' }]}><Input placeholder="例如：内容编辑器、测试问题池、确认抽屉" /></Form.Item>
+          <Form.Item name="page" label="页面" rules={[{ required: true, message: '请输入页面' }]}><Input placeholder="例如：写内容、AI 回复监测、发布记录" /></Form.Item>
+          <Form.Item name="module" label="模块" rules={[{ required: true, message: '请输入模块' }]}><Input placeholder="例如：内容编辑器、监测问题池、确认抽屉" /></Form.Item>
           <Form.Item name="type" label="问题类型"><Select options={feedbackTypeOptions} /></Form.Item>
           <Form.Item name="description" label="问题描述" rules={[{ required: true, message: '请输入问题描述' }]}><Input.TextArea rows={4} /></Form.Item>
         </Form>

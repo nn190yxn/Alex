@@ -14,6 +14,7 @@ import type {
   UserIntentInput
 } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 type Props = {
   brandId: string;
@@ -76,7 +77,7 @@ export function UserIntentPromptCard({ brandId }: Props) {
         queryClient.invalidateQueries({ queryKey: ['brand-prompts', brandId] }),
         queryClient.invalidateQueries({ queryKey: ['brand-workspace', brandId] })
       ]);
-      void messageApi.success(`已生成 ${createdCount} 个首轮测试问题`);
+      void messageApi.success(`已生成 ${createdCount} 个首轮监测问题`);
     },
     onError: (error) => {
       void messageApi.error(error instanceof Error ? error.message : '自动生成失败');
@@ -128,7 +129,7 @@ export function UserIntentPromptCard({ brandId }: Props) {
 
   return (
     <Card
-      title="测试场景与测试问题"
+      title="监测场景与监测问题"
       extra={(
         <Space>
           {contextHolder}
@@ -143,9 +144,9 @@ export function UserIntentPromptCard({ brandId }: Props) {
             onChange={setSelectedTemplateId}
           />
           <Button onClick={() => setTemplateModalOpen(true)}>创建问题模板</Button>
-          <Button onClick={() => setIntentModalOpen(true)}>创建测试场景</Button>
+          <Button onClick={() => setIntentModalOpen(true)}>创建用户场景</Button>
           <Button type="primary" disabled={!selectedTemplateId || intents.length === 0} loading={batchGenerateMutation.isPending} onClick={() => batchGenerateMutation.mutate()}>
-            批量生成测试问题
+            批量生成监测问题
           </Button>
         </Space>
       )}
@@ -157,8 +158,8 @@ export function UserIntentPromptCard({ brandId }: Props) {
         pagination={false}
         expandable={{ expandedRowRender: (record) => renderPromptRows(record, promptsByIntent.get(record.id) ?? [], promptStatusMutation.mutate) }}
         columns={[
-          { title: '测试场景', dataIndex: 'text' },
-          { title: '关联测试主题', render: (_, record) => unitNameMap.get(record.optimizationUnitId) ?? '-' },
+          { title: '用户场景', dataIndex: 'text' },
+          { title: '关联监测主题', render: (_, record) => unitNameMap.get(record.optimizationUnitId) ?? '-' },
           { title: '分类', dataIndex: 'category', render: (value: UserIntentCategory) => intentCategoryLabels[value] },
           { title: '频率', dataIndex: 'monitoringFrequency', render: (value: MonitoringFrequency) => frequencyLabels[value] },
           {
@@ -173,7 +174,7 @@ export function UserIntentPromptCard({ brandId }: Props) {
         ]}
       />
       <Modal
-        title="创建测试场景"
+        title="创建用户场景"
         open={intentModalOpen}
         okText="保存"
         cancelText="取消"
@@ -182,16 +183,16 @@ export function UserIntentPromptCard({ brandId }: Props) {
         onOk={() => intentForm.submit()}
       >
         <Form form={intentForm} layout="vertical" initialValues={{ category: 'category_recommendation', monitoringFrequency: 'weekly', enabled: true }} onFinish={(values) => createIntentMutation.mutate(values)}>
-          <Form.Item name="optimizationUnitId" label="关联测试主题" rules={[{ required: true, message: '请选择测试主题' }]}>
+          <Form.Item name="optimizationUnitId" label="关联监测主题" rules={[{ required: true, message: '请选择监测主题' }]}>
             <Select options={units.map((unit) => ({ value: unit.id, label: unit.name }))} />
           </Form.Item>
           <Form.Item name="category" label="场景分类" rules={[{ required: true, message: '请选择分类' }]}>
             <Select options={Object.entries(intentCategoryLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
-          <Form.Item name="text" label="测试场景" rules={[{ required: true, message: '请输入测试场景' }]}>
+          <Form.Item name="text" label="用户场景" rules={[{ required: true, message: '请输入用户场景' }]}>
             <Input.TextArea rows={3} placeholder="例如：想找适合 6 岁孩子的体适能机构" />
           </Form.Item>
-          <Form.Item name="monitoringFrequency" label="测试频率">
+          <Form.Item name="monitoringFrequency" label="监测频率">
             <Select options={Object.entries(frequencyLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
           <Form.Item name="enabled" label="启用状态" valuePropName="checked">
@@ -200,7 +201,7 @@ export function UserIntentPromptCard({ brandId }: Props) {
         </Form>
       </Modal>
       <Modal
-        title="创建测试问题模板"
+        title="创建监测问题模板"
         open={templateModalOpen}
         okText="保存"
         cancelText="取消"
@@ -208,7 +209,7 @@ export function UserIntentPromptCard({ brandId }: Props) {
         onCancel={() => setTemplateModalOpen(false)}
         onOk={() => templateForm.submit()}
       >
-        <Form form={templateForm} layout="vertical" initialValues={{ category: 'category_recommendation', frequency: 'weekly', platformCodesText: 'doubao\ndeepseek\nkimi' }} onFinish={(values) => createTemplateMutation.mutate(values)}>
+        <Form form={templateForm} layout="vertical" initialValues={{ category: 'category_recommendation', frequency: 'weekly', platformCodesText: '豆包\nDeepSeek\nKimi' }} onFinish={(values) => createTemplateMutation.mutate(values)}>
           <Form.Item name="name" label="模板名称" rules={[{ required: true, message: '请输入模板名称' }]}>
             <Input />
           </Form.Item>
@@ -225,9 +226,9 @@ export function UserIntentPromptCard({ brandId }: Props) {
             <Input.TextArea rows={3} placeholder="一行一个关键词" />
           </Form.Item>
           <Form.Item name="platformCodesText" label="目标平台" rules={[{ required: true, message: '请输入目标平台' }]}>
-            <Input.TextArea rows={3} placeholder="一行一个平台代码" />
+            <Input.TextArea rows={3} placeholder="一行一个平台名称，例如豆包、Kimi、DeepSeek" />
           </Form.Item>
-          <Form.Item name="frequency" label="测试频率">
+          <Form.Item name="frequency" label="监测频率">
             <Select options={Object.entries(frequencyLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
         </Form>
@@ -242,7 +243,7 @@ function renderPromptRows(
   updateStatus: (values: { promptId: string; enabled: boolean }) => void
 ) {
   if (prompts.length === 0) {
-    return <Typography.Text type="secondary">当前测试场景尚未生成测试问题</Typography.Text>;
+    return <Typography.Text type="secondary">当前监测场景尚未生成监测问题</Typography.Text>;
   }
 
   return (
@@ -252,8 +253,8 @@ function renderPromptRows(
       dataSource={prompts}
       pagination={false}
       columns={[
-        { title: '测试问题', dataIndex: 'text' },
-        { title: '平台', render: (_, record) => record.platformCodes.join('、') },
+        { title: '监测问题', dataIndex: 'text' },
+        { title: '平台', render: (_, record) => record.platformCodes.map(getPlatformDisplayName).join('、') },
         { title: '关键词', render: (_, record) => <Space wrap>{record.targetKeywords.map((keyword) => <Tag key={keyword}>{keyword}</Tag>)}</Space> },
         { title: '频率', dataIndex: 'monitoringFrequency', render: (value: MonitoringFrequency) => frequencyLabels[value] },
         {
@@ -295,13 +296,29 @@ function toTemplatePayload(values: TemplateFormValues): PromptTemplateInput {
     category: values.category,
     text: values.text,
     targetKeywords: splitLines(values.targetKeywordsText),
-    platformCodes: splitLines(values.platformCodesText),
+    platformCodes: splitLines(values.platformCodesText).map(toPlatformCode),
     frequency: values.frequency
   };
 }
 
 function splitLines(value?: string): string[] {
   return (value ?? '').split('\n').map((item) => item.trim()).filter(Boolean);
+}
+
+function toPlatformCode(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  const aliases: Record<string, string> = {
+    豆包: 'doubao',
+    kimi: 'kimi',
+    deepseek: 'deepseek',
+    deepseek模型: 'deepseek',
+    通义千问: 'qianwen',
+    qwen: 'qianwen',
+    阶跃星辰: 'stepfun',
+    stepfun: 'stepfun'
+  };
+
+  return aliases[normalized] ?? aliases[value.trim()] ?? normalized;
 }
 
 async function autoGenerateFirstRoundQuestions(
@@ -375,12 +392,12 @@ async function createDefaultIntents(brandId: string, brand: BrandWorkspaceSnapsh
 
 async function createDefaultPromptTemplate(brandId: string, brand: BrandWorkspaceSnapshot['brand']) {
   const response = await apiPost<PromptTemplate>(`/brands/${brandId}/prompt-templates`, {
-    name: `${brand.name}首轮 AI 测试模板`,
+    name: `${brand.name}首轮 AI 回复监测模板`,
     industry: brand.industry,
     category: 'category_recommendation',
     text: '{intent} 请像真实用户在 AI 搜索中提问一样回答，并说明是否推荐{brandName}、推荐理由、适合人群和可参考信息来源。',
     targetKeywords: [brand.name, brand.industry, ...brand.targetCities].filter(Boolean),
-    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
     frequency: 'weekly'
   });
 

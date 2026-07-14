@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BrandWorkspaceSnapshot } from '@geo-platform/shared-types';
 import { getBrandImportCompletenessScore, getImportFieldConfidenceState, getMissingFieldImpact, getBrandImportDraftState, supportedBrandImportFormats } from './brandImportState';
 import { firstRoundSteps, getFirstRoundCurrentStep, getFirstRoundStepStatus } from './firstRoundWorkflow';
+import { getSprintMetricCards, getSprintNextAction, getSprintProgressPercent, getSprintStatusLabel, getSprintStepDisplayStatus } from './sprintWorkspace';
 
 describe('BrandWorkspacePage import helpers', () => {
   it('shows ready import drafts as confirmation work', () => {
@@ -34,7 +35,7 @@ describe('BrandWorkspacePage import helpers', () => {
 
   it('maps field confidence and missing impacts to user-facing guidance', () => {
     expect(getImportFieldConfidenceState('needs_confirmation')).toEqual({ label: '需要确认', color: 'red' });
-    expect(getMissingFieldImpact('targetCities')).toContain('本地推荐类测试问题');
+    expect(getMissingFieldImpact('targetCities')).toContain('本地推荐类监测问题');
   });
 
   it('keeps the supported upload formats visible for the import entry', () => {
@@ -46,12 +47,12 @@ describe('BrandWorkspacePage first round workflow helpers', () => {
   it('keeps the beginner first round workflow in the expected order', () => {
     expect(firstRoundSteps.map((step) => step.title)).toEqual([
       '上传资料',
-      '选择测试问题',
+      '选择监测问题',
       '连接 AI 平台',
-      '开始测试',
+      '开始监测',
       '查看建议',
       '处理优化',
-      '再次测试'
+      '再次监测'
     ]);
   });
 
@@ -66,6 +67,41 @@ describe('BrandWorkspacePage first round workflow helpers', () => {
     expect(getFirstRoundStepStatus(0, 2)).toBe('finish');
     expect(getFirstRoundStepStatus(2, 2)).toBe('process');
     expect(getFirstRoundStepStatus(3, 2)).toBe('wait');
+  });
+});
+
+describe('BrandWorkspacePage Sprint workspace helpers', () => {
+  it('maps Sprint status and step status to display state', () => {
+    expect(getSprintStatusLabel('waiting_confirmation')).toEqual({ label: '待确认', color: 'orange' });
+    expect(getSprintStepDisplayStatus('completed')).toBe('finish');
+    expect(getSprintStepDisplayStatus('waiting_confirmation')).toBe('process');
+    expect(getSprintStepDisplayStatus('failed')).toBe('error');
+  });
+
+  it('chooses the next user action from current Sprint stage', () => {
+    expect(getSprintNextAction(null)).toMatchObject({ label: '查看监测地图', route: '/canvas' });
+    expect(getSprintNextAction(createSprint({ currentStep: 'ai_response_monitoring' }))).toMatchObject({
+      label: '录入真实回复',
+      route: '/monitoring#manual-test-entry'
+    });
+    expect(getSprintNextAction(createSprint({ currentStep: 'publishing_preparation' }))).toMatchObject({ label: '准备发布', route: '/publishing' });
+  });
+
+  it('calculates Sprint progress and metric cards from summary', () => {
+    const sprint = createSprint({
+      steps: [
+        { code: 'question_radar', title: '问题意图雷达', message: '筛选问题', status: 'completed', relatedEntityIds: [] },
+        { code: 'ai_response_monitoring', title: 'AI 回复监测', message: '录入回复', status: 'running', relatedEntityIds: [] }
+      ],
+      metricSummary: { ...createSprint().metricSummary, mentionRate: 40, contentGapCount: 3, sampleSize: 5 }
+    });
+
+    expect(getSprintProgressPercent(sprint)).toBe(50);
+    expect(getSprintMetricCards(sprint)).toEqual(expect.arrayContaining([
+      { label: '样本', value: 5, suffix: '' },
+      { label: '提及率', value: 40, suffix: '%' },
+      { label: '内容缺口', value: 3, suffix: '' }
+    ]));
   });
 });
 
@@ -97,5 +133,41 @@ function createBrand() {
     status: 'active' as const,
     createdAt: '2026-07-05T00:00:00.000Z',
     updatedAt: '2026-07-05T00:00:00.000Z'
+  };
+}
+
+function createSprint(overrides: Partial<import('@geo-platform/shared-types').VisibilitySprint> = {}): import('@geo-platform/shared-types').VisibilitySprint {
+  return {
+    sprintId: 'sprint_1',
+    brandId: 'brand_demo',
+    title: '首轮 AI 可见性运营',
+    goal: '打通问题到复测闭环',
+    status: 'running',
+    currentStep: 'question_radar',
+    steps: [],
+    metricSummary: {
+      questionCoverageRate: 0,
+      mentionRate: 0,
+      recommendationRate: 0,
+      firstRecommendationRate: 0,
+      topThreeRate: 0,
+      citationHitRate: 0,
+      expressionAccuracyRate: 0,
+      riskExpressionCount: 0,
+      contentGapCount: 0,
+      competitorSuppressionCount: 0,
+      sampleSize: 0
+    },
+    relatedQuestionIds: [],
+    relatedTestPlanIds: [],
+    relatedMonitoringRunIds: [],
+    relatedStandardAnswerIds: [],
+    relatedContentTaskIds: [],
+    relatedPublishingRecordIds: [],
+    relatedRetestTaskIds: [],
+    createdBy: 'user_demo',
+    createdAt: '2026-07-11T00:00:00.000Z',
+    updatedAt: '2026-07-11T00:00:00.000Z',
+    ...overrides
   };
 }

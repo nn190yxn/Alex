@@ -53,7 +53,7 @@ export function GeoCanvasPage() {
         setIntentModalOpen(false);
         intentForm.resetFields();
         void queryClient.invalidateQueries({ queryKey: ['geo-canvas', activeBrandId] });
-        void messageApi.success('测试场景已创建');
+        void messageApi.success('用户场景已创建');
       }
     }
   });
@@ -84,11 +84,11 @@ export function GeoCanvasPage() {
     <Space direction="vertical" size={16} className="page-stack">
       {contextHolder}
       <Card
-        title="测试地图"
+        title="监测地图"
         extra={(
           <Space>
-            <Button onClick={() => setIntentModalOpen(true)}>创建测试场景</Button>
-            <Tooltip title="把测试发现的问题变成具体内容动作，比如写公众号推文、官网 FAQ 或小红书图文。">
+            <Button onClick={() => setIntentModalOpen(true)}>创建用户场景</Button>
+            <Tooltip title="把监测发现的问题变成具体内容动作，比如写公众号推文、官网 FAQ 或小红书图文。">
               <Button onClick={() => setStrategyModalOpen(true)}>创建内容策略</Button>
             </Tooltip>
             <Button type="primary" onClick={() => setTaskModalOpen(true)}>创建优化任务</Button>
@@ -96,11 +96,11 @@ export function GeoCanvasPage() {
         )}
       >
         <Typography.Paragraph>
-          这里用来决定第一轮 AI 要帮你测什么：先选一个测试主题，再写一个家长会问 AI 的真实场景，后面 AI 测试就会围绕这些方向生成问题和优化建议。
+          这里用来决定第一轮 AI 要帮你监测什么：先选一个监测主题，再写一个家长会问 AI 的真实场景，后面 AI 回复监测就会围绕这些方向生成问题和优化建议。
         </Typography.Paragraph>
         <Space size={24} wrap>
-          <Statistic title="测试主题" value={canvas?.optimizationUnits.length ?? 0} />
-          <Statistic title="测试场景" value={canvas?.userIntents.length ?? 0} />
+          <Statistic title="监测主题" value={canvas?.optimizationUnits.length ?? 0} />
+          <Statistic title="用户场景" value={canvas?.userIntents.length ?? 0} />
           <Statistic title="内容策略" value={canvas?.contentStrategies.length ?? 0} />
           <Statistic title="优化任务" value={canvas?.tasks.length ?? 0} />
           <Statistic title="综合表现分" value={canvas?.metrics.current.totalScore ?? 0} suffix="/100" />
@@ -121,14 +121,14 @@ export function GeoCanvasPage() {
             </ReactFlow>
           </div>
         ) : (
-          <Empty className="geo-canvas-empty" description="暂无画布节点，请先创建测试主题和测试场景" />
+          <Empty className="geo-canvas-empty" description="暂无画布节点，请先创建监测主题和用户场景" />
         )}
       </Card>
       <Drawer title="节点详情" open={Boolean(selectedNode)} width={420} onClose={() => setSelectedNodeId(undefined)}>
         {canvas && selectedNode ? renderNodeDetail(canvas, selectedNode) : null}
       </Drawer>
       <Modal
-        title="创建测试场景"
+        title="创建用户场景"
         open={intentModalOpen}
         okText="保存"
         cancelText="取消"
@@ -137,16 +137,16 @@ export function GeoCanvasPage() {
         onOk={() => intentForm.submit()}
       >
         <Form form={intentForm} layout="vertical" initialValues={{ category: 'category_recommendation', monitoringFrequency: 'weekly', enabled: true }} onFinish={(values) => createIntentMutation.mutate(values)}>
-          <Form.Item name="optimizationUnitId" label="关联测试主题" rules={[{ required: true, message: '请选择测试主题' }]}>
+          <Form.Item name="optimizationUnitId" label="关联监测主题" rules={[{ required: true, message: '请选择监测主题' }]}>
             <Select options={(canvas?.optimizationUnits ?? []).map((unit) => ({ value: unit.id, label: unit.name }))} />
           </Form.Item>
           <Form.Item name="category" label="场景分类" rules={[{ required: true, message: '请选择分类' }]}>
             <Select options={Object.entries(intentCategoryLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
-          <Form.Item name="text" label="测试场景" rules={[{ required: true, message: '请输入测试场景' }]}>
+          <Form.Item name="text" label="用户场景" rules={[{ required: true, message: '请输入用户场景' }]}>
             <Input.TextArea rows={3} placeholder="例如：贵阳 3-5 岁孩子体能课怎么选？" />
           </Form.Item>
-          <Form.Item name="monitoringFrequency" label="测试频率">
+          <Form.Item name="monitoringFrequency" label="监测频率">
             <Select options={frequencyOptions} />
           </Form.Item>
         </Form>
@@ -161,10 +161,10 @@ export function GeoCanvasPage() {
         onOk={() => strategyForm.submit()}
       >
         <Form form={strategyForm} layout="vertical" initialValues={{ type: 'gap', priority: 'medium', targetPlatform: 'wechat' }} onFinish={(values) => createStrategyMutation.mutate(values)}>
-          <Form.Item name="optimizationUnitId" label={<FieldLabel text="关联测试主题" help="选择这条内容策略要解决哪个测试方向，比如贵阳儿童运动、3 到 5 岁儿童体能。" />} rules={[{ required: true, message: '请选择测试主题' }]}>
+          <Form.Item name="optimizationUnitId" label={<FieldLabel text="关联监测主题" help="选择这条内容策略要解决哪个监测方向，比如贵阳儿童运动、3 到 5 岁儿童体能。" />} rules={[{ required: true, message: '请选择监测主题' }]}>
             <Select options={(canvas?.optimizationUnits ?? []).map((unit) => ({ value: unit.id, label: unit.name }))} />
           </Form.Item>
-          <Form.Item name="intentId" label={<FieldLabel text="关联测试场景" help="选择家长真实会问 AI 的问题场景，内容策略会围绕这个问题补资料。" />} rules={[{ required: true, message: '请选择测试场景' }]}>
+          <Form.Item name="intentId" label={<FieldLabel text="关联用户场景" help="选择家长真实会问 AI 的问题场景，内容策略会围绕这个问题补资料。" />} rules={[{ required: true, message: '请选择用户场景' }]}>
             <Select options={(canvas?.userIntents ?? []).map((intent) => ({ value: intent.id, label: intent.text }))} />
           </Form.Item>
           <Form.Item name="type" label={<FieldLabel text="策略类型" help="选择这次内容要解决的问题：补缺口、修正错误说法、加强关键词、增加权威引用或回应竞品。" />}><Select options={strategyTypeOptions} /></Form.Item>
@@ -188,7 +188,7 @@ export function GeoCanvasPage() {
           <Form.Item name="strategyId" label="关联内容策略">
             <Select allowClear options={(canvas?.contentStrategies ?? []).map((strategy) => ({ value: strategy.id, label: strategy.suggestedTitle }))} />
           </Form.Item>
-          <Form.Item name="optimizationUnitId" label="关联测试主题">
+          <Form.Item name="optimizationUnitId" label="关联监测主题">
             <Select allowClear options={(canvas?.optimizationUnits ?? []).map((unit) => ({ value: unit.id, label: unit.name }))} />
           </Form.Item>
           <Form.Item name="ownerId" label="负责人"><Input placeholder="负责人姓名" /></Form.Item>
@@ -243,14 +243,14 @@ function CanvasNodeLabel({ node }: { node: GeoCanvasNode }) {
 function renderNodeDetail(canvas: GeoCanvasWorkspace, node: GeoCanvasNode) {
   if (node.type === 'optimization_unit') {
     const unit = canvas.optimizationUnits.find((item) => item.id === node.sourceId);
-    return unit ? <Space direction="vertical"><Typography.Text strong>{unit.name}</Typography.Text><Typography.Text>关键词：{unit.targetKeywords.join('、') || '-'}</Typography.Text><Typography.Text>关联测试场景：{unit.relatedCounts.userIntents}</Typography.Text><Typography.Text>内容策略：{unit.relatedCounts.contentStrategies}</Typography.Text></Space> : null;
+    return unit ? <Space direction="vertical"><Typography.Text strong>{unit.name}</Typography.Text><Typography.Text>关键词：{unit.targetKeywords.join('、') || '-'}</Typography.Text><Typography.Text>关联用户场景：{unit.relatedCounts.userIntents}</Typography.Text><Typography.Text>内容策略：{unit.relatedCounts.contentStrategies}</Typography.Text></Space> : null;
   }
   if (node.type === 'user_intent') {
     const intent = canvas.userIntents.find((item) => item.id === node.sourceId);
-    return intent ? <Space direction="vertical"><Typography.Text strong>{intent.text}</Typography.Text><Typography.Text>分类：{intentCategoryLabels[intent.category]}</Typography.Text><Typography.Text>测试频率：{intent.monitoringFrequency}</Typography.Text><Typography.Text>平台表现：{intent.platformMetrics.length} 条</Typography.Text></Space> : null;
+    return intent ? <Space direction="vertical"><Typography.Text strong>{intent.text}</Typography.Text><Typography.Text>分类：{intentCategoryLabels[intent.category]}</Typography.Text><Typography.Text>监测频率：{intent.monitoringFrequency}</Typography.Text><Typography.Text>平台表现：{intent.platformMetrics.length} 条</Typography.Text></Space> : null;
   }
   if (node.type === 'metric') {
-    return <Space direction="vertical"><Statistic title="推荐表现" value={node.metric?.totalScore ?? 0} suffix="/100" /><Typography.Text>样本数：{node.metric?.sampleCount ?? 0}</Typography.Text><Typography.Text>{node.metric?.insufficientSample ? '样本不足，需要继续测试' : '样本已满足当前统计要求'}</Typography.Text></Space>;
+    return <Space direction="vertical"><Statistic title="推荐表现" value={node.metric?.totalScore ?? 0} suffix="/100" /><Typography.Text>样本数：{node.metric?.sampleCount ?? 0}</Typography.Text><Typography.Text>{node.metric?.insufficientSample ? '样本不足，需要继续监测' : '样本已满足当前统计要求'}</Typography.Text></Space>;
   }
   const strategy = canvas.contentStrategies.find((item) => item.id === node.sourceId);
   return strategy ? <Space direction="vertical"><Typography.Text strong>{strategy.suggestedTitle}</Typography.Text><Typography.Text>平台：{strategy.targetPlatform}</Typography.Text><Typography.Text>关键词：{strategy.targetKeywords.join('、') || '-'}</Typography.Text><Typography.Text>状态：{strategy.status}</Typography.Text></Space> : null;
@@ -283,8 +283,8 @@ const nodeStyles = {
 };
 
 const nodeTypeLabels: Record<GeoCanvasNode['type'], string> = {
-  optimization_unit: '测试主题',
-  user_intent: '测试场景',
+  optimization_unit: '监测主题',
+  user_intent: '用户场景',
   metric: '数据表现',
   content_strategy: '内容策略'
 };

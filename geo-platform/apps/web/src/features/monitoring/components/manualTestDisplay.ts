@@ -56,7 +56,7 @@ function parseManualAnswerBlock(block: string): ManualAnswerDraft | null {
   }
 
   return {
-    platformCode,
+    platformCode: normalizePlatformInput(platformCode),
     question,
     rawText,
     modelName
@@ -68,6 +68,25 @@ function getFieldValue(block: string, label: string): string | undefined {
   const match = block.match(pattern);
 
   return match?.[1]?.trim();
+}
+
+function normalizePlatformInput(value: string): string {
+  const trimmed = value.trim();
+  const aliases: Record<string, string> = {
+    豆包: 'doubao',
+    Kimi: 'kimi',
+    kimi: 'kimi',
+    DeepSeek: 'deepseek',
+    deepseek: 'deepseek',
+    通义千问: 'qianwen',
+    千问: 'qianwen',
+    Qwen: 'qianwen',
+    qwen: 'qianwen',
+    阶跃星辰: 'stepfun',
+    stepfun: 'stepfun'
+  };
+
+  return aliases[trimmed] ?? trimmed;
 }
 
 function getAnswerKey(question: string, platformCode: string): string {

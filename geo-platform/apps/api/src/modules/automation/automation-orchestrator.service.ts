@@ -48,11 +48,11 @@ type AutomationPackageDetail = AutomationPackage & {
 
 const stepDefinitions: Array<{ code: AutomationStepCode; title: string }> = [
   { code: 'context_collection', title: '读取品牌资料' },
-  { code: 'question_pool_update', title: '维护测试问题池' },
+  { code: 'question_pool_update', title: '维护监测问题池' },
   { code: 'question_selection', title: '精选本轮问题' },
-  { code: 'test_question_confirmation', title: '确认测试问题' },
-  { code: 'test_plan_execution', title: '执行 AI 测试' },
-  { code: 'answer_analysis', title: '分析测试结果' },
+  { code: 'test_question_confirmation', title: '确认监测问题' },
+  { code: 'test_plan_execution', title: '执行 AI 回复监测' },
+  { code: 'answer_analysis', title: '分析监测结果' },
   { code: 'content_generation', title: '生成优化内容' },
   { code: 'platform_rewrite', title: '按平台改写' },
   { code: 'content_confirmation', title: '确认发布内容' },
@@ -80,8 +80,8 @@ export class AutomationOrchestratorService {
       brandId,
       status: 'draft',
       source: input.source ?? 'brand_workspace',
-      goal: input.goal ?? '自动完成本轮 AI 测试、分析、内容生成和发布建议',
-      targetPlatforms: input.targetPlatforms ?? ['doubao', 'kimi', 'deepseek', 'qianwen'],
+      goal: input.goal ?? '自动完成本轮 AI 回复监测、分析、内容生成和发布建议',
+      targetPlatforms: input.targetPlatforms ?? ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
       targetPublishingPlatforms: input.targetPublishingPlatforms ?? ['zhihu', 'baijiahao', 'xiaohongshu', 'wechat_official', 'official_site_faq'],
       currentStep: 'context_collection',
       stepSummaries: createInitialSteps(now),
@@ -170,13 +170,13 @@ export class AutomationOrchestratorService {
     const automationPackage = this.getExistingPackage(brandId, packageId);
 
     if (!automationPackage.relatedTestPlanId) {
-      throw new NotFoundException('自动化任务包还没有关联测试计划');
+      throw new NotFoundException('自动化任务包还没有关联监测计划');
     }
 
     const result = this.permissionsRepository.executeTestPlan(userId, brandId, automationPackage.relatedTestPlanId);
 
     if (!result) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     const now = new Date().toISOString();
@@ -189,10 +189,10 @@ export class AutomationOrchestratorService {
     if (blockingSteps.length > 0) {
       this.confirmationQueue.createConfirmation(userId, brandId, packageId, {
         type: 'manual_test_required',
-        title: '请处理需要人工确认的测试项',
-        impact: '这些测试项暂时无法自动完成，会影响本轮 AI 测试样本完整性。',
+        title: '请处理需要人工确认的监测项',
+        impact: '这些监测项暂时无法自动完成，会影响本轮 AI 回复样本完整性。',
         recommendation: '建议先按平台提示完成登录、配置或手动录入回答，再继续后续分析。',
-        evidenceSummary: `本轮测试有 ${blockingSteps.length} 个测试项需要人工处理。`,
+        evidenceSummary: `本轮监测有 ${blockingSteps.length} 个监测项需要人工处理。`,
         payload: {
           testPlanId: result.plan.id,
           blockingSteps: blockingSteps.map(toExecutionStepPayload),
@@ -236,7 +236,7 @@ export class AutomationOrchestratorService {
     const automationPackage = this.getExistingPackage(brandId, packageId);
 
     if (!automationPackage.relatedTestPlanId) {
-      throw new NotFoundException('自动化任务包还没有关联测试计划');
+      throw new NotFoundException('自动化任务包还没有关联监测计划');
     }
 
     const testPlan = this.permissionsRepository
@@ -244,7 +244,7 @@ export class AutomationOrchestratorService {
       ?.find((plan) => plan.id === automationPackage.relatedTestPlanId);
 
     if (!testPlan) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     const analysisItems = testPlan.monitoringRunIds
@@ -256,7 +256,7 @@ export class AutomationOrchestratorService {
       .filter((item): item is { run: MonitoringRunDetail; analysis: AnalysisResult } => Boolean(item));
 
     if (analysisItems.length === 0) {
-      throw new NotFoundException('当前测试计划还没有可分析回答');
+      throw new NotFoundException('当前监测计划还没有可分析回答');
     }
 
     const growthPlan = this.permissionsRepository.generateGrowthOptimizationPlan(userId, brandId, testPlan.id);
@@ -270,7 +270,7 @@ export class AutomationOrchestratorService {
     if (reviewItems.length > 0) {
       this.confirmationQueue.createConfirmation(userId, brandId, packageId, {
         type: 'analysis_review',
-        title: '请确认本轮 AI 测试判断',
+        title: '请确认本轮 AI 回复监测判断',
         impact: '这些判断会作为后续内容生成和复测建议的依据。',
         recommendation: '建议重点确认风险表达、无法判断字段、竞品压制和引用缺口，再继续生成内容。',
         evidenceSummary: `本轮 ${summary.sampleCount} 条回答中，有 ${reviewItems.length} 条需要确认。`,
@@ -503,7 +503,7 @@ export class AutomationOrchestratorService {
     });
 
     if (!retestTask) {
-      throw new NotFoundException('复测任务创建失败，请确认本轮测试结果仍然存在');
+      throw new NotFoundException('复测任务创建失败，请确认本轮监测结果仍然存在');
     }
 
     const plannedTask = sourceRunId
@@ -625,7 +625,7 @@ function createInitialSteps(now: string): AutomationStepSummary[] {
     code: step.code,
     status: index === 0 ? 'running' : 'pending',
     title: step.title,
-    message: index === 0 ? '正在读取品牌资料、测试问题池和历史任务。' : '等待上一环节完成。',
+    message: index === 0 ? '正在读取品牌资料、监测问题池和历史任务。' : '等待上一环节完成。',
     startedAt: index === 0 ? now : undefined,
     relatedConfirmationIds: [],
     relatedEntityIds: []
@@ -695,7 +695,7 @@ function updateExecutionStep(
         return {
           ...step,
           status: 'running',
-          message: '测试回答已写入，等待汇总运营判断。',
+          message: '监测回答已写入，等待汇总运营判断。',
           startedAt: step.startedAt ?? now,
           relatedEntityIds: Array.from(new Set([...step.relatedEntityIds, ...runIds]))
         };
@@ -988,7 +988,7 @@ function updateRetestSuggestionStep(automationPackage: AutomationPackage, taskId
         return {
           ...step,
           status: 'running',
-          message: retestRecordId ? '已创建发布后复测任务和复测计划。' : '已创建发布后复测任务，等待补充可复测的测试记录。',
+          message: retestRecordId ? '已创建发布后复测任务和复测计划。' : '已创建发布后复测任务，等待补充可复测的监测记录。',
           startedAt: step.startedAt ?? now,
           relatedEntityIds: Array.from(new Set([...step.relatedEntityIds, ...relatedIds]))
         };
@@ -1081,7 +1081,7 @@ function buildAutomationDraft(workspace: ContentGenerationWorkspace): GeneratedC
   const targetPlatform = task?.targetPlatform ?? 'content_platform';
   const contentType = task?.contentType ?? 'content_draft';
   const keywords = task?.targetKeywords?.length ? task.targetKeywords : ['品牌名称', '核心卖点', '可验证依据'];
-  const referenceSources = task?.referenceSources?.length ? task.referenceSources : ['品牌资料库', '本轮 AI 测试分析结果'];
+  const referenceSources = task?.referenceSources?.length ? task.referenceSources : ['品牌资料库', '本轮 AI 回复监测分析结果'];
   const platformLabel = getPublishingPlatformLabel(targetPlatform);
   const contentTypeLabel = getAutomationContentTypeLabel(contentType);
 

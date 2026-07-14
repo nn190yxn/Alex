@@ -2,15 +2,15 @@ import type { PlatformMode } from '@geo-platform/shared-types';
 
 export function getModeValidationMessage(mode: PlatformMode): string {
   if (mode === 'manual') {
-    return '当前平台已设置为手动测试，请复制测试问题到平台后录入回答。';
+    return '当前平台已设置为手动录入，请复制监测问题到平台后录入回答。';
   }
 
   if (mode === 'semi_auto') {
-    return '当前平台已设置为浏览器辅助测试，请通过打开浏览器完成登录和测试。';
+    return '当前平台已设置为浏览器辅助监测，请通过打开浏览器完成登录和监测。';
   }
 
   if (mode === 'mock') {
-    return '演示测试可用。';
+    return '示例回答可用。';
   }
 
   return '平台连接检查通过';

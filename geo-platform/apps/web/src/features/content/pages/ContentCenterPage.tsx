@@ -87,7 +87,7 @@ export function ContentCenterPage() {
         extra={<Space><Button onClick={() => openAssetModal()}>新建资产</Button><Button type="primary" onClick={() => generateStrategiesMutation.mutate()}>生成策略</Button></Space>}
       >
         <Typography.Paragraph>
-          管理官网、媒体、社媒、百科和案例等内容资产，并根据 AI 测试结果生成内容缺口、信息修正、关键词增强、权威引用和竞品回应策略。
+          管理官网、媒体、社媒、百科和案例等内容资产，并根据 AI 回复监测结果生成内容缺口、信息修正、关键词增强、权威引用和竞品回应策略。
         </Typography.Paragraph>
         <Space size={24} wrap>
           <Statistic title="关键词覆盖率" value={dashboard?.coverage.keywordCoverageRate ?? 0} suffix="%" />

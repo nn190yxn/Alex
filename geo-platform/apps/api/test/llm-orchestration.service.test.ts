@@ -99,6 +99,33 @@ describe('LLMOrchestrationService', () => {
     );
   });
 
+  it('uses StepFun as the default internal test model when multiple API configs are available', async () => {
+    const repository = new PermissionsRepository();
+    const stepfun = repository.listPlatformConfigs('user_demo', 'brand_demo')?.find((item) => item.platformCode === 'stepfun');
+    if (!stepfun) {
+      throw new Error('Missing StepFun default config');
+    }
+    repository.updatePlatformConfig('user_demo', 'brand_demo', stepfun.id, { credentialRef: 'STEPFUN_TEST_KEY' });
+    const custom = createRuntimePlatform(repository);
+    const stepfunAdapter = createAdapter('stepfun', {
+      rawText: '{"themes":[],"candidates":[],"missingProfileFields":[],"generationNotes":[]}',
+      modelName: 'step-3.7-flash',
+      respondedAt: '2026-07-13T00:00:00.000Z'
+    });
+    const customAdapter = createAdapter(custom.platformCode, {
+      rawText: '{"themes":[],"candidates":[],"missingProfileFields":[],"generationNotes":[]}',
+      modelName: 'llm-test-model',
+      respondedAt: '2026-07-13T00:00:00.000Z'
+    });
+    const service = createService(repository, [customAdapter, stepfunAdapter]);
+
+    const result = await service.runTask('user_demo', 'brand_demo', 'question_generation', { input: { topic: '儿童运动' } });
+
+    expect(result.status).toBe('succeeded');
+    expect(stepfunAdapter.runMessages).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ platformCode: 'stepfun', modelName: 'step-3.7-flash' }));
+    expect(customAdapter.runMessages).not.toHaveBeenCalled();
+  });
+
   it('returns validation failures for invalid JSON output', async () => {
     const repository = new PermissionsRepository();
     const config = createRuntimePlatform(repository);

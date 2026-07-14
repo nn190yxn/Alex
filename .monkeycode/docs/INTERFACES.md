@@ -33,7 +33,13 @@
 
 前端第一版同时支持品牌化路由别名。访问 `/brands/:brandId/dashboard`、`/brands/:brandId/canvas`、`/brands/:brandId/monitoring`、`/brands/:brandId/reports` 等路径时，前端会先把 `brandId` 写入当前品牌上下文，再跳转到第一版对应页面；主要页面通过 lazy route modules 加载，路由契约保持不变。
 
-当前阶段使用本地模拟用户，调试请求可通过 `x-user-id` 指定用户。未传时后端默认使用 `user_demo`。
+`/monitoring` 当前产品口径为“AI 回复监测”。该路由继续复用既有监测运行、监测计划和手动答案 API，页面文案强调真实 AI 原始回复获取、手动录入可信过渡路径和回复解读。
+
+`/growth-optimization` 当前会读取 `GET /api/v1/brands/:brandId/sprints/current`、`GET /api/v1/brands/:brandId/sprints/:sprintId/alignment` 和 `GET /api/v1/brands/:brandId/sprints/:sprintId/content-gaps/tasks`，用于展示真实 AI 回复、品牌标准答案和内容资产三类对象的差异。该视图为只读诊断层，不创建新的业务对象。
+
+`/tasks` 当前会读取 `GET /api/v1/brands/:brandId/sprints/current` 和 `GET /api/v1/brands/:brandId/sprints/:sprintId/retest-trend`，用于展示 Sprint 复测趋势。趋势看板展示计划复测任务、已完成复测、改善任务、完成率，以及提及率、推荐率、首位推荐率、引用命中率、表达准确率、风险表达数和问题覆盖率的基线、当前值和变化。
+
+当前阶段使用本地示例用户，调试请求可通过 `x-user-id` 指定用户。未传时后端默认使用 `user_demo`。
 
 请求头：
 
@@ -83,7 +89,7 @@ GET /api/v1/health
 }
 ```
 
-`status` 为 `ok` 或 `degraded`。`dependencies.mapProvider` 返回 `configured`、`fallback`、`rate_limited` 或 `disabled`。健康检查只返回缺失配置项名称和依赖状态，不返回密钥值。
+`status` 为 `ok` 或 `degraded`。`dependencies.aiPlatforms` 在 `STEPFUN_API_KEY` 存在或 `GEO_AI_PLATFORM_CONFIGURED=true` 时返回 `configured`。`dependencies.mapProvider` 返回 `configured`、`fallback`、`rate_limited` 或 `disabled`。健康检查只返回缺失配置项名称和依赖状态，不返回密钥值。
 
 ### 当前品牌摘要
 
@@ -246,9 +252,9 @@ POST /api/v1/brands/:brandId/knowledge-sources/:sourceId/confirm
 
 品牌资料上传入口使用 multipart 表单字段 `file`，第一版接受 Markdown、Word 和 PDF，上传成功后创建 `KnowledgeSource`，状态为 `processing`。前端品牌工作区提供“上传品牌资料”和“手动填写品牌信息”两个入口，上传后自动调用解析接口，并展示解析中、待确认、解析失败、失败原因和手动填写兜底状态。解析入口返回 `BrandImportDraft`，Markdown 可提取品牌名称、行业、城市、课程或产品、目标客户、核心卖点、权威背书、FAQ、竞品和禁用表达，并为字段标记置信度；前端确认区会展示高置信字段、待确认字段、来源片段、资料完整度进度和缺失项影响说明，用户可编辑字段后确认保存。Word 和 PDF 当前先保存文件并返回可理解的失败草稿，等待后续文档转文本能力接入。确认入口接收用户确认后的 `fields`，保存到 `Brand` 和 `BrandProfile`，并将来源状态更新为 `completed`。
 
-品牌工作区同时展示“完成首轮测试”步骤条，固定流程为上传资料、选择测试问题、连接 AI 平台、开始测试、查看建议、执行优化、复测增长。步骤条根据品牌档案、测试问题、监测记录和内容资产数量推导当前步骤；点击步骤按钮会展示对应提示卡，并引导到品牌工作区、AI 监测、内容生成或任务复测页面。
+品牌工作区同时展示“完成首轮监测”步骤条，固定流程为上传资料、选择监测问题、连接 AI 平台、开始监测、查看建议、执行优化、复测增长。步骤条根据品牌档案、监测问题、监测记录和内容资产数量推导当前步骤；点击步骤按钮会展示对应提示卡，并引导到品牌工作区、AI 监测、内容生成或任务复测页面。
 
-### 测试主题
+### 监测主题
 
 ```http
 GET /api/v1/brands/:brandId/test-themes
@@ -256,13 +262,13 @@ POST /api/v1/brands/:brandId/test-themes/generate
 PATCH /api/v1/brands/:brandId/test-themes/:themeId
 ```
 
-测试主题用于把品牌档案转成品牌方可理解的测试方向。生成入口会读取 `Brand` 与 `BrandProfile`，生成品牌词、品类词、地域词、人群年龄段、用户痛点、课程或产品、竞品对比和购买决策主题，并为每个主题返回业务解释、推荐优先级、预计测试价值、启用状态和来源资料字段。重复生成时按 `type + name` 跳过已存在主题。更新入口支持调整主题启用状态、优先级和展示文案。
+监测主题用于把品牌档案转成品牌方可理解的监测方向。生成入口会读取 `Brand` 与 `BrandProfile`，生成品牌词、品类词、地域词、人群年龄段、用户痛点、课程或产品、竞品对比和购买决策主题，并为每个主题返回业务解释、推荐优先级、预计监测价值、启用状态和来源资料字段。重复生成时按 `type + name` 跳过已存在主题。更新入口支持调整主题启用状态、优先级和展示文案。
 
-前端 AI 监测页通过测试主题表格展示主题名称、类型、业务解释、推荐优先级和预计测试价值，并提供一键生成测试主题入口。
+前端 AI 监测页通过监测主题表格展示主题名称、类型、业务解释、推荐优先级和预计监测价值，并提供一键生成监测主题入口。
 
 追光小牛内测品牌会追加固定首轮样例主题：贵阳儿童运动、3 到 5 岁儿童体能、少儿跑酷、快乐体操、感统发展、专注力提升、增高体能和中考体测。
 
-### 测试问法候选
+### 监测问法候选
 
 ```http
 GET /api/v1/brands/:brandId/test-question-candidates?themeId=theme_demo&selected=true&limit=20&offset=0
@@ -271,9 +277,9 @@ PATCH /api/v1/brands/:brandId/test-question-candidates/:candidateId
 POST /api/v1/brands/:brandId/test-question-candidates/selection
 ```
 
-测试问法候选根据已启用测试主题、品牌基础信息和品牌档案生成。生成覆盖品牌直问、品类推荐、地域推荐、人群年龄段需求、用户痛点、课程或产品、竞品对比和购买决策场景。每个候选问题会返回 `purposes`，用于标注是否测试品牌出现、是否排第一、卖点是否准确、是否出现竞品和是否存在风险表达；候选可返回 `promptId`，用于保存测试计划后关联可执行 Prompt；默认目标平台为豆包、Kimi、DeepSeek 和通义千问。重复生成时按 `themeId + question` 跳过已存在问法。列表支持按 `themeId`、`selected`、`limit` 和 `offset` 筛选，并按高、中、低优先级返回。编辑入口支持修改问题文本、测试目的、目标平台、优先级、预计价值和选择状态。批量选择入口接收 `candidateIds`、`selected` 和可选 `themeId`，用于按主题批量勾选或取消勾选候选问法。
+监测问法候选根据已启用监测主题、品牌基础信息和品牌档案生成。生成覆盖品牌直问、品类推荐、地域推荐、人群年龄段需求、用户痛点、课程或产品、竞品对比和购买决策场景。每个候选问题会返回 `purposes`，用于标注是否检测品牌出现、是否排第一、卖点是否准确、是否出现竞品和是否存在风险表达；候选可返回 `promptId`，用于保存监测计划后关联可执行 Prompt；默认目标平台为豆包、Kimi、DeepSeek、通义千问和阶跃星辰。重复生成时按 `themeId + question` 跳过已存在问法。列表支持按 `themeId`、`selected`、`limit` 和 `offset` 筛选，并按高、中、低优先级返回。编辑入口支持修改问题文本、监测目的、目标平台、优先级、预计价值和选择状态。批量选择入口接收 `candidateIds`、`selected` 和可选 `themeId`，用于按主题批量勾选或取消勾选候选问法。
 
-前端默认展示 8 个高价值测试问题，并提供“查看更多问法”展开完整候选列表。候选列表展示测试问题、所属主题、测试目的、目标平台和预计测试价值；支持单题勾选、按主题全选或取消、编辑问题文本、编辑测试目的、编辑目标平台、编辑优先级和预计价值。用户点击“保存为测试计划”时，前端会把已选候选问法提交到 `POST /api/v1/brands/:brandId/test-plans`，并展示目标平台、预计耗时、连接方式摘要和需要确认的事项。用户点击“开始首轮测试”时，前端会复用已保存计划或先创建计划，再调用 `POST /api/v1/brands/:brandId/test-plans/:planId/execute`。
+前端默认展示 8 个高价值监测问题，并提供“查看更多问法”展开完整候选列表。候选列表展示监测问题、所属主题、监测目的、目标平台和预计监测价值；支持单题勾选、按主题全选或取消、编辑问题文本、编辑监测目的、编辑目标平台、编辑优先级和预计价值。用户点击“保存为监测计划”时，前端会把已选候选问法提交到 `POST /api/v1/brands/:brandId/test-plans`，并展示目标平台、预计耗时、连接方式摘要和需要确认的事项。用户点击“开始首轮监测”时，前端会复用已保存计划或先创建计划，再调用 `POST /api/v1/brands/:brandId/test-plans/:planId/execute`。
 
 追光小牛默认 seed 预置三条已勾选高价值问法：“贵阳有哪些值得推荐的儿童运动成长机构？”、“贵阳哪里有适合 3-5 岁孩子的体能馆？”和“贵阳儿童增高体能课怎么选？哪些表达需要家长谨慎看待？”。这三条分别覆盖本地推荐、年龄段需求和风险表达，并关联 `prompt_demo_comparison`。
 
@@ -286,6 +292,167 @@ POST /api/v1/brands/:brandId/test-question-candidates/selection
   "selected": true
 }
 ```
+
+### AI 可见性运营 Sprint 共享契约
+
+共享类型已新增 AI 可见性运营 Sprint 契约，供 Sprint 工作台、API、仓储、问题雷达、标准答案对照、内容缺口任务和指标聚合复用。内存仓储和 Prisma 仓储已实现 Sprint 读写，HTTP API 已提供 Sprint 聚合读取、状态推进、问题雷达、标准答案对照、内容缺口任务生成和指标刷新入口。品牌工作区通过 `GET /api/v1/brands/:brandId/sprints/current` 读取当前 Sprint，并将 `currentStep`、`steps` 和 `metricSummary` 映射为阶段进度、下一步动作和指标摘要。
+
+Sprint 状态：
+
+- `draft`
+- `running`
+- `waiting_confirmation`
+- `completed`
+- `failed`
+- `stopped`
+
+Sprint 阶段：
+
+- `question_radar`
+- `ai_response_monitoring`
+- `standard_answer_alignment`
+- `gap_diagnosis`
+- `content_asset_generation`
+- `publishing_preparation`
+- `retest_and_trend`
+- `completed`
+
+核心结构：
+
+```ts
+type VisibilitySprint = {
+  sprintId: string;
+  brandId: BrandId;
+  title: string;
+  goal: string;
+  status: VisibilitySprintStatus;
+  currentStep: VisibilitySprintStepCode;
+  steps: VisibilitySprintStep[];
+  metricSummary: VisibilitySprintMetricSummary;
+  relatedQuestionIds: string[];
+  relatedTestPlanIds: string[];
+  relatedMonitoringRunIds: string[];
+  relatedStandardAnswerIds: string[];
+  relatedContentTaskIds: string[];
+  relatedPublishingRecordIds: string[];
+  relatedRetestTaskIds: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type QuestionRadarDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  totalQuestionCount: number;
+  inSprintQuestionCount: number;
+  dedupedInSprintQuestionCount: number;
+  duplicateInSprintQuestionCount: number;
+  items: QuestionRadarItem[];
+};
+
+type BrandStandardAnswer = {
+  answerId: string;
+  brandId: BrandId;
+  questionId: string;
+  question: string;
+  answer: string;
+  keyPoints: string[];
+  evidence: BrandStandardAnswerEvidence[];
+  status: 'draft' | 'ready_for_review' | 'approved' | 'archived';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type StandardAnswerAlignmentDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  realAnswerCount: number;
+  approvedStandardAnswerCount: number;
+  summary: StandardAnswerAlignmentSummary;
+  items: StandardAnswerAlignmentItem[];
+  updatedAt: string;
+};
+
+type SprintContentGapTaskResult = {
+  brandId: BrandId;
+  sprintId: string;
+  createdTaskCount: number;
+  skippedQuestionCount: number;
+  tasks: SprintContentGapTask[];
+  sprint: VisibilitySprint;
+};
+```
+
+指标摘要只保存展示聚合值，包含问题覆盖率、提及率、推荐率、首位推荐率、Top 3 率、引用命中率、表达准确率、风险表达数、内容缺口数、竞品压制数和样本量。问题雷达返回问题意图、目标平台覆盖、业务价值、优先级、状态和 Sprint 关联状态，并按归一化问题文本统计同一 Sprint 内重复项。品牌标准答案独立保存问题、答案正文、关键点、证据和审核状态，用作真实回复对照基准和内容生成依据。标准答案对照看板按问题输出等待真实回答、等待标准答案、已对齐或需要处理四类状态，并计算要点覆盖、准确性、风险表达、引用缺口和竞品压制证据。内容缺口任务结果记录本次创建的内容策略、内容生成任务、来源问题、标准答案、真实回答运行和缺口类型，并把新任务 ID 合并回 Sprint 的 `relatedContentTaskIds`。Sprint 契约只保存关联 ID 和聚合状态，不保存平台密钥、cookies、storage state、浏览器 profile 路径、真实回复正文或标准答案正文。
+
+后端仓储端口位于 `当前工作区/geo-platform/apps/api/src/modules/permissions/permissions.repository.port.ts`，已新增以下 Sprint 方法签名：
+
+- `listVisibilitySprints(userId, brandId)`
+- `getVisibilitySprint(userId, brandId, sprintId)`
+- `getCurrentVisibilitySprint(userId, brandId)`
+- `createVisibilitySprint(userId, brandId, input)`
+- `updateVisibilitySprintStep(userId, brandId, sprintId, input)`
+- `updateVisibilitySprintMetrics(userId, brandId, sprintId, input)`
+- `updateVisibilitySprintRelations(userId, brandId, sprintId, input)`
+- `listBrandStandardAnswers(userId, brandId, questionId?)`
+- `getBrandStandardAnswer(userId, brandId, answerId)`
+- `createBrandStandardAnswer(userId, brandId, input)`
+- `updateBrandStandardAnswer(userId, brandId, answerId, input)`
+
+端口输入类型包含 `VisibilitySprintCreateInput`、`VisibilitySprintStepUpdateInput`、`VisibilitySprintMetricUpdateInput`、`VisibilitySprintRelationsUpdateInput`、`BrandStandardAnswerInput` 和 `BrandStandardAnswerUpdateInput`。所有方法签名都携带 `userId` 与 `brandId`，用于后续实现层复用现有品牌访问校验。
+
+内存仓储已实现上述方法，并预置 `visibility_sprint_demo_supercalf_first_round` 作为追光小牛演示 Sprint。默认 Sprint 当前阶段为 `content_asset_generation`，关联 `test_plan_demo_supercalf_first_round`、`run_demo_weekly_mock`、`standard_answer_demo_local_recommendation`、`generation_demo_gap`、`publishing_record_demo_gap` 和 `task_demo_growth_retest`，用于后续 Sprint API 和前端工作台读取演示数据。Prisma 仓储已通过 `visibility_sprints` 表实现同一组方法，字段包括 `steps`、`metric_summary`、`related_question_ids`、`related_test_plan_ids`、`related_monitoring_run_ids`、`related_standard_answer_ids`、`related_content_task_ids`、`related_publishing_record_ids` 和 `related_retest_task_ids`，这些 JSON 字段只保存聚合状态或关联 ID。标准答案通过 `brand_standard_answers` 表持久化，字段包括 `question_id`、`question`、`answer`、`key_points`、`evidence`、`status`、`reviewed_by` 和 `reviewed_at`。
+
+当前 Sprint HTTP API：
+
+```http
+GET /api/v1/brands/:brandId/sprints
+GET /api/v1/brands/:brandId/sprints/current
+GET /api/v1/brands/:brandId/sprints/:sprintId
+GET /api/v1/brands/:brandId/sprints/:sprintId/question-radar
+GET /api/v1/brands/:brandId/sprints/:sprintId/standard-answers
+GET /api/v1/brands/:brandId/sprints/:sprintId/alignment
+GET /api/v1/brands/:brandId/sprints/:sprintId/content-gaps/tasks
+GET /api/v1/brands/:brandId/sprints/:sprintId/publishing-preparation
+GET /api/v1/brands/:brandId/sprints/:sprintId/retest-trend
+POST /api/v1/brands/:brandId/sprints
+POST /api/v1/brands/:brandId/sprints/:sprintId/start
+POST /api/v1/brands/:brandId/sprints/:sprintId/stop
+POST /api/v1/brands/:brandId/sprints/:sprintId/standard-answers/generate
+POST /api/v1/brands/:brandId/sprints/:sprintId/standard-answers/:answerId/approve
+POST /api/v1/brands/:brandId/sprints/:sprintId/content-gaps/generate
+POST /api/v1/brands/:brandId/sprints/:sprintId/publishing-preparation/records
+POST /api/v1/brands/:brandId/sprints/:sprintId/retest-plan
+POST /api/v1/brands/:brandId/sprints/:sprintId/metrics/refresh
+POST /api/v1/brands/:brandId/sprints/:sprintId/advance
+```
+
+创建 Sprint 请求：
+
+```json
+{
+  "title": "首轮 AI 可见性运营",
+  "goal": "打通问题到复测闭环",
+  "status": "draft",
+  "currentStep": "question_radar"
+}
+```
+
+接口均返回统一 `ApiResponse<T>`。列表返回 `VisibilitySprint[]`，当前 Sprint、详情、创建、启动、停止、指标刷新和阶段推进返回 `VisibilitySprint`，问题雷达返回 `QuestionRadarDashboard`，对照分析返回 `StandardAnswerAlignmentDashboard`，内容缺口生成返回 `SprintContentGapTaskResult`，内容缺口任务看板返回 `SprintContentTaskDashboard`，发布准备看板返回 `SprintPublishingPreparationDashboard`，创建发布准备记录返回 `SprintPublishingPreparationResult`，复测计划创建返回 `SprintRetestPlanResult`，复测趋势看板返回 `SprintRetestTrendDashboard`。启动接口将 Sprint 聚合状态改为 `running`，停止接口将 Sprint 聚合状态改为 `stopped`；问题雷达接口读取现有监测问题候选和监测主题，输出问题意图、平台覆盖、业务价值、状态和 Sprint 关联状态，同一 Sprint 内按归一化问题文本去重；对照分析接口只读取 Sprint 关联真实监测运行、解析结果和已审核标准答案，输出覆盖、准确性、风险表达、引用缺口、竞品压制、证据和建议动作；内容缺口生成接口读取对照分析中 `needs_attention` 的问题，为每个问题创建内容策略和内容生成任务，`referenceSources` 记录 Sprint、问题、标准答案、真实回答运行和证据摘要，并把新任务 ID 写入 Sprint；内容缺口任务看板读取 Sprint 关联内容任务和当前草稿版本，输出来源问题、缺口类型、证据摘要、建议动作、复测目标和草稿可审稿状态；发布准备接口读取 Sprint 关联内容任务、当前草稿版本和发布记录，输出草稿、待人工发布、已发布和失败状态，创建记录时只写入草稿或待人工发布状态，并把发布记录 ID 写回 Sprint；复测计划接口读取 Sprint 发布记录并创建任务中心复测任务，草稿和失败发布记录会跳过，创建后把任务 ID 写回 Sprint；复测趋势接口读取 Sprint 关联复测任务和 `RetestRecord`，输出基线指标、已完成复测数、改善数、前后指标和变化值；指标刷新接口只从 Sprint 关联的真实监测运行、原始回答和解析结果计算 `metricSummary`，不把品牌标准答案或内容草稿纳入监测样本。阶段推进接口根据已有关联对象判断下一阶段：缺少问题停在 `question_radar`，缺少真实回答停在 `ai_response_monitoring` 且状态为 `waiting_confirmation`，缺少标准答案停在 `standard_answer_alignment`，指标未刷新停在 `gap_diagnosis`，后续依次检查内容任务、发布记录和复测任务，全部具备后进入 `completed`。
+
+生成标准答案请求：
+
+```json
+{
+  "questionIds": ["candidate_demo_local_recommendation"]
+}
+```
+
+标准答案列表、生成和确认接口返回 `BrandStandardAnswer[]` 或 `BrandStandardAnswer`。生成接口会读取 Sprint 关联问题、品牌工作区和品牌档案，创建 `ready_for_review` 草稿并写回 Sprint 的 `relatedStandardAnswerIds`；确认接口将对应标准答案更新为 `approved`，记录 `reviewedBy` 和 `reviewedAt`，并保持标准答案与真实 AI 回复监测指标分离。
 
 ### 大模型任务共享契约
 
@@ -360,13 +527,13 @@ GET /api/v1/brands/:brandId/llm/tasks/:jobId
 
 ### AI 自动化运营员共享契约
 
-共享类型已新增 AI 自动化运营员契约，供自动化任务包、确认队列、自动化分析摘要和平台改写版本复用。后端自动化 API 已接入第一版任务包编排能力，当前负责创建任务包、读取上下文、维护测试问题池、精选本轮测试问题、生成确认事项、确认后创建测试计划、执行已确认测试计划、汇总回答分析、生成可发布内容、生成平台改写版本、生成发布建议、确认创建发布待办、安排发布后复测、回写复测结果，并记录关键操作审计。
+共享类型已新增 AI 自动化运营员契约，供自动化任务包、确认队列、自动化分析摘要和平台改写版本复用。后端自动化 API 已接入第一版任务包编排能力，当前负责创建任务包、读取上下文、维护监测问题池、精选本轮监测问题、生成确认事项、确认后创建监测计划、执行已确认监测计划、汇总回答分析、生成可发布内容、生成平台改写版本、生成发布建议、确认创建发布待办、安排发布后复测、回写复测结果，并记录关键操作审计。
 
 自动化数据层新增 `AutomationPackage`、`AutomationConfirmation`、`PlatformRewriteVersion`、`TestQuestionPoolItem` 和 `TestQuestionSourceRecord`。所有结构包含 `brandId`；平台改写保留 `contentVersionId`，问题池条目可保留 `candidateId`，来源记录保留 `sourceType`、`sourceId` 和摘要。公开 API 继续只返回自动化业务摘要、确认 payload 和脱敏平台状态，不返回真实 API Key、cookies、storage state、浏览器 profile 路径或平台敏感凭据。
 
-前端通过 `AutomationOperatorCard` 统一调用这些接口。品牌工作区、AI 测试页和增长优化页提供“让 AI 帮我跑一轮”入口；内容生成页展示平台改写、发布建议和复测建议进度。卡片会读取最近一次任务包，显示当前步骤、整体进度、品牌上下文、问题池数量、测试计划数量和待确认事项，并通过抽屉收口测试问题、分析判断、内容草稿、平台改写、发布建议和手动测试确认。发布建议确认抽屉会展示平台、标题和合规提示，方便品牌方确认后创建发布待办。
+前端通过 `AutomationOperatorCard` 统一调用这些接口。品牌工作区、AI 回复监测页和增长优化页提供“让 AI 帮我跑一轮”入口；内容生成页展示平台改写、发布建议和复测建议进度。卡片会读取最近一次任务包，显示当前步骤、整体进度、品牌上下文、问题池数量、监测计划数量和待确认事项，并通过抽屉收口监测问题、分析判断、内容草稿、平台改写、发布建议和手动录入确认。发布建议确认抽屉会展示平台、标题和合规提示，方便品牌方确认后创建发布待办。
 
-当前检查点验证确认：追光小牛可启动自动化任务包，问题池会持续同步测试问题候选并精选本轮问题，测试问题确认后可创建测试计划并执行，后续流程可生成运营判断、内容草稿、平台改写版本、发布建议、发布待办、复测建议，并在复测达标后完成自动化运营闭环。
+当前检查点验证确认：追光小牛可启动自动化任务包，问题池会持续同步监测问题候选并精选本轮问题，监测问题确认后可创建监测计划并执行，后续流程可生成运营判断、内容草稿、平台改写版本、发布建议、发布待办、复测建议，并在复测达标后完成自动化运营闭环。
 
 后端路由：
 
@@ -395,16 +562,16 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/steps/:stepCode/fail
 
 ```json
 {
-  "goal": "自动完成本轮 AI 测试、分析、内容生成和发布建议",
+  "goal": "自动完成本轮 AI 回复监测、分析、内容生成和发布建议",
   "source": "brand_workspace",
   "targetPlatforms": ["doubao", "kimi", "deepseek", "qianwen"],
   "targetPublishingPlatforms": ["zhihu", "baijiahao", "xiaohongshu", "wechat_official", "official_site_faq"]
 }
 ```
 
-任务包详情会在 `AutomationPackage` 基础上返回 `confirmations` 和 `context`。`context` 当前包含品牌名称、品牌档案完整度分、测试问题池数量和测试计划数量，用于让前端展示“AI 已读取哪些资料”。自动化服务公开入口会校验当前用户是否可访问 `brandId`。启动任务包会把 `context_collection` 标记为完成，调用测试主题和测试问题生成能力补齐问题池，再从最新候选问题中精选 6 个本轮问题，创建 `type: test_questions` 的 pending 确认事项，并将任务包切换为 `waiting_confirmation`。
+任务包详情会在 `AutomationPackage` 基础上返回 `confirmations` 和 `context`。`context` 当前包含品牌名称、品牌档案完整度分、监测问题池数量和监测计划数量，用于让前端展示“AI 已读取哪些资料”。自动化服务公开入口会校验当前用户是否可访问 `brandId`。启动任务包会把 `context_collection` 标记为完成，调用监测主题和监测问题生成能力补齐问题池，再从最新候选问题中精选 6 个本轮问题，创建 `type: test_questions` 的 pending 确认事项，并将任务包切换为 `waiting_confirmation`。
 
-本轮测试问题确认事项 payload：
+本轮监测问题确认事项 payload：
 
 ```json
 {
@@ -423,23 +590,23 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/steps/:stepCode/fail
     }
   ],
   "generationSource": "fallback",
-  "generationNotes": ["已使用基础模板生成测试问题"],
+  "generationNotes": ["已使用基础模板生成监测问题"],
   "missingProfileFields": [],
   "nextPoolTriggers": ["new_profile_source", "test_result_gap", "competitor_change", "published_content", "retest_result"]
 }
 ```
 
-用户对 `test_questions` 确认事项执行 `approve` 或 `edit` 后，确认队列会使用 `selectedCandidateIds` 创建 `TestPlan`，并把生成的测试计划 ID 写入任务包 `relatedTestPlanId`。任务包随后进入 `test_plan_execution` 步骤，供自动测试执行入口继续处理。
+用户对 `test_questions` 确认事项执行 `approve` 或 `edit` 后，确认队列会使用 `selectedCandidateIds` 创建 `TestPlan`，并把生成的监测计划 ID 写入任务包 `relatedTestPlanId`。任务包随后进入 `test_plan_execution` 步骤，供自动监测执行入口继续处理。
 
-执行已确认测试计划：
+执行已确认监测计划：
 
 ```http
 POST /api/v1/brands/:brandId/automation/packages/:packageId/test-plan/execute
 ```
 
-该入口要求任务包已存在 `relatedTestPlanId`，并复用现有测试计划执行编排。执行后会把 API 运行数量、浏览器队列数量、手动处理数量和配置处理数量写入 `test_plan_execution` 步骤摘要，关联测试计划 ID 和已生成的监测运行 ID。若没有阻塞项，任务包保持 `running` 并推进到 `answer_analysis`；若存在浏览器待确认、手动录入、平台配置或跳过项，会创建 `type: manual_test_required` 的 pending 确认事项，并保持在 `test_plan_execution`。
+该入口要求任务包已存在 `relatedTestPlanId`，并复用现有监测计划执行编排。执行后会把 API 运行数量、浏览器队列数量、手动处理数量和配置处理数量写入 `test_plan_execution` 步骤摘要，关联监测计划 ID 和已生成的监测运行 ID。若没有阻塞项，任务包保持 `running` 并推进到 `answer_analysis`；若存在浏览器待确认、手动录入、平台配置或跳过项，会创建 `type: manual_test_required` 的 pending 确认事项，并保持在 `test_plan_execution`。
 
-手动测试确认事项 payload：
+手动录入确认事项 payload：
 
 ```json
 {
@@ -467,7 +634,7 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/test-plan/execute
 POST /api/v1/brands/:brandId/automation/packages/:packageId/answers/analyze
 ```
 
-该入口要求任务包已关联测试计划，且测试计划已生成监测运行。服务会读取测试计划的 `monitoringRunIds`，复用现有 `AnalysisResult` 规则解析结果，缺失时调用 `parseAnalysisResult` 补齐，再汇总推荐率、第一推荐率、Top 3 率、平均准确分、平均引用分、竞品压制数量、引用缺口数量、风险确认数量和无法判断数量。分析完成后会创建 `GrowthOptimizationPlan`，并把计划 ID 写入任务包 `relatedGrowthPlanId`，作为后续内容生成上下文。
+该入口要求任务包已关联监测计划，且监测计划已生成监测运行。服务会读取监测计划的 `monitoringRunIds`，复用现有 `AnalysisResult` 规则解析结果，缺失时调用 `parseAnalysisResult` 补齐，再汇总推荐率、第一推荐率、Top 3 率、平均准确分、平均引用分、竞品压制数量、引用缺口数量、风险确认数量和无法判断数量。分析完成后会创建 `GrowthOptimizationPlan`，并把计划 ID 写入任务包 `relatedGrowthPlanId`，作为后续内容生成上下文。
 
 若没有需要确认的分析项，任务包会完成 `answer_analysis` 并进入 `content_generation`。若存在风险表达、排名无法判断、情绪无法判断或引用缺口，服务会创建 `type: analysis_review` 的 pending 确认事项，用户确认后任务包推进到 `content_generation`。
 
@@ -622,7 +789,7 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/publishing-suggestio
 POST /api/v1/brands/:brandId/automation/packages/:packageId/retest-suggestions/generate
 ```
 
-该入口要求任务包已关联发布记录。服务会优先读取测试计划的监测运行，缺省时读取增长优化计划的 `sourceRunIds`，复用任务复测仓储创建“发布后复测 AI 推荐表现”优化任务，并基于增长优化计划 `retestAt` 创建复测记录。复测建议会写入 `retest_suggestion` 步骤摘要。
+该入口要求任务包已关联发布记录。服务会优先读取监测计划的监测运行，缺省时读取增长优化计划的 `sourceRunIds`，复用任务复测仓储创建“发布后复测 AI 推荐表现”优化任务，并基于增长优化计划 `retestAt` 创建复测记录。复测建议会写入 `retest_suggestion` 步骤摘要。
 
 回写复测结果：
 
@@ -650,7 +817,7 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/retest-suggestions/:
   "title": "请确认内容草稿",
   "impact": "确认后会进入平台改写环节。",
   "recommendation": "建议重点检查品牌事实、风险表达和引用依据。",
-  "evidenceSummary": "系统已根据本轮测试分析结果生成草稿。",
+  "evidenceSummary": "系统已根据本轮监测分析结果生成草稿。",
   "payload": {},
   "stepCode": "content_confirmation"
 }
@@ -677,7 +844,7 @@ POST /api/v1/brands/:brandId/automation/packages/:packageId/retest-suggestions/:
 - `failed`
 - `stopped`
 
-自动化步骤 code 覆盖上下文收集、问题池更新、本轮问题筛选、测试问题确认、测试计划执行、回答分析、内容生成、平台改写、内容确认、发布建议、复测建议和完成状态。
+自动化步骤 code 覆盖上下文收集、问题池更新、本轮问题筛选、监测问题确认、监测计划执行、回答分析、内容生成、平台改写、内容确认、发布建议、复测建议和完成状态。
 
 任务包结构：
 
@@ -779,7 +946,7 @@ type PlatformRewriteVersion = {
 
 上述结构均携带 `brandId` 和可追溯关联 ID。确认事项文案字段用于承载更专业的判断说明，同时保持品牌方可理解的表达。
 
-### 测试主题和问题生成结果
+### 监测主题和问题生成结果
 
 `POST /api/v1/brands/:brandId/test-themes/generate` 和 `POST /api/v1/brands/:brandId/test-question-candidates/generate` 返回 `TestAssetGenerationResult<T>`：
 
@@ -792,7 +959,7 @@ type PlatformRewriteVersion = {
 }
 ```
 
-`items` 是已写入的 `TestTheme[]` 或 `TestQuestionCandidate[]`。`source` 为 `llm` 表示使用大模型生成，为 `fallback` 表示使用基础模板生成。`missingProfileFields` 会返回品牌资料缺失项，`generationNotes` 会返回生成说明，前端会在测试问题卡片中保留这些提示，方便内测用户补资料或理解基础模板 fallback。
+`items` 是已写入的 `TestTheme[]` 或 `TestQuestionCandidate[]`。`source` 为 `llm` 表示使用大模型生成，为 `fallback` 表示使用基础模板生成。`missingProfileFields` 会返回品牌资料缺失项，`generationNotes` 会返回生成说明，前端会在监测问题卡片中保留这些提示，方便内测用户补资料或理解基础模板 fallback。
 
 ### 回答解读解析
 
@@ -814,9 +981,9 @@ LLM 失败时使用基础模板生成草稿，避免任务中断。LLM 返回的
 
 ### 增长优化计划生成
 
-`POST /api/v1/brands/:brandId/growth-optimization/generate` 仍返回 `GrowthOptimizationPlan`。接口会优先调用 `optimization_planning` LLM 任务，输入包含品牌档案、测试分析结果、内容资产、发布记录和当前计划；LLM 成功时会写入优化计划、创建下一轮复测问题，并尝试创建内容生成任务。LLM 不可用或输出无效时回退到规则计划生成。
+`POST /api/v1/brands/:brandId/growth-optimization/generate` 仍返回 `GrowthOptimizationPlan`。接口会优先调用 `optimization_planning` LLM 任务，输入包含品牌档案、监测分析结果、内容资产、发布记录和当前计划；LLM 成功时会写入优化计划、创建下一轮复测问题，并尝试创建内容生成任务。LLM 不可用或输出无效时回退到规则计划生成。
 
-### 测试计划
+### 监测计划
 
 ```http
 GET /api/v1/brands/:brandId/test-plans
@@ -827,15 +994,15 @@ POST /api/v1/brands/:brandId/test-plans/:planId/duplicate
 POST /api/v1/brands/:brandId/test-plans/:planId/execute
 ```
 
-创建测试计划时，默认读取当前品牌已勾选的测试问法候选；也可以通过 `candidateIds` 指定候选问法，或通过 `questions` 直接传入自定义问题。系统会汇总目标平台、生成连接方式摘要、估算耗时，并返回需要用户确认或补充配置的事项。
+创建监测计划时，默认读取当前品牌已勾选的监测问法候选；也可以通过 `candidateIds` 指定候选问法，或通过 `questions` 直接传入自定义问题。系统会汇总目标平台、生成连接方式摘要、估算耗时，并返回需要用户确认或补充配置的事项。
 
-追光小牛默认 seed 内置 `test_plan_demo_supercalf_first_round`，名称为“追光小牛首轮 GEO 测试计划”，目标平台为豆包、Kimi、DeepSeek 和通义千问，执行方式为 `browser`，状态为 `needs_confirmation`，用于内测打开项目后直接查看首轮测试样例。
+追光小牛默认 seed 内置 `test_plan_demo_supercalf_first_round`，名称为“追光小牛首轮 GEO 监测计划”，目标平台为豆包、Kimi、DeepSeek、通义千问和阶跃星辰，状态为 `needs_confirmation`，用于内测打开项目后直接查看首轮监测样例；豆包、Kimi、DeepSeek 和通义千问走浏览器辅助或手动录入路径，阶跃星辰走 API 配置或手动录入路径。
 
 创建请求：
 
 ```json
 {
-  "name": "追光小牛首轮 GEO 测试计划",
+  "name": "追光小牛首轮 GEO 监测计划",
   "candidateIds": ["candidate_1", "candidate_2"],
   "platformCodes": ["doubao", "kimi", "deepseek", "qianwen"]
 }
@@ -843,15 +1010,15 @@ POST /api/v1/brands/:brandId/test-plans/:planId/execute
 
 创建响应的 `data` 为 `TestPlanCreationResult`，包含 `plan`、`questionCount`、`platformCount`、`targetPlatforms`、`estimatedDurationMinutes`、`connectionSummary` 和 `confirmationItems`。当平台尚未配置平台密钥或需要浏览器登录确认时，计划会保留为 `needs_configuration` 或 `needs_confirmation` 状态，供后续执行编排继续处理。
 
-执行入口返回 `TestPlanExecutionResult`。系统会根据每个平台的连接摘要分流：`ready + api` 且问题关联 `promptId` 时创建监测运行并写入 `apiRuns`；浏览器可用或半自动平台会调用 browser connector，成功提取回答后创建监测运行、写入原始回答、触发自动分析，并在 `browserSteps` 返回 `queued` 状态和 `runId`；浏览器读取失败、缺少 `promptId` 或平台要求确认时写入 `needs_confirmation`；手动平台写入 `manualSteps`；未配置平台写入 `configurationItems`。当所有目标平台都缺少可用连接方式时，计划状态为 `needs_configuration`，前端可直接展示连接引导。前端执行后按 API 自动测试、浏览器辅助、手动录入、待配置和跳过数量展示摘要；存在确认事项时展示“需要你确认”的下一步提示。
+执行入口返回 `TestPlanExecutionResult`。系统会根据每个平台的连接摘要分流：`ready + api` 且问题关联 `promptId` 时创建监测运行并写入 `apiRuns`；浏览器可用或半自动平台会调用 browser connector，成功提取回答后创建监测运行、写入原始回答、触发自动分析，并在 `browserSteps` 返回 `queued` 状态和 `runId`；浏览器读取失败、缺少 `promptId` 或平台要求确认时写入 `needs_confirmation`；手动平台写入 `manualSteps`；未配置平台写入 `configurationItems`。当所有目标平台都缺少可用连接方式时，计划状态为 `needs_configuration`，前端可直接展示连接引导。前端执行后按 API 自动监测、浏览器辅助监测、手动录入、待配置和跳过数量展示摘要；存在确认事项时展示“需要你确认”的下一步提示。
 
-API 平台执行成功后会保存平台、模型、测试问题、原始回答、调用审计和自动分析结果；执行失败时会记录错误码、失败原因、重试状态和人工录入兜底提示。API 平台缺少 endpoint、模型或平台密钥时会进入连接 AI 平台引导。
+API 平台执行成功后会保存平台、模型、监测问题、原始回答、调用审计和自动分析结果；执行失败时会记录错误码、失败原因、重试状态和人工录入兜底提示。API 平台缺少 endpoint、模型或平台密钥时会进入连接 AI 平台引导。
 
-手动测试录入入口为 `POST /api/v1/brands/:brandId/test-plans/:planId/manual-answers`。请求体支持单条 `ManualTestAnswerInput` 或 `{ "answers": ManualTestAnswerInput[] }`，服务端按路径 `planId`、测试问题文本和 `platformCode` 匹配测试计划问题。匹配成功后创建或复用监测运行，写入原始回答、引用、模型名称并触发自动分析；回答为空、问题平台无法匹配、测试问题缺少 `promptId` 或监测运行创建失败时返回 `failed` 项。前端手动测试录入界面会展示测试计划中的问题和目标平台，提供复制问题、单条粘贴和批量粘贴。批量粘贴按空行分隔，每条使用 `平台：doubao`、`问题：原测试问题`、`回答：AI 原文` 和可选 `模型：model-name` 格式解析；提交前展示已解析数量和缺少回答数量，提交后展示匹配成功、匹配失败和失败原因。
+手动录入入口为 `POST /api/v1/brands/:brandId/test-plans/:planId/manual-answers`。请求体支持单条 `ManualTestAnswerInput` 或 `{ "answers": ManualTestAnswerInput[] }`，服务端按路径 `planId`、监测问题文本和 `platformCode` 匹配监测计划问题。匹配成功后创建或复用监测运行，写入原始回答、引用、模型名称并触发自动分析；回答为空、问题平台无法匹配、监测问题缺少 `promptId` 或监测运行创建失败时返回 `failed` 项。前端手动录入界面会展示监测计划中的问题和目标平台，提供复制问题、单条粘贴和批量粘贴。批量粘贴按空行分隔，每条使用 `平台：豆包`、`问题：原监测问题`、`回答：AI 原文` 和可选 `模型：model-name` 格式解析；提交前展示已解析数量和缺少回答数量，提交后展示匹配成功、匹配失败和失败原因。
 
-模板列表会根据品牌行业、业务范围和城市推荐 `TestPlanTemplate`。当前内置儿童运动本地增长模板和通用品牌首轮测试模板；行业模板未命中时，通用模板会被标记为 `recommended: true`。`from-template` 会根据模板自动生成测试问题、目标平台和分析重点并保存为测试计划。`duplicate` 支持复制已有计划，传入 `retest: true` 时用于创建同题同平台复测计划。
+模板列表会根据品牌行业、业务范围和城市推荐 `TestPlanTemplate`。当前内置儿童运动本地增长模板和通用品牌首轮监测模板；行业模板未命中时，通用模板会被标记为 `recommended: true`。`from-template` 会根据模板自动生成监测问题、目标平台和分析重点并保存为监测计划。`duplicate` 支持复制已有计划，传入 `retest: true` 时用于创建同题同平台复测计划。
 
-### 测试主题
+### 监测主题
 
 ```http
 GET /api/v1/brands/:brandId/optimization-units
@@ -872,7 +1039,7 @@ PATCH /api/v1/brands/:brandId/optimization-units/:unitId
 }
 ```
 
-测试主题底层接口沿用 `optimization-units`。当前 `type` 支持 `brand`、`category`、`scenario`、`location`、`competitor`。当前 `priority` 支持 `high`、`medium`、`low`。响应包含 `relatedCounts`，用于后续接入测试场景、测试问题、内容策略、测试记录和优化任务。
+监测主题底层接口沿用 `optimization-units`。当前 `type` 支持 `brand`、`category`、`scenario`、`location`、`competitor`。当前 `priority` 支持 `high`、`medium`、`low`。响应包含 `relatedCounts`，用于后续接入监测场景、监测问题、内容策略、监测记录和优化任务。
 
 ### GEO 画布
 
@@ -880,7 +1047,7 @@ PATCH /api/v1/brands/:brandId/optimization-units/:unitId
 GET /api/v1/brands/:brandId/canvas
 ```
 
-响应返回 `GeoCanvasWorkspace`，包含测试主题节点、测试场景节点、数据表现节点、内容策略节点、节点连线、GEO 指标看板、内容策略列表和优化任务列表。接口字段仍使用 `optimizationUnits` 与 `userIntents` 保持数据模型稳定。
+响应返回 `GeoCanvasWorkspace`，包含监测主题节点、用户场景节点、数据表现节点、内容策略节点、节点连线、GEO 指标看板、内容策略列表和优化任务列表。接口字段仍使用 `optimizationUnits` 与 `userIntents` 保持数据模型稳定。
 
 ```http
 POST /api/v1/brands/:brandId/canvas/content-strategies
@@ -931,7 +1098,7 @@ GET /api/v1/brands/:brandId/content/strategies
 POST /api/v1/brands/:brandId/content/strategies/generate
 ```
 
-内容中心响应返回 `ContentCenterDashboard`，包含内容资产、内容策略、策略建议和内容覆盖率。覆盖率统计基于品牌知识库、测试主题关键词和内容资产目标关键词，返回关键词覆盖率、未覆盖关键词、已发布资产数和可复用资产数。
+内容中心响应返回 `ContentCenterDashboard`，包含内容资产、内容策略、策略建议和内容覆盖率。覆盖率统计基于品牌知识库、监测主题关键词和内容资产目标关键词，返回关键词覆盖率、未覆盖关键词、已发布资产数和可复用资产数。
 
 创建内容资产：
 
@@ -974,7 +1141,7 @@ POST /api/v1/brands/:brandId/growth-optimization/plans/:planId/confirm
 ```json
 {
   "sourceRunIds": ["run_demo"],
-  "summary": "首轮测试推荐率不足，需要补齐品牌内容和复测计划。",
+  "summary": "首轮监测推荐率不足，需要补齐品牌内容和复测计划。",
   "priority": "high",
   "ownerId": "user_demo",
   "dueDate": "2026-07-20T00:00:00.000Z",
@@ -1168,7 +1335,7 @@ PATCH /api/v1/brands/:brandId/tasks/:taskId/retest/:recordId
 
 从监测问题创建的任务会保存 `sourceRunId`。任务进入待复测时会创建 `RetestRecord` 并绑定 `retestRunId`；复测实际分低于目标分时，任务状态变为 `reopened`，并生成下一轮 `correction` 内容策略。增长优化任务的复测记录还会返回 `beforeMetrics`、`afterMetrics`、`metricDelta`、`improved` 和 `nextSuggestion`，用于展示优化前后推荐率、品牌排名和表达准确性变化。
 
-### 测试场景与测试问题
+### 用户场景与监测问题
 
 ```http
 GET /api/v1/brands/:brandId/intents
@@ -1181,7 +1348,7 @@ POST /api/v1/brands/:brandId/prompts/batch-generate
 PATCH /api/v1/brands/:brandId/prompts/:promptId
 ```
 
-创建测试场景：
+创建用户场景：
 
 ```json
 {
@@ -1193,7 +1360,7 @@ PATCH /api/v1/brands/:brandId/prompts/:promptId
 }
 ```
 
-创建测试问题模板：
+创建监测问题模板：
 
 ```json
 {
@@ -1216,7 +1383,7 @@ PATCH /api/v1/brands/:brandId/prompts/:promptId
 }
 ```
 
-模板生成测试问题时会替换 `{brandName}`、`{brandAlias}`、`{city}`、`{industry}`、`{intent}` 和 `{unitName}`。若模板文本未包含品牌名称或别名，后端会自动补入品牌名称，保持测试问题可追溯。
+模板生成监测问题时会替换 `{brandName}`、`{brandAlias}`、`{city}`、`{industry}`、`{intent}` 和 `{unitName}`。若模板文本未包含品牌名称或别名，后端会自动补入品牌名称，保持监测问题可追溯。
 
 ### 连接 AI 平台
 
@@ -1245,15 +1412,15 @@ x-brand-id: brand_demo
 }
 ```
 
-当前 `mode` 支持 `api`、`manual`、`semi_auto` 和 `mock`。新建品牌会默认预置豆包、Kimi、DeepSeek 和通义千问，均保存业务展示名、浏览器辅助连接状态、OpenAI-compatible endpoint 候选、默认模型名称候选、浏览器测试路径和手动测试兜底路径；系统同时保留 `manual_input` 和 `mock_ai` 作为人工录入与开发测试辅助平台。平台配置公共响应使用 `platformCode` 和 `name` 字段标识平台，不返回 `platformKey`。响应返回 `hasCredential` 与 `credentialRefMasked`，用于表达平台密钥配置状态；真实 `credentialRef` 只进入服务端仓储，不在 API 响应中返回。平台配置公共响应还返回 `availableMethods`、`connectionStatus`、`connectionStatusLabel` 和 `nextAction`，用于归类展示“可自动测试”“可用浏览器测试”“可手动测试”“需要配置”以及下一步处理方式。前端平台连接页面优先展示第一版四个平台，并按上述四类分组；`needs_confirmation` 且包含浏览器能力的平台归入“可用浏览器测试”，用于提示用户授权或确认。编辑弹窗中只保留平台代码、平台名称、调用方式、平台密钥和启用状态为常规字段，接口地址、模型名称、调用限制统一收纳到“高级设置”。`api` 模式校验要求接口地址、模型名称和可用平台密钥三项齐备，失败时返回业务化原因并写入 `lastValidation`。豆包、Kimi、DeepSeek 和通义千问在 Adapter registry 中都有直接 OpenAI-compatible 映射，带 endpoint 的 `api` 平台会通过对应 `OpenAICompatibleAdapter` 构造 chat completions 请求，模型来自 `modelName`，平台密钥由内部 `credentialRef` 解析。
+当前 `mode` 支持 `api`、`manual`、`semi_auto` 和 `mock`。新建品牌会默认预置豆包、Kimi、DeepSeek、通义千问和阶跃星辰，均保存业务展示名、连接状态、OpenAI-compatible endpoint 候选、默认模型名称候选和手动录入兜底路径；系统同时保留 `manual_input` 和 `mock_ai` 作为人工录入与开发辅助平台。平台配置公共响应使用 `platformCode` 和 `name` 字段标识平台，不返回 `platformKey`。响应返回 `hasCredential` 与 `credentialRefMasked`，用于表达平台密钥配置状态；真实 `credentialRef` 只进入服务端仓储，不在 API 响应中返回。平台配置公共响应还返回 `availableMethods`、`connectionStatus`、`connectionStatusLabel` 和 `nextAction`，用于归类展示“可自动监测”“可用浏览器辅助监测”“可手动录入”“需要配置”以及下一步处理方式。前端平台连接页面优先展示第一版平台，并按上述四类分组；`needs_confirmation` 且包含浏览器能力的平台归入“可用浏览器辅助监测”，用于提示用户授权或确认。编辑弹窗中只保留平台代码、平台名称、调用方式、平台密钥和启用状态为常规字段，接口地址、模型名称、调用限制统一收纳到“高级设置”。`api` 模式校验要求接口地址、模型名称和可用平台密钥三项齐备，失败时返回业务化原因并写入 `lastValidation`。豆包、Kimi、DeepSeek、通义千问和阶跃星辰在 Adapter registry 中都有直接 OpenAI-compatible 映射，带 endpoint 的 `api` 平台会通过对应 `OpenAICompatibleAdapter` 构造 chat completions 请求，模型来自 `modelName`，平台密钥由内部 `credentialRef` 解析。LLM 自动任务未指定平台时优先选择已配置密钥的 `stepfun`，用于内测阶段统一使用阶跃星辰 `step-3.7-flash` 支撑问题生成、回答解读、内容生成和优化计划。
 
-平台状态归类规则：`api` 配置完整且最近校验未失败时返回 `ready`；默认四个平台的 `semi_auto` 模式返回 `browser_available`，`availableMethods` 为 `['api', 'browser', 'manual']`，`nextAction` 提示补齐平台密钥后可自动测试，也可先用浏览器或手动测试；`manual` 返回 `manual_available`；停用、缺接口地址、缺模型、缺平台密钥或最近校验失败返回 `needs_configuration`，`nextAction` 给出业务化处理建议。
+平台状态归类规则：`api` 配置完整且最近校验未失败时返回 `ready`；`semi_auto` 模式返回 `browser_available`，`availableMethods` 为 `['api', 'browser', 'manual']`，`nextAction` 提示补齐平台密钥后可自动监测，也可先用浏览器或手动录入；`manual` 返回 `manual_available`；停用、缺接口地址、缺模型、缺平台密钥或最近校验失败返回 `needs_configuration`，`nextAction` 给出业务化处理建议。
 
-浏览器辅助测试的后端抽象位于 `src/modules/platforms/browser-connectors/`。`BrowserConnector` 不是公开 HTTP API，它为后续豆包、Kimi、DeepSeek 和通义千问浏览器适配器提供统一契约：`openLoginPage`、`detectLogin`、`sendQuestion`、`waitForAnswer`、`extractAnswer` 和 `stopSession`。返回结果统一包含 `status`、`loginDetected`、`message`、可选 `issueType`、可选 `manualTestPath` 和可选回答字段；验证码、登录失效、页面结构变化、平台限制和风控提示统一返回 `needs_confirmation`，并给出 `/monitoring?platform=:platformCode&mode=manual` 手动测试路径。`FakeBrowserConnector` 用于契约测试，覆盖登录成功、回答成功和需要用户确认的异常分支。
+浏览器辅助监测的后端抽象位于 `src/modules/platforms/browser-connectors/`。`BrowserConnector` 为已注册浏览器适配器提供统一契约：`openLoginPage`、`detectLogin`、`sendQuestion`、`waitForAnswer`、`extractAnswer` 和 `stopSession`。返回结果统一包含 `status`、`loginDetected`、`message`、可选 `issueType`、可选 `manualTestPath` 和可选回答字段；验证码、登录失效、页面结构变化、平台限制和风控提示统一返回 `needs_confirmation`，并给出 `/monitoring?platform=:platformCode&mode=manual` 手动录入路径。`FakeBrowserConnector` 用于契约测试，覆盖登录成功、回答成功和需要用户确认的异常分支。
 
-浏览器会话状态通过平台接口暴露：`GET /api/v1/platforms/browser-sessions` 按品牌列出会话摘要；`POST /api/v1/platforms/browser-sessions` 接收 `platformCode` 和可选 `testPlanId`，创建 `opening` 状态会话并保存平台 code、授权品牌范围和可选测试计划 ID；`PATCH /api/v1/platforms/browser-sessions/:sessionId` 接收 `BrowserConnectionStatusInput`，更新登录检测结果、最近操作、最近异常类型、最近提示和最近可用时间。前端浏览器连接向导会打开豆包、Kimi、DeepSeek 或通义千问登录页，提示用户自行登录，登录完成后把会话更新为 `ready` 并写入 `lastAvailableAt`；遇到验证码、登录失效、平台限制或风控时，把会话更新为 `needs_confirmation` 并展示手动测试提示。公共 `BrowserConnectionSession` 只包含 `brandId`、`platformCode`、`status`、`loginDetected`、`authorizedScope`、`lastOperation`、`lastIssueType`、`lastMessage`、`lastAvailableAt`、`createdAt` 和 `updatedAt`，不返回登录信息、浏览器存储、本地配置目录或任何平台密钥。
+浏览器会话状态通过平台接口暴露：`GET /api/v1/platforms/browser-sessions` 按品牌列出会话摘要；`POST /api/v1/platforms/browser-sessions` 接收 `platformCode` 和可选 `testPlanId`，创建 `opening` 状态会话并保存平台 code、授权品牌范围和可选监测计划 ID；`PATCH /api/v1/platforms/browser-sessions/:sessionId` 接收 `BrowserConnectionStatusInput`，更新登录检测结果、最近操作、最近异常类型、最近提示和最近可用时间。前端浏览器连接向导会打开豆包、Kimi、DeepSeek 或通义千问登录页，提示用户自行登录，登录完成后把会话更新为 `ready` 并写入 `lastAvailableAt`；遇到验证码、登录失效、平台限制或风控时，把会话更新为 `needs_confirmation` 并展示手动录入提示。公共 `BrowserConnectionSession` 只包含 `brandId`、`platformCode`、`status`、`loginDetected`、`authorizedScope`、`lastOperation`、`lastIssueType`、`lastMessage`、`lastAvailableAt`、`createdAt` 和 `updatedAt`，不返回登录信息、浏览器存储、本地配置目录或任何平台密钥。
 
-第一版浏览器 connector 注册在 `BrowserConnectorRegistry`，默认包含 `doubao`、`kimi`、`deepseek` 和 `qianwen`。四个平台 connector 都实现登录页打开、登录检测、发送问题、等待回答、提取回答和停止会话契约；当前实现使用可测试的浏览器适配边界和平台元数据，返回平台登录页 URL、平台专属 `modelName` 和手动测试路径。遇到验证码、风控、登录失效、平台限制或页面结构变化时，connector 停止自动化流程并返回 `needs_confirmation`。测试计划执行流程会消费该 registry，成功回答进入 `MonitoringRun`、`AIResponse` 和 `AnalysisResult`，异常回答留在 `browserSteps` 与 `confirmationItems` 中等待用户确认。
+第一版浏览器 connector 注册在 `BrowserConnectorRegistry`，默认包含 `doubao`、`kimi`、`deepseek` 和 `qianwen`。这些 connector 都实现登录页打开、登录检测、发送问题、等待回答、提取回答和停止会话契约；当前实现使用可测试的浏览器适配边界和平台元数据，返回平台登录页 URL、平台专属 `modelName` 和手动录入路径。阶跃星辰当前走 OpenAI-compatible API 接入候选和手动录入路径。遇到验证码、风控、登录失效、平台限制或页面结构变化时，connector 停止自动化流程并返回 `needs_confirmation`。监测计划执行流程会消费该 registry，成功回答进入 `MonitoringRun`、`AIResponse` 和 `AnalysisResult`，异常回答留在 `browserSteps` 与 `confirmationItems` 中等待用户确认。
 
 第一版默认平台配置如下：
 
@@ -1263,6 +1430,7 @@ x-brand-id: brand_demo
 | `kimi` | Kimi | `semi_auto` | `api`、`browser`、`manual` | `https://api.moonshot.cn/v1/chat/completions` | `moonshot-v1-8k` |
 | `deepseek` | DeepSeek | `semi_auto` | `api`、`browser`、`manual` | `https://api.deepseek.com/chat/completions` | `deepseek-chat` |
 | `qianwen` | 通义千问 | `semi_auto` | `api`、`browser`、`manual` | `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` | `qwen-plus` |
+| `stepfun` | 阶跃星辰 | `api` | `api` | `https://api.stepfun.com/v1/chat/completions` | `step-3.7-flash` |
 
 校验响应由 Adapter registry 选择对应 Adapter 后生成，并保存到平台配置的 `lastValidation`：
 
@@ -1341,7 +1509,7 @@ POST /api/v1/brands/:brandId/monitoring-runs/:runId/analysis/parse
 }
 ```
 
-监测运行创建和详情响应直接返回扁平 `MonitoringRunDetail` 对象，不包裹在 `{ "run": ... }` 内。响应包含 `brandId`、`optimizationUnitId`、`intentId`、`promptId`、`platformCode`、`status`、`promptText`、可选 `response` 和可选 `analysis`。`mock` 平台会自动生成原始回答并将运行标记为 `completed`；`manual` 和 `semi_auto` 平台会标记为 `review_required` 等待人工录入；`openai` 平台通过真实 Adapter 执行请求并归一化为 `RunPromptResult`；缺失 Adapter、缺失平台密钥或 provider 错误会记录失败原因和 `retryStatus`。前端监测运行表格展示异步任务状态、重试状态，并在重试耗尽时提示人工录入兜底入口。测试结果解释列会对已解析结果展示“有没有出现”“排第几”“说得准不准”“竞品表现”“需要补什么内容”和“下一步”；对失败、待人工、已有回答待解析和等待结果状态展示原因、影响和下一步操作。解析结果记录品牌提及、推荐顺序、情绪倾向、信息准确性、引用来源、竞品提及、平台评价、推荐理由、排名原因、优势表达完整度、表达偏差和人工复核状态。解析规则会读取品牌名称、别名、品牌档案、竞品列表、推荐表达、禁用表达和引用来源；追光小牛样例会检查是否排第一、`ACE 成长体系`、`贵阳 5 家校区` 和 `世界冠军邓书弟` 等关键信号。业务化解释通过 `platformEvaluation` 输出“有没有出现”和整体判断，通过 `rankingReason` 输出“排第几”“竞品表现”“被压制原因候选项”和“内容补强建议”，通过 `expressionCompleteness` 输出“说得准不准”和“需要补什么内容”。当回答命中禁用表达、高风险承诺、排名无法判断或情绪无法判断时，`reviewRequired` 为 `true`，响应解析状态为 `review_required`；`expressionDeviation` 会输出“需要你确认”和建议改法，例如将“保证长高”改为“在科学运动和规律训练基础上，帮助孩子改善体态、促进身体发育”。前端点击“需要确认”会打开复核弹窗，顶部按风险表达、无法判断排名、无法判断情绪展示确认项和建议动作；用户可编辑“有没有出现”“排第几”“说得准不准”“表达偏差”“竞品提及”等分析字段，并关闭 `reviewRequired` 后保存确认。
+监测运行创建和详情响应直接返回扁平 `MonitoringRunDetail` 对象，不包裹在 `{ "run": ... }` 内。响应包含 `brandId`、`optimizationUnitId`、`intentId`、`promptId`、`platformCode`、`status`、`promptText`、可选 `response` 和可选 `analysis`。`mock` 平台会自动生成原始回答并将运行标记为 `completed`；`manual` 和 `semi_auto` 平台会标记为 `review_required` 等待人工录入；`openai` 平台通过真实 Adapter 执行请求并归一化为 `RunPromptResult`；缺失 Adapter、缺失平台密钥或 provider 错误会记录失败原因和 `retryStatus`。前端监测运行表格展示异步任务状态、重试状态，并在重试耗尽时提示人工录入兜底入口。监测结果解释列会对已解析结果展示“有没有出现”“排第几”“说得准不准”“竞品表现”“需要补什么内容”和“下一步”；对失败、待人工、已有回答待解析和等待结果状态展示原因、影响和下一步操作。解析结果记录品牌提及、推荐顺序、情绪倾向、信息准确性、引用来源、竞品提及、平台评价、推荐理由、排名原因、优势表达完整度、表达偏差和人工复核状态。解析规则会读取品牌名称、别名、品牌档案、竞品列表、推荐表达、禁用表达和引用来源；追光小牛样例会检查是否排第一、`ACE 成长体系`、`贵阳 5 家校区` 和 `世界冠军邓书弟` 等关键信号。业务化解释通过 `platformEvaluation` 输出“有没有出现”和整体判断，通过 `rankingReason` 输出“排第几”“竞品表现”“被压制原因候选项”和“内容补强建议”，通过 `expressionCompleteness` 输出“说得准不准”和“需要补什么内容”。当回答命中禁用表达、高风险承诺、排名无法判断或情绪无法判断时，`reviewRequired` 为 `true`，响应解析状态为 `review_required`；`expressionDeviation` 会输出“需要你确认”和建议改法，例如将“保证长高”改为“在科学运动和规律训练基础上，帮助孩子改善体态、促进身体发育”。前端点击“需要确认”会打开复核弹窗，顶部按风险表达、无法判断排名、无法判断情绪展示确认项和建议动作；用户可编辑“有没有出现”“排第几”“说得准不准”“表达偏差”“竞品提及”等分析字段，并关闭 `reviewRequired` 后保存确认。
 
 ### 竞品分析
 

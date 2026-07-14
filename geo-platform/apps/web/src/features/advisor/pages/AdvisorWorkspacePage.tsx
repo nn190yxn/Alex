@@ -170,7 +170,7 @@ export function AdvisorWorkspacePage() {
             columns={[
               { title: '服务类型', render: (_, record) => <Tag>{advisorTypeLabels[record.type]}</Tag> },
               { title: '标题', dataIndex: 'title' },
-              { title: '关联品牌', dataIndex: 'brandId' },
+              { title: '关联品牌', render: () => '当前品牌' },
               { title: '服务时间', dataIndex: 'createdAt' },
               { title: '跟进事项', render: (_, record) => record.followUpItems.length },
               { title: '关联报告', render: (_, record) => record.relatedReport?.title ?? '暂无' },
@@ -182,7 +182,7 @@ export function AdvisorWorkspacePage() {
         <Card title="服务详情" style={{ flex: 1, minWidth: 360 }}>
           {selectedRecord ? (
             <Space direction="vertical" size={12} className="page-stack">
-              <Space wrap><Tag>{advisorTypeLabels[selectedRecord.type]}</Tag><Typography.Text>{selectedRecord.createdBy}</Typography.Text></Space>
+              <Space wrap><Tag>{advisorTypeLabels[selectedRecord.type]}</Tag><Typography.Text>顾问记录</Typography.Text></Space>
               <Typography.Title level={5}>{selectedRecord.title}</Typography.Title>
               <Descriptions size="small" column={1} bordered items={getAdvisorRecordSections(selectedRecord.content).map((section) => ({ key: section.title, label: section.title, children: section.content.join('；') }))} />
               <Card size="small" title="关联报告">

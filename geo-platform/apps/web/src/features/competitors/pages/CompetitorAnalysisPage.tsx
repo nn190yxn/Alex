@@ -130,7 +130,7 @@ export function CompetitorAnalysisPage() {
         )}
       >
         <Typography.Paragraph>
-          维护竞品档案，聚合同测试问题、同平台、同场景下的推荐顺序、压制情况和高风险场景。
+          维护竞品档案，聚合同监测问题、同平台、同场景下的推荐顺序、压制情况和高风险场景。
         </Typography.Paragraph>
         <Space size={24} wrap>
           <Statistic title="竞品数量" value={dashboard?.competitors.length ?? 0} />
@@ -165,7 +165,7 @@ export function CompetitorAnalysisPage() {
           dataSource={dashboard?.highRiskIntents ?? []}
           pagination={false}
           columns={[
-            { title: '测试场景', dataIndex: 'text' },
+            { title: '用户场景', dataIndex: 'text' },
             { title: '被压制次数', dataIndex: 'suppressionCount' }
           ]}
         />
@@ -179,7 +179,7 @@ export function CompetitorAnalysisPage() {
           columns={[
             { title: '竞品', dataIndex: 'competitorName' },
             { title: '平台', dataIndex: 'platformCode' },
-            { title: '测试场景', dataIndex: 'intentText' },
+            { title: '用户场景', dataIndex: 'intentText' },
             { title: '品牌排名', dataIndex: 'brandRank', render: (value) => value ?? '未提及' },
             { title: '竞品排名', dataIndex: 'competitorRank', render: (value) => value ?? '未提及' },
             { title: '排名差', dataIndex: 'rankGap', render: (value) => value ?? '-' },

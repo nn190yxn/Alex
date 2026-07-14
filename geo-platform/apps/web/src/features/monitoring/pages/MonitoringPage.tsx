@@ -26,12 +26,12 @@ export function MonitoringPage() {
 
   return (
     <Space direction="vertical" size={16} className="page-stack">
-      <Card title="AI 测试">
+      <Card title="AI 回复监测">
         <Typography.Paragraph>
-          创建一次 AI 测试，记录 AI 平台回答、手动录入回答和测试结果解读。
+          用真实问题获取或录入 AI 平台原始回答，再解读品牌有没有出现、排第几、说得准不准和缺少哪些内容依据。
         </Typography.Paragraph>
       </Card>
-      <AutomationOperatorCard brandId={activeBrandId} source="monitoring" title="AI 自动测试与运营" compact />
+      <AutomationOperatorCard brandId={activeBrandId} source="monitoring" title="AI 回复监测与运营" compact />
       <GeoMetricDashboardCard brandId={activeBrandId} onStartTest={scrollToMonitoringRuns} />
       <TestQuestionCandidateCard brandId={activeBrandId} />
       <ManualTestEntryCard brandId={activeBrandId} />

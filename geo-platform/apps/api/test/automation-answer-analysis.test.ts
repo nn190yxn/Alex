@@ -98,7 +98,7 @@ describe('Automation answer analysis', () => {
 
 function executeMockPlan(harness: ReturnType<typeof createHarness>, question: string): { automationPackage: ReturnType<AutomationOrchestratorService['createPackage']>; runId: string } {
   const plan = harness.permissionsRepository.createTestPlan('user_demo', 'brand_demo', {
-    name: '自动分析测试计划',
+    name: '自动分析监测计划',
     questions: [{ promptId: 'prompt_demo_comparison', question, purposes: ['brand_mentioned', 'rank_first'], targetPlatforms: ['mock_ai'] }]
   });
   const automationPackage = harness.service.createPackage('user_demo', 'brand_demo');

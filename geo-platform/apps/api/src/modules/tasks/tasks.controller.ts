@@ -40,7 +40,7 @@ export class TasksController {
   @Post(':taskId/retest')
   async planRetest(@Req() request: Request, @Param('brandId') brandId: string, @Param('taskId') taskId: string, @Body() input: RetestPlanInput): Promise<ApiResponse<OptimizationTask>> {
     const task = await this.permissionsService.planOptimizationTaskRetest(request.context.userId, brandId, taskId, normalizeRetestPlanInput(input));
-    if (!task) throw new NotFoundException('再次测试计划无法创建或关联测试记录不存在');
+    if (!task) throw new NotFoundException('再次监测计划无法创建或关联监测记录不存在');
     return { success: true, data: task };
   }
 
@@ -53,7 +53,7 @@ export class TasksController {
     @Body() input: RetestResultInput
   ): Promise<ApiResponse<OptimizationTask>> {
     const task = await this.permissionsService.completeOptimizationTaskRetest(request.context.userId, brandId, taskId, recordId, normalizeRetestResultInput(input));
-    if (!task) throw new NotFoundException('再次测试记录不存在或当前用户无权访问');
+    if (!task) throw new NotFoundException('再次监测记录不存在或当前用户无权访问');
     return { success: true, data: task };
   }
 }

@@ -64,7 +64,7 @@ describe('BrowserConnector contract', () => {
     expect(createNeedsUserConfirmationResult({ platformCode: 'deepseek', issueType: 'captcha' })).toMatchObject({
       status: 'needs_confirmation',
       issueType: 'captcha',
-      message: '页面出现验证码，需要用户确认后继续或改用手动测试。',
+      message: '页面出现验证码，需要用户确认后继续或改用手动录入。',
       manualTestPath: '/monitoring?platform=deepseek&mode=manual'
     });
     expect(buildManualTestPath('通义千问')).toBe('/monitoring?platform=%E9%80%9A%E4%B9%89%E5%8D%83%E9%97%AE&mode=manual');

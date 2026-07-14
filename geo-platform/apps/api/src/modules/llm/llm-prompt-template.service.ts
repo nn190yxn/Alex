@@ -46,7 +46,9 @@ function buildDeveloperInstruction(taskType: LLMTaskType): string {
       ...sharedRules,
       '输出字段必须可映射到 AnalysisResultInput。',
       '必须包含 brandMentioned、brandRank、sentiment、accuracyScore、citationScore、platformEvaluation、recommendationReason、rankingReason、expressionCompleteness、expressionDeviation、competitorMentions、reviewRequired。',
+      'sentiment 只能返回 positive、neutral、negative 或 unknown。priority、purpose 等枚举字段必须使用接口定义的英文值。',
       'accuracyScore 和 citationScore 使用 0 到 100 分。无法判断排名时 brandRank 返回 null。',
+      'rankingReason、expressionCompleteness 和 expressionDeviation 必须返回非空中文说明，不能返回 null、数字或空字符串。',
       'competitorMentions 每项包含 name、rank、context。'
     ].join('\n');
   }

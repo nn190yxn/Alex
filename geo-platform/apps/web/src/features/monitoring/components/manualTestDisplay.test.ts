@@ -12,15 +12,16 @@ describe('manual test display helpers', () => {
   });
 
   it('parses batch pasted manual answers', () => {
-    expect(parseManualAnswerBatch('平台：doubao\n问题：贵阳儿童运动机构推荐哪家？\n回答：推荐追光小牛\n模型：doubao-browser\n\n平台：kimi\n问题：贵阳儿童运动机构推荐哪家？\n回答：可以看看追光小牛')).toEqual([
+    expect(parseManualAnswerBatch('平台：豆包\n问题：贵阳儿童运动机构推荐哪家？\n回答：推荐追光小牛\n模型：doubao-browser\n\n平台：Kimi\n问题：贵阳儿童运动机构推荐哪家？\n回答：可以看看追光小牛\n\n平台：阶跃星辰\n问题：贵阳儿童运动机构推荐哪家？\n回答：追光小牛适合贵阳儿童家庭')).toEqual([
       { platformCode: 'doubao', question: '贵阳儿童运动机构推荐哪家？', rawText: '推荐追光小牛', modelName: 'doubao-browser' },
-      { platformCode: 'kimi', question: '贵阳儿童运动机构推荐哪家？', rawText: '可以看看追光小牛', modelName: undefined }
+      { platformCode: 'kimi', question: '贵阳儿童运动机构推荐哪家？', rawText: '可以看看追光小牛', modelName: undefined },
+      { platformCode: 'stepfun', question: '贵阳儿童运动机构推荐哪家？', rawText: '追光小牛适合贵阳儿童家庭', modelName: undefined }
     ]);
   });
 
   it('counts rows without pasted answers', () => {
     const rows = getManualTestRows(createPlan());
-    const answers = parseManualAnswerBatch('平台：doubao\n问题：贵阳儿童运动机构推荐哪家？\n回答：推荐追光小牛');
+    const answers = parseManualAnswerBatch('平台：豆包\n问题：贵阳儿童运动机构推荐哪家？\n回答：推荐追光小牛');
 
     expect(getMissingAnswerCount(rows, answers)).toBe(2);
   });
@@ -41,7 +42,7 @@ function createPlan(): TestPlan {
   return {
     id: 'plan_demo',
     brandId: 'brand_demo',
-    name: '首轮 GEO 测试计划',
+    name: '首轮 GEO 监测计划',
     status: 'ready',
     questions: [
       {

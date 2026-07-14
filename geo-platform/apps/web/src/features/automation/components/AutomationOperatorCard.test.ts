@@ -39,14 +39,14 @@ describe('AutomationOperatorCard helpers', () => {
       stepSummaries: [{
         code: 'test_plan_execution',
         status: 'running',
-        title: '执行 AI 测试',
+        title: '监测 AI 回复',
         message: 'API 运行 0 个，浏览器队列 24 个，手动处理 0 个，配置处理 0 个，等待浏览器队列执行完成后再进入分析。',
         relatedConfirmationIds: [],
         relatedEntityIds: []
       }]
     }, 0)).toEqual({
       kind: 'continue',
-      label: '检查测试结果',
+      label: '检查监测结果',
       enabled: true,
       stepCode: 'answer_analysis'
     });
@@ -64,7 +64,7 @@ describe('AutomationOperatorCard helpers', () => {
       type: 'warning',
       testableText: '豆包',
       publishingText: '公众号',
-      configurationText: '豆包（需要补充 API Key 后继续自动测试）'
+      configurationText: '豆包（需要补充 API Key 后继续自动监测）'
     });
   });
 
@@ -93,7 +93,7 @@ describe('AutomationOperatorCard helpers', () => {
       {
         question: '如果要选择追光小牛，需要重点了解哪些信息？',
         platformCode: 'doubao',
-        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。'
+        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。'
       },
       {
         question: '贵阳有哪些值得推荐的儿童运动成长机构？',
@@ -200,16 +200,16 @@ function createManualTestConfirmation(): AutomationConfirmation {
     brandId: 'brand_demo',
     type: 'manual_test_required',
     status: 'pending',
-    title: '请处理需要人工确认的测试项',
-    impact: '这些测试项暂时无法自动完成。',
+    title: '请处理需要人工确认的监测项',
+    impact: '这些监测项暂时无法自动完成。',
     recommendation: '建议先按平台提示完成登录、配置或手动录入回答。',
-    evidenceSummary: '本轮测试有 12 个测试项需要人工处理。',
+    evidenceSummary: '本轮监测有 12 个监测项需要人工处理。',
     payload: {
       blockingSteps: [
         {
           question: ' 如果要选择追光小牛，需要重点了解哪些信息？ ',
           platformCode: 'doubao',
-          message: ' 该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。 '
+          message: ' 该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。 '
         },
         {
           question: '贵阳有哪些值得推荐的儿童运动成长机构？'
@@ -231,7 +231,7 @@ function createConfigurationConfirmation(): AutomationConfirmation {
     status: 'pending',
     title: '请补充平台配置',
     impact: '缺少配置的平台会进入人工处理。',
-    recommendation: '建议补齐配置后继续自动测试。',
+    recommendation: '建议补齐配置后继续自动监测。',
     evidenceSummary: '豆包需要补充 API Key。',
     payload: {
       configurationItems: [
@@ -239,7 +239,7 @@ function createConfigurationConfirmation(): AutomationConfirmation {
           platformCode: 'doubao',
           method: 'configuration',
           status: 'needs_configuration',
-          message: '需要补充 API Key 后继续自动测试'
+          message: '需要补充 API Key 后继续自动监测'
         }
       ]
     }
@@ -253,7 +253,7 @@ function createAnalysisConfirmation(): AutomationConfirmation {
     brandId: 'brand_demo',
     type: 'analysis_review',
     status: 'pending',
-    title: '请确认本轮 AI 测试判断',
+    title: '请确认本轮 AI 回复监测判断',
     impact: '这些判断会作为后续内容生成和复测建议的依据。',
     recommendation: '建议重点确认风险表达和引用缺口。',
     evidenceSummary: '本轮 24 条回答中，有 24 条需要确认。',
@@ -360,10 +360,10 @@ function createQuestionConfirmation(): AutomationConfirmation {
     brandId: 'brand_demo',
     type: 'test_questions',
     status: 'pending',
-    title: '请确认本轮精选测试问题',
-    impact: '这组问题会决定本轮 AI 测试覆盖的用户意图和平台回答样本。',
+    title: '请确认本轮精选监测问题',
+    impact: '这组问题会决定本轮 AI 回复监测覆盖的用户意图和平台回答样本。',
     recommendation: '建议保留 5 到 6 个问题。',
-    evidenceSummary: '系统已维护 8 个测试问题，并为本轮精选 6 个问题。',
+    evidenceSummary: '系统已维护 8 个监测问题，并为本轮精选 6 个问题。',
     payload: {
       selectedQuestions: [
         {

@@ -200,7 +200,7 @@ function buildMultiBrandRiskLines(snapshot: MultiBrandReportSnapshot, dataGaps: 
 function buildMultiBrandActionLines(snapshot: MultiBrandReportSnapshot): string[] {
   const actions = ['- 复用领先品牌的强势平台策略，形成跨品牌内容补位清单。'];
   if (snapshot.weakScenarios.length > 0) actions.push('- 对薄弱场景追加监测样本，并安排内容资产补齐。');
-  if (snapshot.highPriorityIssues.length > 0) actions.push('- 按高优先级问题清单推进责任人、截止日期和再次测试计划。');
+  if (snapshot.highPriorityIssues.length > 0) actions.push('- 按高优先级问题清单推进责任人、截止日期和再次监测计划。');
   return actions;
 }
 

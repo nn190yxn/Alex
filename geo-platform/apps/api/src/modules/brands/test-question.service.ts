@@ -12,7 +12,7 @@ import type {
 } from '@geo-platform/shared-types';
 import { LLMOrchestrationService } from '../llm/llm-orchestration.service';
 
-const defaultTargetPlatforms: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen'];
+const defaultTargetPlatforms: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'];
 const firstRoundQuestionLimit = 8;
 
 @Injectable()
@@ -83,7 +83,7 @@ function priorityRank(priority: TestQuestionCandidateInput['priority']): number 
   return 1;
 }
 
-function fallbackResult(items: TestQuestionCandidateInput[], profile: BrandProfile, note = '已使用基础模板生成测试问题'): TestAssetGenerationResult<TestQuestionCandidateInput> {
+function fallbackResult(items: TestQuestionCandidateInput[], profile: BrandProfile, note = '已使用基础模板生成监测问题'): TestAssetGenerationResult<TestQuestionCandidateInput> {
   return {
     items,
     missingProfileFields: profile.missingFields,

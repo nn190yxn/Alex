@@ -24,12 +24,12 @@ describe('platform credential public contract', () => {
       id: 'platform_demo',
       brandId: 'brand_demo',
       platformCode: 'mock_ai',
-      name: '演示 AI',
+      name: '示例回答',
       mode: 'mock',
       availableMethods: ['api'],
       connectionStatus: 'ready',
-      connectionStatusLabel: '可自动测试',
-      nextAction: '开发环境可直接执行模拟测试。',
+      connectionStatusLabel: '可自动监测',
+      nextAction: '开发环境可直接执行示例监测。',
       rateLimitPerMinute: 60,
       enabled: true,
       hasCredential: true,
@@ -48,7 +48,7 @@ describe('platform credential public contract', () => {
 
 describe('beginner friendly GEO workflow contract', () => {
   it('covers import, testing, browser connection, and growth planning inputs', () => {
-    const defaultPlatforms: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen'];
+    const defaultPlatforms: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'];
     const contentTypes: GrowthContentType[] = [
       'wechat_article',
       'xiaohongshu_note',
@@ -107,7 +107,7 @@ describe('beginner friendly GEO workflow contract', () => {
     };
 
     expect(browserSessionHidesCredentialRef).toBe(false);
-    expect(defaultPlatforms).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen']);
+    expect(defaultPlatforms).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']);
     expect(contentTypes).toContain('image_creative_brief');
     expect(importDraft.fields[0]?.key).toBe('intro');
     expect(questionInput.purposes).toContain('rank_first');

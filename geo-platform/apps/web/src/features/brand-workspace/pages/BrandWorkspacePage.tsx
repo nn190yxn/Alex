@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, Card, Col, Divider, Form, Input, Modal, Progress, Row, Select, Space, Statistic, Steps, Table, Tag, Typography, Upload, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import type { BrandFaq, BrandImportConfirmationResult, BrandDetail, BrandImportDraft, BrandImportField, BrandMutationInput, BrandWorkspaceSnapshot, BrandWorkspaceSummary, KnowledgeSource } from '@geo-platform/shared-types';
+import type { BrandFaq, BrandImportConfirmationResult, BrandDetail, BrandImportDraft, BrandImportField, BrandMutationInput, BrandWorkspaceSnapshot, BrandWorkspaceSummary, KnowledgeSource, VisibilitySprint } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost, apiPostForm } from '../../../api/http';
 import { useBrandContextStore } from '../../../stores/brandContextStore';
 import { operationWorkflow } from '../../../layouts/navigation';
@@ -13,6 +13,7 @@ import { OptimizationUnitsCard } from '../components/OptimizationUnitsCard';
 import { UserIntentPromptCard } from '../components/UserIntentPromptCard';
 import { getBrandImportCompletenessScore, getBrandImportDraftState, getImportFieldConfidenceState, getMissingFieldImpact, supportedBrandImportFormats } from './brandImportState';
 import { firstRoundSteps, getFirstRoundCurrentStep, getFirstRoundStepStatus } from './firstRoundWorkflow';
+import { getSprintMetricCards, getSprintNextAction, getSprintProgressPercent, getSprintStatusLabel, getSprintStepDisplayStatus } from './sprintWorkspace';
 
 type BrandFormValues = Omit<BrandMutationInput, 'aliases' | 'targetCities'> & {
   aliasesText?: string;
@@ -46,9 +47,14 @@ export function BrandWorkspacePage() {
     queryKey: ['brand-workspace', activeBrandId],
     queryFn: () => apiGet<BrandWorkspaceSnapshot>(`/brands/${activeBrandId}/workspace`)
   });
+  const currentSprintQuery = useQuery({
+    queryKey: ['visibility-sprint-current', activeBrandId],
+    queryFn: () => apiGet<VisibilitySprint>(`/brands/${activeBrandId}/sprints/current`)
+  });
   const activeBrand = activeBrandQuery.data?.success ? activeBrandQuery.data.data : null;
   const brands = brandsQuery.data?.success ? brandsQuery.data.data : [];
   const workspace = workspaceQuery.data?.success ? workspaceQuery.data.data : null;
+  const currentSprint = currentSprintQuery.data?.success ? currentSprintQuery.data.data : null;
   const currentFirstRoundStep = getFirstRoundCurrentStep(workspace, importDraft);
   const selectedGuide = firstRoundSteps.find((step) => step.key === selectedGuideKey) ?? firstRoundSteps[currentFirstRoundStep];
   const saveBrandMutation = useMutation({
@@ -185,6 +191,7 @@ export function BrandWorkspacePage() {
       <PageErrorAlert response={activeBrandQuery.data} />
       <PageErrorAlert response={brandsQuery.data} />
       <PageErrorAlert response={workspaceQuery.data} />
+      <PageErrorAlert response={currentSprintQuery.data} />
       <Space className="page-heading" align="center">
         <Typography.Title level={2}>品牌工作区</Typography.Title>
         <Button type="primary" onClick={openCreateModal}>新增品牌</Button>
@@ -198,7 +205,7 @@ export function BrandWorkspacePage() {
       </Card>
       <Card title="运营闭环入口">
         <Typography.Paragraph>
-          按创建品牌、选择测试方向、跑 AI 测试、生成优化计划、写内容、记录发布、安排再次测试和导出报告的顺序完成首轮运营。
+          按创建品牌、选择监测方向、监测 AI 回复、生成优化计划、写内容、记录发布、安排再次监测和导出报告的顺序完成首轮运营。
         </Typography.Paragraph>
         <Space wrap>
           {operationWorkflow.map((step, index) => (
@@ -209,8 +216,9 @@ export function BrandWorkspacePage() {
           <Button onClick={() => navigate('/advisor')}>顾问服务</Button>
         </Space>
       </Card>
+      <SprintWorkspaceEntry sprint={currentSprint} loading={currentSprintQuery.isLoading} onNavigate={(route) => navigate(route)} />
       <AutomationOperatorCard brandId={activeBrandId} source="brand_workspace" title="让 AI 帮我跑一轮" />
-      <Card title="完成首轮测试">
+      <Card title="完成首轮监测">
         <Space direction="vertical" size={16} className="page-stack">
           <Steps
             size="small"
@@ -231,8 +239,8 @@ export function BrandWorkspacePage() {
           <Alert
             type="success"
             showIcon
-            message="首轮测试后的下一步"
-            description="测试完成后，先补齐缺失的品牌资料，确认 AI 平台能正常测试，再生成优化计划、内容任务和下一次测试安排。"
+            message="首轮监测后的下一步"
+            description="监测完成后，先补齐缺失的品牌资料，确认 AI 平台能正常监测，再生成优化计划、内容任务和下一次监测安排。"
           />
           <Space wrap>
             {firstRoundSteps.map((step) => (
@@ -304,10 +312,10 @@ export function BrandWorkspacePage() {
       </Card>
       <Row gutter={16}>
         <Col span={4}><Card><Statistic title="档案" value={workspace?.relatedCounts.profile ?? 0} /></Card></Col>
-        <Col span={4}><Card><Statistic title="测试主题" value={workspace?.relatedCounts.optimizationUnits ?? 0} /></Card></Col>
-        <Col span={4}><Card><Statistic title="测试场景" value={workspace?.relatedCounts.intents ?? 0} /></Card></Col>
+        <Col span={4}><Card><Statistic title="监测主题" value={workspace?.relatedCounts.optimizationUnits ?? 0} /></Card></Col>
+        <Col span={4}><Card><Statistic title="用户场景" value={workspace?.relatedCounts.intents ?? 0} /></Card></Col>
         <Col span={4}><Card><Statistic title="内容资产" value={workspace?.relatedCounts.contentAssets ?? 0} /></Card></Col>
-        <Col span={4}><Card><Statistic title="AI 测试记录" value={workspace?.relatedCounts.monitoringRuns ?? 0} /></Card></Col>
+        <Col span={4}><Card><Statistic title="AI 回复记录" value={workspace?.relatedCounts.monitoringRuns ?? 0} /></Card></Col>
         <Col span={4}><Card><Statistic title="报告" value={workspace?.relatedCounts.reports ?? 0} /></Card></Col>
         <Col span={4}><Card><Statistic title="顾问记录" value={workspace?.relatedCounts.advisorRecords ?? 0} /></Card></Col>
       </Row>
@@ -399,6 +407,51 @@ function BrandImportDraftSummary({ draft }: { draft: BrandImportDraft }) {
       />
       <Progress percent={completenessScore} size="small" status={draft.status === 'failed' ? 'exception' : 'active'} />
     </Space>
+  );
+}
+
+function SprintWorkspaceEntry({ sprint, loading, onNavigate }: { sprint: VisibilitySprint | null; loading: boolean; onNavigate: (route: string) => void }) {
+  const status = getSprintStatusLabel(sprint?.status ?? 'draft');
+  const nextAction = getSprintNextAction(sprint);
+  const metricCards = getSprintMetricCards(sprint);
+  const progress = getSprintProgressPercent(sprint);
+
+  return (
+    <Card
+      title="AI 可见性运营 Sprint"
+      loading={loading}
+      extra={<Button type="primary" onClick={() => onNavigate(nextAction.route)}>{nextAction.label}</Button>}
+    >
+      <Space direction="vertical" size={16} className="page-stack">
+        <Row gutter={16} align="middle">
+          <Col xs={24} lg={10}>
+            <Space direction="vertical" size={8} className="page-stack">
+              <Space wrap>
+                <Tag color={status.color}>{status.label}</Tag>
+                <Typography.Text strong>{sprint?.title ?? '首轮 AI 可见性运营'}</Typography.Text>
+              </Space>
+              <Typography.Text type="secondary">{sprint?.goal ?? '围绕高价值问题完成真实回复监测、标准答案对照、内容补强、发布和复测。'}</Typography.Text>
+              <Alert type="info" showIcon message={nextAction.description} action={<Button size="small" onClick={() => onNavigate(nextAction.route)}>{nextAction.label}</Button>} />
+            </Space>
+          </Col>
+          <Col xs={24} lg={14}>
+            <Steps
+              size="small"
+              current={Math.max(0, sprint?.steps.findIndex((step) => step.code === sprint.currentStep) ?? 0)}
+              items={(sprint?.steps ?? []).map((step) => ({ title: step.title, description: step.message, status: getSprintStepDisplayStatus(step.status) }))}
+            />
+            {sprint?.steps.length ? <Progress percent={progress} size="small" /> : null}
+          </Col>
+        </Row>
+        <Row gutter={12}>
+          {metricCards.map((item) => (
+            <Col key={item.label} xs={12} md={4}>
+              <Statistic title={item.label} value={item.value} suffix={item.suffix} />
+            </Col>
+          ))}
+        </Row>
+      </Space>
+    </Card>
   );
 }
 

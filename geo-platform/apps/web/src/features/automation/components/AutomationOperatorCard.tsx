@@ -63,7 +63,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
   });
   const startMutation = useMutation({
     mutationFn: (packageId: string) => apiPost<AutomationPackageDetail>(`/brands/${brandId}/automation/packages/${packageId}/start`, {}),
-    onSuccess: handleResponse('AI 已开始准备本轮测试问题')
+    onSuccess: handleResponse('AI 已开始准备本轮监测问题')
   });
   const continueMutation = useMutation({
     mutationFn: ({ packageId, stepCode }: { packageId: string; stepCode: AutomationStepCode }) => apiPost<AutomationPackageDetail>(`/brands/${brandId}/automation/packages/${packageId}/${getStepActionPath(stepCode)}`, {}),
@@ -80,7 +80,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
 
       return apiPost<AutomationPackageDetail>(`/brands/${brandId}/automation/packages/${packageId}/confirmations/${confirmation.confirmationId}`, {
         action: 'approve',
-        decision: confirmation.type === 'manual_test_required' ? '已录入测试回答，继续分析' : '确认继续'
+        decision: confirmation.type === 'manual_test_required' ? '已录入监测回答，继续分析' : '确认继续'
       });
     },
     onSuccess: handleResponse('确认事项已处理')
@@ -110,7 +110,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
     >
       {contextHolder}
       {!activePackage ? (
-        <Alert type="info" showIcon message="把测试、分析、内容和发布建议交给 AI 串起来" description="AI 会先整理测试问题池，精选本轮问题让你确认，再继续执行后面的运营动作。" />
+        <Alert type="info" showIcon message="把监测、分析、内容和发布建议交给 AI 串起来" description="AI 会先整理监测问题池，精选本轮问题让你确认，再继续执行后面的运营动作。" />
       ) : (
         <Space direction="vertical" size={12} className="page-stack">
           <Space wrap>
@@ -123,7 +123,7 @@ export function AutomationOperatorCard({ brandId, source, title = 'AI 自动运�
             <Descriptions.Item label="品牌">{activePackage.context?.brandName ?? activePackage.brandId}</Descriptions.Item>
             <Descriptions.Item label="档案完整度">{formatScore(activePackage.context?.completenessScore)}</Descriptions.Item>
             <Descriptions.Item label="问题池">{activePackage.context?.questionPoolSize ?? 0} 个</Descriptions.Item>
-            <Descriptions.Item label="测试计划">{activePackage.context?.testPlanCount ?? 0} 个</Descriptions.Item>
+            <Descriptions.Item label="监测计划">{activePackage.context?.testPlanCount ?? 0} 个</Descriptions.Item>
           </Descriptions>
           {capabilitySummary ? <AutomationCapabilityAlert summary={capabilitySummary} /> : null}
           {!compact ? (
@@ -530,14 +530,14 @@ function ConfirmationBlockingStepList({ confirmation, onGoToManualEntry }: { con
 
   return (
     <Space direction="vertical" size={6} className="page-stack">
-      <Typography.Text strong>需要人工处理的测试项</Typography.Text>
+      <Typography.Text strong>需要人工处理的监测项</Typography.Text>
       {confirmation.type === 'manual_test_required' ? (
         <Alert
           type="info"
           showIcon
           message="先录入真实 AI 回答，再继续分析"
-          description="当前浏览器自动执行没有真实回答回填。请到 AI 测试页面复制问题、粘贴平台真实回答；录入完成后再回到这里继续分析。"
-          action={<Button size="small" onClick={onGoToManualEntry}>去 AI 测试录入</Button>}
+          description="当前浏览器自动执行没有真实回答回填。请到 AI 回复监测页面复制问题、粘贴平台真实回答；录入完成后再回到这里继续分析。"
+          action={<Button size="small" onClick={onGoToManualEntry}>去录入真实回复</Button>}
         />
       ) : null}
       <ol className="automation-question-list">
@@ -633,7 +633,7 @@ export function getPrimaryAutomationAction(automationPackage: Pick<AutomationPac
   }
 
   if (isWaitingForBrowserQueue(automationPackage)) {
-    return { kind: 'continue', label: '检查测试结果', enabled: true, stepCode: 'answer_analysis' };
+    return { kind: 'continue', label: '检查监测结果', enabled: true, stepCode: 'answer_analysis' };
   }
 
   const actionLabel = stepActionLabels[automationPackage.currentStep];
@@ -690,8 +690,8 @@ const stepActionPaths: Partial<Record<AutomationStepCode, string>> = {
 };
 
 const stepActionLabels: Partial<Record<AutomationStepCode, string>> = {
-  test_plan_execution: '执行 AI 测试',
-  answer_analysis: '分析测试结果',
+  test_plan_execution: '监测 AI 回复',
+  answer_analysis: '分析监测结果',
   content_generation: '生成优化内容',
   platform_rewrite: '生成平台改写',
   publishing_suggestion: '生成发布建议',
@@ -700,11 +700,11 @@ const stepActionLabels: Partial<Record<AutomationStepCode, string>> = {
 
 const stepLabels: Record<AutomationStepCode, string> = {
   context_collection: '读取品牌资料',
-  question_pool_update: '维护测试问题池',
+  question_pool_update: '维护监测问题池',
   question_selection: '精选本轮问题',
-  test_question_confirmation: '确认测试问题',
-  test_plan_execution: '执行 AI 测试',
-  answer_analysis: '分析测试结果',
+  test_question_confirmation: '确认监测问题',
+  test_plan_execution: '监测 AI 回复',
+  answer_analysis: '分析监测结果',
   content_generation: '生成优化内容',
   platform_rewrite: '按平台改写',
   content_confirmation: '确认发布内容',

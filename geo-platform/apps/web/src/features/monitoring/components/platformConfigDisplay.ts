@@ -13,16 +13,16 @@ export type PlatformConnectionGroup = {
 export const advancedPlatformSettingFields = [
   { name: 'endpointUrl', label: '平台接口地址' },
   { name: 'modelName', label: '模型名称' },
-  { name: 'rateLimitPerMinute', label: '每分钟测试次数上限' }
+  { name: 'rateLimitPerMinute', label: '每分钟监测次数上限' }
 ] as const;
 
-const beginnerPlatformOrder: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen'];
+const beginnerPlatformOrder: BeginnerFriendlyPlatform[] = ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'];
 
 const groups: Array<Omit<PlatformConnectionGroup, 'platforms'>> = [
-  { key: 'auto', title: '可以自动测', description: '平台密钥和模型已经准备好，开始测试后系统会自动提问并保存结果。', color: 'green' },
-  { key: 'browser', title: '可以用浏览器测', description: '你登录平台后，系统在授权范围内辅助提交测试问题。', color: 'gold' },
-  { key: 'manual', title: '可以手动测', description: '把问题复制到 AI 平台，再把回答粘贴回来。', color: 'blue' },
-  { key: 'configuration', title: '需要补充信息', description: '补充平台密钥、浏览器登录或手动测试入口后再开始。', color: 'red' }
+  { key: 'auto', title: '可以自动监测', description: '平台密钥和模型已经准备好，开始监测后系统会自动提问并保存结果。', color: 'green' },
+  { key: 'browser', title: '可以用浏览器辅助监测', description: '你登录平台后，系统在授权范围内辅助提交监测问题。', color: 'gold' },
+  { key: 'manual', title: '可以手动录入', description: '把问题复制到 AI 平台，再把回答粘贴回来。', color: 'blue' },
+  { key: 'configuration', title: '需要补充信息', description: '补充平台密钥、浏览器登录或手动录入入口后再开始。', color: 'red' }
 ];
 
 export function getBeginnerPlatformConfigs(platforms: PlatformConfig[]): PlatformConfig[] {
@@ -103,16 +103,17 @@ function getPlatformOrder(platformCode: string): number {
 }
 
 const methodLabels = {
-  api: '自动测试',
-  browser: '浏览器测试',
-  manual: '手动测试'
+  api: '自动监测',
+  browser: '浏览器辅助监测',
+  manual: '手动录入'
 } as const;
 
 const browserLoginUrls: Record<BeginnerFriendlyPlatform, string> = {
   doubao: 'https://www.doubao.com/chat/',
   kimi: 'https://kimi.moonshot.cn/',
   deepseek: 'https://chat.deepseek.com/',
-  qianwen: 'https://tongyi.aliyun.com/qianwen/'
+  qianwen: 'https://tongyi.aliyun.com/qianwen/',
+  stepfun: 'https://platform.stepfun.com/'
 };
 
 const browserStatusLabels: Record<BrowserConnectionStatus, string> = {
@@ -141,7 +142,7 @@ const browserIssueLabels: Record<BrowserConnectionIssueType, string> = {
   captcha: '遇到验证码，需要你手动处理',
   risk_control: '遇到平台风控，需要你确认',
   login_expired: '登录已失效，需要重新登录',
-  platform_limit: '平台暂时限制测试，建议先手动测试',
+  platform_limit: '平台暂时限制监测，建议先手动录入',
   page_changed: '页面有变化，需要你确认一下',
   unknown: '原因还需要确认'
 };

@@ -30,6 +30,8 @@ import type {
   BrandProfileInput,
   BrandPrompt,
   BrandPromptInput,
+  BrandStandardAnswer,
+  BrandStandardAnswerInput,
   BrandStatus,
   BrandWorkspaceSnapshot,
   BrowserConnectionSession,
@@ -117,13 +119,60 @@ import type {
   TestThemeInput,
   UserIntent,
   UserIntentInput,
-  UserSummary
+  UserSummary,
+  VisibilitySprint,
+  VisibilitySprintMetricSummary,
+  VisibilitySprintStatus,
+  VisibilitySprintStep,
+  VisibilitySprintStepCode
 } from '@geo-platform/shared-types';
 import type { AIPlatformRuntimeConfig } from '../platforms/adapters/ai-platform.adapter';
 
 export const PERMISSIONS_REPOSITORY = Symbol('PERMISSIONS_REPOSITORY');
 
 type MaybePromise<T> = T | Promise<T>;
+
+export type VisibilitySprintCreateInput = {
+  title: string;
+  goal: string;
+  status?: VisibilitySprintStatus;
+  currentStep?: VisibilitySprintStepCode;
+  steps?: VisibilitySprintStep[];
+  metricSummary?: Partial<VisibilitySprintMetricSummary>;
+  relatedQuestionIds?: string[];
+  relatedTestPlanIds?: string[];
+  relatedMonitoringRunIds?: string[];
+  relatedStandardAnswerIds?: string[];
+  relatedContentTaskIds?: string[];
+  relatedPublishingRecordIds?: string[];
+  relatedRetestTaskIds?: string[];
+};
+
+export type VisibilitySprintStepUpdateInput = {
+  status?: VisibilitySprintStatus;
+  currentStep: VisibilitySprintStepCode;
+  steps?: VisibilitySprintStep[];
+};
+
+export type VisibilitySprintMetricUpdateInput = Partial<VisibilitySprintMetricSummary>;
+
+export type VisibilitySprintRelationsUpdateInput = Partial<
+  Pick<
+    VisibilitySprint,
+    | 'relatedQuestionIds'
+    | 'relatedTestPlanIds'
+    | 'relatedMonitoringRunIds'
+    | 'relatedStandardAnswerIds'
+    | 'relatedContentTaskIds'
+    | 'relatedPublishingRecordIds'
+    | 'relatedRetestTaskIds'
+  >
+>;
+
+export type BrandStandardAnswerUpdateInput = Partial<BrandStandardAnswerInput> & {
+  reviewedBy?: string;
+  reviewedAt?: string;
+};
 
 export interface PermissionsRepositoryPort {
   findUser(userId: string): UserSummary | null;
@@ -184,6 +233,17 @@ export interface PermissionsRepositoryPort {
   updateAsyncJob(userId: string, brandId: BrandId, jobId: string, input: AsyncJobUpdateInput): AsyncJob | null;
   listLLMTaskRuns(userId: string, brandId: BrandId): LLMTaskRun[] | null;
   createLLMTaskRun(userId: string, brandId: BrandId, input: LLMTaskRunInput): LLMTaskRun | null;
+  listVisibilitySprints?(userId: string, brandId: BrandId): MaybePromise<VisibilitySprint[] | null>;
+  getVisibilitySprint?(userId: string, brandId: BrandId, sprintId: string): MaybePromise<VisibilitySprint | null>;
+  getCurrentVisibilitySprint?(userId: string, brandId: BrandId): MaybePromise<VisibilitySprint | null>;
+  createVisibilitySprint?(userId: string, brandId: BrandId, input: VisibilitySprintCreateInput): MaybePromise<VisibilitySprint | null>;
+  updateVisibilitySprintStep?(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintStepUpdateInput): MaybePromise<VisibilitySprint | null>;
+  updateVisibilitySprintMetrics?(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintMetricUpdateInput): MaybePromise<VisibilitySprint | null>;
+  updateVisibilitySprintRelations?(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintRelationsUpdateInput): MaybePromise<VisibilitySprint | null>;
+  listBrandStandardAnswers?(userId: string, brandId: BrandId, questionId?: string): MaybePromise<BrandStandardAnswer[] | null>;
+  getBrandStandardAnswer?(userId: string, brandId: BrandId, answerId: string): MaybePromise<BrandStandardAnswer | null>;
+  createBrandStandardAnswer?(userId: string, brandId: BrandId, input: BrandStandardAnswerInput): MaybePromise<BrandStandardAnswer | null>;
+  updateBrandStandardAnswer?(userId: string, brandId: BrandId, answerId: string, input: BrandStandardAnswerUpdateInput): MaybePromise<BrandStandardAnswer | null>;
   listMonitoringRuns(userId: string, brandId: BrandId): MonitoringRunDetail[] | null;
   getMonitoringRun(userId: string, brandId: BrandId, runId: string): MonitoringRunDetail | null;
   getAnalysisResult(userId: string, brandId: BrandId, runId: string): AnalysisResult | null;

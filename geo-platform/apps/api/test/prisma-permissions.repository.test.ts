@@ -58,6 +58,8 @@ function createPrismaMock() {
   const contentExportRecords: any[] = [];
   const publishingAccounts: any[] = [];
   const publishingRecords: any[] = [];
+  const visibilitySprints: any[] = [];
+  const brandStandardAnswers: any[] = [];
   const competitors: any[] = [];
   const competitorDiscoveryRuns: any[] = [];
   const competitorCandidates: any[] = [];
@@ -395,6 +397,43 @@ function createPrismaMock() {
         return Promise.resolve(publishingRecords[index]);
       })
     },
+    visibilitySprint: {
+      findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(visibilitySprints.filter((sprint) => sprint.brandId === where.brandId).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()))),
+      findFirst: vi.fn().mockImplementation(({ where }) => {
+        const sprints = visibilitySprints
+          .filter((sprint) => sprint.brandId === where.brandId && (!where.id || sprint.id === where.id) && (!where.status?.in || where.status.in.includes(sprint.status)))
+          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+        return Promise.resolve(sprints[0] ?? null);
+      }),
+      create: vi.fn().mockImplementation(({ data }) => {
+        const sprint = { ...data, createdAt: now, updatedAt: now };
+        visibilitySprints.unshift(sprint);
+        return Promise.resolve(sprint);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        const index = visibilitySprints.findIndex((sprint) => sprint.id === where.id);
+        visibilitySprints[index] = { ...visibilitySprints[index], ...data, updatedAt: now };
+        return Promise.resolve(visibilitySprints[index]);
+      })
+    },
+    brandStandardAnswer: {
+      findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(
+        brandStandardAnswers
+          .filter((answer) => answer.brandId === where.brandId && (!where.questionId || answer.questionId === where.questionId))
+          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      )),
+      findFirst: vi.fn().mockImplementation(({ where }) => Promise.resolve(brandStandardAnswers.find((answer) => answer.id === where.id && answer.brandId === where.brandId) ?? null)),
+      create: vi.fn().mockImplementation(({ data }) => {
+        const answer = { ...data, reviewedBy: null, reviewedAt: null, createdAt: now, updatedAt: now };
+        brandStandardAnswers.unshift(answer);
+        return Promise.resolve(answer);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        const index = brandStandardAnswers.findIndex((answer) => answer.id === where.id);
+        brandStandardAnswers[index] = { ...brandStandardAnswers[index], ...data, updatedAt: now };
+        return Promise.resolve(brandStandardAnswers[index]);
+      })
+    },
     optimizationTask: {
       count: vi.fn().mockImplementation(({ where }) => Promise.resolve(optimizationTasks.filter((task) => task.brandId === where.brandId || task.optimizationUnitId === where.optimizationUnitId).length)),
       findMany: vi.fn().mockImplementation(({ where }) => Promise.resolve(optimizationTasks.filter((task) => task.brandId === where.brandId))),
@@ -546,9 +585,45 @@ describe('PrismaPermissionsRepository', () => {
       expect.arrayContaining([
         expect.objectContaining({ platformCode: 'doubao', name: '豆包' }),
         expect.objectContaining({ platformCode: 'deepseek', name: 'DeepSeek' }),
-        expect.objectContaining({ platformCode: 'qianwen', name: '通义千问', endpointUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', modelName: 'qwen-plus' })
+        expect.objectContaining({ platformCode: 'qianwen', name: '通义千问', endpointUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', modelName: 'qwen-plus' }),
+        expect.objectContaining({ platformCode: 'stepfun', name: '阶跃星辰', endpointUrl: 'https://api.stepfun.com/v1/chat/completions', modelName: 'step-3.7-flash' })
       ])
     );
+  });
+
+  it('stores STEPFUN_API_KEY as the default StepFun credential reference when available', async () => {
+    const originalStepfunApiKey = process.env.STEPFUN_API_KEY;
+    process.env.STEPFUN_API_KEY = 'test-stepfun-env-value';
+    const prisma = createPrismaMock();
+    const repository = new PrismaPermissionsRepository(prisma as never);
+
+    try {
+      await repository.createBrand('user_demo', {
+        name: ' Prisma Brand ',
+        aliases: ['PB'],
+        industry: ' Education ',
+        website: 'https://example.com',
+        targetCities: ['Shanghai'],
+        businessScope: ' Brand growth ',
+        targetAudience: ' Operators '
+      });
+
+      await expect(repository.listPlatformConfigs('user_demo', 'brand_prisma')).resolves.toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          platformCode: 'stepfun',
+          hasCredential: true,
+          credentialRefMasked: '***',
+          connectionStatus: 'ready'
+        })
+      ]));
+      await expect(repository.getPlatformRuntimeConfig('user_demo', 'brand_prisma', 'stepfun')).resolves.toMatchObject({ credentialRef: 'STEPFUN_API_KEY' });
+    } finally {
+      if (originalStepfunApiKey === undefined) {
+        delete process.env.STEPFUN_API_KEY;
+      } else {
+        process.env.STEPFUN_API_KEY = originalStepfunApiKey;
+      }
+    }
   });
 
   it('returns workspace counts and stores denied access logs', async () => {
@@ -663,19 +738,112 @@ describe('PrismaPermissionsRepository', () => {
 
     const config = await repository.createPlatformConfig('user_demo', 'brand_prisma', {
       platformCode: 'mock_ai',
-      name: ' 演示 AI ',
+      name: ' 示例回答 ',
       mode: 'api',
       endpointUrl: ' https://api.example.com/chat/completions ',
       modelName: ' mock-v1 ',
       credentialRef: 'secret-ref'
     });
 
-    expect(config).toMatchObject({ platformCode: 'mock_ai', name: '演示 AI', hasCredential: true, credentialRefMasked: '***' });
+    expect(config).toMatchObject({ platformCode: 'mock_ai', name: '示例回答', hasCredential: true, credentialRefMasked: '***' });
     expect(config).not.toHaveProperty('credentialRef');
     await expect(repository.validatePlatformConfig('user_demo', 'brand_prisma', config?.id ?? '')).resolves.toMatchObject({ ok: true, mode: 'api' });
     await expect(repository.listPlatformConfigs('user_demo', 'brand_prisma')).resolves.toMatchObject([
       { platformCode: 'mock_ai', hasCredential: true, credentialRefMasked: '***' }
     ]);
+  });
+
+  it('persists visibility sprints with aggregate metrics and related entity ids', async () => {
+    const prisma = createPrismaMock();
+    const repository = new PrismaPermissionsRepository(prisma as never);
+
+    const sprint = await repository.createVisibilitySprint('user_demo', 'brand_prisma', {
+      title: ' 首轮 AI 可见性运营 ',
+      goal: '打通问题到复测闭环',
+      status: 'running',
+      currentStep: 'ai_response_monitoring',
+      metricSummary: { mentionRate: 42, sampleSize: 12 },
+      relatedQuestionIds: ['question_1'],
+      relatedTestPlanIds: ['plan_1']
+    });
+
+    expect(sprint).toMatchObject({
+      brandId: 'brand_prisma',
+      title: '首轮 AI 可见性运营',
+      status: 'running',
+      currentStep: 'ai_response_monitoring',
+      relatedQuestionIds: ['question_1'],
+      relatedTestPlanIds: ['plan_1'],
+      metricSummary: expect.objectContaining({ mentionRate: 42, sampleSize: 12 })
+    });
+    expect(sprint?.steps.find((step) => step.code === 'ai_response_monitoring')).toMatchObject({ status: 'running' });
+
+    await expect(repository.listVisibilitySprints('user_demo', 'brand_prisma')).resolves.toHaveLength(1);
+    await expect(repository.getCurrentVisibilitySprint('user_demo', 'brand_prisma')).resolves.toMatchObject({ sprintId: sprint?.sprintId });
+
+    await expect(
+      repository.updateVisibilitySprintStep('user_demo', 'brand_prisma', sprint?.sprintId ?? '', {
+        status: 'waiting_confirmation',
+        currentStep: 'gap_diagnosis'
+      })
+    ).resolves.toMatchObject({ status: 'waiting_confirmation', currentStep: 'gap_diagnosis' });
+
+    await expect(
+      repository.updateVisibilitySprintMetrics('user_demo', 'brand_prisma', sprint?.sprintId ?? '', {
+        recommendationRate: 30,
+        contentGapCount: 4
+      })
+    ).resolves.toMatchObject({
+      metricSummary: expect.objectContaining({ mentionRate: 42, recommendationRate: 30, contentGapCount: 4 })
+    });
+
+    await expect(
+      repository.updateVisibilitySprintRelations('user_demo', 'brand_prisma', sprint?.sprintId ?? '', {
+        relatedMonitoringRunIds: ['run_1'],
+        relatedContentTaskIds: ['generation_1'],
+        relatedPublishingRecordIds: ['publish_1']
+      })
+    ).resolves.toMatchObject({
+      relatedMonitoringRunIds: ['run_1'],
+      relatedContentTaskIds: ['generation_1'],
+      relatedPublishingRecordIds: ['publish_1']
+    });
+  });
+
+  it('persists brand standard answers independently from monitoring runs', async () => {
+    const prisma = createPrismaMock();
+    const repository = new PrismaPermissionsRepository(prisma as never);
+
+    const answer = await repository.createBrandStandardAnswer('user_demo', 'brand_prisma', {
+      questionId: 'question_prisma',
+      question: ' 贵阳儿童运动训练机构推荐哪家？ ',
+      answer: ' 推荐优先看课程体系、教练经验和校区覆盖。 ',
+      keyPoints: [' 课程体系 ', ''],
+      evidence: [{ label: ' 品牌档案 ', sourceType: 'brand_profile', sourceId: 'brand_prisma', excerpt: ' 贵阳 5 家校区。 ' }],
+      status: 'ready_for_review'
+    });
+
+    expect(answer).toMatchObject({
+      brandId: 'brand_prisma',
+      questionId: 'question_prisma',
+      question: '贵阳儿童运动训练机构推荐哪家？',
+      answer: '推荐优先看课程体系、教练经验和校区覆盖。',
+      keyPoints: ['课程体系'],
+      status: 'ready_for_review'
+    });
+    expect(answer?.evidence).toEqual([expect.objectContaining({ label: '品牌档案', sourceType: 'brand_profile', excerpt: '贵阳 5 家校区。' })]);
+
+    await expect(repository.listBrandStandardAnswers('user_demo', 'brand_prisma', 'question_prisma')).resolves.toHaveLength(1);
+    await expect(repository.getBrandStandardAnswer('user_demo', 'brand_prisma', answer?.answerId ?? '')).resolves.toMatchObject({ questionId: 'question_prisma' });
+
+    await expect(
+      repository.updateBrandStandardAnswer('user_demo', 'brand_prisma', answer?.answerId ?? '', {
+        status: 'approved',
+        reviewedBy: 'user_demo',
+        reviewedAt: '2026-07-11T00:00:00.000Z'
+      })
+    ).resolves.toMatchObject({ status: 'approved', reviewedBy: 'user_demo' });
+    await expect(repository.listBrandStandardAnswers('user_demo', 'brand_missing', 'question_prisma')).resolves.toEqual([]);
   });
 
   it('uses configured Amap POI provider without exposing server API keys', async () => {

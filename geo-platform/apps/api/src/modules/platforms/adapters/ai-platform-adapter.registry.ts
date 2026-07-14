@@ -63,7 +63,8 @@ export function createDefaultAIPlatformAdapters(): AIPlatformAdapter[] {
     new OpenAICompatibleAdapter('doubao'),
     new OpenAICompatibleAdapter('kimi'),
     new OpenAICompatibleAdapter('deepseek'),
-    new OpenAICompatibleAdapter('qianwen')
+    new OpenAICompatibleAdapter('qianwen'),
+    new OpenAICompatibleAdapter('stepfun')
   ];
 }
 

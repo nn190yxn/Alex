@@ -5,7 +5,7 @@ Updated: 2026-07-10
 
 ## Description
 
-竞品地图发现用于把品牌竞品维护从手动输入升级为地图 POI 辅助发现。系统基于品牌城市、校区地址、课程品类和儿童线下服务关键词拉取候选机构，自动计算匹配分数和建议标签，再由用户勾选确认后写入竞品档案，并影响后续测试问题、竞品压制分析、内容对标和增长优化建议。
+竞品地图发现用于把品牌竞品维护从手动输入升级为地图 POI 辅助发现。系统基于品牌城市、校区地址、课程品类和儿童线下服务关键词拉取候选机构，自动计算匹配分数和建议标签，再由用户勾选确认后写入竞品档案，并影响后续监测问题、竞品压制分析、内容对标和增长优化建议。
 
 ## Architecture
 
@@ -17,12 +17,12 @@ graph TD
     D --> E["Competitor Candidate Store"]
     E --> F["Review And Selection UI"]
     F --> G["Competitor Profile Store"]
-    G --> H["Test Theme And Question Services"]
+    G --> H["Monitoring Theme And Question Services"]
     G --> I["Competitor Dashboard"]
     G --> J["Content Strategy And Automation"]
 ```
 
-前端在竞品分析页新增“地图发现竞品”抽屉或页面。后端新增竞品发现服务，服务端读取地图 API Key，通过统一 provider 拉取 POI，候选结果先进入候选表，用户确认后再进入现有竞品档案。自动化运营员和测试问题生成服务读取确认后的竞品标签，区分本地直接竞品、校区周边重点竞品和全国标杆品牌。
+前端在竞品分析页新增“地图发现竞品”抽屉或页面。后端新增竞品发现服务，服务端读取地图 API Key，通过统一 provider 拉取 POI，候选结果先进入候选表，用户确认后再进入现有竞品档案。自动化运营员和监测问题生成服务读取确认后的竞品标签，区分本地直接竞品、校区周边重点竞品和全国标杆品牌。
 
 ## Components and Interfaces
 
@@ -110,6 +110,6 @@ type CompetitorConfirmationLabel = 'direct_competitor' | 'indirect_competitor' |
 
 ## References
 
-[^1]: `.monkeycode/docs/ARCHITECTURE.md` - 当前竞品分析、测试问题和自动化运营员架构说明。
+[^1]: `.monkeycode/docs/ARCHITECTURE.md` - 当前竞品分析、监测问题和自动化运营员架构说明。
 [^2]: `geo-platform/apps/web/src/features/competitors/pages/CompetitorAnalysisPage.tsx` - 当前竞品分析前端页面。
 [^3]: `geo-platform/apps/api/src/modules/competitors/competitors.controller.ts` - 当前竞品分析 API 入口。

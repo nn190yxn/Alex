@@ -29,10 +29,14 @@ function dependencyReadiness(): HealthCheck['dependencies'] {
   return {
     database: process.env.DATABASE_URL ? 'ready' : 'not_configured',
     queue: process.env.GEO_QUEUE_DRIVER && process.env.GEO_QUEUE_DRIVER !== 'memory' ? 'external_configured' : 'in_memory',
-    aiPlatforms: process.env.GEO_AI_PLATFORM_CONFIGURED === 'true' ? 'configured' : 'not_configured',
+    aiPlatforms: aiPlatformReadiness(),
     mapProvider: mapProviderReadiness(),
     logging: process.env.GEO_LOGGING_DRIVER && process.env.GEO_LOGGING_DRIVER !== 'console' ? 'external_configured' : 'console'
   };
+}
+
+function aiPlatformReadiness(): HealthCheck['dependencies']['aiPlatforms'] {
+  return hasConfiguredAiPlatform() ? 'configured' : 'not_configured';
 }
 
 function mapProviderReadiness(): HealthCheck['dependencies']['mapProvider'] {
@@ -52,9 +56,13 @@ function missingConfiguration(): string[] {
     missing.push('DATABASE_URL');
   }
 
-  if (process.env.GEO_AI_PLATFORM_CONFIGURED !== 'true') {
+  if (!hasConfiguredAiPlatform()) {
     missing.push('GEO_AI_PLATFORM_CONFIGURED');
   }
 
   return missing;
+}
+
+function hasConfiguredAiPlatform(): boolean {
+  return process.env.GEO_AI_PLATFORM_CONFIGURED === 'true' || Boolean(process.env.STEPFUN_API_KEY);
 }

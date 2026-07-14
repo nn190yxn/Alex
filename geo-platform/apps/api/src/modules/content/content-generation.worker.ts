@@ -320,7 +320,7 @@ function appendDefaultGuidance(lines: string[], targetPlatformLabel: string, ref
     `- ${targetPlatformLabel}`,
     '',
     '## 复测建议',
-    `- ${retestAt ? `建议在 ${retestAt} 前后` : '建议在内容发布后 7 到 14 天'}，用同一组 AI 测试问题复测品牌是否被提及、排名是否改善、表达是否更准确。`
+    `- ${retestAt ? `建议在 ${retestAt} 前后` : '建议在内容发布后 7 到 14 天'}，用同一组 AI 监测问题复测品牌是否被提及、排名是否改善、表达是否更准确。`
   ].join('\n');
 }
 

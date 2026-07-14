@@ -514,7 +514,7 @@ export class BrandsController {
     const plans = await this.permissionsService.listTestPlans(request.context.userId, brandId);
 
     if (!plans) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     return {
@@ -528,7 +528,7 @@ export class BrandsController {
     const templates = await this.permissionsService.listTestPlanTemplates(request.context.userId, brandId);
 
     if (!templates) {
-      throw new NotFoundException('测试计划模板不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划模板不存在或当前用户无权访问');
     }
 
     return {
@@ -546,7 +546,7 @@ export class BrandsController {
     const plan = await this.permissionsService.createTestPlan(request.context.userId, brandId, normalizeTestPlanInput(body));
 
     if (!plan) {
-      throw new BadRequestException('请先选择至少一个测试问法，并确保目标平台有效');
+      throw new BadRequestException('请先选择至少一个监测问法，并确保目标平台有效');
     }
 
     return {
@@ -564,7 +564,7 @@ export class BrandsController {
     const plan = await this.permissionsService.applyTestPlanTemplate(request.context.userId, brandId, normalizeTestPlanTemplateApplicationInput(body));
 
     if (!plan) {
-      throw new BadRequestException('测试计划模板不存在，或当前品牌无权访问');
+      throw new BadRequestException('监测计划模板不存在，或当前品牌无权访问');
     }
 
     return {
@@ -583,7 +583,7 @@ export class BrandsController {
     const plan = await this.permissionsService.duplicateTestPlan(request.context.userId, brandId, planId, normalizeTestPlanDuplicateInput(body ?? {}));
 
     if (!plan) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     return {
@@ -601,7 +601,7 @@ export class BrandsController {
     const result = await this.permissionsService.executeTestPlan(request.context.userId, brandId, planId);
 
     if (!result) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     return {
@@ -620,7 +620,7 @@ export class BrandsController {
     const result = await this.permissionsService.submitManualTestAnswers(request.context.userId, brandId, normalizeManualTestAnswerBatchInput(planId, body));
 
     if (!result) {
-      throw new NotFoundException('测试计划不存在或当前用户无权访问');
+      throw new NotFoundException('监测计划不存在或当前用户无权访问');
     }
 
     return {
@@ -657,7 +657,7 @@ export class BrandsController {
       ?? await this.permissionsService.generateGrowthOptimizationPlan(request.context.userId, brandId, sourceTestPlanId);
 
     if (!plan) {
-      throw new BadRequestException('请先完成首轮测试并生成可分析的测试结果');
+      throw new BadRequestException('请先完成首轮监测并生成可分析的监测结果');
     }
 
     return {
@@ -1241,7 +1241,7 @@ function normalizeTestQuestionCandidateSelectionInput(input: TestQuestionCandida
 
 function normalizeTestPlanInput(input: TestPlanInput): TestPlanInput {
   if (input.executionMethod && !testPlanExecutionMethods.includes(input.executionMethod)) {
-    throw new BadRequestException('测试计划执行方式不支持');
+    throw new BadRequestException('监测计划执行方式不支持');
   }
 
   const candidateIds = input.candidateIds ? normalizeStringList(input.candidateIds) : undefined;
@@ -1255,7 +1255,7 @@ function normalizeTestPlanInput(input: TestPlanInput): TestPlanInput {
   })).filter((question) => question.question && question.targetPlatforms.length > 0);
 
   if (input.questions && questions?.length === 0) {
-    throw new BadRequestException('测试计划至少需要一个有效问题');
+    throw new BadRequestException('监测计划至少需要一个有效问题');
   }
 
   return {
@@ -1269,7 +1269,7 @@ function normalizeTestPlanInput(input: TestPlanInput): TestPlanInput {
 
 function normalizeTestPlanTemplateApplicationInput(input: TestPlanTemplateApplicationInput): TestPlanTemplateApplicationInput {
   if (!input.templateId?.trim()) {
-    throw new BadRequestException('请选择测试计划模板');
+    throw new BadRequestException('请选择监测计划模板');
   }
 
   return {

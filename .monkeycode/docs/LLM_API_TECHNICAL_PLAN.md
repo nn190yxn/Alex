@@ -2,9 +2,9 @@
 
 ## 目标
 
-本规划用于把 AI 推荐管理平台从“规则模板 + 手动录入 + 演示闭环”升级为“真实大模型驱动的自动问题生成、自动测试、自动解读、自动内容生成和再次测试闭环”。
+本规划用于把 AI 推荐管理平台从“规则模板 + 手动录入 + 示例闭环”升级为“真实大模型驱动的自动问题生成、自动监测、自动解读、自动内容生成和再次监测闭环”。
 
-核心目标是解决内测时最明显的使用问题：品牌方打开系统后，可以先补品牌资料，再由系统自动生成测试问题、调用目标 AI 平台、解读回答、生成优化计划和内容草稿。
+核心目标是解决内测时最明显的使用问题：品牌方打开系统后，可以先补品牌资料，再由系统自动生成监测问题、调用目标 AI 平台、解读回答、生成优化计划和内容草稿。
 
 ## 当前基础
 
@@ -17,9 +17,9 @@
 - 前端品牌上下文：通过 `x-brand-id` 请求头传入
 - 平台配置：`PlatformConfig` 已支持 endpoint、model、mode、rateLimit、hasCredential 和脱敏状态
 - 平台适配器：已有 `AIPlatformAdapter`、`OpenAICompatibleAdapter`、`MockAdapter`、`ManualInputAdapter`
-- 默认平台：豆包、Kimi、DeepSeek、通义千问
+- 默认平台：豆包、Kimi、DeepSeek、通义千问、阶跃星辰
 - 已烟测平台：SenseNova，endpoint 为 `https://token.sensenova.cn/v1/chat/completions`，模型为 `sensenova-6.7-flash-lite`，走 OpenAI-compatible fallback；密钥只保存在运行态配置或目标环境变量中，文档不记录真实值
-- 测试计划：已有测试主题、测试问题、测试计划和执行编排
+- 监测计划：已有监测主题、监测问题、监测计划和执行编排
 - 监测运行：已有 `MonitoringRun`、`AIResponse`、`AnalysisResult`
 - 异步任务：已有 `AsyncJob`，当前支持 `monitoring` 和 `content_generation`
 - 调用审计：已有 `AIPlatformCallAudit`
@@ -27,7 +27,7 @@
 
 需要补强的关键点：
 
-- 测试问题生成目前主要是规则模板，缺少真实大模型生成能力
+- 监测问题生成目前主要是规则模板，缺少真实大模型生成能力
 - 回答解读目前主要是规则解析，缺少大模型结构化判断能力
 - 内容生成 worker 当前使用默认草稿生成器，缺少真实大模型生成正文能力
 - API 调用缺少统一的 LLM 任务层，监测调用、内容生成、问题生成和回答解读还没有复用同一套调用协议
@@ -53,7 +53,7 @@ graph TD
 
 新增核心服务为 `LLM Orchestration Service`。它负责统一处理四类大模型任务：
 
-- `question_generation`：自动生成测试主题和测试问题
+- `question_generation`：自动生成监测主题和监测问题
 - `answer_analysis`：自动解读 AI 回答
 - `content_generation`：生成内容草稿
 - `optimization_planning`：辅助生成优化计划和下一轮问题建议
@@ -143,9 +143,9 @@ type LLMTaskResponse<TOutput> = {
 - 所有任务都写入调用审计
 - 所有任务都携带 `brandId`
 
-### 3. 自动生成测试问题 API
+### 3. 自动生成监测问题 API
 
-当前页面入口：`AI 测试` -> `生成测试主题` / `生成测试问题`
+当前页面入口：`AI 回复监测` -> `生成监测主题` / `生成监测问题`
 
 现有路由：
 
@@ -194,7 +194,7 @@ type QuestionGenerationOutput = {
 - 每个问题必须包含 `targetPlatforms`
 - 每个问题必须包含业务解释 `estimatedValue`
 - 问题要像真实用户提问，避免内部术语
-- 敏感场景要包含风险表达测试，例如“长高”“治疗”“包过”等
+- 敏感场景要包含风险表达检测，例如“长高”“治疗”“包过”等
 
 落库方式：
 
@@ -202,9 +202,9 @@ type QuestionGenerationOutput = {
 - `candidates` 写入 `TestQuestionCandidate`
 - 仍保留当前规则模板作为 fallback
 
-### 4. 自动执行目标 AI 平台测试 API
+### 4. 自动执行目标 AI 平台监测 API
 
-当前页面入口：`AI 测试` -> `开始首轮测试`
+当前页面入口：`AI 回复监测` -> `开始首轮监测`
 
 现有路由：
 
@@ -221,7 +221,7 @@ POST /api/v1/brands/:brandId/test-plans/:planId/execute
 - `manual`：生成手动录入步骤
 - `needs_configuration`：返回配置提示
 
-API 自动测试输入：
+API 自动监测输入：
 
 ```ts
 type RunPromptInput = {
@@ -231,7 +231,7 @@ type RunPromptInput = {
 };
 ```
 
-API 自动测试输出：
+API 自动监测输出：
 
 ```ts
 type RunPromptResult = {
@@ -246,11 +246,11 @@ type RunPromptResult = {
 - `RunPromptResult` 增加 token 和 provider request id
 - `AIPlatformCallAudit` 记录 inputTokenCount、outputTokenCount、costEstimate
 - 按 `rateLimitPerMinute` 控制同品牌同平台请求速率
-- 同一测试计划内按平台串行、跨平台可并行
+- 同一监测计划内按平台串行、跨平台可并行
 
 ### 5. 自动解读 AI 回答 API
 
-当前页面入口：`AI 测试记录` -> `解读`
+当前页面入口：`AI 回复监测记录` -> `解读`
 
 现有路由：
 
@@ -372,7 +372,7 @@ type OptimizationPlanningOutput = {
 - 卖点缺失时生成品牌卖点解释内容计划
 - 引用不足时生成官网 FAQ、公众号推文和平台资料内容计划
 - 风险表达时生成标准表达修正计划
-- 每个计划要包含负责人、截止时间、发布平台和再次测试时间
+- 每个计划要包含负责人、截止时间、发布平台和再次监测时间
 
 ### 7. 自动生成内容 API
 
@@ -439,7 +439,7 @@ type LLMContentGenerationOutput = {
 ```text
 system prompt：角色、边界、安全规则、输出格式
 developer prompt：任务步骤、字段说明、评分规则
-user prompt：品牌资料、测试主题、AI 回答、内容策略等动态输入
+user prompt：品牌资料、监测主题、AI 回答、内容策略等动态输入
 ```
 
 ### 输出格式
@@ -600,15 +600,15 @@ type RunLLMInput = RunPromptInput & {
 
 - `runPrompt` 保持兼容
 - 新增 `runMessages`
-- 豆包、Kimi、DeepSeek、通义千问先走 OpenAI-compatible 路径
+- 豆包、Kimi、DeepSeek、通义千问、阶跃星辰先走 OpenAI-compatible 路径
 - 某个平台协议不兼容时新增专属 Adapter
 
 ## 接口调用链路
 
-### 生成测试问题链路
+### 生成监测问题链路
 
 ```text
-前端点击生成测试问题
+前端点击生成监测问题
 -> BrandsController
 -> TestQuestionService
 -> LLMOrchestrationService.generateQuestions
@@ -618,10 +618,10 @@ type RunLLMInput = RunPromptInput & {
 -> 返回候选问题列表
 ```
 
-### 执行测试链路
+### 执行监测链路
 
 ```text
-前端点击开始首轮测试
+前端点击开始首轮监测
 -> executeTestPlan
 -> 按平台配置分流
 -> api 模式创建 MonitoringRun + AsyncJob
@@ -733,7 +733,7 @@ type RunLLMInput = RunPromptInput & {
 - 给 memory repository 和 Prisma repository 增加必要的 task run 保存能力
 - API 测试覆盖密钥缺失、输出校验失败、审计脱敏和品牌隔离
 
-### 阶段 2：大模型生成测试问题
+### 阶段 2：大模型生成监测问题
 
 目标：解决内测时“问题要自己编”的痛点。
 
@@ -744,7 +744,7 @@ type RunLLMInput = RunPromptInput & {
 - 新增 `QuestionGenerationInput` / `QuestionGenerationOutput`
 - 生成结果写入 `TestTheme` 和 `TestQuestionCandidate`
 - 保留规则模板 fallback
-- 前端继续使用现有 `生成测试主题` 和 `生成测试问题` 按钮
+- 前端继续使用现有 `生成监测主题` 和 `生成监测问题` 按钮
 - 测试覆盖完整品牌资料、资料缺失、竞品缺失、敏感表达场景和输出结构校验
 
 ### 阶段 3：大模型解读 AI 回答
@@ -776,13 +776,13 @@ type RunLLMInput = RunPromptInput & {
 
 ### 阶段 5：优化计划和下一轮问题建议
 
-目标：把测试结果自动转为执行计划。
+目标：把监测结果自动转为执行计划。
 
 开发项：
 
 - 新增 `optimization-planning.prompt.ts`
 - 改造 `generateGrowthOptimizationPlan`
-- 输出内容任务、发布建议、再次测试时间和下一轮问题
+- 输出内容任务、发布建议、再次监测时间和下一轮问题
 - 支持从复测结果生成下一轮策略
 - 测试覆盖推荐率不足、排名低、卖点缺失、引用缺口、风险表达和复测未提升
 
@@ -790,12 +790,12 @@ type RunLLMInput = RunPromptInput & {
 
 ### 功能验收
 
-- 品牌资料完整时，一键生成 5 到 10 个高价值测试问题
-- 每个测试问题包含目的、目标平台、优先级和预计价值
-- API 平台配置完成后，测试计划可以自动创建监测运行并保存回答
+- 品牌资料完整时，一键生成 5 到 10 个高价值监测问题
+- 每个监测问题包含目的、目标平台、优先级和预计价值
+- API 平台配置完成后，监测计划可以自动创建监测运行并保存回答
 - 手动录入回答后，可以触发同一套大模型解读流程
 - 回答解读能输出品牌是否出现、排名、竞品、准确性、风险表达和内容建议
-- 优化计划能拆出内容任务、发布建议和再次测试计划
+- 优化计划能拆出内容任务、发布建议和再次监测计划
 - 内容生成能产出公众号推文、小红书图文、官网 FAQ、短视频脚本、平台介绍文案和图片创意需求
 
 ### 工程验收
@@ -817,13 +817,13 @@ type RunLLMInput = RunPromptInput & {
 
 ## 推荐优先级
 
-第一优先级：自动生成测试问题。
+第一优先级：自动生成监测问题。
 
-原因：这是当前内测最直接的使用阻力。品牌方看到系统能根据资料生成真实问题，才能顺利进入后续测试、解读和内容优化流程。
+原因：这是当前内测最直接的使用阻力。品牌方看到系统能根据资料生成真实问题，才能顺利进入后续监测、解读和内容优化流程。
 
 第二优先级：自动解读 AI 回答。
 
-原因：手动测试和 API 测试都依赖回答解读。解读质量决定用户是否能看懂结果。
+原因：手动录入和 API 监测都依赖回答解读。解读质量决定用户是否能看懂结果。
 
 第三优先级：自动生成内容草稿。
 
@@ -831,4 +831,4 @@ type RunLLMInput = RunPromptInput & {
 
 第四优先级：优化计划自动增强和下一轮问题建议。
 
-原因：这一步让系统从一次性测试工具升级为持续增长工具。
+原因：这一步让系统从一次性监测工具升级为持续增长工具。

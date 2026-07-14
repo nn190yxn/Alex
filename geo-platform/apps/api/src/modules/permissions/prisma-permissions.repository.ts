@@ -167,6 +167,15 @@ import type {
   UserIntent,
   UserIntentCategory,
   UserIntentInput,
+  BrandStandardAnswer,
+  BrandStandardAnswerEvidence,
+  BrandStandardAnswerInput,
+  BrandStandardAnswerStatus,
+  VisibilitySprint,
+  VisibilitySprintMetricSummary,
+  VisibilitySprintStatus,
+  VisibilitySprintStep,
+  VisibilitySprintStepCode,
   UserSummary
 } from '@geo-platform/shared-types';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -181,6 +190,13 @@ import {
   renderSingleBrandReport
 } from './report-renderer';
 import { buildAnalysisResultFields } from './analysis-result-builder';
+import type {
+  BrandStandardAnswerUpdateInput,
+  VisibilitySprintCreateInput,
+  VisibilitySprintMetricUpdateInput,
+  VisibilitySprintRelationsUpdateInput,
+  VisibilitySprintStepUpdateInput
+} from './permissions.repository.port';
 
 type PrismaBrand = {
   id: string;
@@ -447,6 +463,43 @@ type PrismaLLMTaskRun = {
   outputSummary: unknown | null;
   errorCode: string | null;
   errorMessage: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type PrismaVisibilitySprint = {
+  id: string;
+  brandId: string;
+  title: string;
+  goal: string;
+  status: string;
+  currentStep: string;
+  steps: unknown;
+  metricSummary: unknown;
+  relatedQuestionIds: unknown;
+  relatedTestPlanIds: unknown;
+  relatedMonitoringRunIds: unknown;
+  relatedStandardAnswerIds: unknown;
+  relatedContentTaskIds: unknown;
+  relatedPublishingRecordIds: unknown;
+  relatedRetestTaskIds: unknown;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type PrismaBrandStandardAnswer = {
+  id: string;
+  brandId: string;
+  questionId: string;
+  question: string;
+  answer: string;
+  keyPoints: unknown;
+  evidence: unknown;
+  status: string;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -990,6 +1043,7 @@ export class PrismaPermissionsRepository {
           mode: config.mode,
           endpointUrl: config.endpointUrl,
           modelName: config.modelName,
+          credentialRef: getDefaultCredentialRef(config),
           rateLimitPerMinute: config.rateLimitPerMinute ?? defaultRateLimit(config.mode),
           enabled: config.enabled ?? true
         }
@@ -1358,7 +1412,7 @@ export class PrismaPermissionsRepository {
     const plan = await this.prisma.testPlan.create({
       data: {
         brandId,
-        name: input.name?.trim() || `${brand.name}首轮 AI 测试计划`,
+        name: input.name?.trim() || `${brand.name}首轮 AI 回复监测计划`,
         status: inferTestPlanStatus(connectionSummary),
         questions,
         platformCodes,
@@ -1970,6 +2024,222 @@ export class PrismaPermissionsRepository {
     return toLLMTaskRun(run);
   }
 
+  async listVisibilitySprints(userId: string, brandId: BrandId): Promise<VisibilitySprint[] | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const sprints = await this.prisma.visibilitySprint.findMany({ where: { brandId }, orderBy: { updatedAt: 'desc' } });
+
+    return sprints.map(toVisibilitySprint);
+  }
+
+  async getVisibilitySprint(userId: string, brandId: BrandId, sprintId: string): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const sprint = await this.prisma.visibilitySprint.findFirst({ where: { id: sprintId, brandId } });
+
+    return sprint ? toVisibilitySprint(sprint) : null;
+  }
+
+  async getCurrentVisibilitySprint(userId: string, brandId: BrandId): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const activeSprint = await this.prisma.visibilitySprint.findFirst({
+      where: { brandId, status: { in: ['running', 'waiting_confirmation', 'draft'] } },
+      orderBy: { updatedAt: 'desc' }
+    });
+    if (activeSprint) {
+      return toVisibilitySprint(activeSprint);
+    }
+
+    const latestSprint = await this.prisma.visibilitySprint.findFirst({ where: { brandId }, orderBy: { updatedAt: 'desc' } });
+
+    return latestSprint ? toVisibilitySprint(latestSprint) : null;
+  }
+
+  async createVisibilitySprint(userId: string, brandId: BrandId, input: VisibilitySprintCreateInput): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const timestamp = new Date().toISOString();
+    const currentStep = input.currentStep ?? 'question_radar';
+    const sprint = await this.prisma.visibilitySprint.create({
+      data: {
+        id: `visibility_sprint_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        brandId,
+        title: input.title.trim(),
+        goal: input.goal.trim(),
+        status: input.status ?? 'draft',
+        currentStep,
+        steps: (input.steps ?? createDefaultVisibilitySprintSteps(currentStep)) as Prisma.InputJsonArray,
+        metricSummary: {
+          ...createEmptyVisibilitySprintMetricSummary(),
+          ...input.metricSummary,
+          updatedAt: timestamp
+        } as Prisma.InputJsonObject,
+        relatedQuestionIds: input.relatedQuestionIds ?? [],
+        relatedTestPlanIds: input.relatedTestPlanIds ?? [],
+        relatedMonitoringRunIds: input.relatedMonitoringRunIds ?? [],
+        relatedStandardAnswerIds: input.relatedStandardAnswerIds ?? [],
+        relatedContentTaskIds: input.relatedContentTaskIds ?? [],
+        relatedPublishingRecordIds: input.relatedPublishingRecordIds ?? [],
+        relatedRetestTaskIds: input.relatedRetestTaskIds ?? [],
+        createdBy: userId
+      }
+    });
+
+    return toVisibilitySprint(sprint);
+  }
+
+  async updateVisibilitySprintStep(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintStepUpdateInput): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const exists = await this.prisma.visibilitySprint.findFirst({ where: { id: sprintId, brandId } });
+    if (!exists) {
+      return null;
+    }
+
+    const sprint = await this.prisma.visibilitySprint.update({
+      where: { id: sprintId },
+      data: {
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        currentStep: input.currentStep,
+        steps: (input.steps ?? createDefaultVisibilitySprintSteps(input.currentStep)) as Prisma.InputJsonArray
+      }
+    });
+
+    return toVisibilitySprint(sprint);
+  }
+
+  async updateVisibilitySprintMetrics(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintMetricUpdateInput): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const exists = await this.prisma.visibilitySprint.findFirst({ where: { id: sprintId, brandId } });
+    if (!exists) {
+      return null;
+    }
+
+    const metricSummary = {
+      ...toVisibilitySprintMetricSummary(exists.metricSummary),
+      ...input,
+      updatedAt: new Date().toISOString()
+    };
+    const sprint = await this.prisma.visibilitySprint.update({
+      where: { id: sprintId },
+      data: { metricSummary: metricSummary as Prisma.InputJsonObject }
+    });
+
+    return toVisibilitySprint(sprint);
+  }
+
+  async updateVisibilitySprintRelations(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintRelationsUpdateInput): Promise<VisibilitySprint | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const exists = await this.prisma.visibilitySprint.findFirst({ where: { id: sprintId, brandId } });
+    if (!exists) {
+      return null;
+    }
+
+    const sprint = await this.prisma.visibilitySprint.update({
+      where: { id: sprintId },
+      data: {
+        ...(input.relatedQuestionIds !== undefined ? { relatedQuestionIds: input.relatedQuestionIds } : {}),
+        ...(input.relatedTestPlanIds !== undefined ? { relatedTestPlanIds: input.relatedTestPlanIds } : {}),
+        ...(input.relatedMonitoringRunIds !== undefined ? { relatedMonitoringRunIds: input.relatedMonitoringRunIds } : {}),
+        ...(input.relatedStandardAnswerIds !== undefined ? { relatedStandardAnswerIds: input.relatedStandardAnswerIds } : {}),
+        ...(input.relatedContentTaskIds !== undefined ? { relatedContentTaskIds: input.relatedContentTaskIds } : {}),
+        ...(input.relatedPublishingRecordIds !== undefined ? { relatedPublishingRecordIds: input.relatedPublishingRecordIds } : {}),
+        ...(input.relatedRetestTaskIds !== undefined ? { relatedRetestTaskIds: input.relatedRetestTaskIds } : {})
+      }
+    });
+
+    return toVisibilitySprint(sprint);
+  }
+
+  async listBrandStandardAnswers(userId: string, brandId: BrandId, questionId?: string): Promise<BrandStandardAnswer[] | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const answers = await this.prisma.brandStandardAnswer.findMany({
+      where: { brandId, ...(questionId ? { questionId } : {}) },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    return answers.map(toBrandStandardAnswer);
+  }
+
+  async getBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string): Promise<BrandStandardAnswer | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const answer = await this.prisma.brandStandardAnswer.findFirst({ where: { id: answerId, brandId } });
+
+    return answer ? toBrandStandardAnswer(answer) : null;
+  }
+
+  async createBrandStandardAnswer(userId: string, brandId: BrandId, input: BrandStandardAnswerInput): Promise<BrandStandardAnswer | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const answer = await this.prisma.brandStandardAnswer.create({
+      data: {
+        id: `standard_answer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        brandId,
+        questionId: input.questionId.trim(),
+        question: input.question.trim(),
+        answer: input.answer.trim(),
+        keyPoints: toInputJsonArray(cleanStringList(input.keyPoints)),
+        evidence: toInputJsonArray(cleanStandardAnswerEvidence(input.evidence)),
+        status: input.status ?? 'draft',
+        createdBy: userId
+      }
+    });
+
+    return toBrandStandardAnswer(answer);
+  }
+
+  async updateBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string, input: BrandStandardAnswerUpdateInput): Promise<BrandStandardAnswer | null> {
+    if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
+      return null;
+    }
+
+    const exists = await this.prisma.brandStandardAnswer.findFirst({ where: { id: answerId, brandId } });
+    if (!exists) {
+      return null;
+    }
+
+    const answer = await this.prisma.brandStandardAnswer.update({
+      where: { id: answerId },
+      data: {
+        ...(input.questionId !== undefined ? { questionId: input.questionId.trim() } : {}),
+        ...(input.question !== undefined ? { question: input.question.trim() } : {}),
+        ...(input.answer !== undefined ? { answer: input.answer.trim() } : {}),
+        ...(input.keyPoints !== undefined ? { keyPoints: toInputJsonArray(cleanStringList(input.keyPoints)) } : {}),
+        ...(input.evidence !== undefined ? { evidence: toInputJsonArray(cleanStandardAnswerEvidence(input.evidence)) } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.reviewedBy !== undefined ? { reviewedBy: input.reviewedBy.trim() } : {}),
+        ...(input.reviewedAt !== undefined ? { reviewedAt: new Date(input.reviewedAt) } : {})
+      }
+    });
+
+    return toBrandStandardAnswer(answer);
+  }
+
   async listMonitoringRuns(userId: string, brandId: BrandId): Promise<MonitoringRunDetail[] | null> {
     if (!(await this.findAccessibleBrandDetail(userId, brandId))) {
       return null;
@@ -2053,7 +2323,7 @@ export class PrismaPermissionsRepository {
     }
 
     const status = platform.mode === 'manual' || platform.mode === 'semi_auto' ? 'review_required' : 'failed';
-    const errorMessage = status === 'failed' ? '自动测试暂未接入，请改用浏览器辅助测试或手动录入回答' : '等待人工录入原始回答';
+    const errorMessage = status === 'failed' ? '自动监测暂未接入，请改用浏览器辅助监测或手动录入回答' : '等待人工录入原始回答';
     const updated = await this.prisma.monitoringRun.update({
       where: { id: run.id },
       data: {
@@ -2175,7 +2445,7 @@ export class PrismaPermissionsRepository {
     if (!question.promptId) {
       return {
         status: 'needs_confirmation',
-        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。'
+        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。'
       };
     }
 
@@ -2183,7 +2453,7 @@ export class PrismaPermissionsRepository {
     if (!connector) {
       return {
         status: 'needs_confirmation',
-        message: '该平台浏览器适配器尚未注册，请改用手动测试路径。'
+        message: '该平台浏览器适配器尚未注册，请改用手动录入路径。'
       };
     }
 
@@ -2208,7 +2478,7 @@ export class PrismaPermissionsRepository {
     if (!run) {
       return {
         status: 'needs_confirmation',
-        message: '浏览器测试运行创建失败，请确认 Prompt 与平台连接。'
+        message: '浏览器辅助监测运行创建失败，请确认 Prompt 与平台连接。'
       };
     }
 
@@ -2302,7 +2572,7 @@ export class PrismaPermissionsRepository {
       const failureBase = { question: normalized.question, platformCode: normalized.platformCode, status: 'failed' as const };
 
       if (normalized.testPlanId !== testPlanId) {
-        result.failed.push({ ...failureBase, message: '批量录入中的测试计划 ID 不一致。' });
+        result.failed.push({ ...failureBase, message: '批量录入中的监测计划 ID 不一致。' });
         continue;
       }
 
@@ -2313,12 +2583,12 @@ export class PrismaPermissionsRepository {
 
       const question = findManualAnswerQuestion(plan, normalized.question, normalized.platformCode);
       if (!question) {
-        result.failed.push({ ...failureBase, message: '未匹配到对应测试问题和平台，请重新选择对应问题。' });
+        result.failed.push({ ...failureBase, message: '未匹配到对应监测问题和平台，请重新选择对应问题。' });
         continue;
       }
 
       if (!question.promptId) {
-        result.failed.push({ ...failureBase, message: '该测试问题尚未关联 Prompt，无法创建监测记录。' });
+        result.failed.push({ ...failureBase, message: '该监测问题尚未关联 Prompt，无法创建监测记录。' });
         continue;
       }
 
@@ -2511,7 +2781,7 @@ export class PrismaPermissionsRepository {
         brandId,
         sourceTestPlanId: input.sourceTestPlanId,
         sourceRunIds: input.sourceRunIds ?? [],
-        summary: input.summary?.trim() || '根据首轮测试结果生成优化计划',
+        summary: input.summary?.trim() || '根据首轮监测结果生成优化计划',
         reasons: input.reasons ?? [],
         priority: input.priority ?? 'medium',
         ownerId: input.ownerId,
@@ -3754,7 +4024,7 @@ export class PrismaPermissionsRepository {
       retestRunId: task.retestRunId ?? task.sourceRunId,
       plannedAt: plan?.retestAt.toISOString() ?? timestamp,
       targetScore: 80,
-      notes: '优化任务完成后自动进入再次测试计划',
+      notes: '优化任务完成后自动进入再次监测计划',
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -3796,10 +4066,10 @@ export class PrismaPermissionsRepository {
         ...contentRecommendations,
         ...failedRetests.map((record) => ({
           contentType: 'website_faq' as const,
-          title: '再次测试未提升后的下一轮内容补强',
+          title: '再次监测未提升后的下一轮内容补强',
           targetPlatform: toStringArray(plan.publishingPlatforms)[0] ?? 'official_site',
-          targetKeywords: ['再次测试未提升', 'AI 推荐内容补强'],
-          reason: record.nextSuggestion ?? '再次测试指标未提升，需要补充更明确的品牌事实、引用资料和标准表达。'
+          targetKeywords: ['再次监测未提升', 'AI 推荐内容补强'],
+          reason: record.nextSuggestion ?? '再次监测指标未提升，需要补充更明确的品牌事实、引用资料和标准表达。'
         }))
       ];
     } else if (mappedTasks.length > 0 && mappedTasks.every((item) => item.retestRecords.some((record) => record.completedAt && record.passed))) {
@@ -4061,7 +4331,7 @@ export class PrismaPermissionsRepository {
           themeId: theme.id,
           question: question.question,
           purposes: question.purposes,
-          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
           priority: question.priority,
           estimatedValue: question.estimatedValue,
           editable: true,
@@ -4467,6 +4737,203 @@ export class PrismaPermissionsRepository {
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function cleanStringList(values: string[] = []): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function cleanStandardAnswerEvidence(values: BrandStandardAnswerEvidence[] = []): BrandStandardAnswerEvidence[] {
+  return values
+    .map((item) => ({
+      label: item.label.trim(),
+      sourceType: item.sourceType,
+      ...(item.sourceId?.trim() ? { sourceId: item.sourceId.trim() } : {}),
+      excerpt: item.excerpt.trim()
+    }))
+    .filter((item) => item.label.length > 0 && item.excerpt.length > 0);
+}
+
+function toInputJsonArray<T extends Prisma.InputJsonValue>(values: T[]): Prisma.InputJsonArray {
+  return values as Prisma.InputJsonArray;
+}
+
+function createEmptyVisibilitySprintMetricSummary(): VisibilitySprintMetricSummary {
+  return {
+    questionCoverageRate: 0,
+    mentionRate: 0,
+    recommendationRate: 0,
+    firstRecommendationRate: 0,
+    topThreeRate: 0,
+    citationHitRate: 0,
+    expressionAccuracyRate: 0,
+    riskExpressionCount: 0,
+    contentGapCount: 0,
+    competitorSuppressionCount: 0,
+    sampleSize: 0
+  };
+}
+
+function createDefaultVisibilitySprintSteps(currentStep: VisibilitySprintStepCode): VisibilitySprintStep[] {
+  const steps: Array<Pick<VisibilitySprintStep, 'code' | 'title' | 'message'>> = [
+    {
+      code: 'question_radar',
+      title: '问题意图雷达',
+      message: '从品牌资料、竞品和用户真实搜索意图中筛出本轮高价值问题。'
+    },
+    {
+      code: 'ai_response_monitoring',
+      title: 'AI 回复监测',
+      message: '获取真实 AI 平台回答，记录品牌是否被提及、推荐和引用。'
+    },
+    {
+      code: 'standard_answer_alignment',
+      title: '品牌标准答案对照',
+      message: '用品牌确认过的标准答案校验 AI 回复是否准确完整。'
+    },
+    {
+      code: 'gap_diagnosis',
+      title: '内容缺口诊断',
+      message: '识别 AI 误解、竞品压制、引用缺口和表达风险。'
+    },
+    {
+      code: 'content_asset_generation',
+      title: '内容资产生成',
+      message: '把缺口转化为可审稿的文章、问答、门店页和平台内容草稿。'
+    },
+    {
+      code: 'publishing_preparation',
+      title: '发布准备',
+      message: '按平台要求整理标题、正文、标签和人工发布清单。'
+    },
+    {
+      code: 'retest_and_trend',
+      title: '复测和趋势',
+      message: '在内容分发后安排复测，追踪 AI 可见性指标变化。'
+    }
+  ];
+  let reachedCurrent = false;
+
+  return steps.map((step) => {
+    if (step.code === currentStep) {
+      reachedCurrent = true;
+      return { ...step, status: 'running', relatedEntityIds: [] };
+    }
+
+    return { ...step, status: reachedCurrent ? 'pending' : 'completed', relatedEntityIds: [] };
+  });
+}
+
+function toVisibilitySprintMetricSummary(value: unknown): VisibilitySprintMetricSummary {
+  const input = toRecord(value);
+  const summary = createEmptyVisibilitySprintMetricSummary();
+
+  return {
+    questionCoverageRate: toNumber(input.questionCoverageRate, summary.questionCoverageRate),
+    mentionRate: toNumber(input.mentionRate, summary.mentionRate),
+    recommendationRate: toNumber(input.recommendationRate, summary.recommendationRate),
+    firstRecommendationRate: toNumber(input.firstRecommendationRate, summary.firstRecommendationRate),
+    topThreeRate: toNumber(input.topThreeRate, summary.topThreeRate),
+    citationHitRate: toNumber(input.citationHitRate, summary.citationHitRate),
+    expressionAccuracyRate: toNumber(input.expressionAccuracyRate, summary.expressionAccuracyRate),
+    riskExpressionCount: toNumber(input.riskExpressionCount, summary.riskExpressionCount),
+    contentGapCount: toNumber(input.contentGapCount, summary.contentGapCount),
+    competitorSuppressionCount: toNumber(input.competitorSuppressionCount, summary.competitorSuppressionCount),
+    sampleSize: toNumber(input.sampleSize, summary.sampleSize),
+    ...(typeof input.updatedAt === 'string' ? { updatedAt: input.updatedAt } : {})
+  };
+}
+
+function toNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function toVisibilitySprintSteps(value: unknown, currentStep: VisibilitySprintStepCode): VisibilitySprintStep[] {
+  if (!Array.isArray(value)) {
+    return createDefaultVisibilitySprintSteps(currentStep);
+  }
+
+  const steps = value.flatMap((item) => {
+    const input = toRecord(item);
+    if (typeof input.code !== 'string' || typeof input.title !== 'string' || typeof input.message !== 'string') {
+      return [];
+    }
+
+    return [{
+      code: input.code as VisibilitySprintStepCode,
+      status: (typeof input.status === 'string' ? input.status : 'pending') as VisibilitySprintStep['status'],
+      title: input.title,
+      message: input.message,
+      ...(typeof input.startedAt === 'string' ? { startedAt: input.startedAt } : {}),
+      ...(typeof input.completedAt === 'string' ? { completedAt: input.completedAt } : {}),
+      relatedEntityIds: toStringArray(input.relatedEntityIds)
+    } satisfies VisibilitySprintStep];
+  });
+
+  return steps.length > 0 ? steps : createDefaultVisibilitySprintSteps(currentStep);
+}
+
+function toVisibilitySprint(sprint: PrismaVisibilitySprint): VisibilitySprint {
+  const currentStep = sprint.currentStep as VisibilitySprintStepCode;
+
+  return {
+    sprintId: sprint.id,
+    brandId: sprint.brandId,
+    title: sprint.title,
+    goal: sprint.goal,
+    status: sprint.status as VisibilitySprintStatus,
+    currentStep,
+    steps: toVisibilitySprintSteps(sprint.steps, currentStep),
+    metricSummary: toVisibilitySprintMetricSummary(sprint.metricSummary),
+    relatedQuestionIds: toStringArray(sprint.relatedQuestionIds),
+    relatedTestPlanIds: toStringArray(sprint.relatedTestPlanIds),
+    relatedMonitoringRunIds: toStringArray(sprint.relatedMonitoringRunIds),
+    relatedStandardAnswerIds: toStringArray(sprint.relatedStandardAnswerIds),
+    relatedContentTaskIds: toStringArray(sprint.relatedContentTaskIds),
+    relatedPublishingRecordIds: toStringArray(sprint.relatedPublishingRecordIds),
+    relatedRetestTaskIds: toStringArray(sprint.relatedRetestTaskIds),
+    createdBy: sprint.createdBy,
+    createdAt: sprint.createdAt.toISOString(),
+    updatedAt: sprint.updatedAt.toISOString()
+  };
+}
+
+function toBrandStandardAnswer(answer: PrismaBrandStandardAnswer): BrandStandardAnswer {
+  return {
+    answerId: answer.id,
+    brandId: answer.brandId,
+    questionId: answer.questionId,
+    question: answer.question,
+    answer: answer.answer,
+    keyPoints: toStringArray(answer.keyPoints),
+    evidence: toBrandStandardAnswerEvidence(answer.evidence),
+    status: answer.status as BrandStandardAnswerStatus,
+    ...(answer.reviewedBy ? { reviewedBy: answer.reviewedBy } : {}),
+    ...(answer.reviewedAt ? { reviewedAt: answer.reviewedAt.toISOString() } : {}),
+    createdBy: answer.createdBy,
+    createdAt: answer.createdAt.toISOString(),
+    updatedAt: answer.updatedAt.toISOString()
+  };
+}
+
+function toBrandStandardAnswerEvidence(value: unknown): BrandStandardAnswerEvidence[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    const input = toRecord(item);
+    if (typeof input.label !== 'string' || typeof input.sourceType !== 'string' || typeof input.excerpt !== 'string') {
+      return [];
+    }
+
+    return [{
+      label: input.label,
+      sourceType: input.sourceType as BrandStandardAnswerEvidence['sourceType'],
+      ...(typeof input.sourceId === 'string' ? { sourceId: input.sourceId } : {}),
+      excerpt: input.excerpt
+    } satisfies BrandStandardAnswerEvidence];
+  });
 }
 
 function toAuditLog(auditLog: PrismaAuditLog): AuditLog {
@@ -4973,7 +5440,7 @@ function buildConnectionSummaryFromConfigs(platformCodes: string[], configs: Pla
         methods: ['api'],
         status: config.hasCredential ? 'ready' : 'needs_configuration',
         hasCredential: config.hasCredential,
-        message: config.hasCredential ? '可以自动测试。' : '需要填写平台密钥后才能自动测试。'
+        message: config.hasCredential ? '可以自动监测。' : '需要填写平台密钥后才能自动监测。'
       };
     }
 
@@ -4984,7 +5451,7 @@ function buildConnectionSummaryFromConfigs(platformCodes: string[], configs: Pla
         methods: ['api', 'browser', 'manual'],
         status: 'needs_confirmation',
         hasCredential: config.hasCredential,
-        message: '平台接口和模型已预置；补齐平台密钥可自动测试，也可先用浏览器或手动测试。'
+        message: '平台接口和模型已预置；补齐平台密钥可自动监测，也可先用浏览器或手动录入。'
       };
     }
 
@@ -4995,7 +5462,7 @@ function buildConnectionSummaryFromConfigs(platformCodes: string[], configs: Pla
         methods: ['api'],
         status: 'ready',
         hasCredential: false,
-        message: '演示平台可以直接测试。'
+        message: '演示平台可以直接监测。'
       };
     }
 
@@ -5005,7 +5472,7 @@ function buildConnectionSummaryFromConfigs(platformCodes: string[], configs: Pla
       methods: ['manual'],
       status: 'manual_available',
       hasCredential: false,
-      message: '可通过手动录入回答完成测试。'
+      message: '可通过手动录入回答完成监测。'
     };
   });
 }
@@ -5013,7 +5480,7 @@ function buildConnectionSummaryFromConfigs(platformCodes: string[], configs: Pla
 function buildTestPlanConfirmationItems(connectionSummary: TestPlan['connectionSummary']): string[] {
   return connectionSummary.flatMap((summary) => {
     if (summary.status === 'needs_configuration') return [`${summary.name} 需要先补充平台连接信息`];
-    if (summary.status === 'needs_confirmation') return [`${summary.name} 需要确认浏览器登录或切换手动测试`];
+    if (summary.status === 'needs_confirmation') return [`${summary.name} 需要确认浏览器登录或切换手动录入`];
 
     return [];
   });
@@ -5071,7 +5538,7 @@ async function executeTestPlanSteps(
             platformCode,
             method: 'api',
             status: 'skipped',
-            message: '这个问题还没有准备好，暂时无法自动测试。'
+            message: '这个问题还没有准备好，暂时无法自动监测。'
           });
           continue;
         }
@@ -5088,7 +5555,7 @@ async function executeTestPlanSteps(
           method: 'api',
           status: 'skipped',
           promptId: question.promptId,
-          message: '自动测试创建失败，请检查测试问题和平台连接信息。'
+          message: '自动监测创建失败，请检查监测问题和平台连接信息。'
         });
         continue;
       }
@@ -5100,7 +5567,7 @@ async function executeTestPlanSteps(
             platformCode,
             method: 'browser',
             status: 'needs_confirmation',
-            message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。'
+            message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。'
           });
           continue;
         }
@@ -5202,10 +5669,10 @@ const testPlanTemplates: TestPlanTemplate[] = [
     name: '儿童运动本地增长模板',
     industryKeywords: ['儿童运动', '儿童体适能', '运动教育', '少儿运动', '体能'],
     cityRequired: true,
-    description: '适合本地儿童运动、少儿体能、体操、跑酷和中考体测品牌的首轮 AI 测试。',
+    description: '适合本地儿童运动、少儿体能、体操、跑酷和中考体测品牌的首轮 AI 回复监测。',
     recommended: false,
     analysisFocus: ['brand_mentioned', 'rank_first', 'value_prop_accuracy', 'risk_expression'],
-    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen']
+    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
   },
   {
     id: 'generic_brand_first_round',
@@ -5215,7 +5682,7 @@ const testPlanTemplates: TestPlanTemplate[] = [
     description: '适合缺少行业模板时快速启动品牌认知、品类推荐和购买决策测试。',
     recommended: false,
     analysisFocus: ['brand_mentioned', 'rank_first', 'value_prop_accuracy', 'competitor_presence'],
-    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen']
+    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
   }
 ];
 
@@ -6501,9 +6968,18 @@ const defaultPlatformConfigs: Array<Omit<PlatformConfigInput, 'credentialRef'>> 
   { platformCode: 'kimi', name: 'Kimi', mode: 'semi_auto', endpointUrl: 'https://api.moonshot.cn/v1/chat/completions', modelName: 'moonshot-v1-8k', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'deepseek', name: 'DeepSeek', mode: 'semi_auto', endpointUrl: 'https://api.deepseek.com/chat/completions', modelName: 'deepseek-chat', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'qianwen', name: '通义千问', mode: 'semi_auto', endpointUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', modelName: 'qwen-plus', rateLimitPerMinute: 30, enabled: true },
+  { platformCode: 'stepfun', name: '阶跃星辰', mode: 'api', endpointUrl: 'https://api.stepfun.com/v1/chat/completions', modelName: 'step-3.7-flash', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'manual_input', name: '人工录入', mode: 'manual', modelName: 'manual', rateLimitPerMinute: 0, enabled: true },
-  { platformCode: 'mock_ai', name: '演示 AI', mode: 'mock', modelName: 'mock-v1', rateLimitPerMinute: 60, enabled: true }
+  { platformCode: 'mock_ai', name: '示例回答', mode: 'mock', modelName: 'mock-v1', rateLimitPerMinute: 60, enabled: true }
 ];
+
+function getDefaultCredentialRef(config: Pick<PlatformConfigInput, 'platformCode'>): string | undefined {
+  if (config.platformCode === 'stepfun' && process.env.STEPFUN_API_KEY) {
+    return 'STEPFUN_API_KEY';
+  }
+
+  return undefined;
+}
 
 function normalizePlatformConfigInput(input: PlatformConfigInput): PlatformConfigInput {
   return {
@@ -6601,7 +7077,7 @@ function classifyPlatformConfig(config: PrismaPlatformConfig, hasCredential: boo
       availableMethods: [],
       connectionStatus: 'needs_configuration',
       connectionStatusLabel: '需要补充信息',
-      nextAction: '启用平台后再加入测试计划。'
+      nextAction: '启用平台后再加入监测计划。'
     };
   }
 
@@ -6620,8 +7096,8 @@ function classifyPlatformConfig(config: PrismaPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['api'],
       connectionStatus: 'ready',
-      connectionStatusLabel: '可自动测试',
-      nextAction: hasCredential ? '可直接加入自动测试计划。' : '补齐平台密钥后可自动测试。'
+      connectionStatusLabel: '可自动监测',
+      nextAction: hasCredential ? '可直接加入自动监测计划。' : '补齐平台密钥后可自动监测。'
     };
   }
 
@@ -6629,8 +7105,8 @@ function classifyPlatformConfig(config: PrismaPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['api', 'browser', 'manual'],
       connectionStatus: 'browser_available',
-      connectionStatusLabel: '可用浏览器测试',
-      nextAction: '已预置平台接口和模型候选；补齐平台密钥可自动测试，也可先用浏览器或手动测试。'
+      connectionStatusLabel: '可用浏览器辅助监测',
+      nextAction: '已预置平台接口和模型候选；补齐平台密钥可自动监测，也可先用浏览器或手动录入。'
     };
   }
 
@@ -6638,16 +7114,16 @@ function classifyPlatformConfig(config: PrismaPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['manual'],
       connectionStatus: 'manual_available',
-      connectionStatusLabel: '可手动测试',
-      nextAction: '复制问题到平台测试后录入回答。'
+      connectionStatusLabel: '可手动录入',
+      nextAction: '复制问题到平台监测后录入回答。'
     };
   }
 
   return {
     availableMethods: ['api'],
     connectionStatus: 'ready',
-    connectionStatusLabel: '可自动测试',
-    nextAction: '演示平台可以直接测试。'
+    connectionStatusLabel: '可自动监测',
+    nextAction: '演示平台可以直接监测。'
   };
 }
 
@@ -6985,7 +7461,7 @@ function buildGrowthOptimizationTaskInputs(plan: GrowthOptimizationPlan): Optimi
       priority: plan.priority
     },
     {
-      title: '按原测试问题安排再次测试',
+      title: '按原监测问题安排再次监测',
       type: 'monitoring_issue',
       ownerId,
       relatedPromptId,

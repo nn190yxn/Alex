@@ -19,7 +19,7 @@ describe('automation repository', () => {
       brandId: 'brand_demo',
       type: 'test_questions',
       status: 'pending',
-      title: '确认测试问题',
+      title: '确认监测问题',
       impact: '影响本轮测试覆盖面',
       recommendation: '保留高价值问题',
       evidenceSummary: '系统已精选 6 个问题。',
@@ -46,7 +46,7 @@ describe('automation repository', () => {
       brandId: 'brand_demo',
       sourceType: 'llm',
       sourceId: 'candidate_1',
-      summary: '由 LLM 生成测试问题',
+      summary: '由 LLM 生成监测问题',
       createdAt: now
     });
 

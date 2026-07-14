@@ -76,7 +76,7 @@ export class OpenAICompatibleAdapter implements AIPlatformAdapter {
     const credential = this.resolveCredential(config);
     const body: Record<string, unknown> = {
       model: config.modelName ?? 'gpt-4o-mini',
-      messages: input.messages,
+      messages: normalizeMessagesForProvider(input.messages, config.platformCode),
       metadata: {
         brandId: input.brandId,
         platformCode: input.platformCode
@@ -180,7 +180,7 @@ export class OpenAICompatibleAdapter implements AIPlatformAdapter {
         ok: false,
         mode: config.mode,
         checkedAt,
-        message: '当前配置无法使用自动测试，请改用浏览器辅助测试或手动录入回答'
+        message: '当前配置无法使用自动监测，请改用浏览器辅助监测或手动录入回答'
       };
     }
 
@@ -277,6 +277,30 @@ async function normalizeProviderError(response: Pick<Response, 'status' | 'text'
 
 function resolveCredentialFromEnvironment(credentialRef: string): string | undefined {
   return process.env[credentialRef] ?? resolveInlineCredential(credentialRef);
+}
+
+function normalizeMessagesForProvider(messages: RunLLMInput['messages'], platformCode: string): RunLLMInput['messages'] {
+  if (platformCode !== 'stepfun') {
+    return messages;
+  }
+
+  const developerMessages = messages.filter((message) => message.role === 'developer');
+
+  if (developerMessages.length === 0) {
+    return messages;
+  }
+
+  const developerContent = developerMessages.map((message) => message.content).join('\n');
+  const normalizedMessages = messages.filter((message) => message.role !== 'developer');
+  const systemIndex = normalizedMessages.findIndex((message) => message.role === 'system');
+
+  if (systemIndex >= 0) {
+    return normalizedMessages.map((message, index) => index === systemIndex
+      ? { ...message, content: `${message.content}\n${developerContent}` }
+      : message);
+  }
+
+  return [{ role: 'system', content: developerContent }, ...normalizedMessages];
 }
 
 function resolveInlineCredential(credentialRef: string): string | undefined {

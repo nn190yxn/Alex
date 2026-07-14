@@ -17,7 +17,7 @@ export class ManualInputAdapter implements AIPlatformAdapter {
       ok: config.mode === 'manual',
       mode: config.mode,
       checkedAt: new Date().toISOString(),
-      message: config.mode === 'manual' ? '手动测试可用' : '当前平台请改用手动测试方式'
+      message: config.mode === 'manual' ? '手动录入可用' : '当前平台请改用手动录入方式'
     };
   }
 }

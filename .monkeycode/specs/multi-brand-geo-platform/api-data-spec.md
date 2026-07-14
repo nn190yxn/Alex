@@ -83,7 +83,7 @@ viewer      只读用户
 api         官方 API
 manual      人工录入
 semi_auto   半自动采集
-mock        模拟数据
+mock        示例数据
 ```
 
 ### 3.4 监测任务状态

@@ -10,8 +10,8 @@
 - `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 API 契约、共享类型和品牌上下文约定
 - `当前工作区/.monkeycode/docs/DEVELOPER_GUIDE.md`：本地开发、验证和后续任务入口
 - `当前工作区/.monkeycode/docs/DELIVERY_CHECKLIST.md`：交付检查清单、验证命令和当前预览状态
-- `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：内测用户使用说明，按页面流程说明品牌初始化、AI 测试、优化计划、写内容、再次测试和报告导出
-- `当前工作区/.monkeycode/docs/LLM_API_TECHNICAL_PLAN.md`：大模型 API 接入技术规划，覆盖自动生成测试问题、回答解读、内容生成、优化计划、调用审计和分阶段实施
+- `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：内测用户使用说明，按页面流程说明品牌初始化、AI 回复监测、优化计划、写内容、再次监测和报告导出
+- `当前工作区/.monkeycode/docs/LLM_API_TECHNICAL_PLAN.md`：大模型 API 接入技术规划，覆盖自动生成监测问题、回答解读、内容生成、优化计划、调用审计和分阶段实施
 - `当前工作区/.monkeycode/docs/DEPLOYMENT_RUNBOOK.md`：生产试运行部署、健康检查、回滚和排障手册
 - `当前工作区/.monkeycode/docs/PILOT_DEMO_CHECKLIST.md`：试点客户演示数据、演示路径、验收清单和反馈转需求记录格式
 - `当前工作区/.monkeycode/docs/CONTINUOUS_ITERATION_PLAYBOOK.md`：阶段复盘、反馈转需求、行业规则变化和验证门禁机制
@@ -59,21 +59,27 @@
 - `design.md`：阶段边界、门禁和跨阶段规则
 - `tasklist.md`：持续开发总任务清单
 
-小白友好 GEO 自动测试与增长优化流程规格位于 `当前工作区/.monkeycode/specs/beginner-friendly-geo-workflow/`。
+小白友好 GEO AI 回复监测与增长优化流程规格位于 `当前工作区/.monkeycode/specs/beginner-friendly-geo-workflow/`。
 
-- `requirements.md`：品牌资料上传导入、自动生成测试问法、AI 平台连接、浏览器辅助测试、手动兜底、业务化结果解释和 GEO 增长优化闭环需求
+- `requirements.md`：品牌资料上传导入、自动生成监测问法、AI 平台连接、浏览器辅助监测、手动兜底、业务化结果解释和 GEO 增长优化闭环需求
 - `design.md`：小白友好 GEO 流程、平台连接、增长优化和安全边界设计
-- `tasklist.md`：小白友好 GEO 自动测试与增长优化流程实施任务清单
+- `tasklist.md`：小白友好 GEO AI 回复监测与增长优化流程实施任务清单
 
 大模型 API 接入实施计划位于 `当前工作区/.monkeycode/specs/llm-api-integration/`。
 
-- `tasklist.md`：统一 LLM 调用基础、自动生成测试问题、回答解读、内容生成和优化计划增强的实施任务清单
+- `tasklist.md`：统一 LLM 调用基础、自动生成监测问题、回答解读、内容生成和优化计划增强的实施任务清单
 
 竞品地图发现规格位于 `当前工作区/.monkeycode/specs/competitor-map-discovery/`。
 
 - `requirements.md`：地图 POI 辅助发现、候选评分、人工确认和竞品监控衔接需求
 - `design.md`：发现 API、候选评分、候选仓储、竞品档案扩展和前端评审界面设计
 - `tasklist.md`：竞品地图发现第一版内测闭环、地图 Provider 接入和后续工作流联动任务
+
+AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/ai-visibility-sprint-refactor/`。
+
+- `requirements.md`：问题雷达、真实 AI 回复监测、品牌标准答案对照、内容缺口、内容资产、发布准备、复测和趋势需求
+- `design.md`：Sprint 聚合层、阶段状态、指标摘要、数据边界和共享类型设计
+- `tasklist.md`：Sprint 契约、仓储、API、问题雷达、标准答案、对照分析、内容资产、复测和前端工作台实施任务
 
 ## 现有历史文档
 

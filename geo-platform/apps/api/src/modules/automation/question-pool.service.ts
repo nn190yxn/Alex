@@ -45,15 +45,15 @@ export class QuestionPoolService {
     const selected = selectRoundQuestions(candidates, selectedQuestionCount);
 
     if (selected.length === 0) {
-      throw new BadRequestException('当前品牌还没有可用于本轮测试的问题');
+      throw new BadRequestException('当前品牌还没有可用于本轮监测的问题');
     }
 
     this.confirmationQueue.createConfirmation(userId, brandId, packageId, {
       type: 'test_questions',
-      title: '请确认本轮精选测试问题',
-      impact: '这组问题会决定本轮 AI 测试覆盖的用户意图和平台回答样本。',
+      title: '请确认本轮精选监测问题',
+      impact: '这组问题会决定本轮 AI 回复监测覆盖的用户意图和平台回答样本。',
       recommendation: '建议保留 5 到 6 个问题，并覆盖品牌认知、本地推荐、课程适配、购买决策和风险表达。',
-      evidenceSummary: `系统已维护 ${questionPool.length} 个测试问题，并为本轮精选 ${selected.length} 个问题。`,
+      evidenceSummary: `系统已维护 ${questionPool.length} 个监测问题，并为本轮精选 ${selected.length} 个问题。`,
       payload: {
         questionPoolSize: questionPool.length,
         selectedQuestionCount: selected.length,
@@ -162,7 +162,7 @@ export class QuestionPoolService {
         brandId,
         sourceType: source,
         sourceId: candidate.id,
-        summary: `由测试问题候选同步：${candidate.question}`,
+        summary: `由监测问题候选同步：${candidate.question}`,
         createdAt: now
       });
     });
@@ -260,7 +260,7 @@ function updateQuestionPreparationSteps(automationPackage: AutomationPackage): A
         return {
           ...step,
           status: 'completed',
-          message: step.code === 'question_pool_update' ? '测试问题池已更新。' : '本轮精选问题已生成。',
+          message: step.code === 'question_pool_update' ? '监测问题池已更新。' : '本轮精选问题已生成。',
           startedAt: step.startedAt ?? now,
           completedAt: now
         };

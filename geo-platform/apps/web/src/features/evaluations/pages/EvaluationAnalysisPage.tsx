@@ -107,7 +107,7 @@ export function EvaluationAnalysisPage() {
             { title: '原始回答片段', dataIndex: 'rawFragment', render: (value) => <Typography.Text ellipsis>{value}</Typography.Text> },
             { title: '正确表达建议', dataIndex: 'suggestedExpression' },
             { title: '关联平台', dataIndex: 'platformCode' },
-            { title: '关联测试问题', dataIndex: 'promptText' },
+            { title: '关联监测问题', dataIndex: 'promptText' },
             { title: '严重程度', render: (_, record) => <Tag color={record.severity === 'high' ? 'red' : record.severity === 'medium' ? 'orange' : undefined}>{severityLabels[record.severity]}</Tag> },
             { title: '状态', render: (_, record) => <Tag>{statusLabels[record.status]}</Tag> },
             {

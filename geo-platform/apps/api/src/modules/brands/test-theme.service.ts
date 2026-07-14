@@ -2,7 +2,7 @@ import { Injectable, Optional } from '@nestjs/common';
 import type { BrandDetail, BrandProfile, QuestionGenerationInput, QuestionGenerationOutput, TestAssetGenerationResult, TestThemeInput } from '@geo-platform/shared-types';
 import { LLMOrchestrationService } from '../llm/llm-orchestration.service';
 
-const defaultTargetPlatforms = ['doubao', 'kimi', 'deepseek', 'qianwen'];
+const defaultTargetPlatforms = ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'];
 
 @Injectable()
 export class TestThemeService {
@@ -32,7 +32,7 @@ export class TestThemeService {
         name: buildName([brand.industry, brand.businessScope, primaryOffering], '品类推荐'),
         businessExplanation: '验证用户按品类寻找服务时，品牌是否会被 AI 推荐。',
         priority: 'high',
-        estimatedValue: '直接影响非品牌词流量，是首轮 AI 测试的核心入口。',
+        estimatedValue: '直接影响非品牌词流量，是首轮 AI 回复监测的核心入口。',
         sourceProfileFields: ['industry', 'businessScope', 'offerings']
       });
     }

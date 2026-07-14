@@ -171,7 +171,7 @@ export class PlatformsController {
           ok: false,
           mode: config.mode,
           checkedAt: new Date().toISOString(),
-          message: '当前平台暂未接入自动测试，请改用浏览器辅助测试或手动录入回答。'
+          message: '当前平台暂未接入自动监测，请改用浏览器辅助监测或手动录入回答。'
         };
       }
 

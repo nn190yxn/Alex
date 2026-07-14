@@ -356,7 +356,7 @@ export type PromptBatchGenerateInput = {
 
 export type PlatformMode = 'api' | 'manual' | 'semi_auto' | 'mock';
 
-export type BeginnerFriendlyPlatform = 'doubao' | 'kimi' | 'deepseek' | 'qianwen';
+export type BeginnerFriendlyPlatform = 'doubao' | 'kimi' | 'deepseek' | 'qianwen' | 'stepfun';
 
 export type AIConnectionMethod = 'api' | 'browser' | 'manual';
 
@@ -649,6 +649,322 @@ export type AutomationPackage = {
   relatedPublishingRecordIds: string[];
   createdBy: string;
   createdAt: string;
+  updatedAt: string;
+};
+
+export type VisibilitySprintStatus = 'draft' | 'running' | 'waiting_confirmation' | 'completed' | 'failed' | 'stopped';
+
+export type VisibilitySprintStepCode =
+  | 'question_radar'
+  | 'ai_response_monitoring'
+  | 'standard_answer_alignment'
+  | 'gap_diagnosis'
+  | 'content_asset_generation'
+  | 'publishing_preparation'
+  | 'retest_and_trend'
+  | 'completed';
+
+export type VisibilitySprintMetricSummary = {
+  questionCoverageRate: number;
+  mentionRate: number;
+  recommendationRate: number;
+  firstRecommendationRate: number;
+  topThreeRate: number;
+  citationHitRate: number;
+  expressionAccuracyRate: number;
+  riskExpressionCount: number;
+  contentGapCount: number;
+  competitorSuppressionCount: number;
+  sampleSize: number;
+  updatedAt?: string;
+};
+
+export type VisibilitySprintStep = {
+  code: VisibilitySprintStepCode;
+  status: AutomationStepStatus;
+  title: string;
+  message: string;
+  startedAt?: string;
+  completedAt?: string;
+  relatedEntityIds: string[];
+};
+
+export type VisibilitySprint = {
+  sprintId: string;
+  brandId: BrandId;
+  title: string;
+  goal: string;
+  status: VisibilitySprintStatus;
+  currentStep: VisibilitySprintStepCode;
+  steps: VisibilitySprintStep[];
+  metricSummary: VisibilitySprintMetricSummary;
+  relatedQuestionIds: string[];
+  relatedTestPlanIds: string[];
+  relatedMonitoringRunIds: string[];
+  relatedStandardAnswerIds: string[];
+  relatedContentTaskIds: string[];
+  relatedPublishingRecordIds: string[];
+  relatedRetestTaskIds: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuestionRadarItemStatus = 'available' | 'selected' | 'in_sprint' | 'tested' | 'paused';
+
+export type QuestionRadarItem = {
+  questionId: string;
+  sprintId: string;
+  brandId: BrandId;
+  question: string;
+  normalizedQuestion: string;
+  intentLabel: string;
+  intentType: TestThemeType | 'unknown';
+  purposes: TestQuestionPurpose[];
+  platformCoverage: Array<BeginnerFriendlyPlatform | string>;
+  businessValue: string;
+  priority: OptimizationUnitPriority;
+  status: QuestionRadarItemStatus;
+  sprintAssociation: {
+    inSprint: boolean;
+    relation: 'selected_for_sprint' | 'available_for_sprint';
+    duplicateInSprint: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuestionRadarDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  totalQuestionCount: number;
+  inSprintQuestionCount: number;
+  dedupedInSprintQuestionCount: number;
+  duplicateInSprintQuestionCount: number;
+  items: QuestionRadarItem[];
+};
+
+export type BrandStandardAnswerStatus = 'draft' | 'ready_for_review' | 'approved' | 'archived';
+
+export type BrandStandardAnswerEvidence = {
+  label: string;
+  sourceType: 'brand_profile' | 'knowledge_source' | 'manual' | 'content_asset';
+  sourceId?: string;
+  excerpt: string;
+};
+
+export type BrandStandardAnswer = {
+  answerId: string;
+  brandId: BrandId;
+  questionId: string;
+  question: string;
+  answer: string;
+  keyPoints: string[];
+  evidence: BrandStandardAnswerEvidence[];
+  status: BrandStandardAnswerStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BrandStandardAnswerInput = {
+  questionId: string;
+  question: string;
+  answer: string;
+  keyPoints?: string[];
+  evidence?: BrandStandardAnswerEvidence[];
+  status?: BrandStandardAnswerStatus;
+};
+
+export type StandardAnswerAlignmentStatus = 'waiting_real_answer' | 'waiting_standard_answer' | 'aligned' | 'needs_attention';
+
+export type StandardAnswerAlignmentEvidenceType = 'coverage' | 'accuracy' | 'risk_expression' | 'citation_gap' | 'competitor_suppression';
+
+export type StandardAnswerAlignmentEvidence = {
+  type: StandardAnswerAlignmentEvidenceType;
+  severity: 'high' | 'medium' | 'low';
+  label: string;
+  excerpt: string;
+};
+
+export type StandardAnswerAlignmentResponse = {
+  runId: string;
+  responseId?: string;
+  platformCode: string;
+  promptText: string;
+  rawExcerpt: string;
+  citations: string[];
+  brandMentioned: boolean;
+  brandRank: number | null;
+  competitorMentions: CompetitorMention[];
+};
+
+export type StandardAnswerAlignmentItem = {
+  questionId: string;
+  question: string;
+  standardAnswerId?: string;
+  status: StandardAnswerAlignmentStatus;
+  coverageScore: number;
+  accuracyScore: number;
+  keyPointsMatched: string[];
+  keyPointsMissing: string[];
+  citationGap: boolean;
+  riskExpression: boolean;
+  competitorSuppression: boolean;
+  recommendation: string;
+  responses: StandardAnswerAlignmentResponse[];
+  evidence: StandardAnswerAlignmentEvidence[];
+};
+
+export type StandardAnswerAlignmentSummary = {
+  totalQuestionCount: number;
+  alignedCount: number;
+  needsAttentionCount: number;
+  waitingRealAnswerCount: number;
+  waitingStandardAnswerCount: number;
+  citationGapCount: number;
+  riskExpressionCount: number;
+  competitorSuppressionCount: number;
+};
+
+export type StandardAnswerAlignmentDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  realAnswerCount: number;
+  approvedStandardAnswerCount: number;
+  summary: StandardAnswerAlignmentSummary;
+  items: StandardAnswerAlignmentItem[];
+  updatedAt: string;
+};
+
+export type SprintContentGapTask = {
+  questionId: string;
+  question: string;
+  standardAnswerId?: string;
+  contentStrategyId: string;
+  contentTaskId: string;
+  sourceRunIds: string[];
+  gapTypes: StandardAnswerAlignmentEvidenceType[];
+  recommendation: string;
+};
+
+export type SprintContentGapTaskResult = {
+  brandId: BrandId;
+  sprintId: string;
+  createdTaskCount: number;
+  skippedQuestionCount: number;
+  tasks: SprintContentGapTask[];
+  sprint: VisibilitySprint;
+};
+
+export type SprintContentTaskGapContext = {
+  questionId?: string;
+  question?: string;
+  standardAnswerId?: string;
+  sourceRunIds: string[];
+  gapTypes: StandardAnswerAlignmentEvidenceType[];
+  evidenceSummaries: string[];
+  recommendation?: string;
+};
+
+export type SprintContentTaskDraftReadiness = {
+  hasDraft: boolean;
+  bodyLength: number;
+  reviewReady: boolean;
+  message: string;
+};
+
+export type SprintContentTaskItem = {
+  contentTask: ContentGenerationTask;
+  currentVersion?: ContentVersion;
+  gapContext: SprintContentTaskGapContext;
+  retestTarget?: string;
+  draftReadiness: SprintContentTaskDraftReadiness;
+};
+
+export type SprintContentTaskDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  totalTaskCount: number;
+  reviewReadyTaskCount: number;
+  missingDraftTaskCount: number;
+  items: SprintContentTaskItem[];
+  updatedAt: string;
+};
+
+export type SprintPublishingPreparationStatus = 'needs_draft' | 'draft_ready' | 'pending_manual_publish' | 'published' | 'failed';
+
+export type SprintPublishingPreparationItem = {
+  contentTask: ContentGenerationTask;
+  currentVersion?: ContentVersion;
+  publishingRecords: PublishingRecord[];
+  targetPlatform: string;
+  recommendedStatus: SprintPublishingPreparationStatus;
+  message: string;
+};
+
+export type SprintPublishingPreparationDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  totalContentTaskCount: number;
+  preparedRecordCount: number;
+  pendingManualPublishCount: number;
+  publishedRecordCount: number;
+  failedRecordCount: number;
+  items: SprintPublishingPreparationItem[];
+  updatedAt: string;
+};
+
+export type SprintPublishingPreparationInput = {
+  contentTaskIds?: string[];
+  status?: Extract<PublishingRecordStatus, 'draft' | 'pending'>;
+};
+
+export type SprintPublishingPreparationResult = {
+  brandId: BrandId;
+  sprintId: string;
+  createdRecordCount: number;
+  skippedContentTaskCount: number;
+  records: PublishingRecord[];
+  sprint: VisibilitySprint;
+};
+
+export type SprintRetestPlanInput = {
+  publishingRecordIds?: string[];
+  plannedAt?: string;
+  targetScore?: number;
+};
+
+export type SprintRetestPlanResult = {
+  brandId: BrandId;
+  sprintId: string;
+  createdTaskCount: number;
+  skippedPublishingRecordCount: number;
+  tasks: OptimizationTask[];
+  sprint: VisibilitySprint;
+};
+
+export type SprintRetestTrendItem = {
+  task: OptimizationTask;
+  publishingRecord?: PublishingRecord;
+  latestRetestRecord?: RetestRecord;
+  status: 'planned' | 'completed' | 'improved' | 'needs_follow_up';
+  beforeMetrics?: RetestMetricSnapshot;
+  afterMetrics?: RetestMetricSnapshot;
+  metricDelta?: RetestMetricDelta;
+  message: string;
+};
+
+export type SprintRetestTrendDashboard = {
+  brandId: BrandId;
+  sprintId: string;
+  plannedTaskCount: number;
+  completedRetestCount: number;
+  improvedRetestCount: number;
+  baselineMetricSummary: VisibilitySprintMetricSummary;
+  items: SprintRetestTrendItem[];
   updatedAt: string;
 };
 

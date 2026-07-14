@@ -54,6 +54,8 @@ model Brand {
   publishingRecords PublishingRecord[]
   automationPackages AutomationPackage[]
   automationConfirmations AutomationConfirmation[]
+  visibilitySprints VisibilitySprint[]
+  brandStandardAnswers BrandStandardAnswer[]
   platformRewriteVersions PlatformRewriteVersion[]
   testQuestionPoolItems TestQuestionPoolItem[]
   testQuestionSourceRecords TestQuestionSourceRecord[]
@@ -969,6 +971,59 @@ model AutomationConfirmation {
   @@index([packageId])
   @@index([status])
   @@map("automation_confirmations")
+}
+
+model VisibilitySprint {
+  id String @id @map("id")
+  brandId String @map("brand_id")
+  title String
+  goal String
+  status String @default("draft")
+  currentStep String @map("current_step")
+  steps Json @default("[]")
+  metricSummary Json @default("{}") @map("metric_summary")
+  relatedQuestionIds Json @default("[]") @map("related_question_ids")
+  relatedTestPlanIds Json @default("[]") @map("related_test_plan_ids")
+  relatedMonitoringRunIds Json @default("[]") @map("related_monitoring_run_ids")
+  relatedStandardAnswerIds Json @default("[]") @map("related_standard_answer_ids")
+  relatedContentTaskIds Json @default("[]") @map("related_content_task_ids")
+  relatedPublishingRecordIds Json @default("[]") @map("related_publishing_record_ids")
+  relatedRetestTaskIds Json @default("[]") @map("related_retest_task_ids")
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+
+  @@index([brandId])
+  @@index([status])
+  @@index([currentStep])
+  @@index([updatedAt])
+  @@map("visibility_sprints")
+}
+
+model BrandStandardAnswer {
+  id String @id @map("id")
+  brandId String @map("brand_id")
+  questionId String @map("question_id")
+  question String
+  answer String @db.Text
+  keyPoints Json @default("[]") @map("key_points")
+  evidence Json @default("[]")
+  status String @default("draft")
+  reviewedBy String? @map("reviewed_by")
+  reviewedAt DateTime? @map("reviewed_at")
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Restrict)
+
+  @@index([brandId])
+  @@index([questionId])
+  @@index([status])
+  @@index([updatedAt])
+  @@map("brand_standard_answers")
 }
 
 model PlatformRewriteVersion {

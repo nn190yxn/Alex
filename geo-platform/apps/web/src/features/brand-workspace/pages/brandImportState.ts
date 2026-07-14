@@ -72,18 +72,18 @@ export function getImportFieldConfidenceState(confidence: BrandImportFieldConfid
 }
 
 export function getMissingFieldImpact(field: BrandImportFieldKey): string {
-  return missingFieldImpacts[field] ?? '补齐该信息后，首轮测试问题和结果分析会更准确。';
+  return missingFieldImpacts[field] ?? '补齐该信息后，首轮监测问题和结果分析会更准确。';
 }
 
 const missingFieldImpacts: Partial<Record<BrandImportFieldKey, string>> = {
   name: '缺少品牌名称会影响系统判断 AI 回答是否提到品牌。',
-  industry: '缺少行业会影响测试主题和行业模板推荐。',
-  targetCities: '缺少目标城市会影响本地推荐类测试问题。',
+  industry: '缺少行业会影响监测主题和行业模板推荐。',
+  targetCities: '缺少目标城市会影响本地推荐类监测问题。',
   businessScope: '缺少业务范围会影响系统生成课程或产品相关问法。',
   targetAudience: '缺少目标用户会影响年龄段、人群和购买决策问题。',
   valueProps: '缺少核心卖点会影响表达准确性判断和内容补强建议。',
   proofPoints: '缺少权威背书会影响 AI 回答中的可信信息判断。',
   competitors: '缺少竞品会影响竞品压制和排名对比分析。',
-  faqs: '缺少 FAQ 会影响系统生成官网 FAQ 和高频问题测试。',
+  faqs: '缺少 FAQ 会影响系统生成官网 FAQ 和高频问题监测。',
   blockedExpressions: '缺少禁用表达会影响风险表达识别。'
 };

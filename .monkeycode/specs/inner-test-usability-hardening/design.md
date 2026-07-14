@@ -26,7 +26,7 @@ graph TD
 
 - **ContentGenerationWorker**: 强化默认草稿生成逻辑，使真实 LLM 不可用时也能输出可审稿内容。
 - **displayLabels helper**: 统一平台、负责人和演示路径的中文显示。
-- **Core Page Display Updates**: 在自动化确认、AI 测试记录、任务跟进和测试问题编辑中使用中文化 helper。
+- **Core Page Display Updates**: 在自动化确认、AI 回复监测记录、任务跟进和监测问题编辑中使用中文化 helper。
 - **Publishing Draft State**: 未真实发布的内容保持草稿状态，避免输出不可访问链接。
 - **Future Feedback Module**: 后续新增内测反馈接口，将页面反馈转成优化任务或需求候选。
 

@@ -61,7 +61,7 @@
 - [x] 4. 实现 Prompt 模板和输出校验
   - [x] 4.1 实现 PromptTemplateService
     - 按 `question_generation`、`answer_analysis`、`content_generation`、`optimization_planning` 输出 system、developer、user messages。
-    - 动态输入品牌资料、测试主题、AI 回答、内容策略和优化记录。
+    - 动态输入品牌资料、监测主题、AI 回答、内容策略和优化记录。
     - 所有 Prompt 带品牌安全规则和 JSON 输出要求。
   - [x] 4.2 实现 question-generation 输出校验
     - 校验 `themes` 和 `candidates` 数组。
@@ -77,29 +77,29 @@
     - 命中禁用表达时返回需要确认状态。
   - [x] 4.5 实现 optimization-planning 输出校验
     - 校验优化计划、推荐任务、内容任务和下一轮问题结构。
-    - 每个优化计划必须包含优先级、发布平台和再次测试建议。
+    - 每个优化计划必须包含优先级、发布平台和再次监测建议。
     - 输出可映射到现有增长优化与任务模型。
   - [x] 4.6 编写输出校验单元测试
     - 覆盖合法 JSON、缺字段、类型错误、空数组和风险表达。
     - 覆盖四类任务的失败路径和用户提示。
 
-- [x] 5. 接入自动生成测试问题
+- [x] 5. 接入自动生成监测问题
   - [x] 5.1 改造 TestQuestionService
     - 在 `apps/api/src/modules/brands/test-question.service.ts` 中接入 `LLMOrchestrationService.generateQuestions`。
     - 保留当前规则模板作为 fallback。
     - 追光小牛样例继续作为 deterministic fixture 支撑内测。
-  - [x] 5.2 改造测试主题生成入口
+  - [x] 5.2 改造监测主题生成入口
     - `POST /api/v1/brands/:brandId/test-themes/generate` 优先走 LLM 生成主题。
     - LLM 不可用时回退到现有 `TestThemeService`。
     - 返回结果继续写入 `TestTheme`。
-  - [x] 5.3 改造测试问题生成入口
+  - [x] 5.3 改造监测问题生成入口
     - `POST /api/v1/brands/:brandId/test-question-candidates/generate` 优先走 LLM 生成问题。
     - 生成结果写入 `TestQuestionCandidate`。
     - 对重复问题做去重，按主题、优先级和目标平台保留高价值问题。
   - [x] 5.4 支持资料缺失提示
     - LLM 输出 `missingProfileFields` 时，返回给前端用于提示补充品牌资料。
     - 品牌资料缺失时仍允许生成少量通用问题。
-  - [x] 5.5 编写测试问题生成测试
+  - [x] 5.5 编写监测问题生成测试
     - 覆盖完整品牌资料生成 5 到 10 个高价值问题。
     - 覆盖缺少城市、缺少竞品、缺少目标客户时的输出。
     - 覆盖 LLM 失败后 fallback 到规则模板。
@@ -147,10 +147,10 @@
     - 结合分析结果、内容资产、发布记录和品牌资料生成计划。
     - 保留现有规则计划作为 fallback。
   - [x] 8.2 输出下一轮问题建议
-    - 根据首轮测试结果生成下一轮 `TestQuestionCandidateInput`。
+    - 根据首轮监测结果生成下一轮 `TestQuestionCandidateInput`。
     - 问题要聚焦未出现、排名低、卖点缺失、引用缺口和风险表达。
   - [x] 8.3 关联内容任务和复测任务
-    - 优化计划确认后继续拆内容任务、发布建议和再次测试任务。
+    - 优化计划确认后继续拆内容任务、发布建议和再次监测任务。
     - 保持 `GrowthOptimizationPlanConfirmationResult` 兼容。
   - [x] 8.4 编写优化计划测试
     - 覆盖推荐率不足、排名低、卖点缺失、竞品更强、引用缺口和风险表达。
@@ -174,13 +174,13 @@
 
 - [x] 10. 前端对接和体验收口
   - [x] 10.1 保持现有按钮入口不变
-    - `生成测试主题`、`生成测试问题`、`解读`、`生成草稿` 继续使用原页面按钮。
+    - `生成监测主题`、`生成监测问题`、`解读`、`生成草稿` 继续使用原页面按钮。
     - 前端优先复用现有 API 返回结构。
   - [x] 10.2 增加大模型任务状态提示
     - 生成中、需要确认、生成失败和重试提示使用业务语言。
     - 问题生成失败时提示先补品牌资料或稍后重试。
   - [x] 10.3 展示资料缺失和生成说明
-    - 在 `AI 测试` 页面展示 `missingProfileFields` 和 `generationNotes`。
+    - 在 `AI 回复监测` 页面展示 `missingProfileFields` 和 `generationNotes`。
     - 引导用户回 `品牌总览` 补资料。
   - [x] 10.4 内容生成页展示合规说明
     - 展示 `complianceNotes` 和 `retestSuggestions`。
@@ -198,14 +198,14 @@
   - [x] 执行 `npm run prisma:generate`。
 
 - [x] 12. 第一阶段上线门禁
-  - [x] 12.1 验证自动生成测试问题闭环
-    - 使用追光小牛品牌资料生成 5 到 10 个测试问题。
-    - 保存为测试计划并能进入手动测试或 API 测试流程。
+  - [x] 12.1 验证自动生成监测问题闭环
+    - 使用追光小牛品牌资料生成 5 到 10 个监测问题。
+    - 保存为监测计划并能进入手动录入或 API 自动监测流程。
     - 每个问题都有目的、目标平台、优先级和预计价值。
   - [x] 12.2 验证安全边界
     - 公开平台配置响应仅返回 `hasCredential` 和脱敏状态。
     - 调用审计不包含真实平台密钥。
     - LLM task 输出记录包含 `brandId`。
   - [x] 12.3 验证内测路径
-    - 按 `品牌总览 -> AI 测试 -> 优化计划 -> 写内容 -> 任务跟进 -> 报告导出` 路径检查页面可用性。
-    - 未接真实 API 时仍可回退到手动测试。
+    - 按 `品牌总览 -> AI 回复监测 -> 优化计划 -> 写内容 -> 任务跟进 -> 报告导出` 路径检查页面可用性。
+    - 未接真实 API 时仍可回退到手动录入。

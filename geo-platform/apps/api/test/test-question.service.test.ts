@@ -13,7 +13,7 @@ describe('TestQuestionService', () => {
         expect.objectContaining({
           question: '追光小牛是做什么的？适合哪些用户？',
           purposes: expect.arrayContaining(['brand_mentioned', 'value_prop_accuracy']),
-          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
           selected: true
         }),
         expect.objectContaining({
@@ -74,7 +74,7 @@ describe('TestQuestionService', () => {
     );
     expect(candidates.find((candidate) => candidate.question === '贵阳哪里有适合 3-5 岁孩子的体能馆？')).toMatchObject({
       purposes: expect.arrayContaining(['brand_mentioned', 'rank_first', 'value_prop_accuracy']),
-      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
       selected: true
     });
     expect(candidates).toHaveLength(8);
@@ -119,7 +119,7 @@ describe('TestQuestionService', () => {
       expect.objectContaining({
         mode: 'sync',
         input: expect.objectContaining({
-          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
           questionCountPerTheme: 1,
           includeCompetitors: true
         })
@@ -129,7 +129,7 @@ describe('TestQuestionService', () => {
     expect(result.items).toEqual([
       expect.objectContaining({
         question: '贵阳家长第一次了解追光小牛时，应该重点问哪些问题？',
-        targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+        targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
         editable: true,
         selected: true
       })

@@ -74,8 +74,8 @@ export function OptimizationUnitsCard({ brandId }: Props) {
 
   return (
     <Card
-      title="测试主题"
-      extra={<Button type="primary" onClick={openCreateDrawer}>新增测试主题</Button>}
+      title="监测主题"
+      extra={<Button type="primary" onClick={openCreateDrawer}>新增监测主题</Button>}
     >
       <Table
         rowKey="id"
@@ -98,7 +98,7 @@ export function OptimizationUnitsCard({ brandId }: Props) {
             title: '关联对象',
             render: (_, record) => (
               <Typography.Text type="secondary">
-                测试场景 {record.relatedCounts.userIntents} / 测试问题 {record.relatedCounts.prompts} / 内容策略 {record.relatedCounts.contentStrategies}
+                监测场景 {record.relatedCounts.userIntents} / 监测问题 {record.relatedCounts.prompts} / 内容策略 {record.relatedCounts.contentStrategies}
               </Typography.Text>
             )
           },
@@ -120,14 +120,14 @@ export function OptimizationUnitsCard({ brandId }: Props) {
         ]}
       />
       <Drawer
-        title={editingUnitId ? '测试主题详情' : '新增测试主题'}
+        title={editingUnitId ? '监测主题详情' : '新增监测主题'}
         open={drawerOpen}
         width={460}
         onClose={() => setDrawerOpen(false)}
         extra={<Button type="primary" loading={saveUnitMutation.isPending} onClick={() => form.submit()}>保存</Button>}
       >
         <Form form={form} layout="vertical" onFinish={(values) => saveUnitMutation.mutate(values)}>
-          <Form.Item name="name" label="测试主题名称" rules={[{ required: true, message: '请输入测试主题名称' }]}>
+          <Form.Item name="name" label="监测主题名称" rules={[{ required: true, message: '请输入监测主题名称' }]}>
             <Input placeholder="例如：儿童体适能品牌推荐" />
           </Form.Item>
           <Form.Item name="type" label="主题类型" rules={[{ required: true, message: '请选择主题类型' }]}>

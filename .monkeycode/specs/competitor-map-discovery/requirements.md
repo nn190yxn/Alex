@@ -66,14 +66,14 @@
 
 ### Requirement 5: 竞品监控衔接
 
-**User Story:** AS 品牌运营人员, I want 确认后的竞品自动进入测试和内容策略, so that 竞品分析能影响后续 GEO 工作流。
+**User Story:** AS 品牌运营人员, I want 确认后的竞品自动进入监测和内容策略, so that 竞品分析能影响后续 GEO 工作流。
 
 #### Acceptance Criteria
 
 1. WHEN 用户确认直接竞品, the system SHALL 将直接竞品纳入竞品提及率、压制率和排名差分析。
-2. WHEN 用户确认校区周边重点竞品, the system SHALL 生成本地推荐和到店选择相关测试问题。
+2. WHEN 用户确认校区周边重点竞品, the system SHALL 生成本地推荐和到店选择相关监测问题。
 3. WHEN 用户确认全国标杆品牌, the system SHALL 将全国标杆品牌用于内容对标和品牌表达参考。
-4. WHEN 系统生成测试问题, the system SHALL 区分本地直接竞品、校区周边重点竞品和全国标杆品牌。
+4. WHEN 系统生成监测问题, the system SHALL 区分本地直接竞品、校区周边重点竞品和全国标杆品牌。
 5. WHEN 系统生成内容建议, the system SHALL 使用竞品确认标签决定对比角度和表达边界。
 
 ### Requirement 6: 数据边界与合规

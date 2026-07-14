@@ -96,7 +96,7 @@ GEO 平台需要持续跟踪 AI 平台回答规则、内容平台发布要求、
 ### [规则变更标题]
 
 - Date: YYYY-MM-DD
-- Source: 官方文档 / 客户要求 / 运营观察 / 测试结果
+- Source: 官方文档 / 客户要求 / 运营观察 / 监测结果
 - Category: AI 平台规则 / 内容平台规则 / GEO 指标口径 / 客户合规要求
 - Change Summary: 变化摘要
 - Impacted Modules: 受影响模块

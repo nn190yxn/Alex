@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BrowserConnectionSession, BrowserConnectionStatusInput, PlatformConfig, PlatformConfigInput, PlatformMode, PlatformValidationResult } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 import { advancedPlatformSettingFields, getBrowserIssueLabel, getBrowserLoginUrl, getBrowserSessionStatusColor, getBrowserSessionStatusLabel, getLastAvailableLabel, getLatestBrowserSession, getMethodPreview, groupPlatformConfigs } from './platformConfigDisplay';
 
 type PlatformFormValues = PlatformConfigInput;
@@ -139,8 +140,8 @@ export function PlatformConfigCard() {
       <Alert
         type="info"
         showIcon
-        message="先把四个常用 AI 平台跑通"
-        description="豆包、Kimi、DeepSeek 和通义千问可以先用浏览器或手动方式完成首轮测试；补齐平台密钥后，再切换到自动测试。"
+        message="先把常用 AI 平台跑通"
+        description="豆包、Kimi、DeepSeek、通义千问和阶跃星辰可以先用浏览器或手动方式完成首轮监测；补齐平台密钥后，再切换到自动监测。"
       />
       <Space direction="vertical" size={16} className="page-stack">
         {platformGroups.map((group) => (
@@ -158,9 +159,9 @@ export function PlatformConfigCard() {
               locale={{ emptyText: <EmptyState description={`${group.title}里还没有平台。`} /> }}
               scroll={{ x: 980 }}
               columns={[
-                { title: '平台', render: (_, record) => <Space direction="vertical" size={0}><Typography.Text>{record.name}</Typography.Text><Typography.Text type="secondary">{record.platformCode}</Typography.Text></Space> },
-                { title: '能不能测', render: (_, record) => <Tag color={connectionStatusColors[record.connectionStatus]}>{record.connectionStatusLabel}</Tag> },
-                { title: '测试方式', render: (_, record) => <Typography.Text>{getMethodPreview(record)}</Typography.Text> },
+                { title: '平台', render: (_, record) => <Typography.Text>{record.name || getPlatformDisplayName(record.platformCode)}</Typography.Text> },
+                { title: '能不能监测', render: (_, record) => <Tag color={connectionStatusColors[record.connectionStatus]}>{record.connectionStatusLabel}</Tag> },
+                { title: '监测方式', render: (_, record) => <Typography.Text>{getMethodPreview(record)}</Typography.Text> },
                 { title: '平台密钥', render: (_, record) => record.hasCredential ? <Tag color="green">已填写</Tag> : <Tag>未填写</Tag> },
                 {
                   title: '最近检查',
@@ -176,7 +177,7 @@ export function PlatformConfigCard() {
                     <Space>
                       <Button type="link" onClick={() => openEditModal(record)}>编辑</Button>
                       <Button type="link" loading={validateMutation.isPending} onClick={() => validateMutation.mutate(record.id)}>检查连接</Button>
-                      {record.availableMethods.includes('browser') ? <Button type="link" onClick={() => setBrowserPlatform(record)}>打开浏览器测试</Button> : null}
+                      {record.availableMethods.includes('browser') ? <Button type="link" onClick={() => setBrowserPlatform(record)}>打开浏览器监测</Button> : null}
                     </Space>
                   )
                 }
@@ -201,7 +202,7 @@ export function PlatformConfigCard() {
           <Form.Item name="name" label="平台名称" rules={[{ required: true, message: '请输入平台名称' }]}>
             <Input placeholder="例如：DeepSeek" />
           </Form.Item>
-          <Form.Item name="mode" label="测试方式" rules={[{ required: true, message: '请选择测试方式' }]}>
+          <Form.Item name="mode" label="监测方式" rules={[{ required: true, message: '请选择监测方式' }]}>
             <Select options={Object.entries(modeLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
           <Form.Item name="credentialRef" label="平台密钥">
@@ -215,7 +216,7 @@ export function PlatformConfigCard() {
             items={[
               {
                 key: 'advanced',
-                label: '自动测试设置',
+                label: '自动监测设置',
                 children: (
                   <>
                     <Form.Item name={advancedPlatformSettingFields[0].name} label={advancedPlatformSettingFields[0].label}>
@@ -235,7 +236,7 @@ export function PlatformConfigCard() {
         </Form>
       </Modal>
       <Modal
-        title={browserPlatform ? `${browserPlatform.name} 浏览器测试` : '浏览器测试'}
+        title={browserPlatform ? `${browserPlatform.name} 浏览器辅助监测` : '浏览器辅助监测'}
         open={Boolean(browserPlatform)}
         footer={null}
         onCancel={() => setBrowserPlatform(null)}
@@ -271,10 +272,10 @@ export function PlatformConfigCard() {
 }
 
 const modeLabels: Record<PlatformMode, string> = {
-  api: '自动测试',
+  api: '自动监测',
   manual: '人工录入',
-  semi_auto: '浏览器辅助测试',
-  mock: '演示测试'
+  semi_auto: '浏览器辅助监测',
+  mock: '示例回答'
 };
 
 const connectionStatusColors: Record<PlatformConfig['connectionStatus'], string> = {

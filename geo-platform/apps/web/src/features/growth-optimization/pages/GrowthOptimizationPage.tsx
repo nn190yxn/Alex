@@ -13,13 +13,17 @@ import type {
   OptimizationTask,
   OptimizationTaskStatus,
   OptimizationTaskUpdateInput,
-  RetestPlanInput
+  RetestPlanInput,
+  SprintContentTaskDashboard,
+  StandardAnswerAlignmentDashboard,
+  VisibilitySprint
 } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
 import { useBrandContextStore } from '../../../stores/brandContextStore';
 import { getContentTypeDisplay, getOwnerDisplayName, getPlatformDisplay } from '../../../utils/displayLabels';
 import { AutomationOperatorCard } from '../../automation/components/AutomationOperatorCard';
+import { buildSprintDiagnosisRows } from './growthSprintDiagnostics';
 
 type PlanFormValues = GrowthOptimizationPlanConfirmInput & {
   publishingPlatformsText?: string;
@@ -29,7 +33,7 @@ const planStatusLabels: Record<GrowthOptimizationPlanStatus, string> = {
   draft: '待确认',
   confirmed: '已确认',
   in_progress: '处理中',
-  ready_for_retest: '待再次测试',
+  ready_for_retest: '待再次监测',
   completed: '已完成'
 };
 
@@ -45,7 +49,7 @@ const taskStatusLabels: Record<OptimizationTaskStatus, string> = {
   todo: '待处理',
   doing: '处理中',
   review: '待审核',
-  retest: '待再次测试',
+  retest: '待再次监测',
   done: '已完成',
   reopened: '已重开'
 };
@@ -81,7 +85,25 @@ export function GrowthOptimizationPage() {
     queryKey: ['growth-optimization', activeBrandId],
     queryFn: () => apiGet<GrowthOptimizationWorkspace>(`/brands/${activeBrandId}/growth-optimization`)
   });
+  const currentSprintQuery = useQuery({
+    queryKey: ['visibility-sprint-current', activeBrandId],
+    queryFn: () => apiGet<VisibilitySprint>(`/brands/${activeBrandId}/sprints/current`)
+  });
   const workspace = workspaceQuery.data?.success ? workspaceQuery.data.data : null;
+  const currentSprint = currentSprintQuery.data?.success ? currentSprintQuery.data.data : null;
+  const alignmentQuery = useQuery({
+    queryKey: ['visibility-sprint-alignment', activeBrandId, currentSprint?.sprintId],
+    queryFn: () => apiGet<StandardAnswerAlignmentDashboard>(`/brands/${activeBrandId}/sprints/${currentSprint?.sprintId}/alignment`),
+    enabled: Boolean(currentSprint?.sprintId)
+  });
+  const contentTasksQuery = useQuery({
+    queryKey: ['visibility-sprint-content-tasks', activeBrandId, currentSprint?.sprintId],
+    queryFn: () => apiGet<SprintContentTaskDashboard>(`/brands/${activeBrandId}/sprints/${currentSprint?.sprintId}/content-gaps/tasks`),
+    enabled: Boolean(currentSprint?.sprintId)
+  });
+  const alignmentDashboard = alignmentQuery.data?.success ? alignmentQuery.data.data : null;
+  const contentTaskDashboard = contentTasksQuery.data?.success ? contentTasksQuery.data.data : null;
+  const sprintDiagnosisRows = useMemo(() => buildSprintDiagnosisRows(alignmentDashboard, contentTaskDashboard), [alignmentDashboard, contentTaskDashboard]);
   const plans = workspace?.plans ?? [];
 
   const planStats = useMemo(() => getPlanStatusCounts(plans), [plans]);
@@ -175,7 +197,7 @@ export function GrowthOptimizationPage() {
         setRetestTask(undefined);
         retestForm.resetFields();
         void invalidate();
-        void messageApi.success('再次测试计划已创建');
+        void messageApi.success('再次监测计划已创建');
       } else {
         void messageApi.error(response.error.message);
       }
@@ -207,32 +229,69 @@ export function GrowthOptimizationPage() {
     <Space direction="vertical" size={16} className="page-stack">
       {contextHolder}
       <PageErrorAlert response={workspaceQuery.data} />
+      <PageErrorAlert response={currentSprintQuery.data} />
+      <PageErrorAlert response={alignmentQuery.data} />
+      <PageErrorAlert response={contentTasksQuery.data} />
       <AutomationOperatorCard brandId={activeBrandId} source="growth_optimization" title="AI 自动生成内容和发布建议" compact />
       <Card
         title="优化计划"
-        extra={<Button type="primary" loading={generateMutation.isPending} onClick={() => generateMutation.mutate()}>从测试结果生成计划</Button>}
+        extra={<Button type="primary" loading={generateMutation.isPending} onClick={() => generateMutation.mutate()}>从监测结果生成计划</Button>}
       >
         <Typography.Paragraph>
-          把首轮 AI 测试结果转成看得懂、能分工、能跟进的优化计划，明确原因、优先级、负责人、截止时间、发布平台、内容任务和再次测试时间。
+          把首轮 AI 回复监测结果转成看得懂、能分工、能跟进的优化计划，明确原因、优先级、负责人、截止时间、发布平台、内容任务和再次监测时间。
         </Typography.Paragraph>
         <Alert
           type="info"
           showIcon
-          message="确认计划后继续生成内容并安排再次测试"
-          description="建议先确认负责人、截止时间、发布平台和再次测试时间，再批量生成公众号、小红书、官网 FAQ、短视频、平台介绍和图片创意任务。"
+          message="确认计划后继续生成内容并安排再次监测"
+          description="建议先确认负责人、截止时间、发布平台和再次监测时间，再批量生成公众号、小红书、官网 FAQ、短视频、平台介绍和图片创意任务。"
           style={{ marginBottom: 16 }}
         />
         <Space size={24} wrap>
           <Statistic title="全部计划" value={plans.length} />
           <Statistic title="待确认" value={planStats.draft} />
           <Statistic title="处理中" value={planStats.in_progress + planStats.confirmed} />
-          <Statistic title="待再次测试" value={planStats.ready_for_retest} />
+          <Statistic title="待再次监测" value={planStats.ready_for_retest} />
           <Statistic title="已完成" value={planStats.completed} />
         </Space>
       </Card>
 
+      <Card title="标准答案与内容缺口诊断" loading={currentSprintQuery.isLoading || alignmentQuery.isLoading || contentTasksQuery.isLoading}>
+        <Space direction="vertical" size={16} className="page-stack">
+          <Alert
+            type="info"
+            showIcon
+            message="对照真实回复、品牌标准答案和内容资产"
+            description="这里用于判断 AI 真实回复缺了哪些品牌要点、哪些表达需要修正，以及是否已有内容资产可以支撑下一轮复测。"
+          />
+          <Space size={24} wrap>
+            <Statistic title="真实回复" value={alignmentDashboard?.realAnswerCount ?? 0} />
+            <Statistic title="已确认标准答案" value={alignmentDashboard?.approvedStandardAnswerCount ?? 0} />
+            <Statistic title="需要补强" value={alignmentDashboard?.summary.needsAttentionCount ?? 0} />
+            <Statistic title="内容任务" value={contentTaskDashboard?.totalTaskCount ?? 0} />
+            <Statistic title="可审稿草稿" value={contentTaskDashboard?.reviewReadyTaskCount ?? 0} />
+          </Space>
+          <Table
+            rowKey="questionId"
+            size="small"
+            dataSource={sprintDiagnosisRows}
+            pagination={false}
+            locale={{ emptyText: <EmptyState description="暂无标准答案对照数据，请先完成真实回复监测并生成标准答案。" /> }}
+            columns={[
+              { title: '监测问题', dataIndex: 'question', render: (value: string) => <Typography.Text>{value}</Typography.Text> },
+              { title: '真实 AI 回复', dataIndex: 'realAnswerLabel' },
+              { title: '品牌标准答案', dataIndex: 'standardAnswerLabel' },
+              { title: '内容资产', dataIndex: 'contentAssetLabel' },
+              { title: '诊断状态', render: (_, record) => <Tag color={record.statusColor}>{record.statusLabel}</Tag> },
+              { title: '缺口类型', render: (_, record) => record.gapLabels.length > 0 ? <Space wrap>{record.gapLabels.map((label) => <Tag key={label}>{label}</Tag>)}</Space> : '-' },
+              { title: '建议动作', dataIndex: 'recommendation' }
+            ]}
+          />
+        </Space>
+      </Card>
+
       {workspaceQuery.isLoading ? <Card loading /> : null}
-      {!workspaceQuery.isLoading && plans.length === 0 ? <EmptyState description="还没有优化计划，请先完成首轮测试并生成计划。" actionLabel="生成计划" onAction={() => generateMutation.mutate()} /> : null}
+      {!workspaceQuery.isLoading && plans.length === 0 ? <EmptyState description="还没有优化计划，请先完成首轮回复监测并生成计划。" actionLabel="生成计划" onAction={() => generateMutation.mutate()} /> : null}
 
       {plans.map((plan) => {
         const relatedTasks = getPlanTasks(plan, workspace?.relatedTasks ?? []);
@@ -254,7 +313,7 @@ export function GrowthOptimizationPage() {
                 <Descriptions.Item label="优先级">{priorityLabels[plan.priority]}</Descriptions.Item>
                 <Descriptions.Item label="负责人">{getOwnerDisplayName(plan.ownerId)}</Descriptions.Item>
                 <Descriptions.Item label="截止时间">{plan.dueDate}</Descriptions.Item>
-                <Descriptions.Item label="再次测试时间">{plan.retestAt}</Descriptions.Item>
+                <Descriptions.Item label="再次监测时间">{plan.retestAt}</Descriptions.Item>
                 <Descriptions.Item label="发布平台">{formatList(plan.publishingPlatforms)}</Descriptions.Item>
                 <Descriptions.Item label="任务进度">{progress.done}/{progress.total}</Descriptions.Item>
               </Descriptions>
@@ -263,7 +322,7 @@ export function GrowthOptimizationPage() {
               <ContentRecommendationList plan={plan} />
               <TaskTable
                 tasks={relatedTasks}
-                onComplete={(task) => updateTaskMutation.mutate({ taskId: task.id, values: { status: 'done', processingNote: task.processingNote || '优化动作已完成，等待再次测试确认效果。' } })}
+                onComplete={(task) => updateTaskMutation.mutate({ taskId: task.id, values: { status: 'done', processingNote: task.processingNote || '优化动作已完成，等待再次监测确认效果。' } })}
                 onRetest={(task) => setRetestTask(task)}
               />
             </Space>
@@ -276,7 +335,7 @@ export function GrowthOptimizationPage() {
           <Form.Item name="ownerId" label="负责人"><Input placeholder="负责人姓名" /></Form.Item>
           <Form.Item name="dueDate" label="截止时间" rules={[{ required: true, message: '请输入截止时间' }]}><Input placeholder="2026-07-10" /></Form.Item>
           <Form.Item name="publishingPlatformsText" label="发布平台" rules={[{ required: true, message: '请输入发布平台' }]}><Input placeholder="公众号、小红书、官网 FAQ" /></Form.Item>
-          <Form.Item name="retestAt" label="再次测试时间" rules={[{ required: true, message: '请输入再次测试时间' }]}><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
+          <Form.Item name="retestAt" label="再次监测时间" rules={[{ required: true, message: '请输入再次监测时间' }]}><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
         </Form>
       </Modal>
 
@@ -290,13 +349,13 @@ export function GrowthOptimizationPage() {
         ) : <Alert type="info" message="当前计划暂无内容建议" />}
       </Modal>
 
-      <Modal title="安排再次测试" open={Boolean(retestTask)} okText="保存" cancelText="取消" onCancel={() => setRetestTask(undefined)} onOk={() => retestForm.submit()} confirmLoading={retestMutation.isPending}>
+      <Modal title="安排再次监测" open={Boolean(retestTask)} okText="保存" cancelText="取消" onCancel={() => setRetestTask(undefined)} onOk={() => retestForm.submit()} confirmLoading={retestMutation.isPending}>
         <Form form={retestForm} layout="vertical" onFinish={(values) => retestTask && retestMutation.mutate({ taskId: retestTask.id, values })}>
-          <Form.Item name="sourceRunId" label="原测试记录" rules={[{ required: true, message: '请输入原测试记录引用' }]}><Input /></Form.Item>
-          <Form.Item name="retestRunId" label="再次测试记录"><Input placeholder="默认使用原测试记录" /></Form.Item>
-          <Form.Item name="plannedAt" label="计划再次测试时间"><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
+          <Form.Item name="sourceRunId" label="原监测记录" rules={[{ required: true, message: '请输入原监测记录引用' }]}><Input /></Form.Item>
+          <Form.Item name="retestRunId" label="再次监测记录"><Input placeholder="默认使用原监测记录" /></Form.Item>
+          <Form.Item name="plannedAt" label="计划再次监测时间"><Input placeholder="2026-07-17T00:00:00.000Z" /></Form.Item>
           <Form.Item name="targetScore" label="目标分"><Input type="number" min={0} max={100} /></Form.Item>
-          <Form.Item name="notes" label="测试说明"><Input.TextArea rows={3} /></Form.Item>
+          <Form.Item name="notes" label="监测说明"><Input.TextArea rows={3} /></Form.Item>
         </Form>
       </Modal>
     </Space>
@@ -305,7 +364,7 @@ export function GrowthOptimizationPage() {
 
 function ReasonList({ plan }: { plan: GrowthOptimizationPlan }) {
   if (plan.reasons.length === 0) {
-    return <Alert type="info" message="还没有明确原因，建议先补充测试结果解读。" />;
+    return <Alert type="info" message="还没有明确原因，建议先补充监测结果解读。" />;
   }
 
   return (
@@ -364,7 +423,7 @@ function TaskTable({ tasks, onComplete, onRetest }: { tasks: OptimizationTask[];
             render: (_, record) => (
               <Space>
                 <Button size="small" disabled={record.status === 'done'} onClick={() => onComplete(record)}>标记完成</Button>
-                <Button size="small" disabled={!record.sourceRunId} onClick={() => onRetest(record)}>安排再次测试</Button>
+                <Button size="small" disabled={!record.sourceRunId} onClick={() => onRetest(record)}>安排再次监测</Button>
               </Space>
             )
           }

@@ -40,10 +40,11 @@ describe('operation navigation config', () => {
       '/advisor',
       '/reports'
     ]);
-    expect(operationWorkflow.map((step) => step.label)).toEqual(expect.arrayContaining(['跑 AI 测试', '顾问跟进']));
+    expect(operationWorkflow.map((step) => step.label)).toEqual(expect.arrayContaining(['监测 AI 回复', '顾问跟进']));
     expect(getWorkflowIndex('/monitoring')).toBe(2);
     expect(getWorkflowIndex('/growth-optimization')).toBe(3);
-    expect(getNavigationItem('/monitoring')?.description).toContain('推荐你的品牌');
+    expect(getNavigationItem('/monitoring')?.label).toBe('AI 回复监测');
+    expect(getNavigationItem('/monitoring')?.description).toContain('记录 AI 如何回答');
     expect(getNavigationItem('/advisor')?.requiresBrand).toBe(true);
   });
 

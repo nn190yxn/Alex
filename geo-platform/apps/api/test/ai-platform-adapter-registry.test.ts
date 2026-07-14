@@ -44,12 +44,12 @@ describe('AIPlatformAdapterRegistry', () => {
     expect(adapter.platformCode).toBe('deepseek');
   });
 
-  it('registers direct API adapters for the first four supported platforms', () => {
+  it('registers direct API adapters for the first supported platforms', () => {
     const registry = new AIPlatformAdapterRegistry(createDefaultAIPlatformAdapters());
 
-    expect(['doubao', 'kimi', 'deepseek', 'qianwen'].map((platformCode) => (
+    expect(['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'].map((platformCode) => (
       registry.requireAdapter(createPlatformConfig({ platformCode, mode: 'api', endpointUrl: `https://api.example.com/${platformCode}` })).platformCode
-    ))).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen']);
+    ))).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']);
   });
 
   it('keeps selection errors structured for configuration failures', () => {
@@ -94,8 +94,8 @@ function createPlatformConfig(input: Pick<PlatformConfig, 'platformCode' | 'mode
     mode: input.mode,
     availableMethods: input.mode === 'api' ? ['api'] : ['manual'],
     connectionStatus: input.mode === 'api' ? 'ready' : 'manual_available',
-    connectionStatusLabel: input.mode === 'api' ? '可自动测试' : '可手动测试',
-    nextAction: input.mode === 'api' ? '可直接加入自动测试计划。' : '复制问题到平台测试后录入回答。',
+    connectionStatusLabel: input.mode === 'api' ? '可自动监测' : '可手动录入',
+    nextAction: input.mode === 'api' ? '可直接加入自动监测计划。' : '复制问题到平台后录入回答。',
     endpointUrl: input.endpointUrl,
     rateLimitPerMinute: 60,
     enabled: true,

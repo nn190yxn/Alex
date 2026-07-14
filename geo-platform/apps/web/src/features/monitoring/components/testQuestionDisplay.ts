@@ -36,19 +36,20 @@ export const platformLabels: Record<BeginnerFriendlyPlatform, string> = {
   doubao: '豆包',
   kimi: 'Kimi',
   deepseek: 'DeepSeek',
-  qianwen: '通义千问'
+  qianwen: '通义千问',
+  stepfun: '阶跃星辰'
 };
 
 export const connectionMethodLabels: Record<AIConnectionMethod, string> = {
-  api: '自动测试',
-  browser: '浏览器测试',
-  manual: '手动测试'
+  api: '自动监测',
+  browser: '浏览器辅助监测',
+  manual: '手动录入'
 };
 
 export const connectionStatusLabels: Record<AIConnectionStatus, string> = {
-  ready: '可自动测试',
-  browser_available: '可用浏览器测试',
-  manual_available: '可手动测试',
+  ready: '可自动监测',
+  browser_available: '可用浏览器辅助监测',
+  manual_available: '可手动录入',
   needs_configuration: '需要补充信息',
   needs_confirmation: '需要你确认'
 };
@@ -61,10 +62,10 @@ export function getDefaultQuestionCandidates(candidates: TestQuestionCandidate[]
 
 export function getQuestionCandidateCountLabel(total: number, shown: number): string {
   if (total <= shown) {
-    return `已展示全部 ${total} 个测试问题`;
+    return `已展示全部 ${total} 个监测问题`;
   }
 
-  return `默认展示 ${shown} 个高价值测试问题，共 ${total} 个`;
+  return `默认展示 ${shown} 个高价值监测问题，共 ${total} 个`;
 }
 
 export function getPlatformPreview(platforms: string[]): string {
@@ -91,9 +92,9 @@ export function getConnectionSummaryLabel(summary: PlatformConnectionSummary): s
 
 export function getExecutionResultSummary(result: TestPlanExecutionResult): string {
   const parts = [
-    `自动测试 ${result.apiRuns.length} 条`,
-    `浏览器测试 ${result.browserSteps.length} 条`,
-    `手动测试 ${result.manualSteps.length} 条`,
+    `自动监测 ${result.apiRuns.length} 条`,
+    `浏览器辅助监测 ${result.browserSteps.length} 条`,
+    `手动录入 ${result.manualSteps.length} 条`,
     `待补充信息 ${result.configurationItems.length} 条`
   ];
   const skippedCount = result.skippedSteps.length;
@@ -130,6 +131,8 @@ function normalizePlatformInput(value: string): string {
     deepseek: 'deepseek',
     通义千问: 'qianwen',
     千问: 'qianwen',
+    阶跃星辰: 'stepfun',
+    stepfun: 'stepfun',
     SenseNova: 'sensenova',
     人工录入: 'manual_input'
   };

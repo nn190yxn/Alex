@@ -79,7 +79,7 @@ describe('monitoring run repository', () => {
     const repository = new PermissionsRepository();
     const platform = repository.createPlatformConfig('user_demo', 'brand_demo', {
       platformCode: 'api_platform_test',
-      name: 'API 平台测试',
+      name: 'API 平台监测',
       mode: 'api',
       modelName: 'api-model',
       credentialRef: 'secret-ref'
@@ -92,7 +92,7 @@ describe('monitoring run repository', () => {
 
     expect(run?.status).toBe('failed');
     expect(run?.promptId).toBe(prompt?.id);
-    expect(run?.errorMessage).toContain('自动测试暂未接入');
+    expect(run?.errorMessage).toContain('自动监测暂未接入');
     expect(run?.retryStatus).toBe('retry_pending');
     expect(repository.listAsyncJobs('user_demo', 'brand_demo', 'failed')).toContainEqual(
       expect.objectContaining({ jobType: 'monitoring', entityId: run?.id, lastErrorCode: 'adapter_not_ready' })

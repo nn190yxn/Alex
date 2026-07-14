@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PlatformConfig, PlatformConfigInput, PlatformMode, PlatformValidationResult } from '@geo-platform/shared-types';
 import { apiGet, apiPatch, apiPost } from '../../../api/http';
 import { EmptyState, PageErrorAlert } from '../../../components/PageState';
+import { getPlatformDisplayName } from '../../../utils/displayLabels';
 
 type ModelFormValues = PlatformConfigInput;
 
@@ -79,7 +80,7 @@ export function ModelSettingsPage() {
       <PageErrorAlert response={modelsQuery.data} />
       <Card title="模型设置" extra={<Button type="primary" onClick={openCreateModal}>新增模型</Button>}>
         <Typography.Paragraph>
-          这里统一管理要接入的大模型。DeepSeek、小米模型、豆包、通义千问或其他兼容 OpenAI Chat Completions 的接口，都可以在这里填写接口地址、模型名称和密钥引用。
+          当前内测优先使用阶跃星辰 step-3.7-flash。这里也保留 DeepSeek、小米模型、豆包、通义千问或其他兼容 OpenAI Chat Completions 的接入入口，后续可以按需要增加模型。
         </Typography.Paragraph>
         <Alert
           type="info"
@@ -92,7 +93,7 @@ export function ModelSettingsPage() {
       <Card title="接入向导">
         <Space direction="vertical" size={12} className="page-stack">
           <Typography.Paragraph>
-            先从供应商后台准备 API Key、接口地址和模型名称，再在新增模型里填写。页面会保存密钥状态，后续通过“检查连接”确认是否可用。
+            先完成阶跃星辰的 API Key、接口地址和模型名称配置，再按内测需要补充其他供应商。页面会保存密钥状态，后续通过“检查连接”确认是否可用。
           </Typography.Paragraph>
           <Table
             rowKey="platformCode"
@@ -118,7 +119,7 @@ export function ModelSettingsPage() {
           locale={{ emptyText: <EmptyState description="还没有模型设置，请先新增一个模型。" actionLabel="新增模型" onAction={openCreateModal} /> }}
           scroll={{ x: 1100 }}
           columns={[
-            { title: '模型', render: (_, record) => <Space direction="vertical" size={0}><Typography.Text>{record.name}</Typography.Text><Typography.Text type="secondary">{record.platformCode}</Typography.Text></Space> },
+            { title: '模型', render: (_, record) => <Typography.Text>{record.name || getPlatformDisplayName(record.platformCode)}</Typography.Text> },
             { title: '调用方式', dataIndex: 'mode', render: (value: PlatformMode) => modeLabels[value] },
             { title: '接口地址', dataIndex: 'endpointUrl', render: (value) => value || '-' },
             { title: '模型名称', dataIndex: 'modelName', render: (value) => value || '-' },
@@ -155,7 +156,7 @@ export function ModelSettingsPage() {
           <Form.Item name="name" label={<FieldLabel text="显示名称" help="给运营人员看的名称，例如 DeepSeek、Kimi、小米大模型。" />} rules={[{ required: true, message: '请输入显示名称' }]}>
             <Input placeholder="例如：DeepSeek" />
           </Form.Item>
-          <Form.Item name="mode" label={<FieldLabel text="调用方式" help="选择自动 API 测试后，系统会用接口地址和模型名称自动调用；手动测试用于复制问题后粘贴回答。" />} rules={[{ required: true, message: '请选择调用方式' }]}>
+          <Form.Item name="mode" label={<FieldLabel text="调用方式" help="选择自动 API 监测后，系统会用接口地址和模型名称自动调用；手动录入用于复制问题后粘贴回答。" />} rules={[{ required: true, message: '请选择调用方式' }]}>
             <Select options={Object.entries(modeLabels).map(([value, label]) => ({ value, label }))} />
           </Form.Item>
           <Form.Item name="endpointUrl" label={<FieldLabel text="接口地址" help="填写兼容 OpenAI Chat Completions 的完整地址，例如 https://api.deepseek.com/chat/completions。" />}>
@@ -167,7 +168,7 @@ export function ModelSettingsPage() {
           <Form.Item name="credentialRef" label={<FieldLabel text="API Key" help="可以直接填写供应商给的 API Key；也可以填写服务器环境变量名，例如 DEEPSEEK_API_KEY。保存后页面只显示是否已填写。" />}>
             <Input.Password placeholder={editingModel ? '不填写则保持原 API Key' : '粘贴 API Key，或填写环境变量名'} />
           </Form.Item>
-          <Form.Item name="rateLimitPerMinute" label={<FieldLabel text="每分钟调用上限" help="用于控制自动测试频率，避免供应商限流；不知道填多少可先填 20。" />}>
+          <Form.Item name="rateLimitPerMinute" label={<FieldLabel text="每分钟调用上限" help="用于控制自动监测频率，避免供应商限流；不知道填多少可先填 20。" />}>
             <InputNumber min={0} addonAfter="次/分钟" className="full-width" />
           </Form.Item>
           <Form.Item name="enabled" label="是否启用" valuePropName="checked">
@@ -216,12 +217,20 @@ export type ModelSetupGuide = {
 
 export const modelSetupGuides: ModelSetupGuide[] = [
   {
+    platformCode: 'stepfun',
+    displayName: '阶跃星辰',
+    requiredItems: ['API Key', '接口地址', '模型名称'],
+    endpointUrl: 'https://api.stepfun.com/v1/chat/completions',
+    modelName: 'step-3.7-flash',
+    nextAction: '内测默认优先使用，保存后先跑少量问题验证回答格式'
+  },
+  {
     platformCode: 'deepseek',
     displayName: 'DeepSeek',
     requiredItems: ['API Key', '接口地址', '模型名称'],
     endpointUrl: 'https://api.deepseek.com/chat/completions',
     modelName: 'deepseek-chat',
-    nextAction: '保存后检查连接，成功后可用于自动测试'
+    nextAction: '保存后检查连接，成功后可用于自动监测'
   },
   {
     platformCode: 'kimi',
@@ -229,7 +238,7 @@ export const modelSetupGuides: ModelSetupGuide[] = [
     requiredItems: ['API Key', '接口地址', '模型名称'],
     endpointUrl: 'https://api.moonshot.cn/v1/chat/completions',
     modelName: 'moonshot-v1-8k',
-    nextAction: '没有 API Key 时可先用浏览器或手动测试'
+    nextAction: '没有 API Key 时可先用浏览器或手动录入'
   },
   {
     platformCode: 'qianwen',
@@ -246,14 +255,6 @@ export const modelSetupGuides: ModelSetupGuide[] = [
     endpointUrl: '填写供应商提供的 Chat Completions 地址',
     modelName: '填写供应商提供的 model 名称',
     nextAction: '按 OpenAI-compatible 方式接入并检查连接'
-  },
-  {
-    platformCode: 'stepfun',
-    displayName: '阶跃星辰',
-    requiredItems: ['API Key', '接口地址', '模型名称'],
-    endpointUrl: 'https://api.stepfun.com/v1/chat/completions',
-    modelName: 'step-1-8k',
-    nextAction: '保存后先跑少量问题验证回答格式'
   }
 ];
 
@@ -267,5 +268,5 @@ const modeLabels: Record<PlatformMode, string> = {
   api: '自动 API 调用',
   semi_auto: '浏览器或手动确认',
   manual: '手动录入',
-  mock: '演示模拟'
+  mock: '示例回答'
 };

@@ -2,7 +2,7 @@
 
 ## 当前范围
 
-多品牌 GEO 管理平台位于 `当前工作区/geo-platform/`。小白友好 GEO 自动测试与增长优化流程规格已完成，当前交付前最终验证通过。
+多品牌 GEO 管理平台位于 `当前工作区/geo-platform/`。小白友好 GEO AI 回复监测与增长优化流程规格已完成，当前交付前最终验证通过。
 
 ## 验证命令
 
@@ -39,18 +39,25 @@ npm run db:prepare
 - `npm run build` 通过。
 - `npm run verify` 通过，包含 `npm audit`、workspace 类型检查、workspace 测试、workspace 构建、Prisma schema 校验和 Prisma Client 生成；`npm audit` 当前 0 个漏洞。
 - `npm run typecheck --workspaces` 通过。
-- `npm run test --workspace @geo-platform/api` 通过，API 当前 55 个测试文件、227 个测试用例通过。
-- `npm run test --workspace @geo-platform/web` 通过，Web 当前 15 个测试文件、70 个测试用例通过。
+- `npm run test --workspace @geo-platform/api` 通过，API 当前 64 个测试文件、289 个测试用例通过。
+- `npm run test --workspace @geo-platform/web` 通过，Web 当前 20 个测试文件、99 个测试用例通过。
 - `npm run build --workspace @geo-platform/api` 通过。
 - `npm run build --workspace @geo-platform/web` 通过。
 - `DATABASE_URL="postgresql://geo:geo@localhost:5432/geo_platform?schema=public" npx prisma validate --schema apps/api/prisma/schema.prisma` 通过。
 - `npx prisma generate --schema apps/api/prisma/schema.prisma` 通过，Prisma Client 版本为 `6.19.3`。
-- API 健康检查可访问：`http://localhost:3001/api/v1/health` 返回 200，当前状态为 `degraded`，原因是开发环境尚未配置 `GEO_AI_PLATFORM_CONFIGURED`。
+- 旧版测试类公开口径残留扫描通过：文档和源码中的用户可见产品文案已统一为监测口径。
+- 示例数据公开口径残留扫描通过：用户可见旧表达已统一为“示例回答 / 示例监测 / 发现机会”等业务口径。
+- 前端公开展示扫尾通过：平台表格、模型表格、Prompt 模板、手动录入、内容导出、报告中心和顾问工作台已避免直接展示平台 code、内部用户 ID 或品牌 ID；用户可见区域优先显示平台名称、当前品牌和业务化标签。
+- API 健康检查可访问：`http://localhost:3001/api/v1/health` 返回 200；配置 `STEPFUN_API_KEY` 或设置 `GEO_AI_PLATFORM_CONFIGURED=true` 后，`dependencies.aiPlatforms` 显示为 `configured`。
 - 前端入口检查通过：`http://localhost:5173` 返回 200。
 - 公开预览检查通过：`https://5173-af4ce582db267302.monkeycode-ai.online` 返回 200。
 - 提交前清理检查通过：`.gitignore` 已过滤测试上传产物 `uploads/` 和 `geo-platform/packages/shared-types/src/*.js` 编译残留，关键源码文件仍可进入待提交列表。
-- SenseNova 接入烟测通过：`brand_demo` 已在当前 memory 运行态保存 `sensenova` 平台配置，endpoint 为 `https://token.sensenova.cn/v1/chat/completions`，模型为 `sensenova-6.7-flash-lite`，平台校验返回“标准 API 配置可用”；真实短请求返回 200，较低 `max_tokens` 会被 reasoning 占用，项目 LLM 编排默认 `maxTokens: 1600` 可获得标准 `message.content`。
-- 默认 memory repository 下 `brand_demo` 追光小牛闭环接口复测通过：品牌工作区、测试主题、候选问法、测试计划、平台配置、增长优化、内容生成、发布中心、任务看板、报告中心和顾问记录均返回可展示数据。
+- SenseNova 接入历史烟测通过：`sensenova` 可按 OpenAI-compatible 平台配置接入，endpoint 为 `https://token.sensenova.cn/v1/chat/completions`，模型为 `sensenova-6.7-flash-lite`；使用 SenseNova 作为默认模型时，可通过平台配置和 `GEO_AI_PLATFORM_CONFIGURED=true` 标记健康状态。
+- StepFun 接入烟测通过：`stepfun` 可按 OpenAI-compatible 平台配置接入，endpoint 为 `https://api.stepfun.com/v1/chat/completions`，模型为 `step-3.7-flash`；当前运行态业务链路 `answer-analysis` 已返回 `succeeded`，平台密钥只在运行态配置中使用，文档不记录真实值。
+- 内测大模型默认优先使用阶跃星辰 `step-3.7-flash`；LLM 自动任务未指定平台时，会优先选择已配置密钥的 `stepfun` API 配置，模型设置页将阶跃星辰放在接入向导首位。
+- 运行态推荐配置方式：将真实密钥放入 `STEPFUN_API_KEY` 环境变量；新品牌默认阶跃星辰配置会自动引用该环境变量，公开响应仍只返回 `hasCredential` 与脱敏状态。
+- 默认 memory repository 下 `brand_demo` 追光小牛闭环接口复测通过：品牌工作区、监测主题、候选问法、监测计划、平台配置、增长优化、内容生成、发布中心、任务看板、报告中心和顾问记录均返回可展示数据。
+- 默认 memory repository 下 `brand_demo` Sprint 接口烟测通过：Sprint 列表、当前 Sprint、Sprint 详情、问题雷达、标准答案列表、标准答案对照、内容缺口任务、发布准备和复测趋势只读接口均返回 200，可提供前端 Sprint 工作台、诊断看板、发布准备看板和复测趋势看板消费。
 - 端到端写链路烟测通过：增长优化计划创建、确认拆任务、内容任务生成、内容版本保存、发布入口生成、发布账号创建、发布记录创建与发布状态更新、有效监测任务复测创建和复测完成均通过。
 - 冷启动验证通过：重启 `npm run dev` 后 seed 默认数据恢复，临时内存烟测数据清空，前端、API 和公开预览恢复 200。
 
@@ -73,7 +80,7 @@ npm run db:prepare
     "repositoryDriver": "memory",
     "runtimeEnvironment": "development",
     "dependencies": {
-      "database": "not_configured",
+      "database": "ready",
       "queue": "in_memory",
       "aiPlatforms": "not_configured",
       "mapProvider": "configured",
@@ -102,13 +109,14 @@ npm run db:prepare
 - 第五阶段检查点已完成：seed 语法检查、Prisma schema 校验、`git diff --check`、`npm run verify`、API 健康检查、前端入口检查和 5173 预览检查均已通过。
 - 持续迭代机制已建立：阶段复盘、反馈转需求、行业规则变化、文档同步和验证门禁统一记录在 `当前工作区/.monkeycode/docs/CONTINUOUS_ITERATION_PLAYBOOK.md`。
 - 持续迭代检查点已完成：`git diff --check`、`npm run verify`、API 健康检查、前端入口检查和 5173 预览检查均已通过。
+- AI 可见性运营 Sprint 重构已完成核心实现和前端入口：新增 Sprint 聚合、标准答案、对照分析、内容缺口、发布准备、复测趋势和工作台入口；交付口径统一为“AI 回复监测 / 自动监测 / 浏览器辅助监测 / 手动录入 / 再次监测”。
 - 平台密钥接口只返回 `hasCredential` 和脱敏状态，不返回真实平台密钥。
-- 默认第一版 AI 平台为豆包、Kimi、DeepSeek 和通义千问，当前均返回 `browser_available`、`hasCredential=false` 和“补齐平台密钥”下一步提示。
+- 默认 AI 平台为豆包、Kimi、DeepSeek、通义千问和阶跃星辰；其中阶跃星辰默认使用 OpenAI-compatible API 接入候选，未填写平台密钥时返回脱敏配置状态。
 - API 中间件通配路由使用 Nest 11 / Express 5 兼容写法 `forRoutes('{*splat}')`。
 
 ## 后续交付关注点
 
-- 真实 AI 平台接入：当前运行态已补充 SenseNova 配置；后续补充豆包、Kimi、DeepSeek 和通义千问的平台密钥、endpoint、model name 与 provider 配置，并设置 `GEO_AI_PLATFORM_CONFIGURED`。
-- 数据库交付：当前已通过 Prisma schema 校验和 Client 生成；`apps/api/prisma/migrations/` 仍只有 `.gitkeep`，生产或 Prisma 演示环境需要根据目标数据库基线补充受控 migration，或在明确允许的环境中执行 schema 同步流程。
+- 真实 AI 平台接入：当前内测优先使用阶跃星辰 `step-3.7-flash` 支撑 LLM 自动任务；后续可在模型设置中补充豆包、Kimi、DeepSeek、通义千问等平台密钥、endpoint、model name 与 provider 配置，并用 `GEO_AI_PLATFORM_CONFIGURED=true` 标记非 StepFun 默认平台已配置。
+- 数据库交付：当前已通过 Prisma schema 校验和 Client 生成；`apps/api/prisma/migrations/` 已新增 Sprint 聚合和品牌标准答案增量迁移，两个迁移目录均包含 `migration.sql`，并已核对表名、字段、索引、外键和 Prisma schema 模型映射。本地 PostgreSQL 未运行时，`prisma migrate status` 会因无法连接 `localhost:5432` 返回 P1001；生产或 Prisma 演示环境需要在目标数据库可连接后执行迁移状态检查和受控迁移流程。
 - 生产部署：补充数据库、环境变量、构建产物、进程管理和健康检查方案。
 - 持续迭代：基于真实试点反馈、行业规则变化或生产试运行问题建立下一轮规格文档，并按持续迭代机制执行复盘和验证。

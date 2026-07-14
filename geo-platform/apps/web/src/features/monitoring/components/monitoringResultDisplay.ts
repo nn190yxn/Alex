@@ -52,12 +52,12 @@ export function getMonitoringResultSummary(run: MonitoringRunDetail): Monitoring
         { label: '原因', value: 'AI 回答已保存', tone: 'success' },
         { label: '影响', value: '解读后会看到排名、竞品和表达准确性判断', tone: 'muted' }
       ],
-      nextAction: '点击解读，生成测试结果说明。'
+      nextAction: '点击解读，生成监测结果说明。'
     };
   }
 
   return {
-    title: '等待测试结果',
+    title: '等待监测结果',
     lines: [
       { label: '原因', value: '测试尚未完成或还没有回答', tone: 'muted' },
       { label: '影响', value: '暂时无法判断这次测试表现', tone: 'muted' }
@@ -122,9 +122,9 @@ function getAnalysisSummary(analysis: AnalysisResult): MonitoringResultSummary {
   }
 
   return {
-    title: analysis.reviewRequired ? '结果需要你确认' : '测试结果已解读',
+    title: analysis.reviewRequired ? '结果需要你确认' : '监测结果已解读',
     lines,
-    nextAction: analysis.reviewRequired ? '点击查看解读，确认风险表达和无法判断项。' : '根据补强建议生成内容和再次测试计划。'
+    nextAction: analysis.reviewRequired ? '点击查看解读，确认风险表达和无法判断项。' : '根据补强建议生成内容和再次监测计划。'
   };
 }
 

@@ -18,9 +18,9 @@ describe('test plan repository', () => {
     expect(candidates?.every((candidate) => candidate.promptId === 'prompt_demo_comparison')).toBe(true);
     expect(plans).toContainEqual(expect.objectContaining({
       id: 'test_plan_demo_supercalf_first_round',
-      name: '追光小牛首轮 AI 测试计划',
+      name: '追光小牛首轮 AI 回复监测计划',
       status: 'needs_confirmation',
-      platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+      platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
       executionMethod: 'browser',
       estimatedDurationMinutes: 48
     }));
@@ -58,7 +58,7 @@ describe('test plan repository', () => {
 
     expect(plan).toMatchObject({
       brandId: 'brand_demo',
-      name: '追光小牛首轮 AI 测试计划',
+      name: '追光小牛首轮 AI 回复监测计划',
       status: 'needs_configuration',
       executionMethod: 'browser',
       estimatedDurationMinutes: 5,
@@ -72,7 +72,7 @@ describe('test plan repository', () => {
       expect.objectContaining({ platformCode: 'doubao', status: 'needs_confirmation', methods: ['api', 'browser', 'manual'] }),
       expect.objectContaining({ platformCode: 'unconfigured_ai', status: 'needs_configuration' })
     ]));
-    expect(plan?.confirmationItems).toEqual(expect.arrayContaining(['豆包 需要确认浏览器登录或切换手动测试', 'unconfigured_ai 需要先补充平台连接信息']));
+    expect(plan?.confirmationItems).toEqual(expect.arrayContaining(['豆包 需要确认浏览器登录或切换手动录入', 'unconfigured_ai 需要先补充平台连接信息']));
     expect(repository.listTestPlans('user_demo', 'brand_demo')).toContainEqual(plan);
   });
 
@@ -96,12 +96,12 @@ describe('test plan repository', () => {
     });
 
     const plan = repository.createTestPlan('user_demo', 'brand_demo', {
-      name: '自定义测试计划',
+      name: '自定义监测计划',
       candidateIds: [candidate?.id ?? ''],
       platformCodes: ['mock_ai']
     });
 
-    expect(plan).toMatchObject({ name: '自定义测试计划', status: 'ready', executionMethod: 'api' });
+    expect(plan).toMatchObject({ name: '自定义监测计划', status: 'ready', executionMethod: 'api' });
     expect(plan?.platformCodes).toEqual(['mock_ai']);
     expect(plan?.connectionSummary).toEqual([expect.objectContaining({ platformCode: 'mock_ai', status: 'ready' })]);
   });
@@ -235,7 +235,7 @@ describe('test plan repository', () => {
       expect.objectContaining({ platformCode: 'doubao', method: 'browser', status: 'needs_confirmation' })
     ]);
     expect(result?.browserSteps[0]?.runId).toBeUndefined();
-    expect(result?.confirmationItems).toEqual(expect.arrayContaining(['该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。']));
+    expect(result?.confirmationItems).toEqual(expect.arrayContaining(['该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。']));
   });
 
   it('matches manual batch answers by test question and platform', () => {
@@ -308,7 +308,7 @@ describe('test plan repository', () => {
     });
     expect(result?.failed).toEqual([
       expect.objectContaining({ status: 'failed', message: '粘贴内容为空，请补充平台回答。' }),
-      expect.objectContaining({ status: 'failed', message: '未匹配到对应测试问题和平台，请重新选择对应问题。' })
+      expect.objectContaining({ status: 'failed', message: '未匹配到对应监测问题和平台，请重新选择对应问题。' })
     ]);
     expect(repository.listTestPlans('user_demo', 'brand_demo')?.find((item) => item.id === plan?.id)?.monitoringRunIds).toContain(result?.accepted[0]?.run?.id);
   });
@@ -344,7 +344,7 @@ describe('test plan repository', () => {
       '贵阳有哪些值得推荐的儿童运动成长机构？',
       '贵阳哪里有适合 3-5 岁孩子的体能馆？'
     ]));
-    expect(plan?.platformCodes).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen']);
+    expect(plan?.platformCodes).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']);
   });
 
   it('falls back to the generic template when no industry template matches', () => {
@@ -368,7 +368,7 @@ describe('test plan repository', () => {
   it('duplicates existing plans and supports retest naming', () => {
     const repository = new PermissionsRepository();
     const source = repository.createTestPlan('user_demo', 'brand_demo', {
-      name: '首轮测试计划',
+      name: '首轮监测计划',
       questions: [
         {
           question: '追光小牛是做什么的？',
@@ -380,7 +380,7 @@ describe('test plan repository', () => {
 
     const copy = repository.duplicateTestPlan('user_demo', 'brand_demo', source?.id ?? '', { retest: true });
 
-    expect(copy).toMatchObject({ name: '首轮测试计划复测' });
+    expect(copy).toMatchObject({ name: '首轮监测计划复测' });
     expect(copy?.id).not.toBe(source?.id);
     expect(copy?.questions).toEqual(source?.questions);
     expect(copy?.platformCodes).toEqual(source?.platformCodes);

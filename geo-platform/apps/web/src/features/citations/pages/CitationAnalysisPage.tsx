@@ -124,7 +124,7 @@ export function CitationAnalysisPage() {
             { title: '来源类型', render: (_, record) => <Tag>{sourceTypeLabels[record.sourceType]}</Tag> },
             { title: '权威等级', render: (_, record) => <Tag color={record.authorityLevel === 'high' ? 'green' : undefined}>{authorityLabels[record.authorityLevel]}</Tag> },
             { title: '引用次数', dataIndex: 'citationCount' },
-            { title: '关联测试问题', dataIndex: 'promptText' },
+            { title: '关联监测问题', dataIndex: 'promptText' },
             {
               title: '操作',
               render: (_, record) => (

@@ -19,12 +19,12 @@ describe('test question display helpers', () => {
   });
 
   it('explains when only part of the questions are displayed', () => {
-    expect(getQuestionCandidateCountLabel(12, 8)).toBe('默认展示 8 个高价值测试问题，共 12 个');
-    expect(getQuestionCandidateCountLabel(5, 5)).toBe('已展示全部 5 个测试问题');
+    expect(getQuestionCandidateCountLabel(12, 8)).toBe('默认展示 8 个高价值监测问题，共 12 个');
+    expect(getQuestionCandidateCountLabel(5, 5)).toBe('已展示全部 5 个监测问题');
   });
 
   it('previews target platforms with beginner-facing labels', () => {
-    expect(getPlatformPreview(['doubao', 'kimi', 'custom_ai'])).toBe('豆包、Kimi、custom_ai');
+    expect(getPlatformPreview(['doubao', 'kimi', 'stepfun', 'custom_ai'])).toBe('豆包、Kimi、阶跃星辰、custom_ai');
   });
 
   it('formats first-round plan timing and connection summaries', () => {
@@ -36,14 +36,14 @@ describe('test question display helpers', () => {
       methods: ['api', 'manual'],
       status: 'ready',
       hasCredential: true
-    })).toBe('豆包：可自动测试，自动测试、手动测试');
+    })).toBe('豆包：可自动监测，自动监测、手动录入');
     expect(getConnectionSummaryLabel({
       platformCode: 'deepseek',
       name: 'DeepSeek',
       methods: ['api'],
       status: 'needs_configuration',
       hasCredential: false
-    })).toBe('DeepSeek：需要补充信息，自动测试');
+    })).toBe('DeepSeek：需要补充信息，自动监测');
   });
 
   it('summarizes first-round execution outcomes by method', () => {
@@ -53,7 +53,7 @@ describe('test question display helpers', () => {
       manualSteps: [{ question: '问题三' }],
       configurationItems: [{ question: '问题四' }],
       skippedSteps: [{ question: '问题五' }]
-    } as TestPlanExecutionResult)).toBe('自动测试 1 条，浏览器测试 2 条，手动测试 1 条，待补充信息 1 条，跳过 1 条');
+    } as TestPlanExecutionResult)).toBe('自动监测 1 条，浏览器辅助监测 2 条，手动录入 1 条，待补充信息 1 条，跳过 1 条');
   });
 
   it('gets candidate ids by theme for bulk selection', () => {
@@ -69,13 +69,13 @@ describe('test question display helpers', () => {
     expect(toQuestionCandidateUpdateInput({
       question: ' 贵阳儿童运动机构推荐哪家？ ',
       purposesText: 'brand_mentioned、rank_first',
-      targetPlatformsText: '豆包、通义千问',
+      targetPlatformsText: '豆包、通义千问、阶跃星辰',
       priority: 'high',
       estimatedValue: ' 验证本地推荐排名 '
     })).toEqual({
       question: '贵阳儿童运动机构推荐哪家？',
       purposes: ['brand_mentioned', 'rank_first'],
-      targetPlatforms: ['doubao', 'qianwen'],
+      targetPlatforms: ['doubao', 'qianwen', 'stepfun'],
       priority: 'high',
       estimatedValue: '验证本地推荐排名'
     });

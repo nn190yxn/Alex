@@ -22,11 +22,11 @@ npm run db:prepare
 | --- | --- | --- |
 | 用户与品牌 | `user_demo`、`brand_demo`、`permission_demo_owner` | 默认演示用户和品牌权限 |
 | 品牌知识库 | `brand_demo` 的 BrandProfile | 展示品牌介绍、卖点、FAQ、竞品、表达规则和完整度 |
-| 平台配置 | `platform_demo_openai` | 展示 OpenAI demo 平台配置、模型、限流和平台密钥脱敏状态 |
+| 平台配置 | 阶跃星辰默认 API 配置、`platform_mock_demo` | 展示内测默认模型配置、示例回答平台、限流和平台密钥脱敏状态 |
 | 优化单元与意图 | `unit_demo_core`、`intent_demo_buying` | 展示核心产品可见性优化单元和 comparison 意图 |
 | Prompt | `template_demo_comparison`、`prompt_demo_comparison` | 展示模板生成和品牌 Prompt 监测入口 |
-| 监测结果 | `run_demo_weekly_openai`、`response_demo_weekly_openai` | 展示 completed 监测运行、AI 回答、解析结果和引用来源 |
-| 指标快照 | `metric_demo_weekly_openai` | 展示 GEO 指数、样本量和平台维度评分 |
+| 监测结果 | `run_demo_weekly_mock`、`response_demo_weekly_mock` | 展示 completed 监测运行、AI 回答、解析结果和引用来源 |
+| 指标快照 | `metric_demo_weekly_mock` | 展示 GEO 指数、样本量和平台维度评分 |
 | 内容资产与策略 | `asset_demo_homepage`、`strategy_demo_guide` | 展示官网内容资产和 gap 类型内容策略 |
 | 内容生成 | `generation_demo_guide`、`version_demo_guide_v1`、`export_demo_guide_markdown` | 展示已完成内容生成任务、Markdown 版本和导出记录 |
 | 发布 | `publishing_account_demo_website`、`publishing_record_demo_guide` | 展示 Website CMS 账号和已发布记录 |
@@ -68,7 +68,7 @@ npm run db:prepare
 ## 已知限制
 
 - 默认开发模式使用内存仓储，并内置 `brand_demo` 最小演示闭环；需要验证完整 Prisma seed 数据时，API 应使用 `GEO_REPOSITORY_DRIVER=prisma` 和有效 `DATABASE_URL`。
-- 当前 OpenAI demo 平台配置使用凭据引用占位符，演示只展示脱敏状态和配置流转。
+- 阶跃星辰为内测默认 API 平台；未注入 `STEPFUN_API_KEY` 时演示只展示配置状态和手动录入路径，`mock_ai` 仅用于示例回答与开发辅助。
 - 当前队列为内存实现，试点演示重点验证状态流转和交互闭环。
 - 当前报告导出以 Markdown 内容展示为主，文件下载能力可作为后续候选需求进入反馈池。
 - 当前样本量为演示样本，报告中保留数据缺口用于说明真实试点的数据采集边界。
@@ -133,8 +133,8 @@ node -e 'fetch("http://localhost:5173").then(r => console.log(r.status))'
 | --- | --- | --- |
 | `npm run build` | 通过 | API、Web 和 shared-types workspace 构建通过 |
 | `npm run typecheck --workspaces` | 通过 | API、Web 和 shared-types 类型检查通过 |
-| `npm run test --workspace @geo-platform/api` | 通过 | API 41 个测试文件、173 个用例通过 |
-| `npm run test --workspace @geo-platform/web` | 通过 | Web 13 个测试文件、57 个用例通过 |
-| API 健康检查 | 通过 | `http://localhost:3001/api/v1/health` 返回 degraded，缺失项为 `GEO_AI_PLATFORM_CONFIGURED` |
+| `npm run test --workspace @geo-platform/api` | 通过 | API 64 个测试文件、289 个用例通过 |
+| `npm run test --workspace @geo-platform/web` | 通过 | Web 20 个测试文件、99 个用例通过 |
+| API 健康检查 | 通过 | `http://localhost:3001/api/v1/health` 可访问；`STEPFUN_API_KEY` 存在或 `GEO_AI_PLATFORM_CONFIGURED=true` 时 AI 平台状态为 configured |
 | 前端入口检查 | 通过 | `http://localhost:5173` 返回 Vite HTML 入口 |
 | 5173 预览链接 | 通过 | `https://5173-af4ce582db267302.monkeycode-ai.online` |

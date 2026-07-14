@@ -7,12 +7,13 @@ describe('platform config display helpers', () => {
     const platforms = [
       createPlatform('mock_ai', 'ready', ['api']),
       createPlatform('qianwen', 'manual_available', ['manual']),
+      createPlatform('stepfun', 'ready', ['api']),
       createPlatform('doubao', 'ready', ['api']),
       createPlatform('deepseek', 'needs_configuration', []),
       createPlatform('kimi', 'browser_available', ['browser'])
     ];
 
-    expect(getBeginnerPlatformConfigs(platforms).map((platform) => platform.platformCode)).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen']);
+    expect(getBeginnerPlatformConfigs(platforms).map((platform) => platform.platformCode)).toEqual(['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']);
   });
 
   it('groups platforms by the action users can take next', () => {
@@ -20,13 +21,14 @@ describe('platform config display helpers', () => {
       createPlatform('doubao', 'ready', ['api']),
       createPlatform('kimi', 'browser_available', ['browser']),
       createPlatform('deepseek', 'needs_configuration', []),
-      createPlatform('qianwen', 'manual_available', ['manual'])
+      createPlatform('qianwen', 'manual_available', ['manual']),
+      createPlatform('stepfun', 'ready', ['api'])
     ]);
 
     expect(grouped.map((group) => [group.title, group.platforms.map((platform) => platform.platformCode)])).toEqual([
-      ['可以自动测', ['doubao']],
-      ['可以用浏览器测', ['kimi']],
-      ['可以手动测', ['qianwen']],
+      ['可以自动监测', ['doubao', 'stepfun']],
+      ['可以用浏览器辅助监测', ['kimi']],
+      ['可以手动录入', ['qianwen']],
       ['需要补充信息', ['deepseek']]
     ]);
   });
@@ -36,7 +38,7 @@ describe('platform config display helpers', () => {
   });
 
   it('formats available test methods', () => {
-    expect(getMethodPreview(createPlatform('doubao', 'ready', ['api', 'manual']))).toBe('自动测试、手动测试');
+    expect(getMethodPreview(createPlatform('doubao', 'ready', ['api', 'manual']))).toBe('自动监测、手动录入');
     expect(getMethodPreview(createPlatform('deepseek', 'needs_configuration', []))).toBe('待补充');
   });
 
@@ -44,7 +46,7 @@ describe('platform config display helpers', () => {
     expect(advancedPlatformSettingFields).toEqual([
       { name: 'endpointUrl', label: '平台接口地址' },
       { name: 'modelName', label: '模型名称' },
-      { name: 'rateLimitPerMinute', label: '每分钟测试次数上限' }
+      { name: 'rateLimitPerMinute', label: '每分钟监测次数上限' }
     ]);
   });
 

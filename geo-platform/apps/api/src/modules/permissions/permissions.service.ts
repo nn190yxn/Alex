@@ -115,11 +115,22 @@ import type {
   TestThemeInput,
   UserIntent,
   UserIntentInput,
+  VisibilitySprint,
+  BrandStandardAnswer,
+  BrandStandardAnswerInput,
   OptimizationUnit,
   OptimizationUnitInput,
   UserSummary
 } from '@geo-platform/shared-types';
-import { PERMISSIONS_REPOSITORY, type PermissionsRepositoryPort } from './permissions.repository.port';
+import {
+  PERMISSIONS_REPOSITORY,
+  type PermissionsRepositoryPort,
+  type VisibilitySprintCreateInput,
+  type VisibilitySprintMetricUpdateInput,
+  type VisibilitySprintRelationsUpdateInput,
+  type VisibilitySprintStepUpdateInput,
+  type BrandStandardAnswerUpdateInput
+} from './permissions.repository.port';
 import type { AIPlatformRuntimeConfig } from '../platforms/adapters/ai-platform.adapter';
 
 @Injectable()
@@ -359,6 +370,50 @@ export class PermissionsService {
 
   createLLMTaskRun(userId: string, brandId: BrandId, input: LLMTaskRunInput): LLMTaskRun | null {
     return this.permissionsRepository.createLLMTaskRun(userId, brandId, input);
+  }
+
+  async listVisibilitySprints(userId: string, brandId: BrandId): Promise<VisibilitySprint[] | null> {
+    return this.permissionsRepository.listVisibilitySprints ? await this.permissionsRepository.listVisibilitySprints(userId, brandId) : null;
+  }
+
+  async getVisibilitySprint(userId: string, brandId: BrandId, sprintId: string): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.getVisibilitySprint ? await this.permissionsRepository.getVisibilitySprint(userId, brandId, sprintId) : null;
+  }
+
+  async getCurrentVisibilitySprint(userId: string, brandId: BrandId): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.getCurrentVisibilitySprint ? await this.permissionsRepository.getCurrentVisibilitySprint(userId, brandId) : null;
+  }
+
+  async createVisibilitySprint(userId: string, brandId: BrandId, input: VisibilitySprintCreateInput): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.createVisibilitySprint ? await this.permissionsRepository.createVisibilitySprint(userId, brandId, input) : null;
+  }
+
+  async updateVisibilitySprintStep(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintStepUpdateInput): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.updateVisibilitySprintStep ? await this.permissionsRepository.updateVisibilitySprintStep(userId, brandId, sprintId, input) : null;
+  }
+
+  async updateVisibilitySprintMetrics(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintMetricUpdateInput): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.updateVisibilitySprintMetrics ? await this.permissionsRepository.updateVisibilitySprintMetrics(userId, brandId, sprintId, input) : null;
+  }
+
+  async updateVisibilitySprintRelations(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintRelationsUpdateInput): Promise<VisibilitySprint | null> {
+    return this.permissionsRepository.updateVisibilitySprintRelations ? await this.permissionsRepository.updateVisibilitySprintRelations(userId, brandId, sprintId, input) : null;
+  }
+
+  async listBrandStandardAnswers(userId: string, brandId: BrandId, questionId?: string): Promise<BrandStandardAnswer[] | null> {
+    return this.permissionsRepository.listBrandStandardAnswers ? await this.permissionsRepository.listBrandStandardAnswers(userId, brandId, questionId) : null;
+  }
+
+  async getBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string): Promise<BrandStandardAnswer | null> {
+    return this.permissionsRepository.getBrandStandardAnswer ? await this.permissionsRepository.getBrandStandardAnswer(userId, brandId, answerId) : null;
+  }
+
+  async createBrandStandardAnswer(userId: string, brandId: BrandId, input: BrandStandardAnswerInput): Promise<BrandStandardAnswer | null> {
+    return this.permissionsRepository.createBrandStandardAnswer ? await this.permissionsRepository.createBrandStandardAnswer(userId, brandId, input) : null;
+  }
+
+  async updateBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string, input: BrandStandardAnswerUpdateInput): Promise<BrandStandardAnswer | null> {
+    return this.permissionsRepository.updateBrandStandardAnswer ? await this.permissionsRepository.updateBrandStandardAnswer(userId, brandId, answerId, input) : null;
   }
 
   listMonitoringRuns(userId: string, brandId: BrandId): MonitoringRunDetail[] | null {

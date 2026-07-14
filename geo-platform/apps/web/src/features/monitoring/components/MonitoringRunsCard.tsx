@@ -61,7 +61,7 @@ export function MonitoringRunsCard({ brandId }: Props) {
         runForm.resetFields();
         void queryClient.invalidateQueries({ queryKey: ['monitoring-runs', brandId] });
         void queryClient.invalidateQueries({ queryKey: ['brand-workspace', brandId] });
-        void messageApi.success('测试记录已创建');
+        void messageApi.success('回复监测记录已创建');
       } else {
         void messageApi.error(response.error.message);
       }
@@ -144,7 +144,7 @@ export function MonitoringRunsCard({ brandId }: Props) {
   };
 
   return (
-    <Card id="monitoring-runs-card" title="AI 测试记录" extra={<Button type="primary" onClick={openRunModal}>新建测试</Button>}>
+    <Card id="monitoring-runs-card" title="AI 回复监测记录" extra={<Button type="primary" onClick={openRunModal}>新建监测</Button>}>
       {contextHolder}
       <PageErrorAlert response={promptsQuery.data} />
       <PageErrorAlert response={platformsQuery.data} />
@@ -152,21 +152,21 @@ export function MonitoringRunsCard({ brandId }: Props) {
       <Alert
         type="info"
         showIcon
-        message="看完结果后，继续生成优化计划"
-        description="重点看三件事：AI 有没有提到你的品牌、排在第几、说得准不准。确认后到优化计划页安排内容和再次测试。"
+        message="看完真实回复后，继续生成优化计划"
+        description="重点看三件事：AI 有没有提到你的品牌、排在第几、说得准不准。确认后到优化计划页安排内容和再次监测。"
       />
       <Table
         rowKey="id"
         loading={runsQuery.isLoading}
         dataSource={runs}
         pagination={false}
-        locale={{ emptyText: <EmptyState description="还没有 AI 测试记录，先新建一次测试。" actionLabel="新建测试" onAction={openRunModal} /> }}
+        locale={{ emptyText: <EmptyState description="还没有 AI 回复监测记录，先新建一次监测。" actionLabel="新建监测" onAction={openRunModal} /> }}
         scroll={{ x: 1080 }}
         columns={[
-          { title: '测试问题', dataIndex: 'promptText', render: (value: string) => <Typography.Text ellipsis>{value || '-'}</Typography.Text> },
+          { title: '监测问题', dataIndex: 'promptText', render: (value: string) => <Typography.Text ellipsis>{value || '-'}</Typography.Text> },
           { title: '平台', dataIndex: 'platformCode', render: (value: string) => getPlatformDisplayName(value) },
           { title: '状态', dataIndex: 'status', render: (value: MonitoringRunStatus) => <Tag color={statusColors[value]}>{statusLabels[value]}</Tag> },
-          { title: '测试进度', render: (_, record) => <RunExecutionState run={record} /> },
+          { title: '监测进度', render: (_, record) => <RunExecutionState run={record} /> },
           { title: '结果解读', render: (_, record) => <MonitoringResultExplanation run={record} /> },
           { title: 'AI 回答', render: (_, record) => record.response ? <Typography.Text>{record.response.rawText.slice(0, 36)}</Typography.Text> : <Typography.Text type="secondary">待录入</Typography.Text> },
           { title: '解读状态', render: (_, record) => record.analysis ? <Tag color={record.analysis.reviewRequired ? 'orange' : 'green'}>{record.analysis.reviewRequired ? '待确认' : '已解读'}</Tag> : <Tag>未解读</Tag> },
@@ -189,16 +189,16 @@ export function MonitoringRunsCard({ brandId }: Props) {
         ]}
       />
       <Modal
-        title="新建 AI 测试"
+        title="新建 AI 回复监测"
         open={runModalOpen}
-        okText="开始测试"
+        okText="开始监测"
         cancelText="取消"
         confirmLoading={createRunMutation.isPending}
         onCancel={() => setRunModalOpen(false)}
         onOk={() => runForm.submit()}
       >
         <Form form={runForm} layout="vertical" onFinish={(values) => createRunMutation.mutate(values)}>
-          <Form.Item name="promptId" label="测试问题" rules={[{ required: true, message: '请选择测试问题' }]}>
+          <Form.Item name="promptId" label="监测问题" rules={[{ required: true, message: '请选择监测问题' }]}>
             <Select
               options={prompts.map((prompt) => ({ value: prompt.id, label: prompt.text.slice(0, 60) }))}
               onChange={(promptId) => {
@@ -236,7 +236,7 @@ export function MonitoringRunsCard({ brandId }: Props) {
         </Form>
       </Modal>
       <Modal
-        title="确认测试解读"
+        title="确认回复解读"
         open={Boolean(analysisRunId)}
         okText="保存确认"
         cancelText="取消"
@@ -340,7 +340,7 @@ function RunExecutionState({ run }: { run: MonitoringRunDetail }) {
 
 export function getMonitoringRunExecutionState(run: Pick<MonitoringRunDetail, 'status' | 'retryStatus' | 'errorMessage'>): { label: string; color: string; hint?: string } {
   if (run.status === 'running') {
-    return { label: '正在测试', color: 'blue', hint: '系统正在向 AI 平台提交问题' };
+    return { label: '正在监测', color: 'blue', hint: '系统正在向 AI 平台提交问题' };
   }
 
   if (run.retryStatus === 'retry_pending') {
@@ -348,7 +348,7 @@ export function getMonitoringRunExecutionState(run: Pick<MonitoringRunDetail, 's
   }
 
   if (run.retryStatus === 'retried' && run.status === 'failed') {
-    return { label: '自动测试没成功', color: 'red', hint: '可以手动录入 AI 回答' };
+    return { label: '自动监测没成功', color: 'red', hint: '可以手动录入 AI 原始回复' };
   }
 
   if (run.status === 'review_required') {
@@ -356,7 +356,7 @@ export function getMonitoringRunExecutionState(run: Pick<MonitoringRunDetail, 's
   }
 
   if (run.status === 'completed') {
-    return { label: '测试完成', color: 'green' };
+    return { label: '监测完成', color: 'green' };
   }
 
   return { label: '等待开始', color: 'default' };
@@ -370,12 +370,12 @@ const modeLabels: Record<PlatformConfig['mode'], string> = {
   api: '自动',
   manual: '手动',
   semi_auto: '浏览器辅助',
-  mock: '演示测试'
+  mock: '示例回答'
 };
 
 const statusLabels: Record<MonitoringRunStatus, string> = {
   pending: '待开始',
-  running: '测试中',
+  running: '监测中',
   completed: '已完成',
   failed: '未成功',
   review_required: '待手动录入'

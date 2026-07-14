@@ -11,7 +11,8 @@
 - `NODE_ENV`: 生产环境设置为 `production`
 - `GEO_REPOSITORY_DRIVER`: 生产试运行设置为 `prisma`
 - `DATABASE_URL`: PostgreSQL 连接字符串
-- `GEO_AI_PLATFORM_CONFIGURED`: AI 平台配置完成后设置为 `true`
+- `STEPFUN_API_KEY`: 阶跃星辰 API Key，内测默认用于 `step-3.7-flash`
+- `GEO_AI_PLATFORM_CONFIGURED`: AI 平台通过其它方式配置完成后设置为 `true`
 
 ### 可选变量
 
@@ -89,6 +90,7 @@ node -e 'fetch("http://localhost:3001/api/v1/health").then(async r => { console.
 ## 排障
 
 - 健康检查返回 `degraded`: 查看 `missingConfiguration`，补齐对应环境变量。
+- `dependencies.aiPlatforms` 为 `not_configured`: 优先配置 `STEPFUN_API_KEY`；使用其它平台作为默认模型时，将平台配置补齐后设置 `GEO_AI_PLATFORM_CONFIGURED=true`。
 - `dependencies.mapProvider` 为 `fallback`: 检查 `GEO_AMAP_API_KEY` 是否已配置，并重新触发竞品地图发现验证。
 - `repositoryDriver` 为 `memory`: 检查 `GEO_REPOSITORY_DRIVER` 是否设置为 `prisma`。
 - Prisma schema 校验失败: 先修正 `当前工作区/geo-platform/apps/api/prisma/schema.prisma`，再运行 `npm run prisma:validate`。

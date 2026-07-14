@@ -25,7 +25,7 @@ export class FakeBrowserConnector implements BrowserConnector {
   }
 
   async sendQuestion(input: BrowserConnectorQuestionInput): Promise<BrowserConnectorOperationResult> {
-    return this.issueOrReady(input, '测试问题已发送，正在等待回答。');
+    return this.issueOrReady(input, '监测问题已发送，正在等待回答。');
   }
 
   async waitForAnswer(input: BrowserConnectorQuestionInput): Promise<BrowserConnectorOperationResult> {

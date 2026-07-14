@@ -52,7 +52,7 @@ export function ReportCenterPage() {
       {contextHolder}
       <Card title="报告中心" extra={<Button type="primary" onClick={() => setCreateOpen(true)}>生成报告</Button>}>
         <Typography.Paragraph>
-          生成单品牌周报、月报、多品牌对比和客户交付报告，报告内容聚合 AI 推荐表现、竞品、引用、评价、内容缺口和再次测试进度。
+          生成单品牌周报、月报、多品牌对比和客户交付报告，报告内容聚合 AI 推荐表现、竞品、引用、评价、内容缺口和再次监测进度。
         </Typography.Paragraph>
         <Space size={24} wrap>
           <Typography.Text>已生成报告：{dashboard?.reports.length ?? 0}</Typography.Text>
@@ -70,10 +70,9 @@ export function ReportCenterPage() {
         columns={[
           { title: '报告名称', dataIndex: 'title' },
           { title: '报告类型', render: (_, record) => reportTypeLabels[record.type] },
-          { title: '关联品牌', dataIndex: 'brandId' },
+          { title: '关联品牌', render: () => '当前品牌' },
           { title: '统计周期', render: (_, record) => `${record.periodStart} 至 ${record.periodEnd}` },
           { title: '生成状态', render: (_, record) => <Tag color={record.status === 'generated' ? 'green' : record.status === 'failed' ? 'red' : 'gold'}>{statusLabels[record.status]}</Tag> },
-          { title: '创建人', dataIndex: 'createdBy' },
           { title: '创建时间', dataIndex: 'createdAt' },
           { title: '操作', render: (_, record) => <Button size="small" onClick={() => setSelectedReport(record)}>查看</Button> }
         ]}

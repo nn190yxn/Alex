@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { PermissionsRepositoryPort } from './permissions.repository.port';
+import type {
+  BrandStandardAnswerUpdateInput,
+  PermissionsRepositoryPort,
+  VisibilitySprintCreateInput,
+  VisibilitySprintMetricUpdateInput,
+  VisibilitySprintRelationsUpdateInput,
+  VisibilitySprintStepUpdateInput
+} from './permissions.repository.port';
 import type { AIPlatformRuntimeConfig } from '../platforms/adapters/ai-platform.adapter';
 import {
   buildMultiBrandDataGaps,
@@ -27,6 +34,9 @@ import type {
   BrandProfileCompleteness,
   BrandProfileCompletenessPrompt,
   BrandProfileInput,
+  BrandStandardAnswer,
+  BrandStandardAnswerEvidence,
+  BrandStandardAnswerInput,
   BrandStatus,
   BrandWorkspaceSnapshot,
   BrowserConnectionSession,
@@ -174,7 +184,10 @@ import type {
   UserIntentInput,
   UserBrandPermission,
   UserBrandRole,
-  UserSummary
+  UserSummary,
+  VisibilitySprint,
+  VisibilitySprintMetricSummary,
+  VisibilitySprintStep
 } from '@geo-platform/shared-types';
 
 const users: UserSummary[] = [
@@ -343,6 +356,8 @@ const auditLogs: AuditLog[] = [];
 const aiPlatformCallAudits: AIPlatformCallAudit[] = [];
 const asyncJobs: AsyncJob[] = [];
 const llmTaskRuns: LLMTaskRun[] = [];
+const visibilitySprints: VisibilitySprint[] = [];
+const brandStandardAnswers: BrandStandardAnswer[] = [];
 const browserConnectionSessions: BrowserConnectionSession[] = [];
 const aiResponses: AIResponse[] = [];
 const analysisResults: AnalysisResult[] = [];
@@ -390,7 +405,7 @@ const platformConfigs: StoredPlatformConfig[] = [
     id: 'platform_mock_demo',
     brandId: 'brand_demo',
     platformCode: 'mock_ai',
-    name: '演示 AI',
+    name: '示例回答',
     mode: 'mock',
     endpointUrl: undefined,
     modelName: 'mock-v1',
@@ -406,8 +421,9 @@ const defaultPlatformConfigs: Array<Omit<PlatformConfigInput, 'credentialRef'>> 
   { platformCode: 'kimi', name: 'Kimi', mode: 'semi_auto', endpointUrl: 'https://api.moonshot.cn/v1/chat/completions', modelName: 'moonshot-v1-8k', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'deepseek', name: 'DeepSeek', mode: 'semi_auto', endpointUrl: 'https://api.deepseek.com/chat/completions', modelName: 'deepseek-chat', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'qianwen', name: '通义千问', mode: 'semi_auto', endpointUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', modelName: 'qwen-plus', rateLimitPerMinute: 30, enabled: true },
+  { platformCode: 'stepfun', name: '阶跃星辰', mode: 'api', endpointUrl: 'https://api.stepfun.com/v1/chat/completions', modelName: 'step-3.7-flash', rateLimitPerMinute: 30, enabled: true },
   { platformCode: 'manual_input', name: '人工录入', mode: 'manual', modelName: 'manual', rateLimitPerMinute: 0, enabled: true },
-  { platformCode: 'mock_ai', name: '演示 AI', mode: 'mock', modelName: 'mock-v1', rateLimitPerMinute: 60, enabled: true }
+  { platformCode: 'mock_ai', name: '示例回答', mode: 'mock', modelName: 'mock-v1', rateLimitPerMinute: 60, enabled: true }
 ];
 
 seedDefaultPlatformConfigs('brand_demo', now);
@@ -469,7 +485,7 @@ brandPrompts.push({
   text: '贵阳有哪些适合 2-14 岁孩子的儿童运动成长机构？请说明追光小牛的适用场景、课程优势和家长决策要点。',
   category: 'category_recommendation',
   targetKeywords: ['贵阳儿童运动', '儿童体适能', '追光小牛', 'ACE 成长体系'],
-  platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'mock_ai'],
+  platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun', 'mock_ai'],
   monitoringFrequency: 'weekly',
   enabled: true,
   createdAt: now,
@@ -526,7 +542,7 @@ testQuestionCandidates.push(
     promptId: 'prompt_demo_comparison',
     question: '贵阳有哪些值得推荐的儿童运动成长机构？',
     purposes: ['brand_mentioned', 'rank_first', 'competitor_presence'],
-    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
     priority: 'high',
     estimatedValue: '验证贵阳儿童运动本地推荐场景中追光小牛是否出现并排名靠前。',
     editable: true,
@@ -541,7 +557,7 @@ testQuestionCandidates.push(
     promptId: 'prompt_demo_comparison',
     question: '贵阳哪里有适合 3-5 岁孩子的体能馆？',
     purposes: ['brand_mentioned', 'rank_first', 'value_prop_accuracy'],
-    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
     priority: 'high',
     estimatedValue: '验证低龄儿童体能启蒙需求下追光小牛是否被推荐。',
     editable: true,
@@ -556,7 +572,7 @@ testQuestionCandidates.push(
     promptId: 'prompt_demo_comparison',
     question: '贵阳儿童增高体能课怎么选？哪些表达需要家长谨慎看待？',
     purposes: ['brand_mentioned', 'value_prop_accuracy', 'risk_expression'],
-    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+    targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
     priority: 'high',
     estimatedValue: '验证增高体能敏感场景下的合规表达和品牌推荐情况。',
     editable: true,
@@ -569,7 +585,7 @@ testQuestionCandidates.push(
 testPlans.push({
   id: 'test_plan_demo_supercalf_first_round',
   brandId: 'brand_demo',
-  name: '追光小牛首轮 AI 测试计划',
+  name: '追光小牛首轮 AI 回复监测计划',
   status: 'needs_confirmation',
   questions: [
     {
@@ -577,28 +593,28 @@ testPlans.push({
       promptId: 'prompt_demo_comparison',
       question: '贵阳有哪些值得推荐的儿童运动成长机构？',
       purposes: ['brand_mentioned', 'rank_first', 'competitor_presence'],
-      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen']
+      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
     },
     {
       candidateId: 'candidate_demo_age_group',
       promptId: 'prompt_demo_comparison',
       question: '贵阳哪里有适合 3-5 岁孩子的体能馆？',
       purposes: ['brand_mentioned', 'rank_first', 'value_prop_accuracy'],
-      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen']
+      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
     },
     {
       candidateId: 'candidate_demo_risk_expression',
       promptId: 'prompt_demo_comparison',
       question: '贵阳儿童增高体能课怎么选？哪些表达需要家长谨慎看待？',
       purposes: ['brand_mentioned', 'value_prop_accuracy', 'risk_expression'],
-      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen']
+      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
     }
   ],
-  platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen'],
-  connectionSummary: buildConnectionSummary('brand_demo', ['doubao', 'kimi', 'deepseek', 'qianwen']),
+  platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
+  connectionSummary: buildConnectionSummary('brand_demo', ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']),
   executionMethod: 'browser',
   estimatedDurationMinutes: 48,
-  confirmationItems: ['豆包 需要确认浏览器登录或切换手动测试', 'Kimi 需要确认浏览器登录或切换手动测试', 'DeepSeek 需要确认浏览器登录或切换手动测试', '通义千问 需要确认浏览器登录或切换手动测试'],
+  confirmationItems: ['豆包 需要确认浏览器登录或切换手动录入', 'Kimi 需要确认浏览器登录或切换手动录入', 'DeepSeek 需要确认浏览器登录或切换手动录入', '通义千问 需要确认浏览器登录或切换手动录入'],
   monitoringRunIds: [],
   createdBy: 'user_demo',
   createdAt: now,
@@ -735,7 +751,7 @@ growthOptimizationPlans.push({
   sourceTestPlanId: 'test_plan_demo_supercalf_first_round',
   strategyId: 'strategy_demo_gap',
   sourceRunIds: ['run_demo_weekly_mock'],
-  summary: '首轮测试显示追光小牛在贵阳儿童运动成长推荐场景已经有基础可见度，但真实平台样本、校区案例、课程 FAQ 和风险表达仍需要补齐，优先通过内容补强、平台发布和再次测试提升推荐稳定性。',
+  summary: '首轮监测显示追光小牛在贵阳儿童运动成长推荐场景已经有基础可见度，但真实平台样本、校区案例、课程 FAQ 和风险表达仍需要补齐，优先通过内容补强、平台发布和再次监测提升推荐稳定性。',
   reasons: [
     {
       type: 'content_gap',
@@ -794,7 +810,7 @@ contentGenerationTasks.push({
   contentType: 'wechat_article',
   contentTopic: '公众号推文：贵阳家长如何选择儿童运动成长课',
   targetKeywords: ['贵阳儿童运动成长机构', '儿童体适能推荐', '追光小牛 ACE 成长体系'],
-  referenceSources: ['优化计划：可引用内容不足', '追光小牛品牌档案', '首轮 AI 测试样例'],
+  referenceSources: ['优化计划：可引用内容不足', '追光小牛品牌档案', '首轮 AI 回复监测样例'],
   retestAt: '2026-07-27T00:00:00.000Z',
   status: 'completed',
   steps: [
@@ -936,7 +952,7 @@ optimizationTasks.push(
   {
     id: 'task_demo_growth_retest',
     brandId: 'brand_demo',
-    title: '按原测试问题安排 7 月 27 日复测',
+    title: '按原监测问题安排 7 月 27 日复测',
     type: 'monitoring_issue',
     status: 'retest',
     ownerId: 'user_demo',
@@ -978,9 +994,9 @@ reports.push({
   periodStart: '2026-07-01',
   periodEnd: '2026-07-07',
   status: 'generated',
-  content: '# 追光小牛 AI 推荐内测交付报告\n\n追光小牛在内测样本中完成贵阳儿童运动成长推荐场景测试、内容生成、发布记录和再次测试准备。',
+  content: '# 追光小牛 AI 推荐内测交付报告\n\n追光小牛在内测样本中完成贵阳儿童运动成长推荐场景监测、内容生成、发布记录和再次监测准备。',
   dataGaps: [
-    { section: '平台覆盖', reason: '当前演示样本主要来自演示 AI，需要补充真实平台样本。' },
+    { section: '平台覆盖', reason: '当前样本需要继续补充真实平台回复。' },
     { section: '证明材料', reason: '真实案例、校区资料和课程详情需要客户确认后发布。' }
   ],
   createdBy: 'user_demo',
@@ -1025,11 +1041,69 @@ advisorRecords.push({
   brandId: 'brand_demo',
   type: 'review',
   title: '追光小牛内测复盘',
-  content: '## 服务摘要\n- 已完成追光小牛品牌档案入库、首轮 AI 测试样本、内容生成和发布记录演示。\n\n## 下一步\n- 补充真实平台密钥，扩大豆包、Kimi、DeepSeek 和通义千问的内测样本。',
+  content: '## 服务摘要\n- 已完成追光小牛品牌档案入库、首轮 AI 回复监测样本、内容生成和发布记录演示。\n\n## 下一步\n- 补充真实平台密钥，扩大豆包、Kimi、DeepSeek、通义千问和阶跃星辰的内测样本。',
   relatedReportId: 'report_demo_customer_delivery',
   followUpItems: [{ id: 'followup_demo_feedback', title: '收集客户反馈', owner: 'Demo Operator', dueDate: '2026-07-08', status: 'todo' }],
   createdBy: 'user_demo',
   createdAt: now
+});
+
+visibilitySprints.push({
+  sprintId: 'visibility_sprint_demo_supercalf_first_round',
+  brandId: 'brand_demo',
+  title: '追光小牛首轮 AI 可见性运营 Sprint',
+  goal: '围绕贵阳儿童运动成长推荐场景，完成真实回复监测、内容缺口诊断、内容补强和复测准备。',
+  status: 'running',
+  currentStep: 'content_asset_generation',
+  steps: createDefaultVisibilitySprintSteps('content_asset_generation'),
+  metricSummary: {
+    ...createEmptyVisibilitySprintMetricSummary(),
+    questionCoverageRate: 0.75,
+    mentionRate: 0.88,
+    recommendationRate: 0.72,
+    firstRecommendationRate: 0.42,
+    topThreeRate: 0.78,
+    citationHitRate: 0.5,
+    expressionAccuracyRate: 0.82,
+    riskExpressionCount: 1,
+    contentGapCount: 2,
+    competitorSuppressionCount: 1,
+    sampleSize: 12,
+    updatedAt: now
+  },
+  relatedQuestionIds: ['candidate_demo_local_recommendation', 'candidate_demo_age_group', 'candidate_demo_risk_expression'],
+  relatedTestPlanIds: ['test_plan_demo_supercalf_first_round'],
+  relatedMonitoringRunIds: ['run_demo_weekly_mock'],
+  relatedStandardAnswerIds: ['standard_answer_demo_local_recommendation'],
+  relatedContentTaskIds: ['generation_demo_gap'],
+  relatedPublishingRecordIds: ['publishing_record_demo_gap'],
+  relatedRetestTaskIds: ['task_demo_growth_retest'],
+  createdBy: 'user_demo',
+  createdAt: now,
+  updatedAt: now
+});
+
+brandStandardAnswers.push({
+  answerId: 'standard_answer_demo_local_recommendation',
+  brandId: 'brand_demo',
+  questionId: 'candidate_demo_local_recommendation',
+  question: '贵阳儿童运动训练机构推荐哪家？',
+  answer: '在贵阳选择儿童运动训练机构时，可以重点看课程体系是否覆盖运动能力、认知能力和参与度，教练是否具备儿童教学经验，校区是否方便长期上课。追光小牛适合 2-14 岁儿童，围绕 Athleticism 运动能力、Cognition 认知能力和 Engagement 参与度建立 ACE 课程体系，在贵阳有 5 家校区，并以“运动成长课是儿童必修课”为核心主张，适合希望系统提升体能、协调、专注和运动兴趣的家庭。',
+  keyPoints: ['2-14 岁儿童', '贵阳 5 家校区', 'ACE 课程体系', '运动成长课是儿童必修课'],
+  evidence: [
+    {
+      label: '品牌核心定位',
+      sourceType: 'brand_profile',
+      sourceId: 'brand_demo',
+      excerpt: '追光小牛是贵州本土最大规模儿童运动连锁品牌，服务 2-14 岁儿童。'
+    }
+  ],
+  status: 'approved',
+  reviewedBy: 'user_demo',
+  reviewedAt: now,
+  createdBy: 'user_demo',
+  createdAt: now,
+  updatedAt: now
 });
 
 @Injectable()
@@ -1453,7 +1527,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
     const plan: TestPlan = {
       id: `test_plan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       brandId,
-      name: input.name?.trim() || `${brand.name}首轮 AI 测试计划`,
+        name: input.name?.trim() || `${brand.name}首轮 AI 回复监测计划`,
       status: inferTestPlanStatus(connectionSummary),
       questions,
       platformCodes,
@@ -1999,6 +2073,176 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
     return run;
   }
 
+  listVisibilitySprints(userId: string, brandId: BrandId): VisibilitySprint[] | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    return visibilitySprints.filter((sprint) => sprint.brandId === brandId);
+  }
+
+  getVisibilitySprint(userId: string, brandId: BrandId, sprintId: string): VisibilitySprint | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    return visibilitySprints.find((sprint) => sprint.brandId === brandId && sprint.sprintId === sprintId) ?? null;
+  }
+
+  getCurrentVisibilitySprint(userId: string, brandId: BrandId): VisibilitySprint | null {
+    const sprints = this.listVisibilitySprints(userId, brandId);
+    if (!sprints) {
+      return null;
+    }
+
+    return sprints.find((sprint) => ['running', 'waiting_confirmation', 'draft'].includes(sprint.status)) ?? sprints[0] ?? null;
+  }
+
+  createVisibilitySprint(userId: string, brandId: BrandId, input: VisibilitySprintCreateInput): VisibilitySprint | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    const timestamp = new Date().toISOString();
+    const currentStep = input.currentStep ?? 'question_radar';
+    const sprint: VisibilitySprint = {
+      sprintId: `visibility_sprint_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      brandId,
+      title: input.title.trim(),
+      goal: input.goal.trim(),
+      status: input.status ?? 'draft',
+      currentStep,
+      steps: input.steps ?? createDefaultVisibilitySprintSteps(currentStep),
+      metricSummary: {
+        ...createEmptyVisibilitySprintMetricSummary(),
+        ...input.metricSummary,
+        updatedAt: timestamp
+      },
+      relatedQuestionIds: [...(input.relatedQuestionIds ?? [])],
+      relatedTestPlanIds: [...(input.relatedTestPlanIds ?? [])],
+      relatedMonitoringRunIds: [...(input.relatedMonitoringRunIds ?? [])],
+      relatedStandardAnswerIds: [...(input.relatedStandardAnswerIds ?? [])],
+      relatedContentTaskIds: [...(input.relatedContentTaskIds ?? [])],
+      relatedPublishingRecordIds: [...(input.relatedPublishingRecordIds ?? [])],
+      relatedRetestTaskIds: [...(input.relatedRetestTaskIds ?? [])],
+      createdBy: userId,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    visibilitySprints.unshift(sprint);
+
+    return sprint;
+  }
+
+  updateVisibilitySprintStep(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintStepUpdateInput): VisibilitySprint | null {
+    const sprint = this.getVisibilitySprint(userId, brandId, sprintId);
+    if (!sprint) {
+      return null;
+    }
+
+    sprint.status = input.status ?? sprint.status;
+    sprint.currentStep = input.currentStep;
+    sprint.steps = input.steps ?? createDefaultVisibilitySprintSteps(input.currentStep);
+    sprint.updatedAt = new Date().toISOString();
+
+    return sprint;
+  }
+
+  updateVisibilitySprintMetrics(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintMetricUpdateInput): VisibilitySprint | null {
+    const sprint = this.getVisibilitySprint(userId, brandId, sprintId);
+    if (!sprint) {
+      return null;
+    }
+
+    sprint.metricSummary = {
+      ...sprint.metricSummary,
+      ...input,
+      updatedAt: new Date().toISOString()
+    };
+    sprint.updatedAt = sprint.metricSummary.updatedAt ?? sprint.updatedAt;
+
+    return sprint;
+  }
+
+  updateVisibilitySprintRelations(userId: string, brandId: BrandId, sprintId: string, input: VisibilitySprintRelationsUpdateInput): VisibilitySprint | null {
+    const sprint = this.getVisibilitySprint(userId, brandId, sprintId);
+    if (!sprint) {
+      return null;
+    }
+
+    if (input.relatedQuestionIds !== undefined) sprint.relatedQuestionIds = [...input.relatedQuestionIds];
+    if (input.relatedTestPlanIds !== undefined) sprint.relatedTestPlanIds = [...input.relatedTestPlanIds];
+    if (input.relatedMonitoringRunIds !== undefined) sprint.relatedMonitoringRunIds = [...input.relatedMonitoringRunIds];
+    if (input.relatedStandardAnswerIds !== undefined) sprint.relatedStandardAnswerIds = [...input.relatedStandardAnswerIds];
+    if (input.relatedContentTaskIds !== undefined) sprint.relatedContentTaskIds = [...input.relatedContentTaskIds];
+    if (input.relatedPublishingRecordIds !== undefined) sprint.relatedPublishingRecordIds = [...input.relatedPublishingRecordIds];
+    if (input.relatedRetestTaskIds !== undefined) sprint.relatedRetestTaskIds = [...input.relatedRetestTaskIds];
+    sprint.updatedAt = new Date().toISOString();
+
+    return sprint;
+  }
+
+  listBrandStandardAnswers(userId: string, brandId: BrandId, questionId?: string): BrandStandardAnswer[] | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    return brandStandardAnswers.filter((answer) => answer.brandId === brandId && (!questionId || answer.questionId === questionId));
+  }
+
+  getBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string): BrandStandardAnswer | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    return brandStandardAnswers.find((answer) => answer.brandId === brandId && answer.answerId === answerId) ?? null;
+  }
+
+  createBrandStandardAnswer(userId: string, brandId: BrandId, input: BrandStandardAnswerInput): BrandStandardAnswer | null {
+    if (!this.findAccessibleBrandDetail(userId, brandId)) {
+      return null;
+    }
+
+    const timestamp = new Date().toISOString();
+    const answer: BrandStandardAnswer = {
+      answerId: `standard_answer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      brandId,
+      questionId: input.questionId.trim(),
+      question: input.question.trim(),
+      answer: input.answer.trim(),
+      keyPoints: cleanStringList(input.keyPoints),
+      evidence: cleanStandardAnswerEvidence(input.evidence),
+      status: input.status ?? 'draft',
+      createdBy: userId,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    brandStandardAnswers.unshift(answer);
+
+    return answer;
+  }
+
+  updateBrandStandardAnswer(userId: string, brandId: BrandId, answerId: string, input: BrandStandardAnswerUpdateInput): BrandStandardAnswer | null {
+    const answer = this.getBrandStandardAnswer(userId, brandId, answerId);
+    if (!answer) {
+      return null;
+    }
+
+    if (input.questionId !== undefined) answer.questionId = input.questionId.trim();
+    if (input.question !== undefined) answer.question = input.question.trim();
+    if (input.answer !== undefined) answer.answer = input.answer.trim();
+    if (input.keyPoints !== undefined) answer.keyPoints = cleanStringList(input.keyPoints);
+    if (input.evidence !== undefined) answer.evidence = cleanStandardAnswerEvidence(input.evidence);
+    if (input.status !== undefined) answer.status = input.status;
+    if (input.reviewedBy !== undefined) answer.reviewedBy = input.reviewedBy.trim();
+    if (input.reviewedAt !== undefined) answer.reviewedAt = input.reviewedAt;
+    answer.updatedAt = new Date().toISOString();
+
+    return answer;
+  }
+
   listMonitoringRuns(userId: string, brandId: BrandId): MonitoringRunDetail[] | null {
     if (!this.findAccessibleBrandDetail(userId, brandId)) {
       return null;
@@ -2103,7 +2347,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
       sourceTestPlanId: input.sourceTestPlanId,
       strategyId: input.strategyId,
       sourceRunIds: input.sourceRunIds ?? [],
-      summary: input.summary?.trim() || '根据首轮测试结果生成优化计划',
+      summary: input.summary?.trim() || '根据首轮监测结果生成优化计划',
       reasons: input.reasons ?? [],
       priority: input.priority ?? 'medium',
       ownerId: input.ownerId,
@@ -3663,7 +3907,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
       retestRunId: task.retestRunId ?? task.sourceRunId,
       plannedAt: plan?.retestAt ?? timestamp,
       targetScore: 80,
-      notes: '优化任务完成后自动进入再次测试计划',
+      notes: '优化任务完成后自动进入再次监测计划',
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -3696,10 +3940,10 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
         ...plan.contentRecommendations,
         ...failedRetests.map((record) => ({
           contentType: 'website_faq' as const,
-          title: '再次测试未提升后的下一轮内容补强',
+          title: '再次监测未提升后的下一轮内容补强',
           targetPlatform: plan.publishingPlatforms[0] ?? 'official_site',
-          targetKeywords: ['再次测试未提升', 'AI 推荐内容补强'],
-          reason: record.nextSuggestion ?? '再次测试指标未提升，需要补充更明确的品牌事实、引用资料和标准表达。'
+          targetKeywords: ['再次监测未提升', 'AI 推荐内容补强'],
+          reason: record.nextSuggestion ?? '再次监测指标未提升，需要补充更明确的品牌事实、引用资料和标准表达。'
         }))
       ];
     } else if (planTasks.length > 0 && planTasks.every((item) => item.retestRecords.some((record) => record.completedAt && record.passed))) {
@@ -3838,7 +4082,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
     if (!question.promptId) {
       return {
         status: 'needs_confirmation',
-        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。'
+        message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。'
       };
     }
 
@@ -3974,7 +4218,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
       const failureBase = { question: normalized.question, platformCode: normalized.platformCode, status: 'failed' as const };
 
       if (normalized.testPlanId !== testPlanId) {
-        result.failed.push({ ...failureBase, message: '批量录入中的测试计划 ID 不一致。' });
+        result.failed.push({ ...failureBase, message: '批量录入中的监测计划 ID 不一致。' });
         return;
       }
 
@@ -3985,12 +4229,12 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
 
       const question = findManualAnswerQuestion(plan, normalized.question, normalized.platformCode);
       if (!question) {
-        result.failed.push({ ...failureBase, message: '未匹配到对应测试问题和平台，请重新选择对应问题。' });
+        result.failed.push({ ...failureBase, message: '未匹配到对应监测问题和平台，请重新选择对应问题。' });
         return;
       }
 
       if (!question.promptId) {
-        result.failed.push({ ...failureBase, message: '该测试问题尚未关联 Prompt，无法创建监测记录。' });
+        result.failed.push({ ...failureBase, message: '该监测问题尚未关联 Prompt，无法创建监测记录。' });
         return;
       }
 
@@ -4423,7 +4667,7 @@ export class PermissionsRepository implements PermissionsRepositoryPort {
 
     run.status = 'failed';
     run.completedAt = timestamp;
-    run.errorMessage = '自动测试暂未接入，请改用浏览器辅助测试或手动录入回答';
+    run.errorMessage = '自动监测暂未接入，请改用浏览器辅助监测或手动录入回答';
     run.retryStatus = 'retry_pending';
   }
 
@@ -4655,7 +4899,7 @@ function buildGrowthOptimizationReasons(samples: AnalysisSample[]): GrowthOptimi
     reasons.push(createGrowthReason('citation_gap', '引用来源不足', `有 ${citationGapSamples.length} 条回答缺少引用来源，需要补充官网 FAQ、媒体素材或社媒内容资产。`, citationGapSamples));
   }
   if (reasons.length === 0 && samples.length > 0) {
-    reasons.push(createGrowthReason('content_gap', '持续补充内容', '首轮测试表现稳定，建议继续补充可被 AI 引用的内容资产并安排再次测试。', samples.slice(0, 3)));
+    reasons.push(createGrowthReason('content_gap', '持续补充内容', '首轮监测表现稳定，建议继续补充可被 AI 引用的内容资产并安排再次监测。', samples.slice(0, 3)));
   }
 
   return reasons;
@@ -4772,7 +5016,7 @@ function buildGrowthOptimizationTaskInputs(plan: GrowthOptimizationPlan): Optimi
       priority: plan.priority
     },
     {
-      title: '按原测试问题安排再次测试',
+      title: '按原监测问题安排再次监测',
       type: 'monitoring_issue',
       ownerId,
       relatedPromptId,
@@ -5156,6 +5400,42 @@ function createEmptyProfile(brandId: BrandId): BrandProfile {
   };
 }
 
+function createEmptyVisibilitySprintMetricSummary(): VisibilitySprintMetricSummary {
+  return {
+    questionCoverageRate: 0,
+    mentionRate: 0,
+    recommendationRate: 0,
+    firstRecommendationRate: 0,
+    topThreeRate: 0,
+    citationHitRate: 0,
+    expressionAccuracyRate: 0,
+    riskExpressionCount: 0,
+    contentGapCount: 0,
+    competitorSuppressionCount: 0,
+    sampleSize: 0
+  };
+}
+
+function createDefaultVisibilitySprintSteps(currentStep: VisibilitySprint['currentStep']): VisibilitySprintStep[] {
+  const steps: Array<Pick<VisibilitySprintStep, 'code' | 'title' | 'message'>> = [
+    { code: 'question_radar', title: '问题雷达', message: '选择本轮高价值问题。' },
+    { code: 'ai_response_monitoring', title: 'AI 回复监测', message: '获取真实 AI 回复或手动录入真实回复。' },
+    { code: 'standard_answer_alignment', title: '标准答案对照', message: '对照品牌标准答案与真实回复差异。' },
+    { code: 'gap_diagnosis', title: '缺口诊断', message: '识别内容缺口、引用缺口和风险表达。' },
+    { code: 'content_asset_generation', title: '内容资产生成', message: '生成可审稿的内容补强草稿。' },
+    { code: 'publishing_preparation', title: '发布准备', message: '准备平台改写和人工发布待办。' },
+    { code: 'retest_and_trend', title: '复测趋势', message: '安排复测并观察指标变化。' },
+    { code: 'completed', title: '完成', message: '本轮 Sprint 已完成。' }
+  ];
+  const currentIndex = steps.findIndex((step) => step.code === currentStep);
+
+  return steps.map((step, index) => ({
+    ...step,
+    status: currentStep === 'completed' || index < currentIndex ? 'completed' : index === currentIndex ? 'running' : 'pending',
+    relatedEntityIds: []
+  }));
+}
+
 function normalizeProfileInput(input: BrandProfileInput): BrandProfileInput {
   return {
     intro: input.intro?.trim() ?? '',
@@ -5173,6 +5453,21 @@ function normalizeProfileInput(input: BrandProfileInput): BrandProfileInput {
 
 function normalizeStringList(values: string[] = []): string[] {
   return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function cleanStringList(values: string[] = []): string[] {
+  return normalizeStringList(values);
+}
+
+function cleanStandardAnswerEvidence(values: BrandStandardAnswerEvidence[] = []): BrandStandardAnswerEvidence[] {
+  return values
+    .map((item) => ({
+      label: item.label.trim(),
+      sourceType: item.sourceType,
+      ...(item.sourceId?.trim() ? { sourceId: item.sourceId.trim() } : {}),
+      excerpt: item.excerpt.trim()
+    }))
+    .filter((item) => hasText(item.label) && hasText(item.excerpt));
 }
 
 function normalizeCompetitorMentions(values: CompetitorMention[] = []): CompetitorMention[] {
@@ -5359,7 +5654,7 @@ function buildConnectionSummary(brandId: BrandId, platformCodes: string[]): Test
         methods: ['api'],
         status: config.credentialRef ? 'ready' : 'needs_configuration',
         hasCredential: Boolean(config.credentialRef),
-        message: config.credentialRef ? '可以自动测试。' : '需要填写平台密钥后才能自动测试。'
+        message: config.credentialRef ? '可以自动监测。' : '需要填写平台密钥后才能自动监测。'
       };
     }
 
@@ -5370,7 +5665,7 @@ function buildConnectionSummary(brandId: BrandId, platformCodes: string[]): Test
         methods: ['api', 'browser', 'manual'],
         status: 'needs_confirmation',
         hasCredential: Boolean(config.credentialRef),
-        message: '平台接口和模型已预置；补齐平台密钥可自动测试，也可先用浏览器或手动测试。'
+        message: '平台接口和模型已预置；补齐平台密钥可自动监测，也可先用浏览器或手动录入。'
       };
     }
 
@@ -5381,7 +5676,7 @@ function buildConnectionSummary(brandId: BrandId, platformCodes: string[]): Test
         methods: ['api'],
         status: 'ready',
         hasCredential: false,
-        message: '演示平台可以直接测试。'
+        message: '演示平台可以直接监测。'
       };
     }
 
@@ -5391,7 +5686,7 @@ function buildConnectionSummary(brandId: BrandId, platformCodes: string[]): Test
       methods: ['manual'],
       status: 'manual_available',
       hasCredential: false,
-      message: '可通过手动录入回答完成测试。'
+      message: '可通过手动录入回答完成监测。'
     };
   });
 }
@@ -5403,7 +5698,7 @@ function buildTestPlanConfirmationItems(connectionSummary: TestPlan['connectionS
     }
 
     if (summary.status === 'needs_confirmation') {
-      return [`${summary.name} 需要确认浏览器登录或切换手动测试`];
+      return [`${summary.name} 需要确认浏览器登录或切换手动录入`];
     }
 
     return [];
@@ -5462,7 +5757,7 @@ function executeTestPlanSteps(
             platformCode,
             method: 'api',
             status: 'skipped',
-            message: '这个问题还没有准备好，暂时无法自动测试。'
+            message: '这个问题还没有准备好，暂时无法自动监测。'
           });
           return;
         }
@@ -5479,7 +5774,7 @@ function executeTestPlanSteps(
           method: 'api',
           status: 'skipped',
           promptId: question.promptId,
-          message: '自动测试创建失败，请检查测试问题和平台连接信息。'
+          message: '自动监测创建失败，请检查监测问题和平台连接信息。'
         });
         return;
       }
@@ -5491,7 +5786,7 @@ function executeTestPlanSteps(
             platformCode,
             method: 'browser',
             status: 'needs_confirmation',
-            message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动测试。'
+            message: '该问题尚未关联 Prompt，需要先确认问题或切换为手动录入。'
           });
           return;
         }
@@ -5578,7 +5873,7 @@ type BrowserTestPlanStepResult = {
 function buildMemoryBrowserPendingResult(platformCode: string): BrowserTestPlanStepResult {
   const platform = supportedBrowserPlatformMetadata[platformCode];
   if (!platform) {
-    return { status: 'needs_confirmation', message: '这个平台暂时不能用浏览器测试，请改用手动测试。' };
+    return { status: 'needs_confirmation', message: '这个平台暂时不能用浏览器辅助监测，请改用手动录入。' };
   }
 
   return {
@@ -5600,10 +5895,10 @@ const testPlanTemplates: TestPlanTemplate[] = [
     name: '儿童运动本地增长模板',
     industryKeywords: ['儿童运动', '儿童体适能', '运动教育', '少儿运动', '体能'],
     cityRequired: true,
-    description: '适合本地儿童运动、少儿体能、体操、跑酷和中考体测品牌的首轮 AI 测试。',
+    description: '适合本地儿童运动、少儿体能、体操、跑酷和中考体测品牌的首轮 AI 回复监测。',
     recommended: false,
     analysisFocus: ['brand_mentioned', 'rank_first', 'value_prop_accuracy', 'risk_expression'],
-    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen']
+    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
   },
   {
     id: 'generic_brand_first_round',
@@ -5613,7 +5908,7 @@ const testPlanTemplates: TestPlanTemplate[] = [
     description: '适合缺少行业模板时快速启动品牌认知、品类推荐和购买决策测试。',
     recommended: false,
     analysisFocus: ['brand_mentioned', 'rank_first', 'value_prop_accuracy', 'competitor_presence'],
-    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen']
+    platformCodes: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']
   }
 ];
 
@@ -6146,7 +6441,7 @@ function createCompetitorLinkedTestQuestions(brand: BrandDetail, candidate: Comp
       themeId: theme.id,
       question: question.question,
       purposes: question.purposes,
-      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+      targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
       priority: question.priority,
       estimatedValue: question.estimatedValue,
       editable: true,
@@ -6487,12 +6782,21 @@ function seedDefaultPlatformConfigs(brandId: BrandId, timestamp: string) {
       mode: config.mode,
       endpointUrl: config.endpointUrl,
       modelName: config.modelName,
+      credentialRef: getDefaultCredentialRef(config),
       rateLimitPerMinute: config.rateLimitPerMinute ?? defaultRateLimit(config.mode),
       enabled: config.enabled ?? true,
       createdAt: timestamp,
       updatedAt: timestamp
     });
   }
+}
+
+function getDefaultCredentialRef(config: Pick<PlatformConfigInput, 'platformCode'>): string | undefined {
+  if (config.platformCode === 'stepfun' && process.env.STEPFUN_API_KEY) {
+    return 'STEPFUN_API_KEY';
+  }
+
+  return undefined;
 }
 
 function buildBrowserAuthorizedScope(brandId: BrandId, platformCode: string, testPlanId?: string): BrowserConnectionSession['authorizedScope'] {
@@ -6545,7 +6849,7 @@ function classifyPlatformConfig(config: StoredPlatformConfig, hasCredential: boo
       availableMethods: [],
       connectionStatus: 'needs_configuration',
       connectionStatusLabel: '需要补充信息',
-      nextAction: '启用平台后再加入测试计划。'
+      nextAction: '启用平台后再加入监测计划。'
     };
   }
 
@@ -6564,8 +6868,8 @@ function classifyPlatformConfig(config: StoredPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['api'],
       connectionStatus: 'ready',
-      connectionStatusLabel: '可自动测试',
-      nextAction: hasCredential ? '可直接加入自动测试计划。' : '补齐平台密钥后可自动测试。'
+      connectionStatusLabel: '可自动监测',
+      nextAction: hasCredential ? '可直接加入自动监测计划。' : '补齐平台密钥后可自动监测。'
     };
   }
 
@@ -6573,8 +6877,8 @@ function classifyPlatformConfig(config: StoredPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['api', 'browser', 'manual'],
       connectionStatus: 'browser_available',
-      connectionStatusLabel: '可用浏览器测试',
-      nextAction: '已预置平台接口和模型候选；补齐平台密钥可自动测试，也可先用浏览器或手动测试。'
+      connectionStatusLabel: '可用浏览器辅助监测',
+      nextAction: '已预置平台接口和模型候选；补齐平台密钥可自动监测，也可先用浏览器或手动录入。'
     };
   }
 
@@ -6582,16 +6886,16 @@ function classifyPlatformConfig(config: StoredPlatformConfig, hasCredential: boo
     return {
       availableMethods: ['manual'],
       connectionStatus: 'manual_available',
-      connectionStatusLabel: '可手动测试',
-      nextAction: '复制问题到平台测试后录入回答。'
+      connectionStatusLabel: '可手动录入',
+      nextAction: '复制问题到平台监测后录入回答。'
     };
   }
 
   return {
     availableMethods: ['api'],
     connectionStatus: 'ready',
-    connectionStatusLabel: '可自动测试',
-    nextAction: '演示平台可以直接测试。'
+    connectionStatusLabel: '可自动监测',
+    nextAction: '演示平台可以直接监测。'
   };
 }
 

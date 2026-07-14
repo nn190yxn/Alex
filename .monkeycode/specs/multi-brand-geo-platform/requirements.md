@@ -8,7 +8,7 @@
 
 - **GEO**: Generative Engine Optimization，面向生成式 AI 搜索与问答结果的品牌可见度优化。
 - **品牌工作区**: 一个品牌对应的独立数据空间，包含品牌档案、Prompt、竞品、内容资产、监测记录和报告。
-- **Prompt 场景**: 用于模拟用户在 AI 平台中提问的标准化问题。
+- **Prompt 场景**: 用于代表用户在 AI 平台中提问的标准化问题。
 - **GEO 指数**: 用于衡量品牌在 AI 平台中的提及、推荐、准确、正向、引用和竞品对比表现的综合评分。
 - **AI 平台**: ChatGPT、Gemini、Claude、Perplexity、DeepSeek、Kimi、豆包、通义千问、文心一言等可被系统监测的平台。
 - **内容资产**: 官网文章、FAQ、品牌介绍、案例、媒体报道、社媒内容、百科资料、短视频脚本等可影响 AI 认知的内容。
@@ -40,7 +40,7 @@
 
 ### Requirement 3: Prompt 场景库
 
-**User Story:** AS GEO 运营人员, I want 维护通用 Prompt 模板和品牌专属 Prompt, so that 系统可以模拟不同用户搜索场景。
+**User Story:** AS GEO 运营人员, I want 维护通用 Prompt 模板和品牌专属 Prompt, so that 系统可以覆盖不同用户搜索场景。
 
 #### Acceptance Criteria
 

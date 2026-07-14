@@ -218,7 +218,7 @@ describe('analysis result repository', () => {
     expect(result?.tasks.map((task) => task.title)).toEqual(expect.arrayContaining([
       '补齐可被 AI 引用的品牌内容',
       '补充品牌资料缺口并统一标准表达',
-      '按原测试问题安排再次测试',
+      '按原监测问题安排再次监测',
       '跟进优化计划负责人和完成状态'
     ]));
     expect(repeated?.tasks.map((task) => task.id).sort()).toEqual(result?.tasks.map((task) => task.id).sort());

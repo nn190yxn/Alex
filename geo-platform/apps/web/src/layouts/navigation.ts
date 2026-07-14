@@ -20,9 +20,9 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: '发现机会',
     items: [
-      { key: '/canvas', label: '测试地图', description: '把测试主题、用户场景、内容建议和测试结果串起来看', requiresBrand: true },
-      { key: '/monitoring', label: 'AI 测试', description: '用真实问题看看 AI 会不会推荐你的品牌', requiresBrand: true },
-      { key: '/growth-optimization', label: '优化计划', description: '把测试结果变成要写什么、发到哪里、何时再测', requiresBrand: true }
+      { key: '/canvas', label: '监测地图', description: '把监测主题、用户场景、内容建议和监测结果串起来看', requiresBrand: true },
+      { key: '/monitoring', label: 'AI 回复监测', description: '用真实问题记录 AI 如何回答和是否推荐你的品牌', requiresBrand: true },
+      { key: '/growth-optimization', label: '优化计划', description: '把监测结果变成要写什么、发到哪里、何时再测', requiresBrand: true }
     ]
   },
   {
@@ -60,14 +60,14 @@ export const navigationGroups: NavigationGroup[] = [
 
 export const operationWorkflow = [
   { key: '/brands', label: '品牌初始化' },
-  { key: '/canvas', label: '测试地图' },
-  { key: '/monitoring', label: '跑 AI 测试' },
+  { key: '/canvas', label: '监测地图' },
+  { key: '/monitoring', label: '监测 AI 回复' },
   { key: '/growth-optimization', label: '定优化计划' },
   { key: '/content', label: '找内容机会' },
   { key: '/content-generation', label: '写内容' },
   { key: '/publishing', label: '发布记录' },
   { key: '/model-settings', label: '模型设置' },
-  { key: '/tasks', label: '再次测试' },
+  { key: '/tasks', label: '再次监测' },
   { key: '/feedback', label: '内测反馈' },
   { key: '/advisor', label: '顾问跟进' },
   { key: '/reports', label: '报告导出' }

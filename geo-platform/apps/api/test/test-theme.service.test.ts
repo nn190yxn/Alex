@@ -113,7 +113,7 @@ describe('TestThemeService', () => {
       expect.objectContaining({
         mode: 'sync',
         input: expect.objectContaining({
-          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+          targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
           scenarioCount: 8,
           includeCompetitors: true
         })

@@ -53,10 +53,10 @@ export function buildManualTestPath(platformCode: string): string {
 }
 
 const browserIssueMessages: Record<BrowserConnectionIssueType, string> = {
-  captcha: '页面出现验证码，需要用户确认后继续或改用手动测试。',
-  risk_control: '平台触发风控提示，已暂停自动操作，请改用手动测试路径。',
-  login_expired: '登录状态已失效，需要重新登录后继续测试。',
-  platform_limit: '平台限制当前自动操作，已切换到手动测试路径。',
+  captcha: '页面出现验证码，需要用户确认后继续或改用手动录入。',
+  risk_control: '平台触发风控提示，已暂停自动操作，请改用手动录入路径。',
+  login_expired: '登录状态已失效，需要重新登录后继续监测。',
+  platform_limit: '平台限制当前自动操作，已切换到手动录入路径。',
   page_changed: '平台页面结构发生变化，需要确认页面后再继续。',
-  unknown: '浏览器连接异常，需要用户确认后继续或改用手动测试。'
+  unknown: '浏览器连接异常，需要用户确认后继续或改用手动录入。'
 };

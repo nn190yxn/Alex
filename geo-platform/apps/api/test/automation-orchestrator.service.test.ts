@@ -13,15 +13,15 @@ describe('AutomationOrchestratorService', () => {
     const repository = new PermissionsRepository();
     const service = createService(repository);
 
-    const automationPackage = service.createPackage('user_demo', 'brand_demo', { goal: '完成本轮追光小牛 AI 测试' });
+    const automationPackage = service.createPackage('user_demo', 'brand_demo', { goal: '完成本轮追光小牛 AI 回复监测' });
 
     expect(automationPackage).toEqual(
       expect.objectContaining({
         brandId: 'brand_demo',
         status: 'draft',
         currentStep: 'context_collection',
-        goal: '完成本轮追光小牛 AI 测试',
-        targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen'],
+        goal: '完成本轮追光小牛 AI 回复监测',
+        targetPlatforms: ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun'],
         context: expect.objectContaining({ brandName: '追光小牛', questionPoolSize: expect.any(Number), testPlanCount: expect.any(Number) })
       })
     );

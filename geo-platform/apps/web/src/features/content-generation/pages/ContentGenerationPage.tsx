@@ -141,8 +141,8 @@ export function ContentGenerationPage() {
           </Space>
           <Space size={12} className="page-stack" wrap align="start">
             <Form.Item name="targetKeywords" label="目标关键词" style={{ minWidth: 320 }}><Select mode="tags" tokenSeparators={[',', '，', '、']} placeholder="输入后回车，可填写多个" /></Form.Item>
-            <Form.Item name="referenceSources" label="引用资料" style={{ minWidth: 320 }}><Select mode="tags" tokenSeparators={[',', '，', '、']} placeholder="品牌档案、测试结果、内容缺口等" /></Form.Item>
-            <Form.Item name="retestAt" label="再次测试时间" style={{ minWidth: 240 }}><Input placeholder="2026-07-27T00:00:00.000Z" /></Form.Item>
+            <Form.Item name="referenceSources" label="引用资料" style={{ minWidth: 320 }}><Select mode="tags" tokenSeparators={[',', '，', '、']} placeholder="品牌档案、监测结果、内容缺口等" /></Form.Item>
+            <Form.Item name="retestAt" label="再次监测时间" style={{ minWidth: 240 }}><Input placeholder="2026-07-27T00:00:00.000Z" /></Form.Item>
           </Space>
         </Form>
       </Card>
@@ -257,7 +257,7 @@ function Overview({ workspace, onSelect }: { workspace: ContentGenerationWorkspa
             <Descriptions.Item label="内容类型">{getContentTypeLabel(task.contentType)}</Descriptions.Item>
             <Descriptions.Item label="建议发布平台">{getPlatformDisplay(task.targetPlatform)}</Descriptions.Item>
             <Descriptions.Item label="内容主题">{task.contentTopic || '-'}</Descriptions.Item>
-            <Descriptions.Item label="再次测试时间">{task.retestAt || '-'}</Descriptions.Item>
+            <Descriptions.Item label="再次监测时间">{task.retestAt || '-'}</Descriptions.Item>
             <Descriptions.Item label="目标关键词">{formatList(task.targetKeywords)}</Descriptions.Item>
             <Descriptions.Item label="引用资料">{formatList(task.referenceSources)}</Descriptions.Item>
             <Descriptions.Item label="优化计划">{task.growthOptimizationPlanId || '-'}</Descriptions.Item>
@@ -285,7 +285,7 @@ function TaskTable({ tasks, onSelect }: { tasks: ContentGenerationTask[]; onSele
           { title: '建议发布平台', dataIndex: 'targetPlatform', render: (value) => getPlatformDisplay(value) },
           { title: '目标关键词', dataIndex: 'targetKeywords', render: (values) => formatList(values) },
           { title: '引用资料', dataIndex: 'referenceSources', render: (values) => formatList(values) },
-          { title: '再次测试时间', dataIndex: 'retestAt', render: (value) => value || '-' },
+          { title: '再次监测时间', dataIndex: 'retestAt', render: (value) => value || '-' },
           { title: '状态', render: (_, record) => <Tag color={taskStatusColors[record.status]}>{taskStatusLabels[record.status]}</Tag> },
           { title: '操作', render: (_, record) => <Button size="small" onClick={() => onSelect(record.id)}>查看</Button> }
         ]}
@@ -554,7 +554,6 @@ function ExportTable({ records }: { records: ContentExportRecord[] }) {
       columns={[
         { title: '文件名', dataIndex: 'fileName' },
         { title: '格式', dataIndex: 'exportFormat' },
-        { title: '创建人', dataIndex: 'createdBy' },
         { title: '创建时间', dataIndex: 'createdAt' }
       ]}
     />

@@ -73,7 +73,7 @@ describe('OpenAICompatibleAdapter', () => {
         messages: [
           { role: 'system', content: '只返回 JSON' },
           { role: 'developer', content: '按品牌安全规则输出' },
-          { role: 'user', content: '生成测试问题' }
+          { role: 'user', content: '生成监测问题' }
         ],
         response_format: { type: 'json_object' },
         temperature: 0.2,
@@ -85,6 +85,20 @@ describe('OpenAICompatibleAdapter', () => {
       })
     );
     expect(request.init.body).not.toContain('test-token');
+  });
+
+  it('merges developer instructions into system messages for StepFun compatibility', () => {
+    const adapter = new OpenAICompatibleAdapter(() => 'test-token');
+    const request = adapter.buildMessagesRequest(
+      { ...createRunMessagesInput(), platformCode: 'stepfun' },
+      createPlatformConfig({ platformCode: 'stepfun', name: '阶跃星辰', endpointUrl: 'https://api.stepfun.com/v1/chat/completions', modelName: 'step-3.7-flash' })
+    );
+    const body = JSON.parse(request.init.body as string);
+
+    expect(body.messages).toEqual([
+      { role: 'system', content: '只返回 JSON\n按品牌安全规则输出' },
+      { role: 'user', content: '生成监测问题' }
+    ]);
   });
 
   it('normalizes structured message responses with token usage', async () => {
@@ -224,7 +238,7 @@ function createRunMessagesInput() {
     messages: [
       { role: 'system' as const, content: '只返回 JSON' },
       { role: 'developer' as const, content: '按品牌安全规则输出' },
-      { role: 'user' as const, content: '生成测试问题' }
+      { role: 'user' as const, content: '生成监测问题' }
     ],
     responseFormat: 'json' as const,
     temperature: 0.2,
@@ -241,8 +255,8 @@ function createPlatformConfig(input: Partial<PlatformConfig & { credentialRef: s
     mode: 'api',
     availableMethods: ['api'],
     connectionStatus: 'ready',
-    connectionStatusLabel: '可自动测试',
-    nextAction: '可直接加入自动测试计划。',
+    connectionStatusLabel: '可自动监测',
+    nextAction: '可直接加入自动监测计划。',
     endpointUrl: 'https://api.openai.com/v1/chat/completions',
     modelName: 'gpt-test',
     rateLimitPerMinute: 60,

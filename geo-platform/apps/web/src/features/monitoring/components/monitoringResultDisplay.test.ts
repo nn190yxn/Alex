@@ -6,11 +6,11 @@ describe('monitoring result display helpers', () => {
   it('explains parsed results with beginner-facing business labels', () => {
     const summary = getMonitoringResultSummary(createRun({ analysis: createAnalysis() }));
 
-    expect(summary.title).toBe('测试结果已解读');
+    expect(summary.title).toBe('监测结果已解读');
     expect(summary.lines.map((line) => line.label)).toEqual(['有没有出现', '排第几', '说得准不准', '竞品表现', '需要补什么内容']);
     expect(summary.lines[0].value).toBe('出现了品牌');
     expect(summary.lines[1].value).toBe('第 1 位');
-    expect(summary.nextAction).toBe('根据补强建议生成内容和再次测试计划。');
+    expect(summary.nextAction).toBe('根据补强建议生成内容和再次监测计划。');
   });
 
   it('surfaces confirmation-required analysis with the reason', () => {

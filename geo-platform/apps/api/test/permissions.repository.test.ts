@@ -43,6 +43,116 @@ describe('PermissionsRepository', () => {
     );
   });
 
+  it('preloads and manages visibility sprints by accessible brand', () => {
+    const repository = new PermissionsRepository();
+
+    const current = repository.getCurrentVisibilitySprint('user_demo', 'brand_demo');
+
+    expect(current).toEqual(
+      expect.objectContaining({
+        brandId: 'brand_demo',
+        status: 'running',
+        currentStep: 'content_asset_generation',
+        relatedTestPlanIds: ['test_plan_demo_supercalf_first_round'],
+        relatedMonitoringRunIds: ['run_demo_weekly_mock'],
+        relatedStandardAnswerIds: ['standard_answer_demo_local_recommendation'],
+        relatedContentTaskIds: ['generation_demo_gap']
+      })
+    );
+    expect(current?.metricSummary.sampleSize).toBe(12);
+    expect(repository.listVisibilitySprints('user_demo', 'brand_missing')).toBeNull();
+  });
+
+  it('creates and updates visibility sprint steps, metrics and relations', () => {
+    const repository = new PermissionsRepository();
+
+    const created = repository.createVisibilitySprint('user_demo', 'brand_demo', {
+      title: '新一轮 AI 可见性 Sprint',
+      goal: '验证贵阳儿童运动本地推荐场景',
+      relatedQuestionIds: ['candidate_demo_local_recommendation']
+    });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        brandId: 'brand_demo',
+        title: '新一轮 AI 可见性 Sprint',
+        status: 'draft',
+        currentStep: 'question_radar',
+        relatedQuestionIds: ['candidate_demo_local_recommendation']
+      })
+    );
+    expect(created?.steps.find((step) => step.code === 'question_radar')?.status).toBe('running');
+
+    const updatedStep = repository.updateVisibilitySprintStep('user_demo', 'brand_demo', created?.sprintId ?? '', {
+      status: 'running',
+      currentStep: 'ai_response_monitoring'
+    });
+    expect(updatedStep).toEqual(expect.objectContaining({ status: 'running', currentStep: 'ai_response_monitoring' }));
+    expect(updatedStep?.steps.find((step) => step.code === 'question_radar')?.status).toBe('completed');
+
+    const updatedMetrics = repository.updateVisibilitySprintMetrics('user_demo', 'brand_demo', created?.sprintId ?? '', {
+      mentionRate: 0.5,
+      sampleSize: 4
+    });
+    expect(updatedMetrics?.metricSummary).toEqual(expect.objectContaining({ mentionRate: 0.5, sampleSize: 4 }));
+
+    const updatedRelations = repository.updateVisibilitySprintRelations('user_demo', 'brand_demo', created?.sprintId ?? '', {
+      relatedMonitoringRunIds: ['run_demo_weekly_mock'],
+      relatedPublishingRecordIds: ['publishing_record_demo_gap']
+    });
+    expect(updatedRelations).toEqual(
+      expect.objectContaining({
+        relatedMonitoringRunIds: ['run_demo_weekly_mock'],
+        relatedPublishingRecordIds: ['publishing_record_demo_gap']
+      })
+    );
+    expect(repository.updateVisibilitySprintMetrics('user_demo', 'brand_child_fitness', created?.sprintId ?? '', { sampleSize: 8 })).toBeNull();
+  });
+
+  it('manages brand standard answers separately from monitoring samples', () => {
+    const repository = new PermissionsRepository();
+
+    const defaults = repository.listBrandStandardAnswers('user_demo', 'brand_demo', 'candidate_demo_local_recommendation');
+
+    expect(defaults).toContainEqual(
+      expect.objectContaining({
+        answerId: 'standard_answer_demo_local_recommendation',
+        questionId: 'candidate_demo_local_recommendation',
+        status: 'approved',
+        keyPoints: expect.arrayContaining(['ACE 课程体系'])
+      })
+    );
+
+    const created = repository.createBrandStandardAnswer('user_demo', 'brand_demo', {
+      questionId: 'candidate_new',
+      question: ' 3 岁孩子适合什么运动课？ ',
+      answer: ' 适合以趣味体能、协调和平衡为主的运动成长课。 ',
+      keyPoints: [' 趣味体能 ', ''],
+      evidence: [{ label: ' 年龄段 ', sourceType: 'manual', excerpt: ' 3 岁儿童以兴趣和基础动作为主。 ' }]
+    });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        brandId: 'brand_demo',
+        questionId: 'candidate_new',
+        question: '3 岁孩子适合什么运动课？',
+        answer: '适合以趣味体能、协调和平衡为主的运动成长课。',
+        keyPoints: ['趣味体能'],
+        status: 'draft'
+      })
+    );
+    expect(created?.evidence[0]).toEqual(expect.objectContaining({ label: '年龄段', excerpt: '3 岁儿童以兴趣和基础动作为主。' }));
+
+    const reviewed = repository.updateBrandStandardAnswer('user_demo', 'brand_demo', created?.answerId ?? '', {
+      status: 'approved',
+      reviewedBy: 'user_demo',
+      reviewedAt: '2026-07-11T00:00:00.000Z'
+    });
+    expect(reviewed).toEqual(expect.objectContaining({ status: 'approved', reviewedBy: 'user_demo' }));
+    expect(repository.listBrandStandardAnswers('user_demo', 'brand_child_fitness', 'candidate_new')).toEqual([]);
+    expect(repository.getBrandStandardAnswer('user_demo', 'brand_child_fitness', created?.answerId ?? '')).toBeNull();
+  });
+
   it('records denied brand access attempts by user', () => {
     const repository = new PermissionsRepository();
 

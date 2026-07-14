@@ -36,7 +36,7 @@ abstract class SupportedBrowserConnector implements BrowserConnector {
   }
 
   async sendQuestion(input: BrowserConnectorQuestionInput): Promise<BrowserConnectorOperationResult> {
-    return this.issueOrReady(input, `已向${this.metadata.displayName}发送测试问题。`);
+    return this.issueOrReady(input, `已向${this.metadata.displayName}发送监测问题。`);
   }
 
   async waitForAnswer(input: BrowserConnectorQuestionInput): Promise<BrowserConnectorOperationResult> {

@@ -171,7 +171,8 @@ export class LLMOrchestrationService {
     }
 
     const configs = await Promise.resolve(this.permissionsService.listPlatformConfigs(userId, brandId));
-    const config = configs?.find((item) => item.enabled && item.mode === 'api' && item.hasCredential && item.endpointUrl && item.modelName);
+    const candidates = configs?.filter((item) => item.enabled && item.mode === 'api' && item.hasCredential && item.endpointUrl && item.modelName) ?? [];
+    const config = candidates.find((item) => item.platformCode === 'stepfun') ?? candidates[0];
 
     return config ? Promise.resolve(this.permissionsService.getPlatformRuntimeConfig(userId, brandId, config.platformCode)) : null;
   }

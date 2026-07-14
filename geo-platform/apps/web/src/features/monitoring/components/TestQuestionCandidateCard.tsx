@@ -47,8 +47,8 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
     onSuccess: (response) => {
       if (response.success) {
         void queryClient.invalidateQueries({ queryKey: ['test-themes', brandId] });
-        setGenerationNotice(getGenerationNotice('测试主题已生成', response.data));
-        showGenerationMessage(messageApi, '测试主题已生成', response.data);
+        setGenerationNotice(getGenerationNotice('监测主题已生成', response.data));
+        showGenerationMessage(messageApi, '监测主题已生成', response.data);
       } else {
         void messageApi.error(response.error.message);
       }
@@ -62,8 +62,8 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
         setSavedPlan(null);
         setExecutionResult(null);
         void queryClient.invalidateQueries({ queryKey: ['test-question-candidates', brandId] });
-        setGenerationNotice(getGenerationNotice('测试问题已生成', response.data));
-        showGenerationMessage(messageApi, '测试问题已生成', response.data);
+        setGenerationNotice(getGenerationNotice('监测问题已生成', response.data));
+        showGenerationMessage(messageApi, '监测问题已生成', response.data);
       } else {
         void messageApi.error(response.error.message);
       }
@@ -76,7 +76,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
         setSavedPlan(null);
         setExecutionResult(null);
         void queryClient.invalidateQueries({ queryKey: ['test-question-candidates', brandId] });
-        void messageApi.success('测试问题选择已更新');
+        void messageApi.success('监测问题选择已更新');
       } else {
         void messageApi.error(response.error.message);
       }
@@ -85,7 +85,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
   const editCandidateMutation = useMutation({
     mutationFn: (values: QuestionEditFormValues) => {
       if (!editingCandidate) {
-        throw new Error('请先选择要编辑的测试问题');
+        throw new Error('请先选择要编辑的监测问题');
       }
 
       return apiPatch<TestQuestionCandidate>(`/brands/${brandId}/test-question-candidates/${editingCandidate.id}`, toQuestionCandidateUpdateInput(values));
@@ -97,19 +97,19 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
         setExecutionResult(null);
         editForm.resetFields();
         void queryClient.invalidateQueries({ queryKey: ['test-question-candidates', brandId] });
-        void messageApi.success('测试问题已更新');
+        void messageApi.success('监测问题已更新');
       } else {
         void messageApi.error(response.error.message);
       }
     }
   });
   const createPlanMutation = useMutation({
-    mutationFn: () => apiPost<TestPlanCreationResult>(`/brands/${brandId}/test-plans`, { candidateIds: selectedCandidateIds, name: '首轮 AI 测试计划' }),
+    mutationFn: () => apiPost<TestPlanCreationResult>(`/brands/${brandId}/test-plans`, { candidateIds: selectedCandidateIds, name: '首轮 AI 回复监测计划' }),
     onSuccess: (response) => {
       if (response.success) {
         setSavedPlan(response.data);
         setExecutionResult(null);
-        void messageApi.success(`测试计划已保存：${response.data.questionCount} 个问题，${response.data.platformCount} 个平台`);
+        void messageApi.success(`监测计划已保存：${response.data.questionCount} 个问题，${response.data.platformCount} 个平台`);
       } else {
         void messageApi.error(response.error.message);
       }
@@ -121,7 +121,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
       if (response.success) {
         setExecutionResult(response.data);
         setSavedPlan((current) => current ? { ...current, plan: response.data.plan } : current);
-        void messageApi.success('首轮测试已开始');
+        void messageApi.success('首轮回复监测已开始');
       } else {
         void messageApi.error(response.error.message);
       }
@@ -139,7 +139,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
     });
   };
 
-  const startFirstRoundTest = async () => {
+  const startFirstRoundMonitoring = async () => {
     let plan = savedPlan;
 
     if (!plan) {
@@ -158,14 +158,14 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
 
   return (
     <Card
-      title="选择测试问题"
+      title="选择监测问题"
       extra={(
         <Space>
           {contextHolder}
-          <Button loading={generateThemesMutation.isPending} onClick={() => generateThemesMutation.mutate()}>生成测试主题</Button>
-          <Button type="primary" loading={generateCandidatesMutation.isPending} onClick={() => generateCandidatesMutation.mutate()}>生成测试问题</Button>
-          <Button disabled={selectedCandidateIds.length === 0} loading={createPlanMutation.isPending} onClick={() => createPlanMutation.mutate()}>保存为测试计划</Button>
-          <Button type="primary" disabled={selectedCandidateIds.length === 0 && !savedPlan} loading={createPlanMutation.isPending || executePlanMutation.isPending} onClick={() => void startFirstRoundTest()}>开始首轮测试</Button>
+          <Button loading={generateThemesMutation.isPending} onClick={() => generateThemesMutation.mutate()}>生成监测主题</Button>
+          <Button type="primary" loading={generateCandidatesMutation.isPending} onClick={() => generateCandidatesMutation.mutate()}>生成监测问题</Button>
+          <Button disabled={selectedCandidateIds.length === 0} loading={createPlanMutation.isPending} onClick={() => createPlanMutation.mutate()}>保存为监测计划</Button>
+          <Button type="primary" disabled={selectedCandidateIds.length === 0 && !savedPlan} loading={createPlanMutation.isPending || executePlanMutation.isPending} onClick={() => void startFirstRoundMonitoring()}>开始首轮监测</Button>
         </Space>
       )}
     >
@@ -175,14 +175,14 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
         <Alert
           type="info"
           showIcon
-          message="先看测试主题，再选测试问题"
-          description="测试主题说明为什么要测这个方向；测试问题会直接用于豆包、Kimi、DeepSeek 和通义千问的首轮测试。"
+          message="先看监测主题，再选监测问题"
+          description="监测主题说明为什么要监测这个方向；监测问题会直接用于豆包、Kimi、DeepSeek、通义千问和阶跃星辰的首轮回复监测。"
         />
         <Alert
           type="success"
           showIcon
-          message="保存测试计划后继续开始首轮测试"
-          description="已选问题会按目标平台生成测试计划。开始测试后，已填写平台密钥的平台会自动测试，浏览器和手动测试会展示需要你确认的下一步。"
+          message="保存监测计划后继续开始首轮监测"
+          description="已选问题会按目标平台生成监测计划。开始监测后，已填写平台密钥的平台会自动获取回复，浏览器和手动录入会展示需要你确认的下一步。"
         />
         {generationNotice ? (
           <Alert
@@ -193,10 +193,10 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           />
         ) : null}
         {savedPlan ? (
-          <Card size="small" title="首轮测试计划">
+          <Card size="small" title="首轮回复监测计划">
             <Space direction="vertical" size={12} className="page-stack">
               <Descriptions size="small" column={{ xs: 1, sm: 2, md: 4 }}>
-                <Descriptions.Item label="测试问题">{savedPlan.questionCount} 个</Descriptions.Item>
+                <Descriptions.Item label="监测问题">{savedPlan.questionCount} 个</Descriptions.Item>
                 <Descriptions.Item label="目标平台">{getPlatformPreview(savedPlan.targetPlatforms)}</Descriptions.Item>
                 <Descriptions.Item label="预计耗时">{getDurationLabel(savedPlan.estimatedDurationMinutes)}</Descriptions.Item>
                 <Descriptions.Item label="计划状态">{savedPlan.plan.status}</Descriptions.Item>
@@ -205,7 +205,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
                 {savedPlan.connectionSummary.map((summary) => <Tag key={summary.platformCode}>{getConnectionSummaryLabel(summary)}</Tag>)}
               </Space>
               {savedPlan.confirmationItems.length > 0 ? <Alert type="warning" showIcon message="需要你确认的事项" description={savedPlan.confirmationItems.join('；')} /> : null}
-              <Button type="primary" loading={executePlanMutation.isPending} onClick={() => void executePlanMutation.mutate(savedPlan.plan.id)}>一键开始首轮测试</Button>
+              <Button type="primary" loading={executePlanMutation.isPending} onClick={() => void executePlanMutation.mutate(savedPlan.plan.id)}>一键开始首轮监测</Button>
             </Space>
           </Card>
         ) : null}
@@ -213,8 +213,8 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           <Alert
             type={executionResult.configurationItems.length > 0 || executionResult.confirmationItems.length > 0 ? 'warning' : 'success'}
             showIcon
-            message="首轮测试已开始"
-            description={`${getExecutionResultSummary(executionResult)}。${executionResult.confirmationItems.length > 0 ? `需要确认：${executionResult.confirmationItems.join('；')}` : '可以在下方 AI 测试记录查看自动测试结果，浏览器和手动测试会显示对应下一步。'}`}
+            message="首轮回复监测已开始"
+            description={`${getExecutionResultSummary(executionResult)}。${executionResult.confirmationItems.length > 0 ? `需要确认：${executionResult.confirmationItems.join('；')}` : '可以在下方 AI 回复监测记录查看自动结果，浏览器和手动录入会显示对应下一步。'}`}
           />
         ) : null}
         <Table
@@ -223,9 +223,9 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           loading={themesQuery.isLoading}
           dataSource={themes}
           pagination={false}
-          locale={{ emptyText: <EmptyState description="还没有测试主题，请先生成测试主题。" actionLabel="生成测试主题" onAction={() => generateThemesMutation.mutate()} /> }}
+          locale={{ emptyText: <EmptyState description="还没有监测主题，请先生成监测主题。" actionLabel="生成监测主题" onAction={() => generateThemesMutation.mutate()} /> }}
           columns={[
-            { title: '测试主题', dataIndex: 'name' },
+            { title: '监测主题', dataIndex: 'name' },
             { title: '类型', dataIndex: 'type', render: (value: TestTheme['type']) => themeTypeLabels[value] },
             { title: '推荐优先级', dataIndex: 'priority', render: (value: TestTheme['priority']) => <Tag color={priorityColors[value]}>{priorityLabels[value]}</Tag> },
             { title: '为什么要测', dataIndex: 'businessExplanation' },
@@ -262,9 +262,9 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
             onSelectAll: (selected, selectedRows, changedRows) => selectionMutation.mutate({ candidateIds: changedRows.map((row) => row.id), selected })
           }}
           pagination={false}
-          locale={{ emptyText: <EmptyState description="还没有测试问题，请先生成测试问题。" actionLabel="生成测试问题" onAction={() => generateCandidatesMutation.mutate()} /> }}
+          locale={{ emptyText: <EmptyState description="还没有监测问题，请先生成监测问题。" actionLabel="生成监测问题" onAction={() => generateCandidatesMutation.mutate()} /> }}
           columns={[
-            { title: '测试问题', dataIndex: 'question' },
+            { title: '监测问题', dataIndex: 'question' },
             { title: '所属主题', dataIndex: 'themeId', render: (value: string) => themeNameMap.get(value) ?? '-' },
             { title: '测试目的', dataIndex: 'purposes', render: (values: TestQuestionCandidate['purposes']) => <Space wrap>{values.map((value) => <Tag key={value}>{questionPurposeLabels[value]}</Tag>)}</Space> },
             { title: '目标平台', dataIndex: 'targetPlatforms', render: (values: string[]) => getPlatformPreview(values) },
@@ -273,7 +273,7 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           ]}
         />
         <Modal
-          title="编辑测试问题"
+          title="编辑监测问题"
           open={Boolean(editingCandidate)}
           okText="保存"
           cancelText="取消"
@@ -282,9 +282,9 @@ export function TestQuestionCandidateCard({ brandId }: Props) {
           onOk={() => editForm.submit()}
         >
           <Form form={editForm} layout="vertical" onFinish={(values) => editCandidateMutation.mutate(values)}>
-            <Form.Item name="question" label="测试问题" rules={[{ required: true, message: '请输入测试问题' }]}><Input.TextArea rows={3} /></Form.Item>
+            <Form.Item name="question" label="监测问题" rules={[{ required: true, message: '请输入监测问题' }]}><Input.TextArea rows={3} /></Form.Item>
             <Form.Item name="purposesText" label="测试目的" rules={[{ required: true, message: '请输入测试目的' }]}><Input placeholder="brand_mentioned、rank_first" /></Form.Item>
-            <Form.Item name="targetPlatformsText" label="目标平台" rules={[{ required: true, message: '请输入目标平台' }]}><Input placeholder="豆包、Kimi、DeepSeek、通义千问" /></Form.Item>
+            <Form.Item name="targetPlatformsText" label="目标平台" rules={[{ required: true, message: '请输入目标平台' }]}><Input placeholder="豆包、Kimi、DeepSeek、通义千问、阶跃星辰" /></Form.Item>
             <Form.Item name="priority" label="推荐优先级" rules={[{ required: true, message: '请选择推荐优先级' }]}><Select options={[{ value: 'high', label: '高优先级' }, { value: 'medium', label: '中优先级' }, { value: 'low', label: '低优先级' }]} /></Form.Item>
             <Form.Item name="estimatedValue" label="预计测试价值" rules={[{ required: true, message: '请输入预计测试价值' }]}><Input.TextArea rows={2} /></Form.Item>
           </Form>

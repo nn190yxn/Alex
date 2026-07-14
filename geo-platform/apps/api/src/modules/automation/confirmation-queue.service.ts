@@ -154,13 +154,13 @@ export class ConfirmationQueueService {
       const platformCodes = resolveTargetPlatforms(confirmation.payload);
       this.ensureSelectedQuestionPromptBindings(confirmation.decidedBy ?? '', brandId, candidateIds, platformCodes);
       const plan = this.permissionsRepository.createTestPlan(confirmation.decidedBy ?? '', brandId, {
-        name: '本轮 AI 自动测试计划',
+        name: '本轮 AI 自动监测计划',
         candidateIds,
         platformCodes
       });
 
       if (!plan) {
-        throw new BadRequestException('精选测试问题无法保存为测试计划');
+        throw new BadRequestException('精选监测问题无法保存为监测计划');
       }
 
       return updatePackageStep({ ...automationPackage, relatedTestPlanId: plan.id }, 'test_question_confirmation', 'completed', now, {
@@ -235,7 +235,7 @@ export class ConfirmationQueueService {
     const testPlan = this.permissionsRepository.listTestPlans(userId, brandId)?.find((plan) => plan.id === testPlanId);
 
     if (!testPlan || testPlan.monitoringRunIds.length === 0) {
-      throw new BadRequestException('本轮测试还没有真实回答结果。请先到“AI 测试”页面手动录入回答，或接入真实浏览器回填后再继续分析。');
+      throw new BadRequestException('本轮监测还没有真实回答结果。请先到“AI 回复监测”页面手动录入回答，或接入真实浏览器回填后再继续分析。');
     }
   }
 }
@@ -325,7 +325,7 @@ function resolveTargetPlatforms(payload: Record<string, unknown>): string[] {
     return question.targetPlatforms.filter((platform): platform is string => typeof platform === 'string');
   });
 
-  return unique(platforms.length ? platforms : ['doubao', 'kimi', 'deepseek', 'qianwen']);
+  return unique(platforms.length ? platforms : ['doubao', 'kimi', 'deepseek', 'qianwen', 'stepfun']);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
