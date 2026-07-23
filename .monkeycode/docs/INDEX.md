@@ -2,12 +2,12 @@
 
 ## 项目概览
 
-当前仓库包含历史文档、宣传物料 HTML，以及新建的多品牌 GEO 管理平台工程骨架。GEO 平台代码位于 `当前工作区/geo-platform/`，采用 monorepo 组织前端、后端和共享类型。
+当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台，以及 Windows 本地优先专注应用“抵达 Focus”。GEO 平台代码位于 `当前工作区/geo-platform/`；抵达 Focus 位于 `当前工作区/arrive-focus/`，采用 Tauri 2、React、TypeScript、Rust 与 SQLite。
 
 ## 核心文档
 
 - `当前工作区/.monkeycode/docs/ARCHITECTURE.md`：系统架构、目录结构和模块边界
-- `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 API 契约、共享类型和品牌上下文约定
+- `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 HTTP/Tauri command 契约、共享类型、项目类型和品牌上下文约定
 - `当前工作区/.monkeycode/docs/DEVELOPER_GUIDE.md`：本地开发、验证和后续任务入口
 - `当前工作区/.monkeycode/docs/DELIVERY_CHECKLIST.md`：交付检查清单、验证命令和当前预览状态
 - `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：内测用户使用说明，按页面流程说明品牌初始化、AI 回复监测、优化计划、写内容、再次监测和报告导出
@@ -17,6 +17,12 @@
 - `当前工作区/.monkeycode/docs/CONTINUOUS_ITERATION_PLAYBOOK.md`：阶段复盘、反馈转需求、行业规则变化和验证门禁机制
 
 ## 规格文档
+
+抵达 Focus Windows 桌面版规格位于 `当前工作区/.monkeycode/specs/arrive-focus-desktop/`。
+
+- `requirements.md`：桌面应用需求与验收标准
+- `design.md`：Tauri 双窗口、领域服务、SQLite 和桌面集成设计
+- `tasklist.md`：分阶段开发任务清单；全部 15 组任务和最终测试检查点均已完成
 
 多品牌 GEO 管理平台规格位于 `当前工作区/.monkeycode/specs/multi-brand-geo-platform/`。
 

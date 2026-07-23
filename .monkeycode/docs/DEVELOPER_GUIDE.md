@@ -118,6 +118,151 @@ npm run prisma:seed
 
 当前已安装 npm workspace 依赖，`package-lock.json` 由 `npm install` 生成。
 
+## 抵达 Focus 开发与验证
+
+抵达 Focus 工程位于 `当前工作区/arrive-focus/`，前端使用 pnpm，桌面核心位于 `src-tauri/`。
+
+```bash
+cd arrive-focus
+
+# 前端测试
+pnpm test
+
+# TypeScript 类型检查
+pnpm typecheck
+
+# 前端生产构建
+pnpm build
+
+cd src-tauri
+
+# Rust 单元、集成和文档测试
+cargo test
+```
+
+新增固定界面文案时，先在 `src/i18n/messages.ts` 的简体中文资源中增加键，再补充英文资源；类型检查会验证资源键完整性。日期和时间展示统一使用 `useI18n()` 暴露的格式器。主窗口与小组件语言同步测试分别位于 `src/app/App.test.tsx` 和 `src/app/WidgetApp.test.tsx`，资源完整性、系统语言解析和格式化测试位于 `src/i18n/i18n.test.tsx`。
+
+任务 13.2 验证基线为前端 24 个测试文件共 90 项测试通过，Rust 132 项单元测试与 6 项集成测试通过，其中备份恢复和桌面适配器各 3 项；TypeScript 类型检查、Vite 生产构建、`cargo fmt --check` 和包含 `desktop-app` feature 的严格 Clippy 检查通过。
+
+任务 13.3 验证基线为前端 24 个测试文件共 90 项测试通过，Rust 136 项单元测试与 6 项集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --check`、默认 Rust 测试和包含 `desktop-app` feature 的严格 Clippy 检查通过。Tauri 单实例插件、窗口 API 和 `ExitRequested` 编排由桌面 feature 编译门禁覆盖，完整 Windows 单实例与窗口生命周期自动化验收归入任务 13.4。
+
+任务 13.4 验证基线为前端 25 个测试文件共 95 项测试通过，Rust 139 项单元测试与 6 项集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --check`、默认 Rust 测试、包含 `desktop-app` feature 的严格 Clippy 和 `git diff --check` 均通过。新增覆盖 Dialog 显式自动焦点与恢复、3 秒交互就绪预算、焦点环、减少动效、文本缩放重排、第二实例激活顺序与失败短路，以及主窗口屏幕外状态修正。
+
+任务 14.1 验证基线为前端 26 个测试文件共 100 项测试通过，Rust 141 项单元测试与 6 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试、包含 `desktop-app` feature 的严格 Clippy 和补丁检查通过。组件测试覆盖桌面运行时隔离、版本与更新说明、下载后安装确认、取消安装、确认后安装和检查失败脱敏；Rust 测试覆盖安装前持久化顺序与失败阻断。
+
+任务 14.2 验证基线为前端 27 个测试文件共 104 项测试通过，Rust 141 项单元测试与 6 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试、包含 `desktop-app` feature 的严格 Clippy、补丁检查和 Tauri 合并配置构建均通过。`src-tauri/tauri-config.contract.test.ts` 固定 NSIS target、安装模式、双语选择、开始菜单目录、WebView2 bootstrapper、Windows 图标和 Authenticode 覆盖配置契约。
+
+任务 14.3 验证基线为前端 27 个测试文件共 104 项测试通过，Rust 141 项单元测试与 7 项集成测试通过；`pnpm test`、`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --offline --locked`、包含 `desktop-app` feature 的严格 Clippy 和 `git diff --check` 均通过。新增 `src-tauri/tests/desktop_core_flow.rs` 串联项目、任务、重复计划、今日汇总、小组件、通知、专注、日历统计和备份服务，验证 Release Acceptance 核心流程及关键幂等约束。
+
+任务 14.4 验证基线为前端 28 个测试文件共 108 项测试通过，Rust 141 项单元测试与 7 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试、包含 `desktop-app` feature 的严格 Clippy 和补丁检查均通过。`scripts/windows-installer-smoke.contract.test.ts` 跨平台固定两版 NSIS 输入、静默参数、双版本启动探测、升级二进制替换、静默卸载和数据保留断言；完整 PowerShell 烟测在 Windows 10/11 发布机执行。
+
+最终检查点 15 已通过：任务清单全部完成，前端 28 个测试文件共 108 项测试、Rust 141 项单元测试与 7 项集成测试再次通过；TypeScript 类型检查、Vite 生产构建、Rust 格式检查和包含 `desktop-app` feature 的严格 Clippy 均通过。Windows NSIS 实机安装升级烟测继续作为签名发布机门禁执行。
+
+项目持久化修复后的验证基线为前端 30 个测试文件共 112 项测试、Rust 141 项单元测试与 7 项集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --offline --locked` 和包含 `desktop-app` feature 的严格 Clippy 均通过。项目定向测试位于 `src/features/projects/projectClient.test.ts` 与 `src/features/projects/ProjectWorkspace.test.tsx`，覆盖 command 参数、权威列表与详情加载、完整项目输入、写入失败状态保留和项目任务操作。
+
+重复任务生产调度修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 143 项单元测试与 7 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试和包含 `desktop-app` feature 的严格 Clippy 均通过。服务层定向测试覆盖开放式规则跨日回填、规则时区、本地日界线和重复运行幂等；`App.test.tsx` 与 `WidgetApp.test.tsx` 覆盖 `today://changed` 刷新。
+
+调整重复任务运行时时，应保持启动和恢复使用 `GenerationTrigger::Startup`，常驻 worker 使用 `GenerationTrigger::DayBoundary`，并维持“生成实例、提交 SQLite、广播 `today://changed`、扫描通知”的顺序。自动协调使用 UTC 时钟输入并按每条规则的 IANA 时区计算本地日期，测试应注入固定 `DateTime<Utc>`。
+
+Widget 关闭生命周期修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 144 项单元测试与 7 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试和包含 `desktop-app` feature 的严格 Clippy 均通过。`desktop::lifecycle::tests::missing_widget_window_does_not_block_exit_persistence` 固定退出容错边界，桌面 feature 编译覆盖 Widget `CloseRequested` 的保存、隐藏和阻止销毁接线。
+
+Widget Shell 层级恢复修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 145 项单元测试与 7 项集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --offline --locked`、包含 `desktop-app` feature 的严格 Clippy 和 `git diff --check` 均通过。`outcomes_define_window_layer_and_recovery_state` 固定 Shell outcome 到原生窗口层级的映射，`WidgetApp.test.tsx` 覆盖回退提示出现、恢复事件清除提示和监听器卸载。
+
+通知发布失败重试修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 147 项单元测试与 7 项集成测试通过；类型检查、生产构建、Rust 格式检查、默认 Rust 测试、`desktop-app` feature 编译、严格 Clippy 和补丁检查均通过。定向测试覆盖失败投递重新预留、发布失败后重试成功、投递记录幂等，以及扫描游标仅在 reconciliation 成功后推进。
+
+通知中断恢复修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 149 项单元测试与 7 项集成测试通过；默认 Rust 测试、`desktop-app` feature 编译和严格 Clippy 均通过。定向测试使用固定 UTC 时间覆盖 60 秒 lease 边界、活动 `pending` 保持 reconciliation 失败、过期 `pending` 原子接管、`sent` 永久去重和 P7 重复处理幂等。
+
+任务跨窗口同步修复后的验证基线为前端 30 个测试文件共 114 项测试、Rust 151 项单元测试与 7 项集成测试通过；默认 Rust 测试、`desktop-app` feature 编译和严格 Clippy 均通过。`desktop::today_events::tests` 固定成功写入发送一次事件、失败写入保持零事件，desktop feature 编译覆盖 13 个任务、重复规则和实例写 command 的 `AppHandle` 注入与事件接线。
+
+专注跨窗口同步修复后的验证基线为前端 30 个测试文件共 115 项测试、Rust 153 项单元测试与 7 项集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --offline --locked`、`cargo check --offline --locked --features desktop-app` 和包含 `desktop-app` feature 的严格 Clippy 均通过。`desktop::focus_events::tests` 固定成功状态变更发送一次事件、领域失败保持零事件；`WidgetApp.test.tsx` 覆盖跨窗口暂停状态与剩余时间即时更新。
+
+项目状态跨窗口同步修复后的验证基线保持为前端 30 个测试文件共 115 项测试、Rust 153 项单元测试与 7 项集成测试通过；类型检查、生产构建、Rust 格式检查、`desktop-app` feature 编译和严格 Clippy 均通过。项目四类写 command 复用 `after_today_change`，`App.test.tsx` 固定 `today://changed` 同时重新读取项目摘要与当前 Today digest，`WidgetApp.test.tsx` 继续覆盖同一事件触发摘要刷新。
+
+暂停项目专注资格修复后的验证基线为前端 30 个测试文件共 115 项测试、Rust 155 项单元测试与 7 项集成测试通过；`pnpm test`、`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --offline --locked`、`cargo check --offline --locked --features desktop-app` 和包含 `desktop-app` feature 的严格 Clippy 均通过。`services::focus_service::tests::paused_project_blocks_task_and_recurring_instance_focus` 覆盖普通任务当前项目与重复实例快照项目，`desktop::tray::tests::tray_focus_candidates_skip_paused_projects` 固定托盘跳过暂停项目并继续选择后续候选；`domainError.test.ts` 与 `i18n.test.tsx` 覆盖稳定错误码的双语提示。
+
+修改窗口生命周期时，应保持 `tauri-plugin-single-instance` 在 builder 插件链首位，第二实例、托盘和全局快捷键继续复用 `show_main_window()`。主窗口配置保持初始隐藏，并在数据库可用后调用 `restore_main_window()` 显示；主窗口几何运行态必须在恢复前注册，确保恢复产生的窗口事件可以安全防抖。显式退出入口统一调用 `desktop::lifecycle::request_exit()`，关闭到托盘只保存并隐藏主窗口。Widget 的关闭请求必须调用 `prevent_close()` 并隐藏窗口，保证后续显示、解锁、Shell 恢复和退出持久化仍有有效窗口实例。Shell outcome 应继续作为父窗口关系与 `always_on_top` 的共同权威来源；恢复桌面附着后同步广播 `widget://mode-restored`，保持前端提示与原生层级一致。
+
+修改通知投递时，应保持“预留记录、调用系统 publisher、标记 sent 或 failed”的顺序。worker 仅在整批 reconciliation 成功后推进扫描游标；`failed` 和 lease 已过期的 `pending` 允许下一轮原子接管，活动 `pending` 保持窗口待处理，`sent` 继续拒绝重复预留。服务层应处理完当前窗口中的所有候选再返回首个发布错误或 in-flight 状态，避免单个候选阻断同批其他到时任务。
+
+新增会改变项目摘要、今日任务、项目进度或重复实例的 Tauri 写 command 时，应通过 `after_today_change` 在领域写入成功后广播 `today://changed`。失败结果保持原领域错误并跳过广播，主窗口与 Widget 继续把该事件作为重新读取权威 SQLite 摘要的信号。
+
+新增专注状态转换入口时，应通过 `after_focus_change` 在领域状态成功写入后广播 `focus://state-changed`。手动完成和自动到期还需发送 `focus://completed`，并同步广播最终 ready 状态；Widget 保留周期权威读取，用于事件丢失与系统恢复后的校准。
+
+修改开始专注入口时，应保留 `FocusService::validate_target` 的统一资格校验：普通任务使用当前项目引用，重复实例使用快照项目引用，暂停项目返回 `FOCUS_PROJECT_PAUSED`。托盘候选筛选应跳过暂停项目并继续搜索，所有其他入口继续依赖服务层兜底，避免旧前端状态或直接 command 调用绕过项目状态。
+
+主窗口状态定向测试位于 `src-tauri/src/domain/window.rs`、`src-tauri/src/desktop/main_window.rs`、`src-tauri/src/desktop/lifecycle.rs` 和 `src-tauri/src/repositories/preferences_repository.rs`，覆盖值域、物理到逻辑尺寸转换、SQLite 往返、无效状态回退和暂停专注退出持久化。屏幕外位置修正继续由 `desktop/widget_window.rs` 的示例测试与 P8 property-based test 覆盖，主窗口与小组件共享同一算法。
+
+共享无障碍组件测试位于 `src/components/ui.test.tsx`，覆盖 Dialog 初始焦点、焦点循环、Escape 关闭、焦点恢复、唯一可读标题，以及 SegmentedControl 的 roving tabindex、方向键、Home 和 End。主题测试位于 `src/theme/theme.test.ts`，使用 OKLCH 到线性 sRGB 的转换验证每套明暗主题的正文、辅助文字、强调文字、主按钮和状态文字均达到 4.5:1。任务行、小组件和主导航测试分别验证包含业务上下文的操作名称、背景透明度边界和当前页面状态。
+
+无障碍 CSS 契约测试位于 `src/styles/accessibility.contract.test.ts`，直接读取 `global.css` 验证 `:focus-visible`、`prefers-reduced-motion` 和 125% 文本缩放所依赖的重排、滚动边界。主窗口首次交互预算由 `src/app/App.test.tsx` 覆盖；单实例激活和窗口恢复定向测试位于 `src-tauri/src/desktop/main_window.rs`。
+
+文本缩放适配依赖内容自然重排与可滚动边界。修改主页面、设置区、Dialog 或 Widget 布局时，应保留 `min-width: 0`、可换行操作区、视口约束的 Dialog 滚动和 Widget 根滚动；减少动态效果规则应继续停用装饰性动画与过渡，并保留即时状态反馈。
+
+更新发布构建必须同时设置 `ARRIVE_FOCUS_UPDATE_ENDPOINT` 和 `ARRIVE_FOCUS_UPDATE_PUBLIC_KEY`。endpoint 使用 HTTPS，公钥内容来自 Tauri signer 生成结果；签名私钥通过发布环境的 `TAURI_SIGNING_PRIVATE_KEY` 与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 提供。应用仓库和构建日志不得包含私钥。版本发布时同步更新 `package.json`、`src-tauri/Cargo.toml` 与 `src-tauri/tauri.conf.json` 的版本号。
+
+Windows Authenticode 发布构建在 Windows 签名主机执行。先从 `src-tauri/tauri.windows-signing.conf.example.json` 生成被 Git 忽略的 `src-tauri/tauri.windows-signing.conf.json`，将占位 thumbprint 替换为已导入 Windows 证书存储的代码签名证书 SHA-1 thumbprint，再运行签名 bundle：
+
+```bash
+# 生成本地签名覆盖配置
+cp src-tauri/tauri.windows-signing.conf.example.json src-tauri/tauri.windows-signing.conf.json
+
+# 构建并签署可执行文件、NSIS 安装包和更新产物
+pnpm tauri:build:windows:signed
+```
+
+无需发布签名材料的本地 Windows 验包使用独立入口。该命令显式启用 `desktop-app`，并通过公开覆盖配置关闭 updater 产物：
+
+```bash
+pnpm tauri:build:windows
+```
+
+Windows 打包入口修复后的验证基线为前端 30 个测试文件共 118 项测试、Rust 155 项单元测试与 7 项集成测试通过；`pnpm typecheck`、`pnpm build`、默认 Rust 测试、`cargo check --features desktop-app`、包含 `desktop-app` feature 的严格 Clippy、Rust 格式和 `git diff --check` 通过。`src-tauri/tauri-config.contract.test.ts` 固定无签名与签名脚本都携带 `desktop-app` feature、三处发布版本一致，并验证无签名覆盖配置关闭 updater 产物。
+
+Tauri updater 插件即使在无签名验包中关闭更新产物，运行时仍要求 `plugins.updater` 是可反序列化对象。基础配置必须保留空 `endpoints` 数组和空 `pubkey` 字符串，构建时注入的发布公钥继续由 Rust plugin builder 覆盖。配置缺失会在主窗口显示前触发 `PluginInitialization("updater", ...)` panic，并以退出码 101 结束进程；配置契约测试固定该启动前置条件。
+
+Linux 验包环境可使用 `cargo-xwin` 下载的 MSVC sysroot、Clang/LLD、NSIS 和一个向 Cargo 注入 sysroot include/library 路径的 runner 交叉生成 Windows x64 无签名产物。本次验证使用 `/tmp/opencode/cargo-msvc` runner：
+
+```bash
+CARGO_HTTP_MULTIPLEXING=false CARGO_HTTP_TIMEOUT=120 CARGO_NET_RETRY=2 \
+  pnpm tauri build \
+  --runner /tmp/opencode/cargo-msvc \
+  --target x86_64-pc-windows-msvc \
+  --features desktop-app \
+  --config src-tauri/tauri.windows-unsigned.conf.json
+```
+
+应用产物位于 `src-tauri/target/x86_64-pc-windows-msvc/release/arrive-focus.exe`，NSIS 产物位于 `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/抵达 Focus_0.1.4_x64-setup.exe`，同目录的 `SHA256SUMS.txt` 提供两个文件的交付校验值。`file` 与 `llvm-readobj --file-headers` 已确认应用为 `PE32+` x86-64 且 `Subsystem` 为 `IMAGE_SUBSYSTEM_WINDOWS_GUI`；NSIS 文件已识别为 Nullsoft Installer self-extracting archive。两个文件的 PE 证书表均为空，符合无签名构建预期。交叉构建用于静态验包和提前发现编译问题，Windows 10/11 实机继续承担安装、启动、升级、卸载、WebView2 和数据保留验收。
+
+签名覆盖配置保持 `digestAlgorithm` 为 `sha256`，时间戳服务使用 HTTPS。公开发布前在 Windows 10 22H2 x64 与 Windows 11 23H2 x64 验证安装目录页、桌面快捷方式复选框、开始菜单入口、缺少 WebView2 时的联网安装，以及可执行文件和安装包的 Authenticode 签名状态。
+
+Windows 安装升级烟测需要两个版本不同的 NSIS `.exe` 产物，并使用一次性 Windows 测试用户。默认脚本会拒绝已有安装目录、已有 `%APPDATA%/com.arrive.focus` 数据目录和正在运行的 `arrive-focus.exe`：
+
+```powershell
+pnpm smoke:windows-installer -- `
+  -BaselineInstallerPath C:\artifacts\baseline\arrive-focus-setup.exe `
+  -UpgradeInstallerPath C:\artifacts\upgrade\arrive-focus-setup.exe
+```
+
+脚本使用隔离安装目录完成基线静默安装、首次启动、升级静默安装、升级版本启动和静默卸载，最终保留应用数据目录作为验收证据。发布机在烟测完成后按其临时用户或虚拟机回收流程清理环境。
+
+新增或调整领域错误时，需要保持稳定错误码，并在 `src/lib/domainError.ts` 增加精确映射或确认现有类别映射适用；中英文文案同步维护在 `src/i18n/messages.ts`。生产组件统一调用 `domainErrorMessage`，避免直接展示 `DomainError.message` 或任意捕获异常的 `Error.message`。Rust command 统一使用 `CommandResult::from_result(module_path!(), value, version)`，诊断日志只记录脱敏上下文、错误码和字段名。前端 invoke 被 Tauri 拒绝时会调用 `diagnostic_command_failure`，在应用日志中记录经过单行、长度限制和字符过滤的 command 与拒绝原因；日志 IPC 自身失败时仍返回稳定的 `COMMAND_INVOCATION_FAILED`。
+
+SQLite 必须在 `tauri::Builder` 构建 AppManager 前打开并通过 `.manage(database)` 注册。WebView 可以在 `setup` 完成前加载前端脚本，因此在 setup 内调用 `app.manage(database)` 会形成首批 command 与状态注册之间的竞争，并产生 `state not managed for field database`。`tauri-config.contract.test.ts` 固定数据库注册先于 setup。
+
+错误映射定向测试执行 `pnpm exec vitest run src/lib/domainError.test.ts`。Rust 协议与日志脱敏测试位于 `src-tauri/src/lib.rs`，可执行 `cargo test command_failure_diagnostics` 和 `cargo test failure_result_uses_stable_shape`。
+
+备份定向单元测试可在 `当前工作区/arrive-focus/src-tauri/` 执行 `cargo test backup`。P9 属性测试默认运行 64 组随机业务图，验证版本化 JSON 序列化、解析、SQLite 导入和再次导出的规范化模型及摘要等价。
+
+独立恢复集成测试执行 `cargo test --test backup_restore`。测试覆盖未知格式版本、损坏引用、磁盘数据库替换与重开、恢复前快照解析、SQL 故障注入、原数据回滚和快照历史保留。
+
+桌面核心流程集成测试可在 `当前工作区/arrive-focus/src-tauri/` 执行：
+
+```bash
+cargo test --offline --locked --test desktop_core_flow
+```
+
+该测试使用内存 SQLite 与正式领域服务，系统通知通过内存发布器记录；执行环境无需启动 Tauri 窗口或 WebView。
+
 ## 后续开发顺序
 
 当前 `当前工作区/.monkeycode/specs/beginner-friendly-geo-workflow/tasklist.md` 中全部任务已完成。

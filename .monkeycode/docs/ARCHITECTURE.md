@@ -331,3 +331,111 @@ AI 可见性运营 Sprint 共享契约已新增 `VisibilitySprint`、`Visibility
 ## 模块边界
 
 当前工程已实现品牌权限基础边界、品牌工作区 CRUD、品牌知识库编辑、完整度评分、知识库多来源导入记录、品牌级 GEO 优化单元管理、用户意图和 Prompt 模板生成、AI 平台配置 CRUD、平台密钥隐藏、配置校验、Adapter 边界、监测运行记录、示例自动回答、人工回答录入、失败原因记录、回答解析结果、人工复核闭环、GEO 指数计算、单品牌看板、多品牌排行、GEO 画布工作台、增长优化计划页、竞品压制分析、引用来源分析、评价分析、内容策略中心、内容生成工作台、发布中心、任务复测中心、报告中心、顾问服务工作台和第一版运营后台页面串联。后台导航当前按总览、发现机会、数据分析、内容运营和运营闭环分组，顶部展示当前页面、当前品牌和运营流程步骤；流程条按品牌初始化、监测主题与场景、发现增长机会、增长优化计划、策略生成、内容生产、发布记录、复测闭环、顾问跟进和报告导出串联。品牌化路由 `/brands/:brandId/*` 会写入当前品牌上下文，并映射到第一版已有页面。品牌工作区、监测问题、连接 AI 平台、监测记录和增长优化页已补齐下一步提示，首轮监测后引导用户补充品牌资料、连接更多平台、生成内容优化任务并安排复测。画布工作台当前聚合优化单元、用户意图、单元指标、内容策略和优化任务，并提供创建入口；增长优化计划页当前承接首轮监测结果，展示优化原因、优先级、负责人、截止时间、发布平台、复测时间、内容建议和关联执行任务，并提供确认拆任务、生成内容任务、标记完成和发起复测入口；竞品分析当前基于解析结果聚合同 Prompt、同平台、同场景和同优化单元下的排名差距，连续压制时生成高优先级竞品回应策略；引用分析当前基于回答引用列表聚合官网、媒体、社媒、百科和第三方平台来源，并支持绑定内容资产和创建权威引用增强策略；评价分析当前基于解析结果聚合正向、中性、负向和准确表达率，派生错误信息、缺失卖点、禁用表达、负向表达和准确性偏低问题，并支持生成 `correction` 内容策略或写回品牌知识库；内容策略中心当前基于品牌知识库、优化单元关键词、内容资产、解析结果和竞品压制结果生成 `gap`、`correction`、`enhancement`、`authority_citation` 和 `competitor_response` 策略建议，并支持写入内容策略列表；内容生成工作台当前基于内容策略、品牌知识库、用户意图和目标平台生成可编辑 Markdown 草稿，覆盖公众号推文、小红书图文、官网 FAQ、短视频脚本、平台介绍文案和图片创意需求，展示内容主题、目标关键词、引用资料、复测时间、增长计划来源、生成步骤、版本、导出记录和发布入口参数；发布中心当前支持公众号、头条号、搜狐号、百家号账号接入，记录授权状态和异常原因，并将内容生成版本转换为带内容资产、账号、平台和状态的发布记录；任务复测中心当前支持从监测问题创建优化任务、记录处理说明和内容链接、创建复测计划、保存原始监测运行与复测运行关联，并在复测未达标时重开任务和生成下一轮修正策略；报告中心当前聚合 GEO 指数、竞品、引用、评价、内容缺口、任务进度和多品牌排名，生成带 YAML metadata、数据缺口、指标解释、问题归因、行动建议、品牌对比、风险提示、交付进度和下一步动作的 Markdown 报告；顾问服务工作台当前沉淀品牌诊断、服务计划、服务复盘、客户交付、服务记录、培训记录、行业规则更新、顾问备注、结构化服务详情、待跟进事项和客户交付报告引用关系。
+
+## 抵达 Focus 项目持久化架构
+
+抵达 Focus 项目模块位于 `当前工作区/arrive-focus/src/features/projects/`。桌面运行时由 `projectClient.ts` 通过 Tauri commands 读取和修改 SQLite 中的项目，`ProjectWorkspace.tsx` 只维护筛选、选择、对话框和加载状态；浏览器预览使用隔离的示例数据，不参与桌面持久化。
+
+项目列表读取 `ProjectSummary`，详情读取 `ProjectDetail` 及其真实任务集合。创建、编辑和状态变更成功后重新读取当前筛选与详情，失败时保留编辑上下文并通过统一领域错误映射展示安全文案。详情响应必须与当前选中项目 ID 一致，避免异步切换项目时显示旧详情或向错误项目发起任务操作。
+
+主应用启动时读取全量项目摘要，为任务编辑器提供动态项目选项。项目页的“添加任务”进入共享任务编辑器并预选项目；“开始专注”将详情中的真实任务转换为专注工作区输入；任务完成或恢复继续复用 `task_set_completed`，成功后刷新项目详情、今日摘要和周目标。
+
+## 抵达 Focus 重复任务生产调度
+
+`RecurrenceScheduler::reconcile_active_to_utc_now` 负责把所有活跃规则生成到各自 IANA 时区下的本地当天。`Startup` 从规则 `startsOn` 回填完整缺口，用于首次启动和系统恢复后的跨日补偿；`DayBoundary` 只处理规则本地当天，用于常驻进程的增量生成。开放式规则由运行时持续推进，带结束日期的规则继续由领域层裁剪生成范围。
+
+桌面启动在 SQLite 注册为 Tauri state 后立即执行 `Startup`。通知 worker 每 15 秒先执行 `DayBoundary`，再扫描任务提醒，使新生成实例在同一轮后续通知处理中可见；`RunEvent::Resumed` 执行完整回填后再补扫提醒。重复调用依赖 `(recurrence_rule_id, scheduled_date)` 唯一约束和 repository upsert 保持幂等。
+
+`desktop/recurrence.rs` 汇总受影响实例数，仅在实际写入时广播 `today://changed`。主窗口收到事件后刷新当前日期摘要、项目期限信息和周目标；若用户仍停留在跨日前的“今天”，日期会推进到新的本地当天。Widget 收到同一事件后重新读取 Today digest。
+
+项目、普通任务与重复计划的 Tauri 写 command 通过 `desktop/today_events.rs` 共用提交后事件边界。项目创建、更新、状态变更与移除，任务创建、更新、完成恢复、移除、检查项变更与排序，以及重复规则创建、更新、状态变更和实例完成、跳过、当天延后、顺延明天，均在 service 成功写入 SQLite 后广播一次 `today://changed`；日期解析或领域写入失败时保持零广播。事件同时到达来源窗口和其他 WebView，使主窗口的项目摘要、今日摘要与周目标和 Widget 的 Today digest 重新读取同一权威数据。项目暂停、完成、归档或解除关联后，任务的嵌入项目状态与专注候选资格随权威摘要一并刷新。
+
+通知 worker 使用内存扫描游标构造连续提醒窗口。每轮会处理窗口内全部候选；整批成功后将游标推进到当前时间，任一发布失败或活动投递仍在 lease 内时保留原游标，使候选继续落在下一轮窗口内。`notification_deliveries` 的唯一键继续保证每个事件只有一条投递记录：新候选创建带 60 秒 lease 的 `pending` 记录，系统发布成功后转为 `sent`，发布失败后转为 `failed` 并保存稳定错误码；后续扫描可原子地接管 `failed` 或 lease 已过期的 `pending` 记录，并刷新 lease 时间、提示音偏好和错误状态。活动 `pending` 返回 `InFlight`，`sent` 返回 `AlreadySent`。批次会继续尝试同一窗口中的其他候选，再向 worker 返回首个发布错误或 in-flight 状态。
+
+## 抵达 Focus 专注状态同步
+
+`desktop/focus_events.rs` 定义专注状态的提交后事件边界。`focus_start`、`focus_pause`、`focus_resume` 和 `focus_reset` 在领域服务成功写入权威状态后广播 `focus://state-changed`，失败时保持零广播；Tauri 自动注入 `AppHandle`，前端 command 参数不变。手动提前完成在保存专注轮次并清除活动状态后发送 `focus://completed` 与 ready 状态，自动到期协调也发送同一组事件。托盘和全局快捷键继续通过托盘控制路径变更状态，并复用相同状态事件。
+
+主窗口专注空间与 Widget 都直接消费事件 payload，立即呈现开始、暂停、继续、重置和完成状态。Widget 保留每 2 秒读取 `focus_get_state` 的校准轮询，用于休眠、调度延迟和丢失事件后的恢复；UI 倒计时仍只负责展示，SQLite 与 Rust 专注服务继续作为权威来源。
+
+`FocusService::validate_target` 是开始专注的权威资格边界。普通任务通过当前 `project_id` 查询项目，重复实例通过生成时固化的 `snapshot_project_id` 查询项目；项目状态为 `paused` 时返回 `FOCUS_PROJECT_PAUSED`，从而统一覆盖主窗口、Widget、托盘和全局快捷键等入口。托盘在选择下一项时预先过滤暂停项目候选并继续查找下一条待处理任务；服务层校验继续防止旧 UI 快照或直接 command 调用绕过限制。无项目引用或引用项目已不存在时沿用任务自身的可用性结果。
+
+## 抵达 Focus 国际化架构
+
+抵达 Focus 的国际化模块位于 `当前工作区/arrive-focus/src/i18n/`。`messages.ts` 以简体中文资源推导 `MessageKey`，英文资源通过 `Record<MessageKey, string>` 约束键完整性；`locale.ts` 将 `system`、`zhCn` 和 `en` 偏好解析为 `zh-CN` 或 `en-US`，并监听浏览器 `languagechange`；`I18nContext.tsx` 提供参数插值、日期、时间和相对时间格式化。
+
+主窗口 `App.tsx` 与小组件 `WidgetApp.tsx` 分别订阅 `settings://changed`，解析相同语言偏好并挂载 `I18nProvider`。两个窗口共享文案资源和 `Intl` 格式器，语言变化会同步更新界面、根节点 `data-locale` 与文档 `lang` 属性。固定界面文案已覆盖导航、今日、项目、专注、日历、统计、任务、重复计划、设置和小组件；`src/lib/domainError.ts` 根据稳定领域错误码及错误类别选择类型化中英文安全文案。
+
+## 抵达 Focus 无障碍与缩放架构
+
+共享 UI 边界位于 `当前工作区/arrive-focus/src/components/ui.tsx`。`Dialog` 使用 React 唯一标题 ID 建立可读名称，打开时保存当前触发元素并将焦点移入对话框，Tab 与 Shift+Tab 在可操作元素间循环，Escape 触发关闭，卸载后恢复触发元素焦点。`SegmentedControl` 使用 radiogroup、radio、`aria-checked` 和 roving tabindex，支持方向键、Home 与 End 切换。主导航通过 `aria-current="page"` 表达当前页面，项目卡通过 `aria-pressed` 表达选中状态，任务行与小组件快捷操作的可读名称包含任务标题。
+
+主题模块为主窗口和小组件共享 `accentContrast`、`focusRing`、`success`、`warning` 与 `danger` 语义令牌。明暗模式分别解析状态色和主按钮前景色；组件测试将 OKLCH 转换为相对亮度，逐主题验证正文、辅助文字、强调文字、主按钮和状态文字与对应背景的 WCAG 2.2 AA 对比度。全局焦点环覆盖按钮、表单控件、链接和可编程聚焦元素。
+
+主内容容器允许自然重排，侧栏、对话框和小组件在内容超出可见区域时提供滚动；窄窗口下标题栏、操作区和对话框页脚允许换行。小组件透明度仅作用于背景合成，文字、图标、操作控件和焦点环保持完整不透明。`prefers-reduced-motion: reduce` 会停用装饰性动画与过渡，状态变化仍通过即时颜色、文字和结构反馈呈现。
+
+## 抵达 Focus 桌面生命周期架构
+
+Tauri 启动先从编译期 `Context` 的应用标识解析数据目录、打开 SQLite，并通过 `Builder::manage(database)` 把数据库注册到 AppManager；随后才注册插件和执行 `setup`。该顺序保证 WebView 首次加载并发起 command 时 `State<Database>` 已经可用，启动契约测试固定数据库注册早于 setup。第二个进程启动时，single-instance 插件回调复用托盘和全局快捷键共同使用的 `show_main_window()`，显示、取消最小化并聚焦现有主窗口。主窗口在 `tauri.conf.json` 中初始隐藏；`desktop/main_window.rs` 恢复保存状态，再显示并聚焦窗口，避免默认位置闪现。
+
+`MainWindowState` 保存物理坐标、逻辑宽高、最大化状态、显示器名称和 DPI scale factor。状态以 `mainWindowState` 键写入现有 `preferences` 表，属于设备运行态数据。窗口移动、缩放和 DPI 变化通过 `MainWindowGeometryRuntime` 进行 180 毫秒防抖写入；最大化期间只更新最大化标记并保留最后一个普通窗口矩形，最小化期间保持既有状态。
+
+恢复流程按主显示器优先收集所有工作区，并复用小组件的 `restore_visible_rect` 算法验证主要操作区域。保存矩形仍可见时保留原位置；矩形位于全部显示器之外时居中到主显示器工作区；显示器信息暂时不可用时调用 Tauri `center()`。
+
+`desktop/lifecycle.rs` 统一显式退出：先校准并持久化活动专注，再同步保存主窗口和小组件几何，全部成功后调用 `AppHandle::exit`。托盘退出、关闭主窗口且后台运行关闭、Tauri `ExitRequested` 都经过该边界；持久化失败会记录稳定错误码并阻止退出。关闭到托盘会在隐藏前同步保存主窗口状态，并继续保留后台计时。
+
+Widget 的原生 `CloseRequested` 由应用拦截。运行时先尝试持久化当前几何，再隐藏窗口并保留 WebView、Shell monitor 和前端状态，使 `Alt+F4` 后仍可通过托盘或 command 重新显示。显式退出仍把活动专注、主窗口状态和可访问的 Widget 几何作为持久化边界；Widget 已被外部销毁而无法按标签取得时跳过其几何，实际窗口操作或数据库写入失败继续阻止退出和更新安装。
+
+Widget Shell monitor 每 2 秒检查桌面附着宿主。`ShellAttachmentOutcome` 同时定义父窗口附着结果和应应用的 Tauri 原生层级：`DesktopAttached` 关闭 `always_on_top`，`Floating` 与 `FloatingFallback` 开启 `always_on_top`。Explorer 重启或宿主失效时，桌面模式临时回退为置顶浮窗，并仅在一次连续失败周期内广播一次 `widget://mode-fallback`；重新发现宿主并附着后关闭置顶并广播 `widget://mode-restored`，前端据此清除回退提示。显式切换浮窗模式会停止桌面恢复请求并清除失败周期状态。
+
+任务 13.4 的自动化边界由前端行为测试、CSS 契约测试和 Rust 纯逻辑测试组成。Testing Library 验证 Dialog 的键盘顺序、显式自动焦点和关闭后焦点恢复，以及主导航在 3 秒预算内进入可交互状态；`accessibility.contract.test.ts` 读取实际全局样式，固定焦点环、减少动效、主内容、侧栏、Dialog 和 Widget 的缩放重排契约。Rust 侧将已有实例激活抽象为可替换窗口目标，验证显示、取消最小化、聚焦的调用顺序和失败短路；主窗口恢复测试将持久化状态直接送入共享可见区域修正算法，覆盖屏幕外位置居中。
+
+## 抵达 Focus 更新架构
+
+`src-tauri/src/commands/update.rs` 在 Rust 侧封装 `tauri-plugin-updater`，前端只通过项目 command 协议访问更新能力。`PendingUpdateState` 管理检查、可下载、下载中、已验签和安装中状态，阻止并发操作；更新检查设置 30 秒超时并只接受构建时注入的 HTTPS 发布端点。下载由 updater 插件完成并验证 Minisign 签名，进度通过 `update://download-progress` 事件发送到主窗口，已验证的包保存在进程内等待用户确认。
+
+设置页 `UpdateSettingsPanel` 在桌面运行时自动检查版本，展示版本号、发布日期和更新说明，并将下载确认与安装确认拆为两个显式步骤。安装入口先调用桌面生命周期的 `persist_before_exit`，校准活动专注并保存主窗口与小组件状态；持久化成功后启动更新安装并调用 Tauri restart。检查、下载、验签、持久化或安装失败时应用继续运行，界面只展示稳定安全文案，内部错误通过现有脱敏诊断日志记录。
+
+发布构建通过 `ARRIVE_FOCUS_UPDATE_ENDPOINT` 和 `ARRIVE_FOCUS_UPDATE_PUBLIC_KEY` 注入发布端点与 Minisign 公钥，`bundle.createUpdaterArtifacts` 生成更新产物。签名私钥只属于受保护的发布环境；Windows Authenticode 代码签名由后续安装包发布任务配置，与 updater 包签名组成独立信任边界。
+
+Windows 打包提供无签名验包与正式签名两个入口。无签名入口合并 `src-tauri/tauri.windows-unsigned.conf.json`，关闭 updater 产物并显式启用 `desktop-app` Cargo feature，可在 Windows 构建机或 Linux xwin MSVC 交叉构建环境生成 NSIS 安装包；签名入口合并被 Git 忽略的 Authenticode 配置，同样显式启用 `desktop-app`，并保留 updater 产物与双重签名边界。Linux 交叉构建产物用于静态格式和编译完整性验证，正式 Authenticode 签名及安装、升级、卸载验收位于 Windows 发布边界。
+
+## 抵达 Focus Windows 安装包架构
+
+`src-tauri/tauri.conf.json` 将 Windows bundle 固定为 NSIS，并使用 Tauri 标准安装模板。`currentUser` 安装模式提供安装目录页；标准完成页提供桌面快捷方式复选框；`startMenuFolder` 将开始菜单快捷方式收口到“抵达 Focus”目录。安装程序支持简体中文和英文，并在启动时显示语言选择器。
+
+WebView2 前置条件使用 `downloadBootstrapper`。目标设备缺少 Evergreen WebView2 Runtime 时，安装程序通过 Microsoft bootstrapper 静默安装运行时，因此首次安装需要网络连接。应用和安装包图标使用 `src-tauri/icons/icon.ico`。
+
+Windows Authenticode 使用独立发布覆盖文件 `src-tauri/tauri.windows-signing.conf.json`。仓库只保存无凭据模板 `tauri.windows-signing.conf.example.json`，本地覆盖文件由 `.gitignore` 排除。发布环境填写证书 SHA-1 thumbprint，使用 SHA-256 摘要与 HTTPS 时间戳服务；Tauri 在同一次 bundle 流程中签署 Windows 可执行文件和 NSIS 安装包。该信任边界与 updater 的 Minisign 私钥和公钥配置保持独立。
+
+`scripts/windows-installer-smoke.ps1` 在一次性 Windows 测试用户下接收基线版和升级版 NSIS 安装包，使用 `/S` 与隔离的 `/D` 目录依次完成静默安装和升级。脚本启动两个已安装版本并等待 `arrive-focus.sqlite3` 创建，通过可执行文件 SHA-256 变化确认升级替换，最后静默运行 `uninstall.exe /S`，验证程序文件移除且 `%APPDATA%/com.arrive.focus` 中的 SQLite 数据和测试标记继续保留。脚本在安装目录、应用数据目录或同名进程已存在时立即停止，避免覆盖日常用户环境。
+
+## 抵达 Focus 自动化桌面核心流程
+
+`src-tauri/tests/desktop_core_flow.rs` 以单个内存 SQLite 数据库串联公开领域服务，覆盖 Release Acceptance 的跨模块核心路径：创建项目和当日任务、创建每日重复任务规则、幂等生成今日实例、聚合今日清单、读取并显示默认小组件、发布到时提醒、开始和提前完成专注、完成任务、读取周历复盘与项目统计，最后导出并重新解析版本化 JSON 备份。
+
+测试在通知边界注入实现 `NotificationPublisher` 的内存记录器，以已授权状态验证系统通知标题、正文和重复 reconcile 幂等性。其余步骤均使用正式 service 与 repository，通过真实迁移后的 SQLite schema 验证跨模块引用、持久化和统计结果；窗口位置、Tauri WebView 与 Windows 原生安装行为由独立桌面逻辑测试、前端行为测试和后续安装升级烟测覆盖。
+
+## 抵达 Focus 错误边界与诊断日志
+
+Rust command 统一通过 `CommandResult::from_result` 将领域服务结果转换为前端协议。`CommandResult<T>` 自定义序列化保证 `ok` 为 JSON 布尔值；失败响应保留稳定 `code`、可选 `field` 和内部 `message`，供业务逻辑识别和兼容现有 command 契约。
+
+领域失败通过 `tauri-plugin-log` 写入桌面诊断日志。单条事件只包含 command 模块上下文、错误码和字段名；各字段限制为 120 个 ASCII 安全字符，换行和特殊字符会被替换。日志入口不接收 command 参数，也不写入 `DomainError.message`，因此任务标题、便签正文、文件路径和数据库详情不会进入诊断事件。
+
+前端所有生产界面通过 `domainErrorMessage(error, t)` 展示错误。精确错误码优先映射到可执行文案，其余错误按存储、备份、专注、重复计划、桌面集成、输入和冲突类别映射；未知错误使用通用安全文案，Tauri invoke 异常统一转换为 `COMMAND_INVOCATION_FAILED`。invoke 包装器同时通过独立诊断 command 将经过单行、长度限制和字符过滤的 command 与拒绝原因写入 Rust 应用日志，诊断通道失败不会改变公开错误契约。组件测试使用包含路径和任务标题标记的底层错误验证敏感原文不会进入 DOM。
+
+今日页的随手便签以 SQLite 日记录为权威来源，输入停止 500 毫秒后自动保存，同时提供明确的“保存记录”按钮和 `Ctrl+Enter` 快捷保存。编辑器分别跟踪当前草稿与最后保存值，较早保存请求的状态回写不会覆盖用户随后输入的新内容。
+
+## 抵达 Focus 备份架构
+
+抵达 Focus 的备份边界位于 `当前工作区/arrive-focus/src-tauri/src/`。`domain/backup.rs` 定义版本 1 的 `BackupEnvelope`、全部可移植记录、导入摘要和预校验规则；`repositories/backup_repository.rs` 在同一次 SQLite 只读连接中按稳定顺序读取快照；`services/backup_service.rs` 负责生成格式化 JSON、识别格式版本、限制输入大小并返回 `ValidatedBackup`。
+
+备份数据覆盖项目、任务、检查项、重复规则、任务实例、专注轮次、活动专注、便签、周目标和偏好。窗口位置、通知投递记录和备份历史属于设备或运行态数据，不进入可移植数据集。解析阶段会在数据库写入前校验结构、未知字段、时间日期、枚举、字符串长度、数值范围、集合数量、ID 唯一性及跨记录引用，并生成记录数量与最早、最晚业务日期摘要。
+
+主窗口通过 Rust 侧 `tauri-plugin-dialog` 打开原生 JSON 保存或选择对话框，路径和文件内容始终由后端处理。恢复采用“选择并校验 → 展示摘要并确认 → 消费校验令牌”的三段式流程；待恢复数据保存在进程内，不经前端往返传输。
+
+恢复事务获取 SQLite 写锁后读取当前业务快照，先把版本化 JSON 写入应用数据目录的 `backups/` 并登记 `pre_restore` 历史，再清理通知投递派生记录并按外键拓扑替换十类业务数据。任务实例先以空来源引用插入，随后统一恢复自引用字段。任意 SQL 或外键检查失败时事务自动回滚，独立快照文件继续保留，并在数据库可写时补记历史记录；成功后广播 `backup://restored`，主窗口与小组件重新读取权威数据。窗口位置、小组件布局、迁移记录和既有备份历史在恢复期间保持不变。
+
+正确性属性 P9 使用 Rust `proptest` 生成零到四组带合法引用的业务记录，随机覆盖状态、重复模式、可选时间、完成值、跨实例来源和活动专注引用。每个样本依次执行版本化 JSON 序列化、正式解析、SQLite 事务恢复和再次导出，并比较恢复后的规范化业务模型与导入摘要。
+
+`tests/backup_restore.rs` 通过磁盘临时 SQLite 数据库验证公共备份边界：未知版本和损坏引用在恢复前被拒绝；成功恢复会生成可重新解析的旧数据快照，并在数据库重开后保持新数据；SQL trigger 故障注入会触发事务回滚，同时保留恢复前快照及其历史记录。
