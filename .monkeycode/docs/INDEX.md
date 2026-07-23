@@ -10,7 +10,12 @@
 - `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 API 契约、共享类型和品牌上下文约定
 - `当前工作区/.monkeycode/docs/DEVELOPER_GUIDE.md`：本地开发、验证和后续任务入口
 - `当前工作区/.monkeycode/docs/DELIVERY_CHECKLIST.md`：交付检查清单、验证命令和当前预览状态
-- `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：内测用户使用说明，按页面流程说明品牌初始化、AI 回复监测、优化计划、写内容、再次监测和报告导出
+- `当前工作区/.monkeycode/docs/GEO_PLATFORM_VISUAL_USER_GUIDE.md`：当前版新手教程，包含平台地图、页面布局、八阶段闭环、30 分钟小闭环、逐页操作、状态说明和故障处理
+- `当前工作区/.monkeycode/docs/宣传资料/GEO_MARKETING_CAMPAIGN_PACK.md`：面向中小企业的小红书与微信公众号宣传内容包，包含 10 组双平台文章、10 张配套生图提示词和发布排期
+- `当前工作区/.monkeycode/docs/宣传资料/GEO_GPT_IMAGE_2_PROMPTS.md`：20 条高醒目度 GPT Image 2.0 生图提示词，覆盖认知冲击、问题诊断、方法工具和行动转化四组主题
+- `当前工作区/.monkeycode/docs/宣传资料/GEO_GPT_IMAGE_2_PROMPTS_V1.md`：第一版 10 条统一 SaaS 视觉提示词，作为历史参考保留
+- `当前工作区/.monkeycode/docs/宣传资料/GEO_SHORT_VIDEO_SCRIPT_PACK.md`：面向小红书和视频号的 10 条短视频脚本，包含核心口播、分镜、字幕、封面、CTA 和拍摄剪辑清单
+- `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：历史内测流程说明，保留早期页面名称和测试操作记录
 - `当前工作区/.monkeycode/docs/LLM_API_TECHNICAL_PLAN.md`：大模型 API 接入技术规划，覆盖自动生成监测问题、回答解读、内容生成、优化计划、调用审计和分阶段实施
 - `当前工作区/.monkeycode/docs/DEPLOYMENT_RUNBOOK.md`：生产试运行部署、健康检查、回滚和排障手册
 - `当前工作区/.monkeycode/docs/PILOT_DEMO_CHECKLIST.md`：试点客户演示数据、演示路径、验收清单和反馈转需求记录格式
@@ -80,6 +85,30 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `requirements.md`：问题雷达、真实 AI 回复监测、品牌标准答案对照、内容缺口、内容资产、发布准备、复测和趋势需求
 - `design.md`：Sprint 聚合层、阶段状态、指标摘要、数据边界和共享类型设计
 - `tasklist.md`：Sprint 契约、仓储、API、问题雷达、标准答案、对照分析、内容资产、复测和前端工作台实施任务
+
+内测可用性优化规格位于 `当前工作区/.monkeycode/specs/inner-test-usability-hardening/`。
+
+- `requirements.md`：内容草稿质量、去测试痕迹、内测闭环、能力提示和反馈入口需求
+- `design.md`：内容生成 fallback、显示标签、发布草稿和外部能力扩展设计
+- `tasklist.md`：当前已完成内容质量、中文化、竞品发现、反馈入口、平台配置向导、Markdown/DOCX/文本型 PDF 正文解析、浏览器辅助监测真实回答回填，以及授权后的自动或半自动发布直连框架
+
+GEO 成熟产品体验重构规格位于 `当前工作区/.monkeycode/specs/2026-07-14-geo-mature-product-ux-refresh/`。
+
+- `benchmark-analysis.md`：30 张成熟 GEO 产品参考截图的页面范式和借鉴边界
+- `requirements.md`：任务型应用壳、共享页面模板、统一视觉层级和连续性需求
+- `design.md`：页面模板、视觉令牌、状态模型、正确性属性和交付顺序
+- `tasklist.md`：全页面 UX 重构实施清单
+
+GEO 产品体验精修规格位于 `当前工作区/.monkeycode/specs/geo-product-experience-refinement/`。
+
+- `requirements.md`：品牌资料、监测、内容发布、分析诊断和全局用词需求
+- `design.md`：闭环信息架构、页面设计、显示标签和正确性属性
+- `tasklist.md`：产品体验精修实施清单，当前已完成导航与术语测试、品牌资产中心与资料完整度体验、监测对象和用户意图列表、AI 回复监测创建与真实回复边界、内容运营、自有媒体与发布运营、分析诊断边界测试、全局 UI 治理、后端持久化与安全边界，以及首轮闭环和异常修正自动化端到端测试
+
+平台内可视化使用教程规格位于 `当前工作区/.monkeycode/specs/in-app-visual-user-guide/`。
+
+- `requirements.md`：全局教程入口、八阶段可视化闭环、业务地图、术语和故障处理需求
+- `design.md`：教程抽屉组件、现有导航数据复用、响应式行为和测试策略
 
 ## 现有历史文档
 

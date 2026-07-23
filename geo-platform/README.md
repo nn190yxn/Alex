@@ -28,6 +28,10 @@ npm run dev:api
 
 前端开发服务通过 `/api` 代理到后端 `http://localhost:3001`。
 
+## 测试版封装
+
+Docker 测试版封装包含 Web、API、PostgreSQL、自动迁移和持久化卷。启动与环境配置说明见 `deploy/README.md`。
+
 ## 环境变量
 
 内测默认大模型使用阶跃星辰 `step-3.7-flash`。本地或试运行环境可以在 `.env` 中配置：

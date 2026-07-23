@@ -39,8 +39,8 @@ npm run db:prepare
 - `npm run build` 通过。
 - `npm run verify` 通过，包含 `npm audit`、workspace 类型检查、workspace 测试、workspace 构建、Prisma schema 校验和 Prisma Client 生成；`npm audit` 当前 0 个漏洞。
 - `npm run typecheck --workspaces` 通过。
-- `npm run test --workspace @geo-platform/api` 通过，API 当前 64 个测试文件、289 个测试用例通过。
-- `npm run test --workspace @geo-platform/web` 通过，Web 当前 20 个测试文件、99 个测试用例通过。
+- `npm run test --workspace @geo-platform/api` 通过，API 当前 68 个测试文件、308 个测试用例通过。
+- `npm run test --workspace @geo-platform/web` 通过，Web 当前 28 个测试文件、152 个测试用例通过。
 - `npm run build --workspace @geo-platform/api` 通过。
 - `npm run build --workspace @geo-platform/web` 通过。
 - `DATABASE_URL="postgresql://geo:geo@localhost:5432/geo_platform?schema=public" npx prisma validate --schema apps/api/prisma/schema.prisma` 通过。
