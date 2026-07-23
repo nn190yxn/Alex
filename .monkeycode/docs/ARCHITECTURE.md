@@ -92,7 +92,7 @@ geo-platform/
 - `src/app/routePaths.test.ts`：新手动作链路由协议测试，覆盖 query 编码、监测区块 hash、诊断到内容任务、发布记录和再次监测上下文传递
 - `src/app/FirstRoundWorkflowRoutes.test.ts`：首轮业务路径集成测试，串联数据总览、品牌信息、优化单元、用户意图、AI 回复监测、优化建议、内容生成、发布记录、复测任务和同题监测，并验证分析异常进入内容任务、品牌资料修正、标准答案 mutation 与复测入口时持续保留来源上下文
 - `src/app/WorkspaceRouteRedirect.test.ts`：品牌工作区别名重定向测试，遍历全部品牌化别名并覆盖嵌套别名、工作流 query、区块 hash 和未知别名回退
-- `src/app/viteConfig.test.ts`：开发预览配置测试，校验 Vite 实际优先加载的 `vite.config.js` 与 TypeScript 源配置 `vite.config.ts` 均保留 `.monkeycode-ai.online` 域名白名单和 `/api` 到本地 API 服务的代理目标，避免双配置漂移
+- `src/app/viteConfig.test.ts`：开发预览配置测试，直接加载唯一的 TypeScript 配置 `vite.config.ts`，校验 `.monkeycode-ai.online` 域名白名单和 `/api` 到本地 API 服务的代理目标
 - `src/app/filterQuery.test.ts`：统一筛选 query 测试，覆盖读取归一化、工作流 query 保留、定向清空、有效日期边界和结果计数
 - `src/components/PageState.test.ts`：页面状态 helper 测试，覆盖 API 业务错误提取、技术错误兜底，以及重新加载、补充品牌资料、开始 AI 回复监测、创建内容草稿和录入发布结果动作映射
 - `src/components/SharedPageTemplates.test.tsx`：共享页面模板服务端静态渲染测试，覆盖页面标题、单一主操作、行动型空态、筛选控件、平台切换、创建工作台五态、资产库完整度、管理列表行操作、部分失败保留成功数据、全失败隐藏误导数据、移动端顺序类名和可选区域缺省结构
@@ -115,7 +115,7 @@ geo-platform/
 - `src/app/WorkflowContextPreservation.property.test.ts`：正确性属性 P4 确定性生成测试，覆盖全部工作流 route builder、品牌工作区别名重定向和八个相邻阶段目标；使用普通 ID、空格 ID、中文及 URL 特殊字符 ID，组合四种监测模式、两个动作、四个发布 Tab 和三个监测锚点，验证构造、解析、重定向后的 query/hash 与业务对象上下文保持一致；测试名使用 `validatesCriteria` 标注需求 3.4 和 8.1
 - `src/layouts/navigation.test.ts`：前端导航配置测试，覆盖五个任务域、24 个唯一页面入口、资料管理与支持工具二级入口、运营流程顺序、场景化相邻阶段和品牌化路由别名；`src/utils/displayLabels.test.ts` 覆盖五个业务平台名称、GEO 专业词解释、品牌角色、负责人、内容类型、公开状态及未知值兜底；`src/layouts/AppShellState.test.ts` 覆盖 767px/768px 模式边界、390px/768px/1024px/1440px 页面边距层级，以及桌面折叠、移动抽屉开关和路由关闭；`src/stores/brandContextStore.test.ts` 覆盖应用壳品牌切换；`src/app/routes.test.ts` 双向校验导航入口与第一版路由集合完全一致，并继续验证 lazy route 注册
 
-Vite 配置位于 `当前工作区/geo-platform/apps/web/vite.config.ts` 和实际优先加载的 `当前工作区/geo-platform/apps/web/vite.config.js`。开发服务将 `/api` 代理到 `http://localhost:3001`，并允许 `.monkeycode-ai.online` 预览域名访问；配置测试同步校验两份文件。生产构建通过 `build.rolldownOptions.output.codeSplitting.groups` 拆分 React、Ant Design、TanStack Query 和通用 vendor chunks，24 个第一版页面均通过 `React.lazy` 注册并生成独立页面 chunk。业务页面的内部跨页动作使用 React Router 导航，持续保留内存品牌上下文、工作流 query 和区块 hash。
+Vite 配置统一位于 `当前工作区/geo-platform/apps/web/vite.config.ts`。开发服务将 `/api` 代理到 `http://localhost:3001`，并允许 `.monkeycode-ai.online` 预览域名访问；配置测试直接加载该 TypeScript 配置。生产构建通过 `build.rolldownOptions.output.codeSplitting.groups` 拆分 React、Ant Design、TanStack Query 和通用 vendor chunks，24 个第一版页面均通过 `React.lazy` 注册并生成独立页面 chunk。业务页面的内部跨页动作使用 React Router 导航，持续保留内存品牌上下文、工作流 query 和区块 hash。
 
 全局页面骨架样式位于 `当前工作区/geo-platform/apps/web/src/styles/global.css`。样式通过 `--geo-*` 视觉令牌统一 1440px 最大阅读宽度、桌面/平板/移动 32px/24px/16px 页面边距、24px 区域间距、16px 组件间距、8px 紧凑间距、12px 内容面板圆角、8px 控件圆角、文字层级、语义色和两级阴影；`app-content` 使用居中稳定阅读宽度，Ant Design 卡片、表格、控件和指标显示复用同一视觉基线。当前提供 `geo-workbench-grid`、`geo-toolbar`、`geo-filter-row`、`geo-task-entry`、`geo-next-action`、`geo-list-panel`、`geo-detail-panel`、`geo-diagnostic-card`、`geo-platform-stat-card`、`geo-publish-checklist` 和 `geo-sticky-action-bar` 等复用类，以及统一筛选、平台切换、指标网格、关键结论和明细区域组件样式，用于新手首页、资产中心、对象列表、创作台、发布统计和分析诊断页面；桌面端支持主内容与右侧详情并排，平板端在 1199px 和 991px 两级断点依次收口双栏与页面操作区，移动端按标题说明、主操作、筛选、指标、列表和详情顺序堆叠。内容区所有 Ant Design 表格限制在父容器宽度内并提供横向滚动，管理列表在 767px 以下保留首个关键字段和末尾操作列。公开文案采用“一个业务主题、一句直接说明”和“动作 + 对象”的表达规则；`displayLabels.ts` 统一转换平台、角色、负责人、内容类型、监测方式和状态，`api/http.ts` 统一过滤技术错误详情，页面只展示业务标签和可执行下一步。
 
