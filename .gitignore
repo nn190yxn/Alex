@@ -2,7 +2,6 @@
 *.zip
 
 .monkeycode-tmp-files/
-${HOME}/
 
 node_modules/
 dist/
