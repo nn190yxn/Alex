@@ -55,6 +55,13 @@ impl NotificationPublisher for TauriNotificationPublisher<'_> {
                 field: None,
             });
         }
+        #[cfg(target_os = "windows")]
+        if let Some(crate::domain::notification::SystemNotificationActivation::OpenMemo {
+            memo_id,
+        }) = &notification.activation
+        {
+            return show_windows_memo_notification(self.app, notification, memo_id);
+        }
         let builder = self
             .app
             .notification()
@@ -70,6 +77,38 @@ impl NotificationPublisher for TauriNotificationPublisher<'_> {
     }
 }
 
+#[cfg(target_os = "windows")]
+fn show_windows_memo_notification(
+    app: &tauri::AppHandle,
+    notification: &SystemNotification,
+    memo_id: &str,
+) -> Result<(), DomainError> {
+    use tauri::Manager;
+    use tauri_winrt_notification::{Sound, Toast};
+
+    let app_handle = app.clone();
+    let activation_memo_id = memo_id.to_owned();
+    let sound = notification.sound_enabled.then_some(Sound::Default);
+    Toast::new(&app.config().identifier)
+        .title(&notification.title)
+        .text1(&notification.body)
+        .sound(sound)
+        .on_activated(move |_| {
+            if let Err(error) = crate::desktop::memo_notification_activation::activate(
+                &app_handle,
+                &activation_memo_id,
+            ) {
+                log::warn!(
+                    "event=memo_notification_activation_failed code={}",
+                    error.code
+                );
+            }
+            Ok(())
+        })
+        .show()
+        .map_err(notification_error)
+}
+
 pub fn start_notification_worker(app: tauri::AppHandle) -> Result<(), DomainError> {
     std::thread::Builder::new()
         .name("task-notification-worker".into())
@@ -82,7 +121,7 @@ pub fn start_notification_worker(app: tauri::AppHandle) -> Result<(), DomainErro
                 );
                 let now = Local::now().fixed_offset();
                 let window = continuous_reminder_window(previous_scan, now);
-                let reconciliation = reconcile_task_notifications_in_window(&app, window);
+                let reconciliation = reconcile_notifications_in_window(&app, window);
                 previous_scan =
                     next_reminder_scan_cursor(previous_scan, now, reconciliation.is_ok());
                 std::thread::sleep(std::time::Duration::from_secs(15));
@@ -116,6 +155,27 @@ fn reconcile_task_notifications_in_window(
     let database = app.state::<Database>();
     NotificationService::new(&database)
         .reconcile_task_reminders(window, &TauriNotificationPublisher::new(app))
+}
+
+fn reconcile_notifications_in_window(
+    app: &tauri::AppHandle,
+    window: ReminderWindow,
+) -> Result<usize, DomainError> {
+    use tauri::Manager;
+
+    let database = app.state::<Database>();
+    let service = NotificationService::new(&database);
+    let publisher = TauriNotificationPublisher::new(app);
+    let task_result = service.reconcile_task_reminders(window, &publisher);
+    let memo_result = service.reconcile_memo_reminders(
+        window.ends_at.with_timezone(&chrono::Utc),
+        "Untitled memo",
+        &publisher,
+    );
+    match (task_result, memo_result) {
+        (Ok(task_count), Ok(memo_count)) => Ok(task_count + memo_count),
+        (Err(error), _) | (_, Err(error)) => Err(error),
+    }
 }
 
 fn continuous_reminder_window(

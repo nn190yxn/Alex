@@ -1,8 +1,11 @@
+use chrono::{DateTime, Utc};
+
 use crate::{
     domain::{
         focus::{FocusCompletionKind, FocusSession},
         notification::{
             NotificationCandidate, NotificationKind, ReminderWindow, SystemNotification,
+            SystemNotificationActivation,
         },
         settings::{NotificationPermissionState, NotificationPreferences, NotificationSettings},
     },
@@ -75,6 +78,7 @@ impl<'a> NotificationService<'a> {
                     format_duration(session.actual_seconds)
                 ),
                 sound_enabled: preferences.sound_enabled,
+                activation: None,
             },
             publisher,
         )
@@ -97,6 +101,7 @@ impl<'a> NotificationService<'a> {
                 title: "任务到时".into(),
                 body: candidate.title.clone(),
                 sound_enabled: preferences.sound_enabled,
+                activation: None,
             };
             match self.publish_candidate(candidate, notification, publisher) {
                 Ok(true) => delivered += 1,
@@ -107,6 +112,49 @@ impl<'a> NotificationService<'a> {
             }
         }
         first_error.map_or(Ok(delivered), Err)
+    }
+
+    pub fn reconcile_memo_reminders(
+        &self,
+        now: DateTime<Utc>,
+        untitled_label: &str,
+        publisher: &impl NotificationPublisher,
+    ) -> Result<usize, DomainError> {
+        let preferences = PreferencesRepository::new(self.database).get_notifications()?;
+        if !preferences.notifications_enabled {
+            return Ok(0);
+        }
+        crate::services::memo_reminder_service::MemoReminderService::new(self.database)
+            .reconcile_due(now, untitled_label, |occurrence| {
+                let scheduled_for =
+                    occurrence
+                        .reminder
+                        .next_scheduled_for
+                        .clone()
+                        .ok_or_else(|| DomainError {
+                            code: "MEMO_REMINDER_DATA_INVALID".into(),
+                            message: "stored memo reminder occurrence is invalid".into(),
+                            field: None,
+                        })?;
+                self.publish_candidate(
+                    NotificationCandidate {
+                        kind: NotificationKind::MemoReminder,
+                        source_id: occurrence.reminder.id.clone(),
+                        title: occurrence.display_title.clone(),
+                        scheduled_for,
+                    },
+                    SystemNotification {
+                        title: "备忘录提醒".into(),
+                        body: occurrence.display_title.clone(),
+                        sound_enabled: preferences.sound_enabled,
+                        activation: Some(SystemNotificationActivation::OpenMemo {
+                            memo_id: occurrence.reminder.memo_id.clone(),
+                        }),
+                    },
+                    publisher,
+                )
+                .map(|_| ())
+            })
     }
 
     fn publish_candidate(
@@ -190,8 +238,15 @@ mod tests {
 
     use super::*;
     use crate::{
-        repositories::{focus_repository::FocusRepository, task_repository::TaskRecord},
-        services::focus_service::FocusService,
+        domain::memo::{MemoInput, MemoReminderInput, MemoReminderRule, MemoReminderStatus},
+        repositories::{
+            focus_repository::FocusRepository, memo_repository::MemoRepository,
+            task_repository::TaskRecord,
+        },
+        services::{
+            focus_service::FocusService, memo_reminder_service::MemoReminderService,
+            memo_service::MemoService,
+        },
     };
 
     struct FakePublisher {
@@ -243,6 +298,33 @@ mod tests {
                 updated_at: stamp,
             })
             .unwrap();
+    }
+
+    fn memo_reminder(
+        database: &Database,
+        id: &str,
+        title: &str,
+        due_at: DateTime<Utc>,
+    ) -> MemoReminderRule {
+        let now = due_at - chrono::Duration::minutes(5);
+        let input = MemoInput {
+            title: title.into(),
+            body: "Reminder body".into(),
+            tags: Vec::new(),
+            pinned: false,
+            reminder: Some(MemoReminderInput::Once {
+                scheduled_local: due_at.format("%Y-%m-%dT%H:%M").to_string(),
+                timezone: "UTC".into(),
+            }),
+        };
+        let core = MemoService::create(id.into(), &input, now).unwrap();
+        let reminder = MemoReminderService::prepare_rule(id, None, input.reminder.as_ref(), now)
+            .unwrap()
+            .unwrap();
+        MemoRepository::new(database)
+            .create(&core, &[], Some(&reminder), "Untitled memo")
+            .unwrap();
+        reminder
     }
 
     proptest! {
@@ -544,5 +626,185 @@ mod tests {
             .unwrap_err();
         assert_eq!(error.code, "NOTIFICATION_DELIVERY_IN_FLIGHT");
         assert!(publisher.published.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn memo_reminder_is_published_once_and_advanced() {
+        let database = Database::open_in_memory().unwrap();
+        let due_at = Utc.with_ymd_and_hms(2026, 7, 23, 10, 5, 0).unwrap();
+        let memo_id = "ebbc2524-ae61-4ae7-b62e-5cc8eb6ed112";
+        memo_reminder(&database, memo_id, "Review notes", due_at);
+        let publisher = FakePublisher::working();
+        let service = NotificationService::new(&database);
+
+        assert_eq!(
+            service
+                .reconcile_memo_reminders(due_at, "Untitled memo", &publisher)
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            service
+                .reconcile_memo_reminders(due_at, "Untitled memo", &publisher)
+                .unwrap(),
+            0
+        );
+        let published = publisher.published.lock().unwrap();
+        assert_eq!(published.len(), 1);
+        assert_eq!(published[0].title, "备忘录提醒");
+        assert_eq!(published[0].body, "Review notes");
+        assert_eq!(
+            published[0].activation,
+            Some(SystemNotificationActivation::OpenMemo {
+                memo_id: memo_id.into(),
+            })
+        );
+        let reminder = MemoRepository::new(&database)
+            .get(memo_id, "Untitled memo")
+            .unwrap()
+            .unwrap()
+            .reminder
+            .unwrap();
+        assert_eq!(reminder.status, MemoReminderStatus::Completed);
+    }
+
+    #[test]
+    fn failed_memo_delivery_is_recorded_and_retried() {
+        let database = Database::open_in_memory().unwrap();
+        let due_at = Utc.with_ymd_and_hms(2026, 7, 23, 10, 5, 0).unwrap();
+        memo_reminder(&database, "memo", "Review notes", due_at);
+        let failing_publisher = FakePublisher {
+            published: Mutex::new(Vec::new()),
+            error: Some(DomainError {
+                code: "NOTIFICATION_SEND_FAILED".into(),
+                message: "injected failure".into(),
+                field: None,
+            }),
+        };
+        let service = NotificationService::new(&database);
+
+        let error = service
+            .reconcile_memo_reminders(due_at, "Untitled memo", &failing_publisher)
+            .unwrap_err();
+        assert_eq!(error.code, "NOTIFICATION_SEND_FAILED");
+        assert_eq!(
+            NotificationRepository::new(&database)
+                .delivery_status()
+                .unwrap(),
+            Some(("failed".into(), Some("NOTIFICATION_SEND_FAILED".into())))
+        );
+
+        let working_publisher = FakePublisher::working();
+        assert_eq!(
+            service
+                .reconcile_memo_reminders(due_at, "Untitled memo", &working_publisher)
+                .unwrap(),
+            1
+        );
+        assert_eq!(working_publisher.published.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn active_memo_delivery_lease_keeps_reminder_due() {
+        let database = Database::open_in_memory().unwrap();
+        let due_at = Utc::now() - chrono::Duration::minutes(1);
+        let reminder = memo_reminder(&database, "memo", "Review notes", due_at);
+        let scheduled_for = reminder.next_scheduled_for.as_deref().unwrap();
+        NotificationRepository::new(&database)
+            .reserve(
+                NotificationKind::MemoReminder,
+                &reminder.id,
+                scheduled_for,
+                true,
+            )
+            .unwrap();
+        let publisher = FakePublisher::working();
+
+        let error = NotificationService::new(&database)
+            .reconcile_memo_reminders(Utc::now(), "Untitled memo", &publisher)
+            .unwrap_err();
+
+        assert_eq!(error.code, "NOTIFICATION_DELIVERY_IN_FLIGHT");
+        assert!(publisher.published.lock().unwrap().is_empty());
+        let stored = MemoRepository::new(&database)
+            .get("memo", "Untitled memo")
+            .unwrap()
+            .unwrap()
+            .reminder
+            .unwrap();
+        assert_eq!(stored.status, MemoReminderStatus::Active);
+        assert_eq!(stored.next_scheduled_for, reminder.next_scheduled_for);
+    }
+
+    #[test]
+    fn expired_memo_delivery_lease_is_reclaimed() {
+        let database = Database::open_in_memory().unwrap();
+        let due_at = Utc::now() - chrono::Duration::minutes(2);
+        let reminder = memo_reminder(&database, "memo", "Review notes", due_at);
+        let scheduled_for = reminder.next_scheduled_for.as_deref().unwrap();
+        NotificationRepository::new(&database)
+            .reserve(
+                NotificationKind::MemoReminder,
+                &reminder.id,
+                scheduled_for,
+                true,
+            )
+            .unwrap();
+        database
+            .write(|tx| {
+                tx.execute(
+                    "UPDATE notification_deliveries SET created_at = ?1 WHERE kind = 'memoReminder'",
+                    [
+                        (Utc::now() - chrono::Duration::minutes(2)).to_rfc3339(),
+                    ],
+                )?;
+                Ok(())
+            })
+            .unwrap();
+        let publisher = FakePublisher::working();
+
+        assert_eq!(
+            NotificationService::new(&database)
+                .reconcile_memo_reminders(Utc::now(), "Untitled memo", &publisher)
+                .unwrap(),
+            1
+        );
+        assert_eq!(publisher.published.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn sent_memo_delivery_advances_without_republishing() {
+        let database = Database::open_in_memory().unwrap();
+        let due_at = Utc.with_ymd_and_hms(2026, 7, 23, 10, 5, 0).unwrap();
+        let reminder = memo_reminder(&database, "memo", "Review notes", due_at);
+        let scheduled_for = reminder.next_scheduled_for.as_deref().unwrap();
+        let repository = NotificationRepository::new(&database);
+        repository
+            .reserve(
+                NotificationKind::MemoReminder,
+                &reminder.id,
+                scheduled_for,
+                true,
+            )
+            .unwrap();
+        repository
+            .mark_sent(NotificationKind::MemoReminder, &reminder.id, scheduled_for)
+            .unwrap();
+        let publisher = FakePublisher::working();
+
+        assert_eq!(
+            NotificationService::new(&database)
+                .reconcile_memo_reminders(due_at, "Untitled memo", &publisher)
+                .unwrap(),
+            1
+        );
+        assert!(publisher.published.lock().unwrap().is_empty());
+        let stored = MemoRepository::new(&database)
+            .get("memo", "Untitled memo")
+            .unwrap()
+            .unwrap()
+            .reminder
+            .unwrap();
+        assert_eq!(stored.status, MemoReminderStatus::Completed);
     }
 }

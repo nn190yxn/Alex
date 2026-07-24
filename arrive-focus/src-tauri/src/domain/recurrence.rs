@@ -188,6 +188,128 @@ pub fn scheduled_dates(
     Ok(dates)
 }
 
+pub fn next_scheduled_date(
+    rule: &RecurrenceRule,
+    on_or_after: NaiveDate,
+) -> Result<Option<NaiveDate>, DomainError> {
+    rule.validate()?;
+    if rule.status != RecurrenceStatus::Active {
+        return Ok(None);
+    }
+
+    let starts_on = parse_date(&rule.starts_on, "startsOn")?;
+    let ends_on = rule
+        .ends_on
+        .as_deref()
+        .map(|value| parse_date(value, "endsOn"))
+        .transpose()?;
+    let candidate = on_or_after.max(starts_on);
+    if ends_on.is_some_and(|end| candidate > end) {
+        return Ok(None);
+    }
+
+    let next = match &rule.pattern {
+        RecurrencePattern::Daily { interval } => {
+            let elapsed = (candidate - starts_on).num_days();
+            let interval = i64::from(*interval);
+            let remainder = elapsed % interval;
+            candidate.checked_add_signed(Duration::days(if remainder == 0 {
+                0
+            } else {
+                interval - remainder
+            }))
+        }
+        RecurrencePattern::Weekdays => next_weekday(candidate),
+        RecurrencePattern::Weekly { interval, weekdays } => {
+            next_weekly_date(starts_on, candidate, *interval, weekdays)
+        }
+        RecurrencePattern::Monthly {
+            interval,
+            day_of_month,
+        } => next_monthly_date(starts_on, candidate, *interval, *day_of_month),
+    }
+    .ok_or_else(|| recurrence_error("next scheduled date exceeds supported values", "onOrAfter"))?;
+
+    Ok((!ends_on.is_some_and(|end| next > end)).then_some(next))
+}
+
+fn next_weekday(mut candidate: NaiveDate) -> Option<NaiveDate> {
+    while candidate.weekday().number_from_monday() > 5 {
+        candidate = candidate.succ_opt()?;
+    }
+    Some(candidate)
+}
+
+fn next_weekly_date(
+    starts_on: NaiveDate,
+    candidate: NaiveDate,
+    interval: u32,
+    weekdays: &[u8],
+) -> Option<NaiveDate> {
+    let start_week = starts_on.checked_sub_signed(Duration::days(i64::from(
+        starts_on.weekday().num_days_from_monday(),
+    )))?;
+    let candidate_week = candidate.checked_sub_signed(Duration::days(i64::from(
+        candidate.weekday().num_days_from_monday(),
+    )))?;
+    let week_offset = (candidate_week - start_week).num_days() / 7;
+    let interval = i64::from(interval);
+    let remainder = week_offset % interval;
+    let mut week_start = if remainder == 0 {
+        candidate_week
+    } else {
+        candidate_week.checked_add_signed(Duration::weeks(interval - remainder))?
+    };
+
+    loop {
+        for weekday in 1..=7 {
+            if !weekdays.contains(&weekday) {
+                continue;
+            }
+            let date = week_start.checked_add_signed(Duration::days(i64::from(weekday) - 1))?;
+            if date >= candidate {
+                return Some(date);
+            }
+        }
+        week_start = week_start.checked_add_signed(Duration::weeks(interval))?;
+    }
+}
+
+fn next_monthly_date(
+    starts_on: NaiveDate,
+    candidate: NaiveDate,
+    interval: u32,
+    day_of_month: u8,
+) -> Option<NaiveDate> {
+    let start_month = i64::from(starts_on.year()) * 12 + i64::from(starts_on.month0());
+    let candidate_month = i64::from(candidate.year()) * 12 + i64::from(candidate.month0());
+    let interval = i64::from(interval);
+    let month_offset = candidate_month - start_month;
+    let remainder = month_offset % interval;
+    let mut target_month = candidate_month.checked_add(if remainder == 0 {
+        0
+    } else {
+        interval - remainder
+    })?;
+    let mut target = date_in_month(target_month, day_of_month)?;
+    if target < candidate {
+        target_month = target_month.checked_add(interval)?;
+        target = date_in_month(target_month, day_of_month)?;
+    }
+    Some(target)
+}
+
+fn date_in_month(month_index: i64, day_of_month: u8) -> Option<NaiveDate> {
+    let year = i32::try_from(month_index.div_euclid(12)).ok()?;
+    let month = u32::try_from(month_index.rem_euclid(12) + 1).ok()?;
+    let first = NaiveDate::from_ymd_opt(year, month, 1)?;
+    NaiveDate::from_ymd_opt(
+        year,
+        month,
+        u32::from(day_of_month).min(last_day_of_month(first)),
+    )
+}
+
 fn matches_pattern(pattern: &RecurrencePattern, starts_on: NaiveDate, date: NaiveDate) -> bool {
     match pattern {
         RecurrencePattern::Daily { interval } => {

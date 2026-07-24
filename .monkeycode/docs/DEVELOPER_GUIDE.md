@@ -188,6 +188,10 @@ Widget Shell 层级恢复修复后的验证基线为前端 30 个测试文件共
 
 新增专注状态转换入口时，应通过 `after_focus_change` 在领域状态成功写入后广播 `focus://state-changed`。手动完成和自动到期还需发送 `focus://completed`，并同步广播最终 ready 状态；Widget 保留周期权威读取，用于事件丢失与系统恢复后的校准。
 
+新增备忘录写入口时，应通过 `after_memo_change` 在 Repository 事务成功后广播空 payload 的 `memo://changed`。领域失败保持原错误并跳过广播，订阅方只用该事件触发 SQLite 权威数据重读。定向验证使用 `cargo test --offline --locked memo`，当前覆盖 47 项 memo 相关测试，其中 `commands::memo::tests` 使用真实内存 SQLite 验证写 command 编排，`desktop::memo_events::tests` 固定成功写入一次广播与失败零广播；`cargo check --offline --locked --features desktop-app` 验证 `AppHandle` 注入和 Tauri command 接线。
+
+备忘录错误映射修改后运行 `pnpm test -- src/lib/domainError.test.ts` 与 `pnpm run typecheck`，验证全部稳定 `MEMO_*` 类别在简体中文和英文下返回安全操作提示。Rust 日志边界使用 `cargo test --offline --locked diagnostics` 验证诊断事件排除备忘录标题、正文、标签、搜索词和内部错误 message；当前前端全量测试为 32 个文件共 132 项，诊断定向测试为 3 项。
+
 修改开始专注入口时，应保留 `FocusService::validate_target` 的统一资格校验：普通任务使用当前项目引用，重复实例使用快照项目引用，暂停项目返回 `FOCUS_PROJECT_PAUSED`。托盘候选筛选应跳过暂停项目并继续搜索，所有其他入口继续依赖服务层兜底，避免旧前端状态或直接 command 调用绕过项目状态。
 
 主窗口状态定向测试位于 `src-tauri/src/domain/window.rs`、`src-tauri/src/desktop/main_window.rs`、`src-tauri/src/desktop/lifecycle.rs` 和 `src-tauri/src/repositories/preferences_repository.rs`，覆盖值域、物理到逻辑尺寸转换、SQLite 往返、无效状态回退和暂停专注退出持久化。屏幕外位置修正继续由 `desktop/widget_window.rs` 的示例测试与 P8 property-based test 覆盖，主窗口与小组件共享同一算法。
@@ -251,6 +255,46 @@ SQLite 必须在 `tauri::Builder` 构建 AppManager 前打开并通过 `.manage(
 
 错误映射定向测试执行 `pnpm exec vitest run src/lib/domainError.test.ts`。Rust 协议与日志脱敏测试位于 `src-tauri/src/lib.rs`，可执行 `cargo test command_failure_diagnostics` 和 `cargo test failure_result_uses_stable_shape`。
 
+备忘录 schema 迁移位于 `src-tauri/migrations/0004_memo_center.sql`。数据库定向测试执行 `cargo test --offline --locked repositories::database::tests`，覆盖迁移幂等、批次回滚、既有通知保留、`memoReminder` 类型、字段 CHECK/UNIQUE 约束和备忘录关联级联约束。
+
+备忘录领域模型位于 `src-tauri/src/domain/memo.rs`。定向验证执行 `cargo test --offline --locked domain::memo::tests`，覆盖空草稿、Unicode 长度边界、标签限制、camelCase 提醒协议、未来时间、频率组合、重复星期、日期范围、间隔、IANA 时区、夏令时不存在的本地时间和时钟格式。
+
+前端备忘录 DTO 和 command client 位于 `src/features/memos/`。执行 `pnpm exec vitest run src/features/memos/memoClient.test.ts` 验证六个 command 的名称与参数映射，执行 `pnpm run typecheck` 验证 DTO 与前端调用类型。
+
+备忘录核心服务位于 `src-tauri/src/services/memo_service.rs`。执行 `cargo test --offline --locked services::memo_service::tests` 验证创建、读取、更新、置顶时间和显示标题派生逻辑。
+
+备忘录提醒时间计算与到期协调位于 `src-tauri/src/services/memo_reminder_service.rs`，共享日期选择函数位于 `src-tauri/src/domain/recurrence.rs`。执行 `cargo test --offline --locked memo_reminder_service` 可验证一次提醒 UTC 转换、每天和每周自定义间隔、工作日、月末收敛、结束日期、DST 缺失和重叠时刻、同批失败隔离及陈旧发生时间条件推进；当前共 10 项。
+
+修改提醒扫描时，应保持“查询全部到期项、逐项投递、成功后条件推进”的顺序。投递失败保留原 `next_scheduled_for`，一次提醒成功后设为 completed，重复提醒从当前发生时间计算严格递增的下一时间；Repository 更新必须继续校验提醒 ID、active 状态和旧发生时间。通知租约与幂等投递记录由通知服务层接入，提醒扫描服务保持 publisher 回调边界。
+
+备忘录通知协调位于 `src-tauri/src/services/notification_service.rs`，桌面周期接线位于 `src-tauri/src/desktop/notifications.rs`。执行 `cargo test --offline --locked notification_service::tests` 可定向验证首次投递、显示标题与提示音、失败记录和重试、活动 lease、过期 lease 接管、已发送中断恢复及任务通知既有行为。修改协调逻辑时保持 `(memoReminder, reminder.id, next_scheduled_for)` 唯一身份，并让 `AlreadySent` 路径完成提醒状态推进。
+
+标签关联事务位于 `src-tauri/src/repositories/memo_repository.rs`。执行 `cargo test --offline --locked memo` 可联合验证标签规范化、大小写复用、关联替换、孤立标签清理和缺失备忘录回滚。
+
+执行 `cargo test --offline --locked repositories::memo_repository::tests` 可定向验证删除级联、共享标签保留、稳定错误码，以及通过 SQLite trigger 注入清理失败后的事务回滚。
+
+Property M2 使用 `proptest` 运行 64 组随机标签集合。执行 `cargo test --offline --locked property_tag_normalization_keeps_entities_and_links_unique`，验证大小写与首尾空白变体经过规范化和关联替换后，标签实体、规范名和 memo-tag 关联始终唯一。
+
+Property M6 使用 `proptest` 运行 64 组随机标签共享图。执行 `cargo test --offline --locked property_memo_removal_is_atomic_for_random_association_graphs`，验证正常删除会精确保留共享标签和关联，注入孤立标签清理失败时会恢复目标备忘录、提醒、全部标签及关联。
+
+`MemoRepository` 的定向测试执行 `cargo test --offline --locked repositories::memo_repository::tests`。测试覆盖 CRUD 详情往返、标签聚合、标签筛选实时计数、重复提醒反序列化、到期提醒稳定查询、发生时间条件推进、LIKE 特殊字符字面搜索、搜索筛选交集、稳定排序、核心字段、标签与提醒的联合回滚，以及删除和属性测试；当前共 17 项。
+
+Property M3 使用 `proptest` 运行 64 组随机置顶状态、置顶时间、更新时间和 ID 集合。执行 `cargo test --offline --locked property_memo_list_sorting_is_stable`，验证正序或逆序写入后，两次列表查询都与置顶、置顶时间倒序、更新时间倒序、ID 升序的纯 Rust 基准完全一致。
+
+Property M8 使用 `proptest` 运行 64 组随机标题、正文、标签命中位置和筛选关联。执行 `cargo test --offline --locked property_search_and_tag_filter_return_exact_intersection`，验证搜索结果、标签结果及二者交集分别与 Rust 集合基准完全一致，并覆盖 `%`、`_` 和反斜杠的字面搜索。
+
+Repository 独立集成测试位于 `src-tauri/tests/memo_repository.rs`。执行 `cargo test --offline --locked --test memo_repository`，验证临时文件数据库中的 CRUD、搜索、标签、提醒、删除与重开持久化，并验证关联写入失败后的跨重开事务回滚；当前共 2 项。执行 `cargo test --offline --locked memo` 可运行 47 项 memo 相关单元与属性测试。
+
+备忘录数据与 Repository 阶段质量门禁执行 `cargo test --offline --locked`。阶段 4 检查点包含 186 项库测试和 9 项集成/适配测试，共 195 项；同时执行 `cargo fmt --all -- --check` 与 `git diff --check`。
+
+提醒规则任务 6.1 的验证基线为 198 项 Rust 库测试与 9 项集成/适配测试通过；`cargo fmt --all -- --check`、默认 `cargo check --offline --locked` 和 `git diff --check` 同步通过。
+
+提醒扫描任务 6.2 的验证基线为 203 项 Rust 库测试与 9 项集成/适配测试通过；`cargo fmt --all -- --check`、`cargo check --offline --locked --features desktop-app`、`cargo clippy --offline --locked --all-targets -- -D warnings` 和 `git diff --check` 同步通过。
+
+通知租约任务 6.3 的验证基线为 208 项 Rust 库测试与 9 项集成/适配测试通过；`cargo fmt --all -- --check`、`cargo check --offline --locked --features desktop-app`、`cargo clippy --offline --locked --all-targets --features desktop-app -- -D warnings` 和 `git diff --check` 同步通过。新增定向测试覆盖备忘录通知首次成功、失败重试、活动 lease、过期接管和 `AlreadySent` 中断恢复。
+
+通知点击任务 6.4 的验证基线为 211 项 Rust 库测试与 9 项集成/适配测试通过；`cargo fmt --all -- --check`、`cargo check --offline --locked --features desktop-app`、`cargo clippy --offline --locked --all-targets --features desktop-app -- -D warnings` 和 `git diff --check` 同步通过。`cargo test --offline --locked memo_notification_activation` 定向覆盖有效 UUID 按“显示主窗口、发送事件”顺序激活、非法 ID 零副作用和窗口失败零事件。Windows target 编译可执行 `cargo check --locked --target x86_64-pc-windows-msvc --features desktop-app`，安装态还需验证通知主体点击、主窗口恢复和 `memo://open-requested` 到达。
+
 备份定向单元测试可在 `当前工作区/arrive-focus/src-tauri/` 执行 `cargo test backup`。P9 属性测试默认运行 64 组随机业务图，验证版本化 JSON 序列化、解析、SQLite 导入和再次导出的规范化模型及摘要等价。
 
 独立恢复集成测试执行 `cargo test --test backup_restore`。测试覆盖未知格式版本、损坏引用、磁盘数据库替换与重开、恢复前快照解析、SQL 故障注入、原数据回滚和快照历史保留。
@@ -291,6 +335,4 @@ AI 可见性运营 Sprint 任务 6.4 已完成：任务跟进页新增“Sprint 
 
 AI 可见性运营 Sprint 任务 7.1 和 7.2 已完成：项目文档已同步到 `ARCHITECTURE.md`、`INTERFACES.md`、`DEVELOPER_GUIDE.md` 和文档索引；完整验证门禁的审计、类型检查、API 测试、Web 测试、构建、Prisma schema 校验和 Prisma Client 生成均已通过，最新 `npm run verify` 已完整通过。
 
-第一阶段上线门禁已完成追光小牛内测路径验证：自动生成监测主题后可生成 8 个监测问题，问题包含目的、目标平台、优先级和预计价值；监测问题可保存为计划并进入浏览器确认监测流程；公开平台配置响应仅包含 `hasCredential` 和脱敏状态，不暴露 `credentialRef`；LLM 异步任务响应只返回任务状态和 `jobId`；品牌总览、AI 回复监测、优化计划、写内容、任务跟进和报告导出页面入口可用；未接真实大模型 API 时，问题生成、优化计划和内容生成仍可走 fallback 或浏览器确认流程。
-
-后续建议基于真实试点反馈、行业规则变化或生产试运行问题建立下一轮规格文档。
+第一阶段上线门禁已完成追光小牛内测路径验证：自动生成监测主题后可生成 8 个监测问题，问题包含目的、目标平台、优先级和预计价值；监测问题可保存为计划并进入浏览器确认监测流程；公开平台配置响应仅包含 `hasCredential` 和脱敏状态，不暴露 `credentialRef`；LLM 异步任务响应只返回任务状态和 `jobId`；品牌总览、AI 回复监测、优化计划、写内�

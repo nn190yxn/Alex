@@ -1,4 +1,6 @@
 pub mod focus_events;
+pub mod memo_events;
+pub mod memo_notification_activation;
 pub mod shell_attachment;
 pub mod today_events;
 pub mod tray;

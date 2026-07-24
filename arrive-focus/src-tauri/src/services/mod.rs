@@ -1,6 +1,8 @@
 pub mod backup_service;
 pub mod calendar_service;
 pub mod focus_service;
+pub mod memo_reminder_service;
+pub mod memo_service;
 pub mod notification_service;
 pub mod planning_service;
 pub mod project_service;

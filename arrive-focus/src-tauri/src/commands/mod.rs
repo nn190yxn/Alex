@@ -5,6 +5,7 @@ pub mod calendar;
 pub mod desktop_integration;
 pub mod focus;
 pub mod health;
+pub mod memo;
 #[cfg(feature = "desktop-app")]
 pub mod notification;
 pub mod planning;

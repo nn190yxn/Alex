@@ -95,6 +95,7 @@ dependencies = [
  "tauri-plugin-notification",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "tauri-winrt-notification",
  "tempfile",
  "thiserror 2.0.18",
  "uuid",

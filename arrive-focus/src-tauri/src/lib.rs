@@ -269,6 +269,12 @@ pub fn run() {
             commands::focus::focus_resume,
             commands::focus::focus_reset,
             commands::focus::focus_finish,
+            commands::memo::memo_list,
+            commands::memo::memo_get,
+            commands::memo::memo_create,
+            commands::memo::memo_update,
+            commands::memo::memo_remove,
+            commands::memo::memo_tag_list,
             commands::project::project_create,
             commands::project::project_update,
             commands::project::project_set_status,
@@ -367,6 +373,27 @@ mod tests {
         assert!(!event.contains("Private note body"));
         assert!(!event.contains("launch plan"));
         assert!(!event.contains('\n'));
+    }
+
+    #[test]
+    fn memo_failure_diagnostics_exclude_content_tags_and_search_terms() {
+        let error = DomainError {
+            code: "MEMO_SAVE_FAILED".into(),
+            message: "Title=Private launch; Body=secret plan; Tag=finance; Search=acquisition"
+                .into(),
+            field: Some("body".into()),
+        };
+
+        let event = diagnostic_failure_event("commands::memo", &error);
+
+        assert_eq!(
+            event,
+            "event=domain_error context=commands::memo code=MEMO_SAVE_FAILED field=body"
+        );
+        assert!(!event.contains("Private launch"));
+        assert!(!event.contains("secret plan"));
+        assert!(!event.contains("finance"));
+        assert!(!event.contains("acquisition"));
     }
 
     #[test]

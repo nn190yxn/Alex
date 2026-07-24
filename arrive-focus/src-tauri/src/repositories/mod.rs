@@ -2,6 +2,7 @@ pub mod backup_repository;
 pub mod calendar_repository;
 pub mod database;
 pub mod focus_repository;
+pub mod memo_repository;
 pub mod notification_repository;
 pub mod planning_repository;
 pub mod preferences_repository;

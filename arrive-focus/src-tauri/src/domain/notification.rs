@@ -7,6 +7,7 @@ pub enum NotificationKind {
     FocusCompleted,
     TaskDue,
     RecurringTaskDue,
+    MemoReminder,
 }
 
 impl NotificationKind {
@@ -15,6 +16,7 @@ impl NotificationKind {
             Self::FocusCompleted => "focusCompleted",
             Self::TaskDue => "taskDue",
             Self::RecurringTaskDue => "recurringTaskDue",
+            Self::MemoReminder => "memoReminder",
         }
     }
 }
@@ -32,6 +34,12 @@ pub struct SystemNotification {
     pub title: String,
     pub body: String,
     pub sound_enabled: bool,
+    pub activation: Option<SystemNotificationActivation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SystemNotificationActivation {
+    OpenMemo { memo_id: String },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

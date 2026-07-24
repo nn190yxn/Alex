@@ -1,6 +1,7 @@
 pub mod backup;
 pub mod calendar;
 pub mod focus;
+pub mod memo;
 pub mod notification;
 pub mod planning;
 pub mod project;

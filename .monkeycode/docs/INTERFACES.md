@@ -1877,6 +1877,50 @@ interface DomainError {
 
 Rust command 失败诊断事件格式为 `event=domain_error context=<context> code=<code> field=<field>`。诊断字段只接受 ASCII 字母、数字、下划线、连字符、点和冒号，单字段最长 120 个字符；事件不包含 `message` 或 command 请求参数。
 
+## 抵达 Focus 备忘录数据库接口
+
+SQLite schema 版本 4 增加 `memos`、`memo_tags`、`memo_tag_links` 和 `memo_reminders`。备忘录标题上限为 200 字符，正文上限为 20000 字符；标签规范名全局唯一，单条备忘录与标签通过复合主键关联；每条备忘录最多关联一条提醒定义。提醒支持 `once` 与 `recurring`，重复频率支持 `daily`、`weekdays`、`weekly` 和 `monthly`，到期扫描索引为 `(status, next_scheduled_for)`。
+
+`notification_deliveries.kind` 增加 `memoReminder`。投递身份继续使用 `(kind, source_id, scheduled_for)` 唯一约束，既有专注完成、任务到时和重复任务到时记录在版本 4 迁移期间完整复制。
+
+Rust 备忘录输入协议由 `MemoInput`、`MemoListQuery`、`MemoReminderInput` 和 `MemoReminderRule` 定义，并通过 serde 输出 camelCase 字段。提醒 `kind` 为 `once` 时使用 `scheduledLocal` 与 `timezone`；为 `recurring` 时使用 `frequency`、`interval`、`weekdays`、`monthlyDay`、`localTime`、`startsOn`、`endsOn` 和 `timezone`。
+
+`MemoReminderService::next_occurrence(schedule, after)` 返回严格晚于 `after` 的下一 UTC 时间；重复规则已越过 `endsOn` 时返回空值。`daily`、`weekly` 和 `monthly` 使用正整数 `interval` 表达自定义间隔，`weekdays` 固定按周一至周五执行且要求 `interval = 1`。每月的 `monthlyDay` 会收敛到目标月份最后一个自然日。
+
+`MemoReminderService::prepare_rule(memo_id, current, schedule, now)` 为创建或更新准备持久化提醒。新规则生成 ID，更新规则保留原 ID 与 `createdAt`，取消提醒返回空值；下一发生时间为空时状态直接设为 `completed`。`MemoRepository::create` 与 `update` 在核心字段和标签事务中同步保存该结果。
+
+`MemoRepository::list_due_reminders(now, untitled_label)` 返回 `status = active` 且 `nextScheduledFor <= now` 的 `DueMemoReminder[]`，结果按发生时间和提醒 ID 升序排列。每项包含完整 `MemoReminderRule`、备忘录 ID 和派生后的本地化显示标题。
+
+`MemoReminderService::reconcile_due(now, untitled_label, deliver)` 逐项调用投递回调并返回成功投递数量。投递失败的提醒保留原发生时间，同批后续提醒继续处理，最终返回首个错误。`advance_after_delivery` 将一次提醒设为 `completed`，将重复提醒推进到严格晚于当前发生时间的下一时刻；没有后续有效日期时设为 `completed`。
+
+`MemoRepository::advance_reminder(id, expected_scheduled_for, next_scheduled_for, status, updated_at)` 仅更新 ID、active 状态和旧发生时间全部匹配的记录，并返回是否实际更新。该比较更新防止陈旧扫描结果覆盖已推进状态。
+
+`NotificationService::reconcile_memo_reminders(now, untitled_label, publisher)` 读取通知偏好并协调全部到期备忘录提醒。每次发生使用 `kind = memoReminder`、`source_id = reminder.id` 和 `scheduled_for = nextScheduledFor` 作为唯一身份；通知标题固定为“备忘录提醒”，正文只使用派生后的显示标题，提示音遵循全局通知偏好。
+
+协调器复用 `NotificationRepository::reserve` 的三态结果：`Acquired` 调用 publisher 并记录 `sent` 或 `failed`，`InFlight` 返回 `NOTIFICATION_DELIVERY_IN_FLIGHT` 并保留提醒状态，`AlreadySent` 跳过 publisher 并继续推进提醒。`failed` 记录和超过 60 秒的 `pending` lease 可在后续周期重新获取，从而覆盖发布失败重试与进程中断恢复。
+
+备忘录通知的 `SystemNotification.activation` 为 `OpenMemo { memo_id }`，专注和任务通知不设置激活数据。Windows 通知主体点击后，桌面层要求 `memo_id` 是规范小写连字符 UUID，随后显示主窗口并广播 `memo://open-requested`；事件 payload 是备忘录 ID 字符串，不包含标题、正文或标签。窗口激活完成前不会发送事件，订阅方收到事件后通过 `memo_get` 读取权威详情。
+
+前端 `memoClient` 公开 `list(query)`、`get(id)`、`create(input)`、`update(id, input)`、`remove(id)` 和 `listTags()`。这些方法分别映射到 `memo_list`、`memo_get`、`memo_create`、`memo_update`、`memo_remove` 与 `memo_tag_list`，返回统一的 `CommandResult<T>`。
+
+六个备忘录 Tauri commands 已注册到桌面 invoke handler。读取命令直接查询 SQLite 权威数据；创建和更新命令先执行领域字段及标签规范化、准备提醒规则，再通过 Repository 事务保存核心字段、标签和提醒；删除命令使用 Repository 事务级联边界。所有领域失败统一经 `CommandResult::from_result` 返回并只记录模块、错误码和字段名。
+
+`memo_create`、`memo_update` 和 `memo_remove` 由 Tauri 自动注入 `AppHandle`，前端 invoke 参数保持现有协议。三个写命令成功提交后发送一次空 payload 的 `memo://changed`；失败命令返回原 `DomainError` 且不发送事件。主窗口订阅方将事件视为重新读取 SQLite 权威数据的失效通知。
+
+command 接线测试在前端逐项固定六个 invoke 名称与参数对象，在 Rust 侧通过内存 SQLite 固定创建、更新、标签替换、取消置顶、删除及缺失记录错误。`after_memo_change` 单元测试独立固定成功一次回调和失败零回调，因此事件行为与数据库编排均可在默认测试配置中验证。
+
+标签规范名是去除首尾空白后的 Unicode 小写字符串。单个输入中的空白和大小写变体合并为一个标签，并保留首次输入的显示名称；数据库中的 `normalized_name` 唯一约束保证跨备忘录复用同一标签实体。
+
+备忘录删除领域错误使用稳定代码：目标不存在时为 `MEMO_NOT_FOUND`，SQLite 删除事务失败时为 `MEMO_DELETE_FAILED`。删除失败消息为固定安全文案，不包含 SQL、标题、正文、标签或底层数据库错误详情。
+
+Repository 保存失败使用 `MEMO_SAVE_FAILED`，持久化提醒行无法恢复为领域联合时使用 `MEMO_REMINDER_DATA_INVALID`。`MemoRecord` 聚合核心字段、按规范名排序的标签、可选提醒、显示标题和审计时间；读取不存在的 ID 返回空值，由 service/command 边界映射为 `MEMO_NOT_FOUND`。
+
+备忘录稳定错误码包括：`MEMO_TITLE_INVALID`、`MEMO_BODY_INVALID`、`MEMO_SEARCH_INVALID`、`MEMO_TAG_ID_INVALID`、`MEMO_TAG_INVALID`、`MEMO_TAG_LIMIT_EXCEEDED`、`MEMO_NOT_FOUND`、`MEMO_SAVE_FAILED`、`MEMO_DELETE_FAILED`、`MEMO_REMINDER_TIME_INVALID`、`MEMO_REMINDER_DATE_INVALID`、`MEMO_REMINDER_INTERVAL_INVALID`、`MEMO_REMINDER_WEEKDAYS_INVALID`、`MEMO_REMINDER_MONTHLY_DAY_INVALID`、`MEMO_REMINDER_TIMEZONE_INVALID`、`MEMO_REMINDER_DATA_INVALID`、`MEMO_NOTIFICATION_ACTIVATION_INVALID` 和 `MEMO_NOTIFICATION_ACTIVATION_FAILED`。前端对标题、正文、标签、记录失效、保存、删除及提醒错误提供精确双语安全文案，搜索与标签 ID 验证沿用通用输入提示。
+
+`MemoRepository::list` 接受 `MemoListQuery { search, tagId }`。`search` 在标题、正文和标签名称中执行不区分 ASCII 大小写的字面量包含匹配，`tagId` 使用 EXISTS 子查询筛选；两者同时提供时采用交集语义。排序键固定为 pinned、`pinnedAt DESC`、`updatedAt DESC`、`id ASC`。
+
+`memo_tag_list` 返回 `MemoTagSummary[]`。每项包含 `id`、`name` 和 `memoCount`，其中 `memoCount` 是调用时关联该标签的备忘录数量；零关联标签不会出现在结果中。
+
 ## 抵达 Focus 备份 JSON 接口
 
 `BackupService::export_json()` 从 SQLite 业务表生成稳定字段顺序的 pretty JSON；`BackupService::parse_json(input)` 返回通过预校验的 `ValidatedBackup`。当前格式版本为 `1`，单个 JSON 输入上限为 128 MiB。

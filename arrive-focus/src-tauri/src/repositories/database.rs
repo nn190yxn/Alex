@@ -20,6 +20,11 @@ const MIGRATIONS: &[Migration] = &[
         name: "weekly_goal_category",
         sql: include_str!("../../migrations/0003_weekly_goal_category.sql"),
     },
+    Migration {
+        version: 4,
+        name: "memo_center",
+        sql: include_str!("../../migrations/0004_memo_center.sql"),
+    },
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -170,6 +175,8 @@ fn lock_error() -> DomainError {
 
 #[cfg(test)]
 mod tests {
+    use rusqlite::params;
+
     use super::*;
 
     #[test]
@@ -208,7 +215,120 @@ mod tests {
                 row.get(0)
             })
             .unwrap();
-        assert_eq!(count, 3);
+        assert_eq!(count, 4);
+    }
+
+    #[test]
+    fn memo_center_migration_preserves_notifications_and_constraints() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        configure_connection(&connection).unwrap();
+        run_migrations(&mut connection, &MIGRATIONS[..3]).unwrap();
+        connection.execute("INSERT INTO notification_deliveries(id, kind, source_id, scheduled_for, status, sound_enabled, created_at) VALUES ('delivery', 'taskDue', 'task', '2026-07-23T10:00:00Z', 'sent', 1, '2026-07-23T10:00:00Z')", []).unwrap();
+
+        run_migrations(&mut connection, MIGRATIONS).unwrap();
+
+        let preserved: String = connection
+            .query_row(
+                "SELECT kind FROM notification_deliveries WHERE id = 'delivery'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(preserved, "taskDue");
+        connection.execute("INSERT INTO notification_deliveries(id, kind, source_id, scheduled_for, status, sound_enabled, created_at) VALUES ('memo-delivery', 'memoReminder', 'reminder', '2026-07-23T11:00:00Z', 'pending', 1, '2026-07-23T11:00:00Z')", []).unwrap();
+
+        connection.execute("INSERT INTO memos(id, title, body, created_at, updated_at) VALUES ('memo', 'Title', 'Body', '2026-07-23T10:00:00Z', '2026-07-23T10:00:00Z')", []).unwrap();
+        connection.execute("INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES ('tag', 'Work', 'work', '2026-07-23T10:00:00Z')", []).unwrap();
+        connection
+            .execute(
+                "INSERT INTO memo_tag_links(memo_id, tag_id) VALUES ('memo', 'tag')",
+                [],
+            )
+            .unwrap();
+        connection.execute("INSERT INTO memo_reminders(id, memo_id, schedule_kind, frequency, interval_value, local_time, starts_on, timezone, next_scheduled_for, status, created_at, updated_at) VALUES ('reminder', 'memo', 'recurring', 'daily', 1, '09:00', '2026-07-23', 'Asia/Shanghai', '2026-07-24T01:00:00Z', 'active', '2026-07-23T10:00:00Z', '2026-07-23T10:00:00Z')", []).unwrap();
+
+        connection
+            .execute("DELETE FROM memos WHERE id = 'memo'", [])
+            .unwrap();
+        let links: i64 = connection
+            .query_row("SELECT COUNT(*) FROM memo_tag_links", [], |row| row.get(0))
+            .unwrap();
+        let reminders: i64 = connection
+            .query_row("SELECT COUNT(*) FROM memo_reminders", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!((links, reminders), (0, 0));
+    }
+
+    #[test]
+    fn memo_center_migration_enforces_field_and_identity_constraints() {
+        let mut connection = Connection::open_in_memory().unwrap();
+        configure_connection(&connection).unwrap();
+        run_migrations(&mut connection, MIGRATIONS).unwrap();
+
+        let now = "2026-07-23T10:00:00Z";
+        assert!(connection
+            .execute(
+                "INSERT INTO memos(id, title, body, created_at, updated_at) VALUES ('long-title', ?1, '', ?2, ?2)",
+                params!["x".repeat(201), now],
+            )
+            .is_err());
+        assert!(connection
+            .execute(
+                "INSERT INTO memos(id, title, body, created_at, updated_at) VALUES ('long-body', '', ?1, ?2, ?2)",
+                params!["x".repeat(20_001), now],
+            )
+            .is_err());
+        assert!(connection
+            .execute(
+                "INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES ('empty-tag', '', 'empty', ?1)",
+                [now],
+            )
+            .is_err());
+
+        connection
+            .execute(
+                "INSERT INTO memos(id, title, body, created_at, updated_at) VALUES ('memo', '', '', ?1, ?1)",
+                [now],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES ('tag', 'Work', 'work', ?1)",
+                [now],
+            )
+            .unwrap();
+        assert!(connection
+            .execute(
+                "INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES ('duplicate-tag', 'work', 'work', ?1)",
+                [now],
+            )
+            .is_err());
+
+        assert!(connection
+            .execute(
+                "INSERT INTO memo_reminders(id, memo_id, schedule_kind, interval_value, local_time, starts_on, timezone, status, created_at, updated_at) VALUES ('bad-kind', 'memo', 'later', 1, '09:00', '2026-07-23', 'Asia/Shanghai', 'active', ?1, ?1)",
+                [now],
+            )
+            .is_err());
+        assert!(connection
+            .execute(
+                "INSERT INTO memo_reminders(id, memo_id, schedule_kind, frequency, interval_value, monthly_day, local_time, starts_on, timezone, status, created_at, updated_at) VALUES ('bad-day', 'memo', 'recurring', 'monthly', 1, 32, '09:00', '2026-07-23', 'Asia/Shanghai', 'active', ?1, ?1)",
+                [now],
+            )
+            .is_err());
+
+        connection
+            .execute(
+                "INSERT INTO memo_reminders(id, memo_id, schedule_kind, frequency, interval_value, local_time, starts_on, timezone, status, created_at, updated_at) VALUES ('reminder', 'memo', 'recurring', 'daily', 1, '09:00', '2026-07-23', 'Asia/Shanghai', 'active', ?1, ?1)",
+                [now],
+            )
+            .unwrap();
+        assert!(connection
+            .execute(
+                "INSERT INTO memo_reminders(id, memo_id, schedule_kind, local_time, starts_on, timezone, status, created_at, updated_at) VALUES ('second-reminder', 'memo', 'once', '10:00', '2026-07-24', 'Asia/Shanghai', 'active', ?1, ?1)",
+                [now],
+            )
+            .is_err());
     }
 
     #[test]

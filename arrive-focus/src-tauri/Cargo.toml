@@ -28,6 +28,7 @@ desktop-app = [
     "dep:tauri-plugin-log",
     "dep:tauri-plugin-single-instance",
     "dep:tauri-plugin-updater",
+    "dep:tauri-winrt-notification",
     "tauri/tray-icon",
 ]
 
@@ -53,6 +54,7 @@ tauri-plugin-updater = { version = "2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+tauri-winrt-notification = { version = "0.7.3", optional = true }
 
 [dev-dependencies]
 proptest = "=1.7.0"
