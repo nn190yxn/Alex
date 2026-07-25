@@ -925,7 +925,7 @@ fn reconcile_directories(
             || directory
                 .components()
                 .any(|component| component == Component::ParentDir)
-            || !directory.starts_with(root)
+            || !path_starts_with(directory, root)
         {
             return Err(DomainError {
                 code: ErrorCode::PathOutsideSource,
@@ -940,13 +940,37 @@ fn reconcile_directories(
     for directory in directories {
         if collapsed
             .iter()
-            .any(|ancestor| directory.starts_with(ancestor))
+            .any(|ancestor| path_starts_with(&directory, ancestor))
         {
             continue;
         }
         collapsed.push(directory);
     }
     Ok(collapsed)
+}
+
+fn path_starts_with(path: &Path, base: &Path) -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        comparison_path(path).starts_with(comparison_path(base))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        path.starts_with(base)
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn comparison_path(path: &Path) -> PathBuf {
+    let path = path.to_string_lossy();
+    let path = if let Some(path) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{path}")
+    } else if let Some(path) = path.strip_prefix(r"\\?\") {
+        path.to_owned()
+    } else {
+        path.into_owned()
+    };
+    PathBuf::from(path.to_lowercase())
 }
 
 fn emit_progress(progress_sink: &ProgressSink, run: &ScanRunRecord, started: Instant) {
@@ -1106,6 +1130,30 @@ mod tests {
             thread::sleep(Duration::from_millis(10));
         }
         panic!("scan did not finish within the test deadline")
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn reconciliation_compares_verbatim_and_regular_windows_paths() {
+        let drive_directory = PathBuf::from(r"c:\documents\team");
+        assert_eq!(
+            reconcile_directories(
+                Path::new(r"\\?\C:\Documents"),
+                vec![drive_directory.clone()]
+            )
+            .unwrap(),
+            vec![drive_directory]
+        );
+
+        let unc_directory = PathBuf::from(r"\\server\share\team");
+        assert_eq!(
+            reconcile_directories(
+                Path::new(r"\\?\UNC\server\share"),
+                vec![unc_directory.clone()]
+            )
+            .unwrap(),
+            vec![unc_directory]
+        );
     }
 
     #[test]
