@@ -1,0 +1,63 @@
+[package]
+name = "document-index"
+version = "0.1.0"
+description = "A local metadata index for Windows documents"
+authors = ["Document Index"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "document_index_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "document-index"
+path = "src/main.rs"
+required-features = ["desktop-app"]
+
+[features]
+default = []
+desktop-app = [
+    "dep:dirs",
+    "dep:tauri",
+    "dep:tauri-plugin-dialog",
+    "dep:tauri-plugin-single-instance",
+    "dep:tauri-plugin-window-state",
+]
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+base64 = "0.22"
+dirs = { version = "6", optional = true }
+quick-xml = "0.41"
+regex = "1"
+notify = "8.2"
+rusqlite = { version = "0.37", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tauri = { version = "2.8", features = [], optional = true }
+tauri-plugin-dialog = { version = "2", optional = true }
+tauri-plugin-single-instance = { version = "2", optional = true }
+tauri-plugin-window-state = { version = "2", optional = true }
+unicode-normalization = "0.1"
+uuid = { version = "1", features = ["v4"] }
+walkdir = "2"
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+proptest = "=1.7.0"
+tempfile = "=3.21.0"
+
+[build-dependencies]
+tauri-build = { version = "2.4", features = [] }

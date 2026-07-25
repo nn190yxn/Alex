@@ -1,5 +1,154 @@
 # 开发者指南
 
+## 资料索引开发与验证
+
+资料索引桌面工程位于 `当前工作区/document-index/`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。
+
+```bash
+cd document-index
+
+# TypeScript 类型检查
+pnpm typecheck
+
+# 前端测试
+pnpm test
+
+# 前端生产构建
+pnpm build
+
+# Tauri 桌面开发
+pnpm tauri:dev
+```
+
+Rust 工具链可用时执行：
+
+```bash
+cd document-index/src-tauri
+
+# Rust 格式检查
+cargo fmt --all -- --check
+
+# Rust 测试
+cargo test --locked
+
+# 桌面 feature 严格检查
+cargo check --locked --features desktop-app
+cargo clippy --locked --features desktop-app --all-targets -- -D warnings
+```
+
+任务 3 当前验证基线为 2 个前端测试文件共 4 个用例、15 个 Rust 单元测试和 8 个 SQLite 仓储集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all`、`cargo test --all-targets`、默认严格 Clippy、Tauri desktop feature 编译和 desktop feature 严格 Clippy 均通过。测试覆盖名称与版本标记规范化、来源重叠与暂停恢复、默认和自定义扩展名、空目录、元数据扫描、访问错误隔离、取消恢复，以及任务 2 的全部 SQLite 仓储场景。
+
+扫描只读取路径、文件名、扩展名、大小、创建时间和修改时间。调试扫描时可监听 Tauri `scan-progress` 事件，并通过 `get_scan_status` 核对持久化状态；异常退出后重新启动桌面应用会恢复 `queued` 和 `running` 扫描。用户主动取消的运行保持 `cancelled`，不会参与启动恢复。
+
+任务 4 验证基线为 20 个 Rust 单元测试、15 个 SQLite 仓储与属性测试以及 5 个前端测试通过；TypeScript 类型检查、生产构建、默认与 desktop feature 严格 Clippy、Rust 全目标测试和补丁检查均通过。测试覆盖跨目录归组、中置信度建议、四种排序、缺失时间、稳定并列规则、人工重命名/合并/拆分事务、人工规则持久化、建议分页，以及 P1 单主题归属、P2 人工优先、P3 最新创建、P4 最近修改和 P5 稳定排序。
+
+调整归组算法时应同时核对 `GroupingService` 中的阻塞键、证据权重和阈值。候选顺序必须保持稳定，候选查询必须维持数量上限；扫描测试应继续覆盖同一批次内的候选匹配，避免批次大小改变主题归属结果。
+
+调整人工主题操作时应通过 `TopicService` 和 `TopicRepository` 保持单事务写入，确保文档归属、人工规则、空主题清理和双时间标记同步更新。所有普通持久写 command 应先从 `ScanCoordinator::begin_mutation` 获取 guard，使完整服务调用彼此串行并与备份恢复 maintenance guard 互斥；guard 需要覆盖 watcher 同步和文件回收后的数据库提交。测试应覆盖普通写之间以及普通写与恢复之间的双向拒绝和 guard 释放。`manual_grouping_rules.document_id` 使用 partial unique index，对应 upsert 冲突目标必须包含 `WHERE document_id IS NOT NULL`。
+
+任务 5.1 验证基线为 21 个 Rust 单元测试、17 个 SQLite 仓储与属性测试以及 5 个前端测试通过；TypeScript 类型检查、生产构建、默认与 desktop feature 严格 Clippy、Rust 全目标测试和补丁检查均通过。搜索测试覆盖空文本、四类 FTS 元数据字段、来源与目录边界、创建和修改时间组合筛选、反向时间范围及跨页稳定顺序。
+
+调整搜索查询时应保持所有 SQL 结构片段由内部排序枚举和固定字段生成，用户输入只通过绑定参数传入。FTS 查询词需要继续转义为安全前缀词，目录筛选需要继续使用路径分隔符边界，分页排序需要保留主题 ID 最终决胜。
+
+任务 5.2 验证基线为 21 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 5 个前端测试通过；全部质量门禁继续通过。主题详情测试覆盖完整版本字段、创建时间排序、版本标签与类型、缺失和不可访问状态、双时间标记跳过不可访问文件及主题不存在错误。
+
+任务 5.3 验证基线为 24 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 5 个前端测试通过；TypeScript 类型检查、生产构建、Rust 全目标测试、默认与 desktop feature 严格 Clippy 和补丁检查均通过。Shell 服务测试使用记录型适配器，覆盖 canonical 合法路径打开与定位、未知文档、数据库不可用状态、磁盘文件缺失和索引源边界外路径，全程不会启动真实系统程序。
+
+调整文件打开或 Explorer 定位时，应保持 command 只传数据库文档 ID。`ShellService` 必须在每次调用时重新读取文档和来源、canonicalize 两端路径、校验实时文件状态及来源边界，然后才调用 `ShellAdapter`；测试继续注入记录型适配器，避免测试环境产生桌面副作用。
+
+任务 5.4 验证基线为 24 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 6 个前端测试通过；TypeScript 类型检查、生产构建、Rust 全目标测试、默认与 desktop feature 严格 Clippy 和补丁检查均通过。`commands/search.rs` 负责搜索、详情、打开和定位 command，前端 command client 测试固定四类参数的 camelCase 映射。
+
+任务 5.5 验证基线为 27 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 6 个前端测试通过；TypeScript 类型检查、生产构建、Rust 全目标测试、desktop feature 严格 Clippy 和补丁检查均通过。预览测试覆盖会话替换与释放、文本大小降级、新版 Office 内容提取和预览正文无法通过 FTS 检索。
+
+修改内置预览时，应同时保持文件级上限、Office 单条目与累计解压上限、归档条目数量上限和纯文本渲染契约。测试正文应使用唯一标记并通过 `SearchService` 验证零索引，错误消息与日志不得包含正文。
+
+任务 5.6 验证基线为 29 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 6 个前端测试通过；TypeScript 类型检查、生产构建、Rust 全目标测试、desktop feature 严格 Clippy、Windows GNU 目标交叉检查和补丁检查均通过。Windows Preview Host 测试使用记录型后端覆盖区域同步、切换时卸载、失效会话和无效参数，全程不会加载真实 COM 处理程序。
+
+修改原生 Preview Handler 宿主时，应保持 COM 对象只在专用 STA 工作线程创建和调用，切换文件及关闭宿主时调用 `Unload`，并对窗口句柄和区域进行前置校验。Linux 环境可安装 `x86_64-pc-windows-gnu` Rust target 与 `gcc-mingw-w64-x86-64` 后运行 `cargo check --target x86_64-pc-windows-gnu`，用于验证 Windows cfg 分支和 `windows` crate API。
+
+任务 5.7 验证基线为 33 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 6 个前端测试通过；完整 Rust 测试、desktop feature 严格 Clippy 和 Windows GNU 目标交叉检查均通过。回收站测试使用记录型适配器覆盖成功后的状态与双时间聚合更新、系统失败时数据库快照保持、确认与路径前置校验以及打开回收站操作。
+
+修改回收站流程时，应保持“完整校验全部路径、执行一次系统回收、成功后提交一次数据库事务”的顺序。测试环境只使用 `RecycleBinAdapter` 替身，Windows 实机验收负责验证 `SHFileOperationW` 的回收站恢复行为和 Explorer 回收站入口。
+
+任务 5.8 验证基线为 33 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 7 个前端测试通过；TypeScript 类型检查、生产构建、服务层测试、desktop feature 严格 Clippy，以及包含 `desktop-app` 的 Windows GNU 目标交叉检查均通过。前端测试固定五个新增 command 的 camelCase 参数映射，Windows 交叉门禁覆盖 Tauri HWND 获取和原生预览调用链。
+
+修改预览 command 时，应同步更新 Rust command、`generate_handler!` 注册、Tauri managed state、TypeScript `CommandContract`、`commandClient` 和参数映射测试。原生预览会话的创建、尺寸调整与关闭必须使用同一个 session ID。
+
+任务 5.9 验证基线为 35 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 7 个前端测试通过；TypeScript 类型检查、生产构建、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。专项覆盖搜索空查询、组合筛选、时间并列与稳定分页，Shell 越界路径与文件缺失，预览资源释放、关闭后尺寸调整、正文零持久化、Preview Handler 不可用，以及回收成功和失败时的索引事务边界。
+
+任务 6.1 验证基线为 35 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 8 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。前端测试覆盖五个固定导航入口、当前页状态、索引快照计数和实时扫描进度事件；Rust 扫描测试同时验证 `IndexStatus` 的完成状态、活动文档数、主题数、失败数和最近完成时间。
+
+调整索引状态栏时，应保持启动快照与 `scan-progress` 增量事件并存。扫描完成事件触发 `get_index_status` 刷新最终数据库聚合；组件卸载时释放 Tauri 事件监听器，导航切换期间保留同一状态栏实例。
+
+任务 6.2 验证基线为 35 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 10 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。`SearchWorkspace` 组件测试覆盖文本收敛、来源与目录筛选、创建和修改双时间边界、排序、主题摘要、选择上下文、分页以及键盘调整分隔线。
+
+调整搜索工作台时，应保持查询参数与 `SearchQuery` 契约一致，日期上界覆盖完整 UTC 日，筛选和排序变化重置页码。分隔线应同时支持指针和键盘操作，宽度偏好继续限制在 32% 到 68% 并使用 `document-index.workspace-split` 持久化；重复路径断言应限定在对应可访问区域内。
+
+任务 6.3 验证基线为 35 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 13 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。主题详情组件测试覆盖四类排序、默认时间维度恢复、全部版本字段、双时间标记、缺失文件禁用、文件打开与定位、多选回收、确认摘要、成功刷新、回收站入口和失败状态保留。
+
+调整主题版本操作时，应保持文件 command 只传数据库文档 ID，非 `available` 文档的选择和文件操作保持禁用。回收确认必须展示文件名与完整路径，并使用 `RECYCLE_CONFIRMATION_TOKEN`；成功后刷新详情和搜索摘要，失败时保留确认上下文，方便用户核对或取消。
+
+任务 6.4 验证基线为 36 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 15 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。索引位置组件测试覆盖来源状态、暂停、手动刷新、原生目录选择、添加后扫描、错误展开、自定义扩展名校验和白名单保存；Rust 测试覆盖默认规则读取和最近扫描错误定位。
+
+调整索引位置管理时，应保持原生目录对话框只返回用户明确选择的路径，来源保存和扫描启动继续使用独立 command。扩展名界面提交完整启用白名单，并至少保留一项；扫描错误读取应继续支持显式运行 ID 和最近运行两种方式。
+
+任务 6.5 验证基线为 36 个 Rust 单元测试、21 个 SQLite 仓储与属性测试以及 19 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。新增测试覆盖建议证据展示、接受、忽略、主题重命名、多主题合并、文档拆分，以及建议接受后的人工规则、双时间聚合和相关建议终态。
+
+调整待整理流程时，应保持建议接受的单事务边界，并确保普通主题合并关闭引用已删除源主题的待处理建议。建议忽略只更新建议状态。人工主题编辑继续通过 `TopicService` 执行，前端写操作成功后重新读取主题目录、详情和侧栏统计。主题目录每页最多 100 条，`TopicEditor` 必须根据 `Page.total` 提供服务端分页，只渲染当前页并保留跨页选择状态；测试需覆盖进入第 2 页和权威主题总数。
+
+任务 6.6 验证基线为 36 个 Rust 单元测试、21 个 SQLite 仓储与属性测试以及 23 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。新增前端测试覆盖预览会话创建与释放、viewport 同步、缩放、Office 分段切换、受限状态兜底、预览与批量回收选择隔离，以及折叠预览时释放会话。
+
+调整文件预览界面时，应保持单活动会话和数据库文档 ID 边界。切换文件、折叠区域、离开工作区和组件卸载都需要关闭会话；图片与 PDF 的 Blob URL 需要同步撤销。原生预览尺寸继续由实际 DOM 区域驱动，受限或失败状态保留默认程序打开和 Explorer 定位入口，正文数据只存在于当前前端会话内存。
+
+任务 6.7 验证基线为 36 个 Rust 单元测试、21 个 SQLite 仓储与属性测试以及 25 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。前端测试矩阵覆盖检索筛选与清除、空状态、双时间标记关联、排序与偏好恢复、扫描排队运行失败完成状态、人工整理、两栏布局、分隔线偏好、预览切换与释放、全宽模式往返和回收站确认。
+
+运行前端测试时应单独执行 `pnpm test`，避免并行生产构建造成 jsdom 用例争抢 CPU 并触发 Vitest 默认超时。异步分页测试应等待响应后的页面状态落地，确保 React 状态更新在测试结束前完成。
+
+任务 7.1 验证基线为 41 个 Rust 单元测试和 22 个 SQLite 仓储与属性测试通过；`cargo fmt --all -- --check`、完整 `cargo test` 和 `cargo check --features desktop-app` 通过。新增测试覆盖事件目录归并、Access 忽略、祖先目录折叠、有界队列溢出根复扫、局部 missing 的路径组件边界，以及局部新增和移除文档更新。
+
+调整文件监听时应保持 callback 只向有界队列投递轻量事件，目录合并和数据库更新由单 worker 完成。通知错误、重扫标记和队列溢出统一提升为来源根目录更新；暂停或替换 watcher 后通过 generation 丢弃旧事件。局部扫描只在目录完整遍历后执行范围 missing 标记，活动全量扫描结束后再重试。
+
+任务 7.2 验证基线为 48 个 Rust 单元测试和 23 个 SQLite 仓储与属性测试通过，共 71 个测试；`cargo fmt --all -- --check`、完整 `cargo test --locked` 和 `cargo clippy --locked --features desktop-app --all-targets -- -D warnings` 均通过。新增测试覆盖启动状态刷新、活动 `scanning` 保留、离线 watcher 跳过与在线重建、离线索引保留、局部和全量扫描期间来源掉线、未完成扫描跨来源恢复、原子扫描状态写回和并发暂停保持。
+
+调整启动恢复时应保持“实时刷新来源状态、恢复未完成运行、同步在线 watcher”的顺序。来源不可访问或遍历不完整时跳过 missing 标记；扫描线程通过仓储原子状态更新保留数据库中的最新 `enabled`，确保并发暂停来源持续处于 `paused`。根目录 reconcile 按 `ScanCoordinator.batch_size` 分批提交，批内候选继续参与 transient grouping。
+
+任务 7.3 验证基线为 48 个 Rust 单元测试、28 个 SQLite 集成与属性测试，共 76 个 Rust 测试，以及 8 个前端测试文件、29 个前端用例通过。`cargo fmt --all -- --check`、`cargo test --locked`、desktop feature 编译、`pnpm test` 和 `pnpm typecheck` 均通过。新增测试覆盖备份完整往返、严格字段白名单与正文零导出、无效 JSON、版本和引用拒绝、SQLite 事务回滚、离线与暂停来源状态、缺失文档、FTS 和双时间重建、设置页文件对话框及 localStorage 偏好恢复。
+
+调整备份格式时应保持版本字段和 serde `deny_unknown_fields`，并同步 Rust DTO、TypeScript command 契约和设置页。恢复必须先完成全部结构与引用校验，再进入单一事务；来源启用状态与路径可访问性分别计算，暂停来源中的可访问文件继续保持 `available`。备份字段继续排除正文、预览、原始文件、扫描历史、错误和待整理建议。
+
+任务 7.4 验证基线为 48 个 Rust 单元测试和 31 个 SQLite 仓储、属性与跨模块集成测试，共 79 个 Rust 测试；`cargo fmt --all`、增量恢复专项测试、备份恢复专项测试、watch 与 scan coordinator 定向测试，以及完整 `cargo test --locked` 均通过。`src-tauri/tests/incremental_recovery.rs` 覆盖文件变化与局部 reconcile、合并目录输入、溢出根复扫、搜索和主题聚合一致性、正文零索引、离线来源、带游标扫描恢复、跨来源继续，以及备份恢复后的派生索引重建与后续增量更新。
+
+任务 9.2 验证基线为 48 个 Rust 单元测试和 32 个 SQLite 仓储、属性与跨模块集成测试，共 80 个 Rust 测试；`cargo fmt --all`、`cargo test --locked --test core_flow_acceptance` 和完整 `cargo test --locked` 均通过。`src-tauri/tests/core_flow_acceptance.rs` 使用 `TempDir` 与磁盘 SQLite 验收添加索引源、首次扫描、跨目录多版本归组、双时间排序与标记、元数据搜索、人工重命名/合并/拆分、后续扫描保持人工修正、默认与自定义扩展名过滤，以及 FTS 和备份正文零持久化。该测试不启动真实 watcher、COM、Windows Shell 或回收站。
+
+定向运行核心流程验收：
+
+```bash
+cd document-index/src-tauri
+
+RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/bin:$PATH cargo test --locked --test core_flow_acceptance
+```
+
+任务 9.3 的 `metadata_performance` 是默认忽略的重型 integration test。它使用临时磁盘 SQLite 和单事务 fixture 构建 100,000 条仅元数据记录，由现有 triggers 真实填充 FTS，并通过真实 `SearchService` 测量空文本主题浏览分页、常用 FTS 前缀检索和来源/目录/双时间组合筛选。每类查询预热 2 次后测量 7 次，输出全部样本并以最大值断言低于 500 毫秒。
+
+任务 10.1 最终交付基线为 8 个前端测试文件、29 个前端用例和 81 个 Rust 常规测试通过，100,000 条 release 性能基准已单独通过。最终门禁同时通过 `pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --locked`、`cargo check --locked --features desktop-app`、`cargo clippy --locked --features desktop-app --all-targets -- -D warnings` 和 `git diff --check`。当前 Linux 容器验证覆盖桌面 feature 编译；Windows Preview Handler、回收站、文件事件顺序和 NSIS 安装体验继续由 Windows 10/11 实机验收。
+
+2026-07-25 交付审计新增文件身份稳定性门禁：扫描在 Unix 使用设备号和 inode，在 Windows 使用卷序列号和文件索引。人工归组文档只有在同来源身份候选唯一且旧路径已经消失时才沿用原文档 ID；普通自动归组记录继续重新分类，硬链接保留旧路径时建立独立记录。`incremental_recovery` 同时覆盖局部 reconcile、完整扫描、人工规则路径同步和硬链接误判防护。SQLite 第四个迁移为身份查询增加索引，并允许多个硬链接规则共享文件身份。
+
+2026-07-25 恢复并发与主题目录审计基线为 8 个前端测试文件、30 个前端用例和 85 个 Rust 常规测试通过。恢复 maintenance guard 与普通写 guard 共享原子协调状态，覆盖来源刷新、新增与启停、扫描取消、扩展名更新、主题重命名、合并、文档拆分、建议接受与忽略和文件回收；普通写彼此串行，避免并发来源新增绕过路径重叠校验。前端回归覆盖人工编辑器进入第 2 页、权威主题总数和有界当前页渲染。`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --locked`、`cargo check --locked --features desktop-app`、`cargo clippy --locked --features desktop-app --all-targets -- -D warnings` 和包含 `desktop-app` 的 Windows GNU 目标交叉检查均通过。
+
+```bash
+cd document-index/src-tauri
+
+# 显式运行十万条元数据 release 性能门禁
+RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/bin:$PATH cargo test --release --test metadata_performance -- --ignored --nocapture
+```
+
+2026-07-25 当前 Linux 容器实测 fixture 构建耗时 34.56 秒，预热后 7 次查询最大值为空文本浏览 75.18 毫秒、FTS 前缀 119.86 毫秒、组合筛选 42.98 毫秒。该结果用于当前开发容器回归；R10.2 的 Windows 10/11、4 核 CPU、8 GB 内存和 SSD 基线需要继续执行实机验收。调整文本搜索 SQL 时应保持 `topic_search` 虚表作为命中集驱动表，并运行同文件中的查询计划回归测试，避免恢复为逐文档相关 FTS 子查询。
+
+Debian/Ubuntu 环境编译 Tauri desktop feature 需要 `libgtk-3-dev`、`libwebkit2gtk-4.1-dev`、`librsvg2-dev` 和 `libayatana-appindicator3-dev`。本项目 Rust 1.88 工具链位于 `/usr/local/rustup` 和 `/usr/local/cargo`；执行 Rust 门禁时设置 `RUSTUP_HOME=/usr/local/rustup`、`CARGO_HOME=/usr/local/cargo`，并将 `/usr/local/cargo/bin` 放在 `PATH` 前部。
+
+`pnpm-workspace.yaml` 使用 pnpm 11 的 `allowBuilds` 显式允许 `esbuild` 安装脚本。`pnpm-lock.yaml` 只记录标准 semver 依赖和完整性信息，不包含执行机器上的全局链接路径。
+
 ## 开发入口
 
 GEO 平台工程位于 `当前工作区/geo-platform/`。

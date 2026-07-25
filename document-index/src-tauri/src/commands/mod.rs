@@ -1,0 +1,11 @@
+#[cfg(feature = "desktop-app")]
+pub mod backup;
+pub mod health;
+#[cfg(feature = "desktop-app")]
+pub mod indexing;
+#[cfg(feature = "desktop-app")]
+pub mod preview;
+#[cfg(feature = "desktop-app")]
+pub mod search;
+#[cfg(feature = "desktop-app")]
+pub mod topics;
