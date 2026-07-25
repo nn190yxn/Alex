@@ -915,11 +915,15 @@ fn reconcile_directories(
     root: &Path,
     directories: Vec<PathBuf>,
 ) -> Result<Vec<PathBuf>, DomainError> {
-    let mut directories = if directories.is_empty() {
+    let directories = if directories.is_empty() {
         vec![root.to_path_buf()]
     } else {
         directories
     };
+    let mut directories = directories
+        .into_iter()
+        .map(canonicalize_reconciliation_path)
+        .collect::<Vec<_>>();
     for directory in &directories {
         if !directory.is_absolute()
             || directory
@@ -947,6 +951,17 @@ fn reconcile_directories(
         collapsed.push(directory);
     }
     Ok(collapsed)
+}
+
+fn canonicalize_reconciliation_path(path: PathBuf) -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        fs::canonicalize(&path).unwrap_or(path)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        path
+    }
 }
 
 fn path_starts_with(path: &Path, base: &Path) -> bool {
