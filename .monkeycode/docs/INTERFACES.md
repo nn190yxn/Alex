@@ -89,7 +89,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。
 
-前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源筛选支持多选 ID，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。主题选择仅在前端保存 `topicId`、主题名和路径摘要，后续详情仍通过 `get_topic_detail` 按 ID 读取权威数据。
+前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源筛选支持多选 ID，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。主题选择仅在前端保存当前展开的 `topicId`；重复选择当前主题会清空该 ID，选择其他主题会切换该 ID，后续详情始终通过 `get_topic_detail` 按 ID 读取权威数据。
 
 前端 `TopicEditor` 使用 `search_topics` 每页读取 100 条主题，根据响应 `total` 计算总页数并只渲染当前页。翻页保留已选主题 ID、活动主题和已选文档，使跨页合并与跨页拆分目标选择继续可用；目录标题始终显示权威主题总数。
 

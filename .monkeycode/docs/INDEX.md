@@ -22,7 +22,7 @@ Windows 本地资料索引规格位于 `当前工作区/.monkeycode/specs/local-
 
 - `requirements.md`：索引源、元数据扫描、智能归组、双时间标记、搜索、预览和安全回收需求
 - `design.md`：Tauri、React、Rust、SQLite、领域边界、安全与测试设计
-- `tasklist.md`：分阶段实施任务清单；任务 1 至任务 11 和最终交付检查点已全部完成
+- `tasklist.md`：分阶段实施任务清单；任务 1 至任务 12 和最终交付检查点已全部完成
 
 抵达 Focus Windows 桌面版规格位于 `当前工作区/.monkeycode/specs/arrive-focus-desktop/`。
 

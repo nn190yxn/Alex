@@ -84,6 +84,8 @@ cargo clippy --locked --features desktop-app --all-targets -- -D warnings
 
 调整搜索工作台时，应保持查询参数与 `SearchQuery` 契约一致，日期上界覆盖完整 UTC 日，筛选和排序变化重置页码。分隔线应同时支持指针和键盘操作，宽度偏好继续限制在 32% 到 68% 并使用 `document-index.workspace-split` 持久化；重复路径断言应限定在对应可访问区域内。
 
+任务 12.1 验证基线为 8 个前端测试文件、32 个前端用例通过；TypeScript 类型检查、生产构建和补丁检查均通过。`SearchWorkspace` 回归测试覆盖主题版本列表首次点击展开、重复点击收起，以及点击其他主题时切换当前展开项。
+
 任务 6.3 验证基线为 35 个 Rust 单元测试、19 个 SQLite 仓储与属性测试以及 13 个前端测试通过；TypeScript 类型检查、生产构建、Rust 格式检查、desktop feature 严格 Clippy、包含 `desktop-app` 的 Windows GNU 目标交叉检查和补丁检查均通过。主题详情组件测试覆盖四类排序、默认时间维度恢复、全部版本字段、双时间标记、缺失文件禁用、文件打开与定位、多选回收、确认摘要、成功刷新、回收站入口和失败状态保留。
 
 调整主题版本操作时，应保持文件 command 只传数据库文档 ID，非 `available` 文档的选择和文件操作保持禁用。回收确认必须展示文件名与完整路径，并使用 `RECYCLE_CONFIRMATION_TOKEN`；成功后刷新详情和搜索摘要，失败时保留确认上下文，方便用户核对或取消。

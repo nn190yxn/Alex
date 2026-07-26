@@ -203,7 +203,7 @@ export function SearchWorkspace({ libraryMode = false }: { libraryMode?: boolean
                 aria-pressed={selectedTopicId === topic.id}
                 className="topic-card"
                 onClick={() => {
-                  setSelectedTopicId(topic.id);
+                  setSelectedTopicId((current) => current === topic.id ? undefined : topic.id);
                   setPreviewDocument(undefined);
                 }}
                 type="button"

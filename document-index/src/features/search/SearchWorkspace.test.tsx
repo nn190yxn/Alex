@@ -63,6 +63,29 @@ const topicDetail: TopicDetail = {
   documents: [topic.recentlyModifiedDocument!, topic.newestCreatedDocument!],
 };
 
+const archivedTopic: TopicSummary = {
+  ...topic,
+  id: "topic-2",
+  displayName: "品牌升级方案",
+  documentCount: 1,
+  newestCreatedDocument: {
+    ...topic.newestCreatedDocument!,
+    id: "document-brand",
+    topicId: "topic-2",
+    fileName: "品牌升级方案-v1.docx",
+    normalizedName: "品牌升级方案",
+    absolutePath: "C:\\资料\\品牌升级方案-v1.docx",
+  },
+  recentlyModifiedDocument: undefined,
+};
+
+const archivedTopicDetail: TopicDetail = {
+  ...archivedTopic,
+  canonicalName: "品牌升级方案",
+  displayNameManual: false,
+  documents: [archivedTopic.newestCreatedDocument!],
+};
+
 describe("SearchWorkspace", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -191,6 +214,38 @@ describe("SearchWorkspace", () => {
       expect(commandClient.searchTopics).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
     });
     expect(await screen.findByText("第 2 / 2 页")).toBeInTheDocument();
+  });
+
+  it("toggles a topic's version list and switches the expanded topic", async () => {
+    vi.mocked(commandClient.searchTopics).mockResolvedValue({
+      ok: true,
+      data: { ...page, items: [topic, archivedTopic] },
+      version: 3,
+    });
+    vi.mocked(commandClient.getTopicDetail).mockImplementation(async (topicId) => ({
+      ok: true,
+      data: topicId === archivedTopic.id ? archivedTopicDetail : topicDetail,
+      version: 3,
+    }));
+    render(<SearchWorkspace />);
+
+    const firstTopic = await screen.findByRole("button", { name: /年度商业计划/ });
+    const secondTopic = screen.getByRole("button", { name: /品牌升级方案/ });
+
+    fireEvent.click(firstTopic);
+    expect(await screen.findByRole("heading", { name: "年度商业计划" })).toBeInTheDocument();
+    expect(firstTopic).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(firstTopic);
+    expect(screen.queryByRole("heading", { name: "年度商业计划" })).not.toBeInTheDocument();
+    expect(firstTopic).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(firstTopic);
+    expect(await screen.findByRole("heading", { name: "年度商业计划" })).toBeInTheDocument();
+    fireEvent.click(secondTopic);
+    expect(await screen.findByRole("heading", { name: "品牌升级方案" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "年度商业计划" })).not.toBeInTheDocument();
+    expect(secondTopic).toHaveAttribute("aria-pressed", "true");
   });
 
   it("renders the empty state and clears every search filter", async () => {
