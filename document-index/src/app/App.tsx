@@ -5,6 +5,8 @@ import type { IndexSource, IndexStatus, ScanProgress, ScanRun } from "../domain/
 import { OrganizeQueue } from "../features/organize/OrganizeQueue";
 import { SearchWorkspace } from "../features/search/SearchWorkspace";
 import { BackupSettings } from "../features/settings/BackupSettings";
+import { readTheme, saveTheme } from "../features/settings/themePreference";
+import type { AppTheme } from "../features/settings/themePreference";
 import { SourceManager } from "../features/sources/SourceManager";
 import { commandClient } from "../lib/commandClient";
 
@@ -40,6 +42,7 @@ export function App() {
   const [dataRevision, setDataRevision] = useState(0);
   const [activeScanId, setActiveScanId] = useState<string>();
   const [sourceCount, setSourceCount] = useState<number>();
+  const [theme, setTheme] = useState<AppTheme>(readTheme);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +111,10 @@ export function App() {
       failureCount: scan.failureCount,
     }));
   };
+  const handleThemeChange = (nextTheme: AppTheme) => {
+    saveTheme(nextTheme);
+    setTheme(nextTheme);
+  };
 
   return (
     <main className="app-shell">
@@ -142,7 +149,7 @@ export function App() {
         <p className="service-status">{serviceStatus}</p>
       </aside>
       <section className={`workspace ${activeView === "search" ? "workspace-search" : ""} ${activeView === "sources" ? "workspace-sources" : ""} ${activeView === "organize" ? "workspace-organize" : ""} ${activeView === "settings" ? "workspace-settings" : ""}`} id={view.id} aria-labelledby="workspace-title">
-        {activeView === "search" ? <SearchWorkspace key={dataRevision} /> : activeView === "library" ? <SearchWorkspace key={dataRevision} libraryMode /> : activeView === "sources" ? <SourceManager key={dataRevision} onScanStarted={handleScanStarted} onSourcesChanged={handleSourcesChanged} /> : activeView === "organize" ? <OrganizeQueue key={dataRevision} onSuggestionResolved={() => void refreshIndexSummary()} /> : activeView === "settings" ? <BackupSettings onRestored={() => { setDataRevision((current) => current + 1); void refreshIndexSummary(); }} /> : (
+        {activeView === "search" ? <SearchWorkspace key={dataRevision} /> : activeView === "library" ? <SearchWorkspace key={dataRevision} libraryMode /> : activeView === "sources" ? <SourceManager key={dataRevision} onScanStarted={handleScanStarted} onSourcesChanged={handleSourcesChanged} /> : activeView === "organize" ? <OrganizeQueue key={dataRevision} onSuggestionResolved={() => void refreshIndexSummary()} /> : activeView === "settings" ? <BackupSettings onRestored={() => { setDataRevision((current) => current + 1); void refreshIndexSummary(); }} onThemeChange={handleThemeChange} theme={theme} /> : (
           <>
             <header className="workspace-header">
               <div>

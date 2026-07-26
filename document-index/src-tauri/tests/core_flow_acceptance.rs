@@ -346,6 +346,7 @@ fn core_metadata_flow_is_accepted_end_to_end() {
             backup_path.to_str().unwrap(),
             BackupPreferences {
                 default_time_dimension: "modifiedAt".into(),
+                theme: "parchment".into(),
                 workspace_split: 50.0,
             },
         )

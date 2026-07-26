@@ -140,6 +140,10 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-26 首次启动可靠性修复基线为 8 个前端测试文件、31 个前端用例和 86 个 Rust 常规测试通过。前端回归覆盖空来源自动进入索引位置、显著目录选择入口、来源数量回传和扫描运行回传；Rust 回归覆盖启用且从未扫描的在线来源自动启动、`last_scan_at` 防重复和未完成运行来源排除。调整桌面启动流程时保持“刷新来源状态、恢复未完成运行、启动从未扫描来源、同步在线 watcher”的顺序。
 
+2026-07-26 外观主题切换基线为 10 个前端测试文件、40 个前端用例和 88 个 Rust 常规测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --check`、串行完整 `cargo test --locked -- --test-threads=1`、`cargo clippy --locked --all-targets -- -D warnings` 和 `git diff --check` 均通过。前端测试覆盖安全启动恢复、主题卡选择语义、即时切换与持久化；Rust 备份测试覆盖 `minimal` 往返、历史备份默认 `parchment`、未知主题在数据替换前拒绝。
+
+调整外观主题时应同步 `themePreference.ts` 的稳定标识、`global.css` 的语义变量、设置页主题卡和备份 DTO。新增主题需要同时更新 TypeScript 联合类型、Rust 偏好校验、历史备份策略及前后端往返测试。根元素主题应在 React 挂载前恢复，切换过程应保留当前业务组件状态。
+
 ```bash
 cd document-index/src-tauri
 

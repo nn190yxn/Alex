@@ -3,6 +3,8 @@ import { useState } from "react";
 
 import type { BackupPreferences } from "../../domain/commands";
 import { commandClient } from "../../lib/commandClient";
+import { AppearanceSettings } from "./AppearanceSettings";
+import type { AppTheme } from "./themePreference";
 
 const TIME_DIMENSION_KEY = "document-index.default-time-dimension";
 const WORKSPACE_SPLIT_KEY = "document-index.workspace-split";
@@ -10,9 +12,11 @@ const JSON_FILTER = [{ name: "资料索引备份", extensions: ["json"] }];
 
 interface BackupSettingsProps {
   onRestored: () => void;
+  onThemeChange: (theme: AppTheme) => void;
+  theme: AppTheme;
 }
 
-export function BackupSettings({ onRestored }: BackupSettingsProps) {
+export function BackupSettings({ onRestored, onThemeChange, theme }: BackupSettingsProps) {
   const [busy, setBusy] = useState<"export" | "restore">();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string }>();
   const [restorePath, setRestorePath] = useState<string>();
@@ -33,7 +37,7 @@ export function BackupSettings({ onRestored }: BackupSettingsProps) {
     if (!path) return;
     setBusy("export");
     setFeedback(undefined);
-    const result = await commandClient.exportIndexBackup(path, readPreferences());
+    const result = await commandClient.exportIndexBackup(path, readPreferences(theme));
     setFeedback(result.ok
       ? { type: "success", message: `备份已导出，包含 ${result.data.documentCount} 条文档元数据。` }
       : { type: "error", message: result.error.message });
@@ -66,6 +70,7 @@ export function BackupSettings({ onRestored }: BackupSettingsProps) {
       if (result.ok) {
         safeStorageSet(TIME_DIMENSION_KEY, result.data.preferences.defaultTimeDimension);
         safeStorageSet(WORKSPACE_SPLIT_KEY, String(result.data.preferences.workspaceSplit));
+        onThemeChange(result.data.preferences.theme);
         setFeedback({ type: "success", message: `索引已恢复，已重新校验 ${result.data.sourceCount} 个索引位置。` });
         setRestorePath(undefined);
         onRestored();
@@ -88,6 +93,7 @@ export function BackupSettings({ onRestored }: BackupSettingsProps) {
         <span className="local-badge">JSON / 本机文件</span>
       </header>
       {feedback && <p className={`backup-feedback backup-feedback-${feedback.type}`} role="status">{feedback.message}</p>}
+      <AppearanceSettings onThemeChange={onThemeChange} theme={theme} />
       <section className="backup-section" aria-labelledby="backup-title">
         <div className="backup-section-heading">
           <div>
@@ -123,13 +129,14 @@ export function BackupSettings({ onRestored }: BackupSettingsProps) {
   );
 }
 
-function readPreferences(): BackupPreferences {
+function readPreferences(theme: AppTheme): BackupPreferences {
   const defaultTimeDimension = safeStorageGet(TIME_DIMENSION_KEY) === "createdAt"
     ? "createdAt"
     : "modifiedAt";
   const split = Number(safeStorageGet(WORKSPACE_SPLIT_KEY));
   return {
     defaultTimeDimension,
+    theme,
     workspaceSplit: Number.isFinite(split) && split >= 32 && split <= 68 ? split : 42,
   };
 }

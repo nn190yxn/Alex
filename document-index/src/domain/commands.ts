@@ -50,6 +50,7 @@ export type CommandResult<T> =
 
 export interface BackupPreferences {
   defaultTimeDimension: "modifiedAt" | "createdAt";
+  theme: "parchment" | "minimal";
   workspaceSplit: number;
 }
 

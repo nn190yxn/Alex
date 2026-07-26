@@ -109,7 +109,9 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `RecycleBinService::recycle_documents` 接受去重前的文档 ID 列表和固定明确确认令牌。成功返回的 `RecycleResult` 包含 `recycledDocumentIds` 和稳定排序的 `affectedTopicIds`；空选择或无效确认返回 `INVALID_INPUT`，文档、来源和路径错误沿用受控 Shell 校验错误，系统回收失败返回 `FILE_SYSTEM_ERROR`。`open_recycle_bin` 委托同一适配器打开 Windows 回收站。
 
-`export_index_backup` 接受 `.json` 路径和 `BackupPreferences`，偏好包括 `defaultTimeDimension` 与 `workspaceSplit`，返回来源、主题和文档数量。`restore_index_backup` 接受用户通过原生文件对话框选择的 `.json` 路径，成功返回同类计数与恢复后的偏好。恢复校验失败返回 `INVALID_INPUT`，文件读写失败返回 `FILE_SYSTEM_ERROR`，活动扫描或活动普通写返回 `SCAN_ALREADY_RUNNING`，事务失败返回 `DATABASE_ERROR`；恢复 guard 存续期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收也返回 `SCAN_ALREADY_RUNNING`。普通写 command 彼此串行，冲突时沿用同一稳定错误码和通用操作进行中文案。成功后 command 同步来源 watcher。
+`export_index_backup` 接受 `.json` 路径和 `BackupPreferences`，偏好包括 `defaultTimeDimension: "modifiedAt" | "createdAt"`、`theme: "parchment" | "minimal"` 与范围为 32 至 68 的 `workspaceSplit`，返回来源、主题和文档数量。`restore_index_backup` 接受用户通过原生文件对话框选择的 `.json` 路径，成功返回同类计数与恢复后的偏好；历史备份缺少 `theme` 时返回 `parchment`。未知主题及其他偏好校验失败返回字段路径明确的 `INVALID_INPUT`，文件读写失败返回 `FILE_SYSTEM_ERROR`，活动扫描或活动普通写返回 `SCAN_ALREADY_RUNNING`，事务失败返回 `DATABASE_ERROR`；恢复 guard 存续期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收也返回 `SCAN_ALREADY_RUNNING`。普通写 command 彼此串行，冲突时沿用同一稳定错误码和通用操作进行中文案。成功后 command 同步来源 watcher，前端写回并应用三项偏好。
+
+外观偏好使用 `document-index.appearance-theme` 本机存储键。`readTheme()` 对缺失值、未知值和存储读取异常返回 `parchment`；`saveTheme(theme)` 先设置根元素 `data-theme`，再尝试持久化，因此存储写入异常不会阻止当前会话完成视觉切换。
 
 前端回收确认展示选中文档数量、当前主题、文件名和完整路径。成功响应触发当前 `TopicDetail` 与外层 `TopicSummary` 刷新，并显示 `open_recycle_bin` 入口；失败响应保留确认上下文并显示索引状态保持说明。
 

@@ -61,7 +61,7 @@ describe("commandClient", () => {
 
   it("maps backup paths and preferences to their command contracts", async () => {
     vi.mocked(invoke).mockResolvedValue({ ok: true, data: {}, version: 3 });
-    const preferences = { defaultTimeDimension: "createdAt" as const, workspaceSplit: 56 };
+    const preferences = { defaultTimeDimension: "createdAt" as const, theme: "minimal" as const, workspaceSplit: 56 };
 
     await commandClient.exportIndexBackup("C:\\Backups\\index.json", preferences);
     await commandClient.restoreIndexBackup("C:\\Backups\\index.json");

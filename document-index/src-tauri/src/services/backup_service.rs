@@ -22,7 +22,13 @@ const BACKUP_VERSION: u32 = 1;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BackupPreferences {
     pub default_time_dimension: String,
+    #[serde(default = "default_theme")]
+    pub theme: String,
     pub workspace_split: f64,
+}
+
+fn default_theme() -> String {
+    "parchment".into()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -206,6 +212,12 @@ fn validate_preferences(preferences: &BackupPreferences) -> Result<(), DomainErr
         return Err(invalid_field(
             "The workspace split preference is invalid.",
             "preferences.workspaceSplit",
+        ));
+    }
+    if !matches!(preferences.theme.as_str(), "parchment" | "minimal") {
+        return Err(invalid_field(
+            "The appearance theme is invalid.",
+            "preferences.theme",
         ));
     }
     Ok(())

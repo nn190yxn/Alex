@@ -14,6 +14,11 @@ vi.mock("../../lib/commandClient", () => ({
 }));
 
 describe("BackupSettings", () => {
+  const appearanceProps = {
+    onThemeChange: vi.fn(),
+    theme: "parchment" as const,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
@@ -29,12 +34,12 @@ describe("BackupSettings", () => {
       version: 3,
     });
 
-    render(<BackupSettings onRestored={vi.fn()} />);
+    render(<BackupSettings {...appearanceProps} onRestored={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "导出备份" }));
 
     await waitFor(() => expect(commandClient.exportIndexBackup).toHaveBeenCalledWith(
       "C:\\Backups\\index.json",
-      { defaultTimeDimension: "createdAt", workspaceSplit: 56 },
+      { defaultTimeDimension: "createdAt", theme: "parchment", workspaceSplit: 56 },
     ));
     expect(await screen.findByText("备份已导出，包含 8 条文档元数据。")).toBeInTheDocument();
   });
@@ -45,7 +50,7 @@ describe("BackupSettings", () => {
     vi.mocked(commandClient.restoreIndexBackup).mockResolvedValue({
       ok: true,
       data: {
-        preferences: { defaultTimeDimension: "createdAt", workspaceSplit: 61 },
+        preferences: { defaultTimeDimension: "createdAt", theme: "minimal", workspaceSplit: 61 },
         sourceCount: 1,
         topicCount: 2,
         documentCount: 3,
@@ -53,7 +58,7 @@ describe("BackupSettings", () => {
       version: 3,
     });
 
-    render(<BackupSettings onRestored={onRestored} />);
+    render(<BackupSettings {...appearanceProps} onRestored={onRestored} />);
     fireEvent.click(screen.getByRole("button", { name: "从备份恢复" }));
     await screen.findByRole("button", { name: "确认替换并恢复" });
     expect(commandClient.restoreIndexBackup).not.toHaveBeenCalled();
@@ -62,6 +67,7 @@ describe("BackupSettings", () => {
     await screen.findByText("索引已恢复，已重新校验 1 个索引位置。");
     expect(window.localStorage.getItem("document-index.default-time-dimension")).toBe("createdAt");
     expect(window.localStorage.getItem("document-index.workspace-split")).toBe("61");
+    expect(appearanceProps.onThemeChange).toHaveBeenCalledWith("minimal");
     expect(onRestored).toHaveBeenCalledOnce();
   });
 
@@ -73,7 +79,7 @@ describe("BackupSettings", () => {
     });
     const onRestored = vi.fn();
 
-    render(<BackupSettings onRestored={onRestored} />);
+    render(<BackupSettings {...appearanceProps} onRestored={onRestored} />);
     fireEvent.click(screen.getByRole("button", { name: "从备份恢复" }));
     fireEvent.click(await screen.findByRole("button", { name: "确认替换并恢复" }));
 

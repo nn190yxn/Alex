@@ -76,7 +76,21 @@ vi.mock("@tauri-apps/api/event", () => ({
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+    document.documentElement.removeAttribute("data-theme");
     vi.mocked(commandClient.listSources).mockResolvedValue({ ok: true, data: [source], version: 3 });
+  });
+
+  it("switches themes immediately and persists the selection", async () => {
+    render(<App />);
+    await screen.findByText("本地索引服务已就绪");
+
+    fireEvent.click(screen.getByRole("button", { name: /设置/ }));
+    fireEvent.click(screen.getByRole("button", { name: /极简黑白/ }));
+
+    expect(document.documentElement).toHaveAttribute("data-theme", "minimal");
+    expect(window.localStorage.getItem("document-index.appearance-theme")).toBe("minimal");
+    expect(screen.getByRole("button", { name: /极简黑白/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("renders the desktop shell and reports a ready backend", async () => {

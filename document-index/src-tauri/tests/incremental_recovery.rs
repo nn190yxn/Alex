@@ -489,6 +489,7 @@ fn restored_backup_rebuilds_derived_data_and_accepts_later_local_updates() {
             backup_path.to_str().unwrap(),
             BackupPreferences {
                 default_time_dimension: "modifiedAt".into(),
+                theme: "parchment".into(),
                 workspace_split: 50.0,
             },
         )

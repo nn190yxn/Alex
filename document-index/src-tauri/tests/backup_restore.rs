@@ -113,6 +113,7 @@ fn document(
 fn preferences() -> BackupPreferences {
     BackupPreferences {
         default_time_dimension: "createdAt".into(),
+        theme: "minimal".into(),
         workspace_split: 57.0,
     }
 }
@@ -274,6 +275,49 @@ fn invalid_json_unsupported_versions_and_inconsistent_references_are_rejected() 
 }
 
 #[test]
+fn historical_backups_without_a_theme_restore_to_parchment() {
+    let directory = tempfile::tempdir().unwrap();
+    let database = open_database(&directory, "index.sqlite3");
+    let path = directory.path().join("historical.json");
+    let mut backup = empty_backup(1);
+    backup["preferences"]
+        .as_object_mut()
+        .unwrap()
+        .remove("theme");
+    fs::write(&path, serde_json::to_vec(&backup).unwrap()).unwrap();
+
+    let restored = BackupService::new(&database)
+        .restore(path.to_str().unwrap())
+        .unwrap();
+
+    assert_eq!(restored.preferences.theme, "parchment");
+}
+
+#[test]
+fn backups_with_unknown_themes_are_rejected_before_replacement() {
+    let directory = tempfile::tempdir().unwrap();
+    let source_path = directory.path().join("archive");
+    fs::create_dir(&source_path).unwrap();
+    let database = open_database(&directory, "index.sqlite3");
+    seed_index(&database, &source_path);
+    let path = directory.path().join("unknown-theme.json");
+    let mut backup = empty_backup(1);
+    backup["preferences"]["theme"] = json!("neon");
+    fs::write(&path, serde_json::to_vec(&backup).unwrap()).unwrap();
+
+    let error = BackupService::new(&database)
+        .restore(path.to_str().unwrap())
+        .unwrap_err();
+
+    assert_eq!(error.code, ErrorCode::InvalidInput);
+    assert_eq!(error.field.as_deref(), Some("preferences.theme"));
+    assert!(IndexSourceRepository::new(&database)
+        .get("source-a")
+        .unwrap()
+        .is_some());
+}
+
+#[test]
 fn restore_rolls_back_the_entire_replacement_when_sqlite_rejects_a_write() {
     let directory = tempfile::tempdir().unwrap();
     let source_path = directory.path().join("archive");
@@ -421,7 +465,7 @@ fn empty_backup(version: u32) -> Value {
         "format": "document-index-backup",
         "version": version,
         "exportedAt": "2026-07-24T08:00:00Z",
-        "preferences": { "defaultTimeDimension": "modifiedAt", "workspaceSplit": 42 },
+        "preferences": { "defaultTimeDimension": "modifiedAt", "theme": "parchment", "workspaceSplit": 42 },
         "data": {
             "indexSources": [], "topics": [], "documents": [], "manualGroupingRules": [],
             "extensionRules": [{ "id": "builtin-txt", "extension": "txt", "builtIn": true, "enabled": true }]
