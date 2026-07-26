@@ -59,6 +59,14 @@ fn search(
         .expect("search should succeed")
 }
 
+fn document_at(database: &Database, source_id: &str, path: &std::path::Path) -> DocumentRecord {
+    let path = fs::canonicalize(path).expect("fixture path should remain accessible");
+    DocumentRepository::new(database)
+        .get_by_source_path(source_id, path.to_str().unwrap())
+        .expect("document lookup should succeed")
+        .expect("document should be indexed")
+}
+
 fn active_index_shape(database: &Database) -> (i64, i64, i64) {
     database
         .read(|connection| {
@@ -128,10 +136,7 @@ fn local_reconcile_keeps_search_and_topic_aggregates_consistent_for_file_changes
     coordinator
         .reconcile_directories(&source.id, vec![team_a.clone()])
         .unwrap();
-    let modified = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, version_two.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let modified = document_at(&database, &source.id, &version_two);
     assert_eq!(modified.size_bytes, modified_body.len() as i64);
     assert_eq!(search(&database, BODY_MARKER).total, 0);
 
@@ -196,10 +201,7 @@ fn manual_grouping_survives_rename_and_updates_the_rule_path() {
         .unwrap();
     wait_for_terminal(&coordinator, &initial.id);
 
-    let original = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, original_path.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let original = document_at(&database, &source.id, &original_path);
     assert!(original.file_identity.is_some());
     let details = TopicService::new(&database)
         .move_documents_to_topic(&[original.id.clone()], None, Some("Curated Proposal"))
@@ -218,16 +220,13 @@ fn manual_grouping_survives_rename_and_updates_the_rule_path() {
         .reconcile_directories(&source.id, vec![source_root.clone()])
         .unwrap();
 
-    let renamed = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, renamed_path.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let renamed = document_at(&database, &source.id, &renamed_path);
     assert_eq!(renamed.id, original.id);
     assert_eq!(renamed.topic_id, curated_topic_id);
     assert!(renamed.manual_topic);
     assert_eq!(renamed.file_name, "Proposal Final.txt");
     assert!(DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, original_path.to_str().unwrap())
+        .get_by_source_path(&source.id, &original.absolute_path)
         .unwrap()
         .is_none());
 
@@ -237,10 +236,7 @@ fn manual_grouping_survives_rename_and_updates_the_rule_path() {
         .start_scan(vec![source.id.clone()], Arc::new(|_| {}))
         .unwrap();
     wait_for_terminal(&coordinator, &full_scan.id);
-    let delivered = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, delivered_path.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let delivered = document_at(&database, &source.id, &delivered_path);
     assert_eq!(delivered.id, original.id);
     assert_eq!(delivered.topic_id, curated_topic_id);
     assert!(delivered.manual_topic);
@@ -263,7 +259,7 @@ fn manual_grouping_survives_rename_and_updates_the_rule_path() {
         })
         .unwrap();
     assert_eq!(document_count, 1);
-    assert_eq!(rule_path, delivered_path.to_string_lossy());
+    assert_eq!(rule_path, delivered.absolute_path);
     assert_eq!(rule_identity, delivered.file_identity);
     assert_eq!(
         TopicService::new(&database)
@@ -298,10 +294,7 @@ fn live_hard_link_is_not_mistaken_for_a_manual_document_move() {
         .start_scan(vec![source.id.clone()], Arc::new(|_| {}))
         .unwrap();
     wait_for_terminal(&coordinator, &initial.id);
-    let original = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, original_path.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let original = document_at(&database, &source.id, &original_path);
     TopicService::new(&database)
         .move_documents_to_topic(&[original.id.clone()], None, Some("Curated Link"))
         .unwrap();
@@ -311,10 +304,7 @@ fn live_hard_link_is_not_mistaken_for_a_manual_document_move() {
         .reconcile_directories(&source.id, vec![source_root])
         .unwrap();
 
-    let linked = DocumentRepository::new(&database)
-        .get_by_source_path(&source.id, linked_path.to_str().unwrap())
-        .unwrap()
-        .unwrap();
+    let linked = document_at(&database, &source.id, &linked_path);
     assert_ne!(linked.id, original.id);
     assert_eq!(linked.file_identity, original.file_identity);
     let document_count: i64 = database
