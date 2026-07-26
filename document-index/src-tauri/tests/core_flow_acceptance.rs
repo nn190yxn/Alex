@@ -58,6 +58,7 @@ fn document_at(
     source_id: &str,
     path: &std::path::Path,
 ) -> document_index_core::repositories::DocumentRecord {
+    let path = fs::canonicalize(path).expect("fixture path should remain accessible");
     DocumentRepository::new(database)
         .get_by_source_path(source_id, path.to_str().unwrap())
         .expect("document lookup should succeed")
