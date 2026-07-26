@@ -136,6 +136,8 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-25 恢复并发与主题目录审计基线为 8 个前端测试文件、30 个前端用例和 85 个 Rust 常规测试通过。恢复 maintenance guard 与普通写 guard 共享原子协调状态，覆盖来源刷新、新增与启停、扫描取消、扩展名更新、主题重命名、合并、文档拆分、建议接受与忽略和文件回收；普通写彼此串行，避免并发来源新增绕过路径重叠校验。前端回归覆盖人工编辑器进入第 2 页、权威主题总数和有界当前页渲染。`pnpm typecheck`、`pnpm build`、`cargo fmt --all -- --check`、`cargo test --locked`、`cargo check --locked --features desktop-app`、`cargo clippy --locked --features desktop-app --all-targets -- -D warnings` 和包含 `desktop-app` 的 Windows GNU 目标交叉检查均通过。
 
+2026-07-26 首次启动可靠性修复基线为 8 个前端测试文件、31 个前端用例和 86 个 Rust 常规测试通过。前端回归覆盖空来源自动进入索引位置、显著目录选择入口、来源数量回传和扫描运行回传；Rust 回归覆盖启用且从未扫描的在线来源自动启动、`last_scan_at` 防重复和未完成运行来源排除。调整桌面启动流程时保持“刷新来源状态、恢复未完成运行、启动从未扫描来源、同步在线 watcher”的顺序。
+
 ```bash
 cd document-index/src-tauri
 
@@ -484,4 +486,4 @@ AI 可见性运营 Sprint 任务 6.4 已完成：任务跟进页新增“Sprint 
 
 AI 可见性运营 Sprint 任务 7.1 和 7.2 已完成：项目文档已同步到 `ARCHITECTURE.md`、`INTERFACES.md`、`DEVELOPER_GUIDE.md` 和文档索引；完整验证门禁的审计、类型检查、API 测试、Web 测试、构建、Prisma schema 校验和 Prisma Client 生成均已通过，最新 `npm run verify` 已完整通过。
 
-第一阶段上线门禁已完成追光小牛内测路径验证：自动生成监测主题后可生成 8 个监测问题，问题包含目的、目标平台、优先级和预计价值；监测问题可保存为计划并进入浏览器确认监测流程；公开平台配置响应仅包含 `hasCredential` 和脱敏状态，不暴露 `credentialRef`；LLM 异步任务响应只返回任务状态和 `jobId`；品牌总览、AI 回复监测、优化计划、写内�
+第一阶段上线门禁已完成追光小牛内测路径验证：自动生成监测主题后可生成 8 个监测问题，问题包含目的、目标平台、优先级和预计价值；监测问题可保存为计划并进入浏览器确认监测流程；公开平台配置响应仅包含 `hasCredential` 和脱敏状态，不暴露 `credentialRef`；LLM 异步任务响应只返回任务状态和 `jobId`；品牌总览、AI 回复监测、优化计划、写内�

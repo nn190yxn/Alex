@@ -2,12 +2,15 @@ import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 
-import type { ExtensionRule, IndexSource, ScanError, ScanProgress } from "../../domain/models";
+import type { ExtensionRule, IndexSource, ScanError, ScanProgress, ScanRun } from "../../domain/models";
 import { commandClient } from "../../lib/commandClient";
 
 const TERMINAL_SCAN_STATUSES = new Set(["completed", "cancelled", "failed"]);
 
-export function SourceManager() {
+export function SourceManager({ onScanStarted, onSourcesChanged }: {
+  onScanStarted?: (scan: ScanRun) => void;
+  onSourcesChanged?: (sources: IndexSource[]) => void;
+}) {
   const [sources, setSources] = useState<IndexSource[]>([]);
   const [rules, setRules] = useState<ExtensionRule[]>([]);
   const [errors, setErrors] = useState<ScanError[]>([]);
@@ -28,7 +31,10 @@ export function SourceManager() {
         commandClient.listScanErrors(),
       ]);
       if (!active) return;
-      if (sourceResult.ok) setSources(sourceResult.data);
+      if (sourceResult.ok) {
+        setSources(sourceResult.data);
+        onSourcesChanged?.(sourceResult.data);
+      }
       if (extensionResult.ok) setRules(extensionResult.data);
       if (errorResult.ok) setErrors(errorResult.data);
       const failure = [sourceResult, extensionResult, errorResult].find((result) => !result.ok);
@@ -44,7 +50,10 @@ export function SourceManager() {
         commandClient.listScanErrors(payload.id),
       ]).then(([sourceResult, errorResult]) => {
         if (!active) return;
-        if (sourceResult.ok) setSources(sourceResult.data);
+        if (sourceResult.ok) {
+          setSources(sourceResult.data);
+          onSourcesChanged?.(sourceResult.data);
+        }
         if (errorResult.ok) setErrors(errorResult.data);
       });
     }).then((unlisten) => {
@@ -82,8 +91,11 @@ export function SourceManager() {
       setBusyAction(undefined);
       return;
     }
-    setSources((current) => [...current, added.data]);
+    const nextSources = [...sources, added.data];
+    setSources(nextSources);
+    onSourcesChanged?.(nextSources);
     const scan = await commandClient.startScan([added.data.id]);
+    if (scan.ok) onScanStarted?.(scan.data);
     setFeedback(scan.ok
       ? { type: "success", message: `已添加 ${added.data.displayName}，扫描已开始。` }
       : { type: "error", message: scan.error.message });
@@ -95,7 +107,9 @@ export function SourceManager() {
     setFeedback(undefined);
     const result = await commandClient.setSourceEnabled(source.id, !source.enabled);
     if (result.ok) {
-      setSources((current) => current.map((item) => item.id === result.data.id ? result.data : item));
+      const nextSources = sources.map((item) => item.id === result.data.id ? result.data : item);
+      setSources(nextSources);
+      onSourcesChanged?.(nextSources);
       setFeedback({
         type: "success",
         message: result.data.enabled ? `${result.data.displayName} 已恢复。` : `${result.data.displayName} 已暂停。`,
@@ -110,6 +124,7 @@ export function SourceManager() {
     setBusyAction(`scan:${source.id}`);
     setFeedback(undefined);
     const result = await commandClient.startScan([source.id]);
+    if (result.ok) onScanStarted?.(result.data);
     setFeedback(result.ok
       ? { type: "success", message: `${source.displayName} 正在刷新索引。` }
       : { type: "error", message: result.error.message });
@@ -172,7 +187,14 @@ export function SourceManager() {
           <span>{sources.length} 个位置</span>
         </div>
         {loading ? <p className="source-empty">正在读取索引配置。</p> : sources.length === 0 ? (
-          <p className="source-empty">尚未添加索引位置。选择资料目录后，应用会开始首次扫描。</p>
+          <div className="source-onboarding">
+            <p className="eyebrow">FIRST INDEX</p>
+            <h4>选择资料目录，开始建立本地索引</h4>
+            <p>应用只读取文件名、路径、大小和文件时间。目录保存后会立即开始首次扫描。</p>
+            <button disabled={busyAction === "add"} onClick={() => void addSource()} type="button">
+              {busyAction === "add" ? "正在添加" : "选择资料目录"}
+            </button>
+          </div>
         ) : (
           <div className="source-list">
             {sources.map((source) => (

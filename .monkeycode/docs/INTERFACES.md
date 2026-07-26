@@ -79,7 +79,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `PreviewService` | `create_session`、`close_session`、`active_session_id` | 创建单活动短期预览会话，按格式与大小选择内置适配器并释放会话状态 |
 | `WindowsPreviewHost` | `start`、`resize`、`unload` | 在专用 STA 线程托管 DOC、XLS、PPT 的系统 `IPreviewHandler`，同步预览区域并释放活动处理程序 |
 | `RecycleBinService` | `recycle_documents`、`open_recycle_bin` | 校验确认令牌和受控文档路径，成功移入 Windows 回收站后以事务更新文档状态与主题聚合 |
-| `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，隔离离线来源，并对来源内目录执行有界批量局部更新 |
+| `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`start_unscanned_sources`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，为启用且从未扫描的在线来源补启首次扫描，隔离离线来源，并对来源内目录执行有界批量局部更新 |
 | `WatchService` | `new`、`sync_sources` | 只维护启用且实时可访问来源的递归 watcher，通过有界队列、防抖、generation 和溢出根复扫调度局部更新 |
 | `BackupService` | `export`、`restore` | 导出版本化元数据 JSON，校验并事务恢复配置，重新检查来源和文档实时状态 |
 
@@ -97,7 +97,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，键名为 `document-index.default-time-dimension`；版本号和文件名排序不会覆盖该偏好。版本选择只接受 `available` 文档，单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
 
-前端 `SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
+前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
 
 `ShellService::open_document` 和 `ShellService::reveal_document` 接收文档 ID。服务拒绝未知文档、非 `available` 状态、实时缺失文件、不可访问来源及 canonical 路径越界；对应错误码包括 `DOCUMENT_NOT_FOUND`、`SOURCE_NOT_FOUND`、`SOURCE_UNAVAILABLE`、`FILE_SYSTEM_ERROR` 和 `PATH_OUTSIDE_SOURCE`。`ShellAdapter` 隔离系统调用，`SystemShellAdapter` 在 Windows 上调用 Explorer；两个 Rust command 已注册，成功结果的 `data` 为 `null`。
 

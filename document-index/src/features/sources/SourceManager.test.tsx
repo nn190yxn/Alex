@@ -101,7 +101,9 @@ describe("SourceManager", () => {
       data: [...rules, { id: "custom-odt", extension: "odt", builtIn: false, enabled: true }],
       version: 3,
     });
-    render(<SourceManager />);
+    const onScanStarted = vi.fn();
+    const onSourcesChanged = vi.fn();
+    render(<SourceManager onScanStarted={onScanStarted} onSourcesChanged={onSourcesChanged} />);
     await screen.findByText("Archive");
 
     fireEvent.click(screen.getByRole("button", { name: "添加索引位置" }));
@@ -111,6 +113,9 @@ describe("SourceManager", () => {
       multiple: false,
     }));
     await waitFor(() => expect(commandClient.addSource).toHaveBeenCalledWith("D:\\Projects"));
+    await waitFor(() => expect(commandClient.startScan).toHaveBeenCalledWith(["source-2"]));
+    expect(onSourcesChanged).toHaveBeenLastCalledWith([source, newSource]);
+    expect(onScanStarted).toHaveBeenCalledWith(expect.objectContaining({ id: "scan-2", status: "queued" }));
     expect(await screen.findByText("Projects")).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("textbox", { name: "自定义扩展名" }), { target: { value: ".ODT" } });

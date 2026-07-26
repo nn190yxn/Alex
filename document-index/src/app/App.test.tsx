@@ -6,6 +6,17 @@ import type { ScanProgress } from "../domain/models";
 import { commandClient } from "../lib/commandClient";
 import { App } from "./App";
 
+const source = {
+  id: "source-1",
+  path: "C:\\Archive",
+  displayName: "Archive",
+  enabled: true,
+  status: "ready" as const,
+  addedAt: "2026-07-24T08:00:00.000Z",
+  lastScanAt: "2026-07-24T09:00:00.000Z",
+  lastSuccessAt: "2026-07-24T09:05:00.000Z",
+};
+
 vi.mock("../lib/commandClient", () => ({
   commandClient: {
     health: vi.fn().mockResolvedValue({ ok: true, data: "ready", version: 0 }),
@@ -23,7 +34,20 @@ vi.mock("../lib/commandClient", () => ({
       },
       version: 3,
     }),
-    listSources: vi.fn().mockResolvedValue({ ok: true, data: [], version: 3 }),
+    listSources: vi.fn().mockResolvedValue({
+      ok: true,
+      data: [{
+        id: "source-1",
+        path: "C:\\Archive",
+        displayName: "Archive",
+        enabled: true,
+        status: "ready",
+        addedAt: "2026-07-24T08:00:00.000Z",
+        lastScanAt: "2026-07-24T09:00:00.000Z",
+        lastSuccessAt: "2026-07-24T09:05:00.000Z",
+      }],
+      version: 3,
+    }),
     listExtensions: vi.fn().mockResolvedValue({ ok: true, data: [], version: 3 }),
     listScanErrors: vi.fn().mockResolvedValue({ ok: true, data: [], version: 3 }),
     searchTopics: vi.fn().mockResolvedValue({
@@ -52,6 +76,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(commandClient.listSources).mockResolvedValue({ ok: true, data: [source], version: 3 });
   });
 
   it("renders the desktop shell and reports a ready backend", async () => {
@@ -76,7 +101,7 @@ describe("App", () => {
       "aria-current",
       "page",
     );
-    expect(await screen.findByText("尚未添加索引位置。选择资料目录后，应用会开始首次扫描。")).toBeInTheDocument();
+    expect(await screen.findByText("Archive")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /待整理/ }));
     expect(screen.getByRole("heading", { name: "检查需要人工确认的归组" })).toBeInTheDocument();
@@ -86,6 +111,18 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "调整资料索引偏好" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "导出备份" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "从备份恢复" })).toBeInTheDocument();
+  });
+
+  it("guides a first-time user to add an index location", async () => {
+    vi.mocked(commandClient.listSources).mockResolvedValue({ ok: true, data: [], version: 3 });
+
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: "管理应用可以扫描的位置" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "索引位置" })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("heading", { name: "选择资料目录，开始建立本地索引" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "选择资料目录" })).toBeInTheDocument();
+    expect(screen.getByText("请添加索引位置")).toBeInTheDocument();
   });
 
   it("updates the persistent status bar from scan progress events", async () => {

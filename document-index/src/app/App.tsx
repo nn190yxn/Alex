@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
-import type { IndexStatus, ScanProgress } from "../domain/models";
+import type { IndexSource, IndexStatus, ScanProgress, ScanRun } from "../domain/models";
 import { OrganizeQueue } from "../features/organize/OrganizeQueue";
 import { SearchWorkspace } from "../features/search/SearchWorkspace";
 import { BackupSettings } from "../features/settings/BackupSettings";
@@ -39,6 +39,7 @@ export function App() {
   const [indexStatus, setIndexStatus] = useState<IndexStatus>(EMPTY_INDEX_STATUS);
   const [dataRevision, setDataRevision] = useState(0);
   const [activeScanId, setActiveScanId] = useState<string>();
+  const [sourceCount, setSourceCount] = useState<number>();
 
   useEffect(() => {
     let active = true;
@@ -54,6 +55,13 @@ export function App() {
       setServiceStatus(result.ok ? "本地索引服务已就绪" : "本地索引服务暂不可用");
     });
     void refreshIndexStatus();
+    void commandClient.listSources().then((result) => {
+      if (!active || !result.ok) return;
+      setSourceCount(result.data.length);
+      if (result.data.length === 0) {
+        setActiveView((current) => current === "search" ? "sources" : current);
+      }
+    });
     void listen<ScanProgress>("scan-progress", ({ payload }) => {
       if (!active) return;
       setActiveScanId(payload.status === "queued" || payload.status === "running" ? payload.id : undefined);
@@ -86,6 +94,20 @@ export function App() {
     const result = await commandClient.getIndexStatus();
     if (result.ok) setIndexStatus(result.data);
   };
+  const handleSourcesChanged = (sources: IndexSource[]) => {
+    setSourceCount(sources.length);
+    void refreshIndexSummary();
+  };
+  const handleScanStarted = (scan: ScanRun) => {
+    setActiveScanId(scan.id);
+    setIndexStatus((current) => ({
+      ...current,
+      scanStatus: scan.status,
+      discoveredCount: scan.discoveredCount,
+      processedCount: scan.processedCount,
+      failureCount: scan.failureCount,
+    }));
+  };
 
   return (
     <main className="app-shell">
@@ -114,12 +136,13 @@ export function App() {
         <IndexStatusBar
           activeScanId={activeScanId}
           onCancelled={() => setActiveScanId(undefined)}
+          sourceCount={sourceCount}
           status={indexStatus}
         />
         <p className="service-status">{serviceStatus}</p>
       </aside>
       <section className={`workspace ${activeView === "search" ? "workspace-search" : ""} ${activeView === "sources" ? "workspace-sources" : ""} ${activeView === "organize" ? "workspace-organize" : ""} ${activeView === "settings" ? "workspace-settings" : ""}`} id={view.id} aria-labelledby="workspace-title">
-        {activeView === "search" ? <SearchWorkspace key={dataRevision} /> : activeView === "library" ? <SearchWorkspace key={dataRevision} libraryMode /> : activeView === "sources" ? <SourceManager key={dataRevision} /> : activeView === "organize" ? <OrganizeQueue key={dataRevision} onSuggestionResolved={() => void refreshIndexSummary()} /> : activeView === "settings" ? <BackupSettings onRestored={() => { setDataRevision((current) => current + 1); void refreshIndexSummary(); }} /> : (
+        {activeView === "search" ? <SearchWorkspace key={dataRevision} /> : activeView === "library" ? <SearchWorkspace key={dataRevision} libraryMode /> : activeView === "sources" ? <SourceManager key={dataRevision} onScanStarted={handleScanStarted} onSourcesChanged={handleSourcesChanged} /> : activeView === "organize" ? <OrganizeQueue key={dataRevision} onSuggestionResolved={() => void refreshIndexSummary()} /> : activeView === "settings" ? <BackupSettings onRestored={() => { setDataRevision((current) => current + 1); void refreshIndexSummary(); }} /> : (
           <>
             <header className="workspace-header">
               <div>
@@ -141,9 +164,10 @@ export function App() {
   );
 }
 
-function IndexStatusBar({ activeScanId, onCancelled, status }: {
+function IndexStatusBar({ activeScanId, onCancelled, sourceCount, status }: {
   activeScanId?: string;
   onCancelled: () => void;
+  sourceCount?: number;
   status: IndexStatus;
 }) {
   const [cancelling, setCancelling] = useState(false);
@@ -152,7 +176,9 @@ function IndexStatusBar({ activeScanId, onCancelled, status }: {
   const progress = status.discoveredCount > 0
     ? Math.min(100, Math.round((status.processedCount / status.discoveredCount) * 100))
     : 0;
-  const statusLabel = status.scanStatus === "running"
+  const statusLabel = sourceCount === 0
+    ? "请添加索引位置"
+    : status.scanStatus === "running"
     ? "正在扫描"
     : status.scanStatus === "queued"
       ? "等待扫描"

@@ -342,6 +342,31 @@ impl ScanCoordinator {
         Ok(resumed)
     }
 
+    pub fn start_unscanned_sources(
+        self: &Arc<Self>,
+        progress_sink: ProgressSink,
+    ) -> Result<Option<ScanRun>, DomainError> {
+        let unfinished_source_ids = ScanRepository::new(&self.database)
+            .list_unfinished()?
+            .into_iter()
+            .flat_map(|run| run.source_ids)
+            .collect::<HashSet<_>>();
+        let source_ids = IndexSourceRepository::new(&self.database)
+            .list_enabled()?
+            .into_iter()
+            .filter(|source| {
+                source.last_scan_at.is_none()
+                    && source.status != "unavailable"
+                    && !unfinished_source_ids.contains(&source.id)
+            })
+            .map(|source| source.id)
+            .collect::<Vec<_>>();
+        if source_ids.is_empty() {
+            return Ok(None);
+        }
+        self.start_scan(source_ids, progress_sink).map(Some)
+    }
+
     fn resolve_sources(
         &self,
         source_ids: &[String],
@@ -1524,11 +1549,40 @@ mod tests {
             error_summary: None,
         };
         scans.upsert_run(&resumable).unwrap();
+        assert!(coordinator
+            .start_unscanned_sources(Arc::new(|_| {}))
+            .unwrap()
+            .is_none());
         let resumed = coordinator.resume_unfinished(Arc::new(|_| {})).unwrap();
         assert_eq!(resumed.len(), 1);
         let progress = wait_for_terminal(&coordinator, &resumable.id);
         assert_eq!(progress.run.status, ScanStatus::Completed);
         assert_eq!(progress.run.processed_count, 1);
+    }
+
+    #[test]
+    fn starts_each_enabled_unscanned_source_once() {
+        let database = Arc::new(Database::open_in_memory().unwrap());
+        let root = tempfile::tempdir().unwrap();
+        File::create(root.path().join("first-scan.pdf")).unwrap();
+        let source = SourceService::new(&database)
+            .add_source(root.path().to_str().unwrap())
+            .unwrap();
+        let coordinator = ScanCoordinator::with_batch_size(database, 1);
+
+        let scan = coordinator
+            .start_unscanned_sources(Arc::new(|_| {}))
+            .unwrap()
+            .expect("an enabled source without scan history should start");
+        assert_eq!(scan.source_ids, vec![source.id]);
+        assert_eq!(
+            wait_for_terminal(&coordinator, &scan.id).run.status,
+            ScanStatus::Completed
+        );
+        assert!(coordinator
+            .start_unscanned_sources(Arc::new(|_| {}))
+            .unwrap()
+            .is_none());
     }
 
     #[test]

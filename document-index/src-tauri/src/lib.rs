@@ -51,8 +51,9 @@ fn run_desktop() -> Result<(), String> {
         .setup(|app| {
             let coordinator = app.state::<Arc<services::ScanCoordinator>>();
             services::SourceService::new(coordinator.database()).list_sources()?;
-            coordinator
-                .resume_unfinished(commands::indexing::progress_sink(app.handle().clone()))?;
+            let progress_sink = commands::indexing::progress_sink(app.handle().clone());
+            coordinator.resume_unfinished(progress_sink.clone())?;
+            coordinator.start_unscanned_sources(progress_sink)?;
             let watcher = app.state::<Arc<services::WatchService>>();
             watcher.sync_sources()?;
             Ok(())
