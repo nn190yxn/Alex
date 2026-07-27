@@ -1,5 +1,122 @@
 # 接口文档
 
+## 资料索引 Tauri Commands
+
+资料索引工程的 command 契约定义于 `当前工作区/document-index/src/domain/commands.ts`，前端调用封装位于 `当前工作区/document-index/src/lib/commandClient.ts`。成功与失败响应使用判别联合：
+
+```ts
+type CommandResult<T> =
+  | { ok: true; data: T; version: number }
+  | { ok: false; error: DomainError };
+```
+
+当前 Rust 运行时已注册：
+
+| Command | 参数 | 输出 | 状态 |
+|---------|------|------|------|
+| `health` | 无 | `"ready"` | 已实现并注册 |
+| `export_index_backup` | `{ path, preferences }` | `BackupExportResult` | 已实现并注册 |
+| `restore_index_backup` | `{ path }` | `BackupRestoreResult` | 已实现并注册 |
+| `list_sources` | 无 | `IndexSource[]` | 已实现并注册 |
+| `add_source` | `{ path }` | `IndexSource` | 已实现并注册 |
+| `set_source_enabled` | `{ sourceId, enabled }` | `IndexSource` | 已实现并注册 |
+| `start_scan` | `{ sourceIds }` | `ScanRun` | 已实现并注册 |
+| `cancel_scan` | `{ scanId }` | `ScanRun` | 已实现并注册 |
+| `get_scan_status` | `{ scanId }` | `ScanProgress` | 已实现并注册 |
+| `get_index_status` | 无 | `IndexStatus` | 已实现并注册 |
+| `list_scan_errors` | `{ scanId? }` | `ScanError[]` | 已实现并注册 |
+| `list_extensions` | 无 | `ExtensionRule[]` | 已实现并注册 |
+| `update_extensions` | `{ extensions }` | `ExtensionRule[]` | 已实现并注册 |
+| `rename_topic` | `{ topicId, displayName }` | `TopicDetail` | 已实现并注册 |
+| `merge_topics` | `{ sourceTopicIds, targetName }` | `TopicDetail` | 已实现并注册 |
+| `move_documents_to_topic` | `{ documentIds, targetTopicId?, newTopicName? }` | `TopicDetail[]` | 已实现并注册 |
+| `list_organize_suggestions` | `{ page, pageSize }` | `Page<GroupingSuggestion>` | 已实现并注册 |
+| `accept_organize_suggestion` | `{ suggestionId }` | `TopicDetail` | 已实现并注册 |
+| `dismiss_organize_suggestion` | `{ suggestionId }` | `GroupingSuggestion` | 已实现并注册 |
+| `search_topics` | `{ query }` | `Page<TopicSummary>` | 已实现并注册 |
+| `get_topic_detail` | `{ topicId, sortBy, sortDirection }` | `TopicDetail` | 已实现并注册 |
+| `open_document` | `{ documentId }` | `null` | 已实现并注册 |
+| `reveal_document` | `{ documentId }` | `null` | 已实现并注册 |
+| `create_preview_session` | `{ documentId, viewport }` | `PreviewSession` | 已实现并注册 |
+| `resize_preview_session` | `{ sessionId, viewport }` | `null` | 已实现并注册 |
+| `close_preview_session` | `{ sessionId }` | `null` | 已实现并注册 |
+| `recycle_documents` | `{ documentIds, confirmationToken }` | `RecycleResult` | 已实现并注册 |
+| `open_recycle_bin` | 无 | `null` | 已实现并注册 |
+
+TypeScript 中的主题、建议、搜索、详情、文件、预览和回收站边界均已接入 Rust 运行时。
+
+扫描进度通过 `scan-progress` Tauri 事件发送 `ScanProgress`。`start_scan` 接受空 `sourceIds` 时扫描全部启用来源；重复选择同一来源的活动扫描返回 `SCAN_ALREADY_RUNNING`。`cancel_scan` 保留已提交的扫描批次，`get_scan_status` 返回当前路径、计数、状态和已用时间。`get_index_status` 无输入，返回 `IndexStatus`，包含可选扫描状态、发现与处理进度、活动文档数、活动主题数、待整理数、最近扫描失败数和最近成功完成时间。`list_scan_errors` 接受可选 `scanId`，省略时读取最近扫描运行；`list_extensions` 返回完整内置和自定义扩展名规则。
+
+稳定错误码包括输入、索引源、路径边界、文档、主题、扫描、数据库、文件系统、调用层和内部错误。前端 invoke 异常只返回归一化错误，不暴露本地路径或原始异常正文。
+
+## 资料索引 SQLite 仓储
+
+SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src/database.rs`，记录类型和仓储位于 `当前工作区/document-index/src-tauri/src/repositories/`。所有 `rusqlite` 失败统一映射为 `DATABASE_ERROR`，仓储写操作通过 `Database::transaction` 提交或整体回滚。
+
+| 仓储 | 主要方法 | 行为 |
+|------|----------|------|
+| `BackupRepository` | `snapshot`、`replace` | 按严格备份白名单读取元数据快照，并在单一事务中整套恢复配置、双时间聚合与 FTS |
+| `IndexSourceRepository` | `upsert`、`get`、`list`、`list_enabled` | 保存、读取索引源状态并稳定列出启用来源 |
+| `TopicRepository` | `upsert`、`get`、`list_page`、`rename_manual`、`merge_manual`、`merge_suggestion_manual`、`move_documents_manual` | 保留人工显示名称，以事务维护建议终态、人工归属规则、空主题清理和双时间文档标记 |
+| `DocumentRepository` | `upsert_batch`、`upsert_discovery_batch`、`get`、`get_by_source_path`、`list_by_source_file_identity`、`list_for_topic_sorted`、`mark_missing_not_seen`、`mark_missing_not_seen_under` | 批量写入主题与元数据，按来源和身份读取最多两个移动候选，保留人工主题归属并同步人工规则路径，支持全源和路径组件边界内的缺失标记、四种稳定排序与主题聚合刷新 |
+| `ScanRepository` | `upsert_run`、`get_run`、`list_unfinished`、`index_status`、`add_error`、`list_errors`、`list_latest_errors` | 保存扫描源、恢复游标、计数和逐路径错误，并聚合侧栏状态快照 |
+| `ExtensionRuleRepository` | `upsert`、`replace_enabled`、`list` | 管理内置和自定义扩展名规则及原子白名单替换 |
+| `GroupingRepository` | `find_candidates`、`list_pending_suggestions`、`get_suggestion`、`dismiss_pending_suggestion` | 按规范化名称和首个关键词读取有界归组候选，按分数分页读取、定位和忽略待整理建议 |
+| `SearchRepository` | `search_topic_ids`、`search_topics`、`rebuild` | 查询或重建仅含元数据的 FTS5 索引，组合文档级筛选并稳定分页主题 ID |
+
+持久化记录包括 `IndexSourceRecord`、`TopicRecord`、`DocumentRecord`、`ScanRunRecord`、`ScanErrorRecord` 和 `ExtensionRuleRecord`。`documents` 使用 `(source_id, absolute_path)` 唯一键；`topics` 分别保存 `newest_created_document_id` 和 `recently_modified_document_id`；搜索只返回仍处于 `available` 状态的文档所属主题，主题与搜索分页上限为 100 条。
+
+## 资料索引服务接口
+
+| 服务 | 主要方法 | 行为 |
+|------|----------|------|
+| `SourceService` | `list_sources`、`add_source`、`set_source_enabled`、`list_extensions`、`update_extensions`、`enabled_extensions` | 实时校验和管理索引源状态与扩展名白名单，保留离线来源索引 |
+| `NameNormalizer` | `normalize` | 输出原始文件名、扩展名、规范化名称、版本标签和版本排序键 |
+| `GroupingService` | `classify`、`blocking_keys`、`list_organize_suggestions`、`dismiss_organize_suggestion` | 生成阻塞键，计算元数据证据分数，返回归组决策，映射建议分页并忽略待处理建议 |
+| `TopicService` | `detail`、`rename_topic`、`merge_topics`、`accept_organize_suggestion`、`move_documents_to_topic` | 返回稳定排序主题详情，以事务执行人工重命名、建议接受、合并和拆分 |
+| `SearchService` | `search_topics` | 校验时间范围，执行文本、来源、目录和双时间筛选，返回稳定分页的 `TopicSummary` |
+| `ShellService` | `open_document`、`reveal_document` | 按数据库文档 ID 重新校验实时文件与来源边界，再委托 Windows Shell 打开或定位 |
+| `PreviewService` | `create_session`、`close_session`、`active_session_id` | 创建单活动短期预览会话，按格式与大小选择内置适配器并释放会话状态 |
+| `WindowsPreviewHost` | `start`、`resize`、`unload` | 在专用 STA 线程托管 DOC、XLS、PPT 的系统 `IPreviewHandler`，同步预览区域并释放活动处理程序 |
+| `RecycleBinService` | `recycle_documents`、`open_recycle_bin` | 校验确认令牌和受控文档路径，成功移入 Windows 回收站后以事务更新文档状态与主题聚合 |
+| `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`start_unscanned_sources`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，为启用且从未扫描的在线来源补启首次扫描，隔离离线来源，并对来源内目录执行有界批量局部更新 |
+| `WatchService` | `new`、`sync_sources` | 只维护启用且实时可访问来源的递归 watcher，通过有界队列、防抖、generation 和溢出根复扫调度局部更新 |
+| `BackupService` | `export`、`restore` | 导出版本化元数据 JSON，校验并事务恢复配置，重新检查来源和文档实时状态 |
+
+`GroupingDecision` 包含 `AutoGroup`、`Suggest` 和 `Independent` 三种结果。`GroupingMatch` 返回目标主题、0 到 1 的总分和 `GroupingEvidence[]`；证据类型沿用 `normalizedName`、`keywords`、`editSimilarity`、`version`、`fileType` 和 `path`。中置信度建议写入 `grouping_suggestions`，来源主题 ID 排序后形成稳定建议 ID，重复扫描会更新同一建议。扫描发现新路径时只对唯一、旧路径已消失的人工归组身份候选执行原记录接管；自动归组记录继续走名称分类流程。
+
+`accept_organize_suggestion` 只接受状态为 `pending` 且引用至少两个有效主题的建议。目标主题为去重并稳定排序后的首个主题；建议状态、文档迁移、人工规则、源主题清理、相关建议关闭和双时间聚合在同一事务中提交。`dismiss_organize_suggestion` 只把当前待处理建议更新为 `dismissed`，不会改变主题或文档归属。未知建议和已处理建议返回 `INVALID_INPUT`。
+
+`SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。
+
+前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源筛选支持多选 ID，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。主题选择仅在前端保存当前展开的 `topicId`；重复选择当前主题会清空该 ID，选择其他主题会切换该 ID，后续详情始终通过 `get_topic_detail` 按 ID 读取权威数据。
+
+前端 `TopicEditor` 使用 `search_topics` 每页读取 100 条主题，根据响应 `total` 计算总页数并只渲染当前页。翻页保留已选主题 ID、活动主题和已选文档，使跨页合并与跨页拆分目标选择继续可用；目录标题始终显示权威主题总数。
+
+`TopicService::detail` 接收主题 ID、`SortField` 和 `SortDirection`，返回 `TopicDetail`。`documents` 包含全部可用状态的版本记录；`newestCreatedDocument` 和 `recentlyModifiedDocument` 只引用当前可访问文档。主题不存在时返回 `TOPIC_NOT_FOUND`。`get_topic_detail` Rust command 已注册。
+
+前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，键名为 `document-index.default-time-dimension`；版本号和文件名排序不会覆盖该偏好。版本选择只接受 `available` 文档，单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
+
+前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
+
+`ShellService::open_document` 和 `ShellService::reveal_document` 接收文档 ID。服务拒绝未知文档、非 `available` 状态、实时缺失文件、不可访问来源及 canonical 路径越界；对应错误码包括 `DOCUMENT_NOT_FOUND`、`SOURCE_NOT_FOUND`、`SOURCE_UNAVAILABLE`、`FILE_SYSTEM_ERROR` 和 `PATH_OUTSIDE_SOURCE`。`ShellAdapter` 隔离系统调用，`SystemShellAdapter` 在 Windows 上调用 Explorer；两个 Rust command 已注册，成功结果的 `data` 为 `null`。
+
+`PreviewSession` 包含短期会话 ID、文档 ID、文件名、扩展名、实时大小和 `PreviewContent`。内容判别联合包括纯文本 `text`、带 MIME 与 Base64 的 `binary`、带 `PreviewSection[]` 的 `office`、携带原生会话 ID 的 `native`，以及原因属于 `unsupportedFormat`、`fileTooLarge` 或 `invalidContent` 的 `limited`。`PreviewViewport` 使用 `x`、`y`、`width` 和 `height` 描述宿主窗口内的预览区域。内置服务、Windows 原生宿主和预览 commands 均已完成并注册。
+
+前端 `PreviewPane` 只接收主题详情返回的文档记录，并继续以文档 ID 调用预览 command。组件使用单一活动 session ID 驱动创建、区域调整和关闭；切换文件、折叠预览或卸载组件都会关闭会话。文本、图片、PDF、Office 分段、Windows 原生内容和受限状态分别按 `PreviewContent.kind` 渲染，预览正文与 Blob URL 仅保留在组件内存中。
+
+`WindowsPreviewHost::start` 接受旧版 Office 文件路径、父窗口句柄和 `PreviewViewport`，返回短期原生会话 ID；`resize` 与 `unload` 只接受当前活动会话 ID。切换文件时先卸载旧处理程序，处理程序发现、COM 初始化和调用失败统一返回 `FILE_SYSTEM_ERROR`，无效格式、窗口句柄、区域或失效会话返回 `INVALID_INPUT`。
+
+`RecycleBinService::recycle_documents` 接受去重前的文档 ID 列表和固定明确确认令牌。成功返回的 `RecycleResult` 包含 `recycledDocumentIds` 和稳定排序的 `affectedTopicIds`；空选择或无效确认返回 `INVALID_INPUT`，文档、来源和路径错误沿用受控 Shell 校验错误，系统回收失败返回 `FILE_SYSTEM_ERROR`。`open_recycle_bin` 委托同一适配器打开 Windows 回收站。
+
+`export_index_backup` 接受 `.json` 路径和 `BackupPreferences`，偏好包括 `defaultTimeDimension: "modifiedAt" | "createdAt"`、`theme: "parchment" | "minimal"` 与范围为 32 至 68 的 `workspaceSplit`，返回来源、主题和文档数量。`restore_index_backup` 接受用户通过原生文件对话框选择的 `.json` 路径，成功返回同类计数与恢复后的偏好；历史备份缺少 `theme` 时返回 `parchment`。未知主题及其他偏好校验失败返回字段路径明确的 `INVALID_INPUT`，文件读写失败返回 `FILE_SYSTEM_ERROR`，活动扫描或活动普通写返回 `SCAN_ALREADY_RUNNING`，事务失败返回 `DATABASE_ERROR`；恢复 guard 存续期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收也返回 `SCAN_ALREADY_RUNNING`。普通写 command 彼此串行，冲突时沿用同一稳定错误码和通用操作进行中文案。成功后 command 同步来源 watcher，前端写回并应用三项偏好。
+
+外观偏好使用 `document-index.appearance-theme` 本机存储键。`readTheme()` 对缺失值、未知值和存储读取异常返回 `parchment`；`saveTheme(theme)` 先设置根元素 `data-theme`，再尝试持久化，因此存储写入异常不会阻止当前会话完成视觉切换。
+
+前端回收确认展示选中文档数量、当前主题、文件名和完整路径。成功响应触发当前 `TopicDetail` 与外层 `TopicSummary` 刷新，并显示 `open_recycle_bin` 入口；失败响应保留确认上下文并显示索引状态保持说明。
+
+`create_preview_session` 从当前 Tauri `WebviewWindow` 获取原生父窗口句柄。普通格式创建内置会话；DOC、XLS 和 PPT 创建 `native` 会话并将 viewport 传给 Windows Preview Host。`resize_preview_session` 对内置会话完成活动状态校验，对原生会话同步 `IPreviewHandler::SetRect`；`close_preview_session` 释放对应活动会话。五个预览与回收站 command 均返回统一 `CommandResult<T>`。
+
 ## 通用响应结构
 
 所有 API 统一使用 `ApiResponse<T>` 响应结构，定义位于 `当前工作区/geo-platform/packages/shared-types/src/index.ts`。

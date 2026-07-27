@@ -1,5 +1,155 @@
 # 系统架构文档
 
+## 资料索引桌面工程
+
+Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，源码与发布边界归属独立仓库 `https://github.com/nn190yxn/zhuaomiansousuo`。主仓库保留需求、设计和任务规格，并通过 gitlink 固定已验证的独立仓库提交。任务 1 至任务 11 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及最终前端与 Rust 交付验证。
+
+```text
+document-index/
+├── src/
+│   ├── app/                    React 单窗口应用外壳
+│   ├── domain/                 TypeScript 领域模型与 command 契约
+│   ├── features/preview/       文件预览会话、格式渲染与资源释放
+│   ├── features/search/        搜索筛选、主题结果与可调整双栏工作区
+│   ├── features/organize/      待整理建议与人工主题编辑工作区
+│   ├── features/sources/       索引位置、扫描错误与扩展名设置
+│   ├── features/topics/        主题详情、版本排序、文件操作与回收确认
+│   ├── lib/                    类型化 Tauri invoke 客户端
+│   └── test/                   Vitest 与 Testing Library 初始化
+├── src-tauri/
+│   ├── capabilities/           主窗口最小 capability
+│   ├── migrations/             SQLite schema 与 FTS5 迁移
+│   ├── icons/                  Tauri 多平台应用图标
+│   ├── src/commands/            健康检查、索引源、扫描、主题、搜索、备份和文件操作 command
+│   ├── src/database.rs          SQLite 连接、配置与迁移执行器
+│   ├── src/domain/              Rust DTO、错误码和响应协议
+│   ├── src/repositories/        索引源、文档、主题、扫描、扩展名和搜索仓储
+│   ├── src/services/            索引源、名称规范化、智能归组、主题、搜索、Shell、预览、备份、扫描协调和文件监听服务
+│   ├── tests/                   SQLite 仓储、增量恢复、核心流程验收与十万条元数据性能测试
+│   └── tauri.conf.json          单主窗口与 Windows NSIS、WiX 配置
+├── app-icon.svg                应用图标源文件
+├── package.json                 pnpm、Vite、TypeScript 与 Vitest 脚本
+└── pnpm-workspace.yaml          pnpm 11 依赖构建许可
+```
+
+前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
+
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、预览创建/调整/关闭、文档回收、打开回收站，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务和回收站服务，并接入单实例、窗口状态恢复、原生目录与备份文件对话框和应用数据目录初始化；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
+
+Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器；`main` 推送保存构建 Artifact，`v*` 标签生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
+
+应用外观支持 `parchment` 与 `minimal` 两套稳定主题。`src/features/settings/themePreference.ts` 负责从 `document-index.appearance-theme` 安全读取偏好、校验主题标识并设置根元素 `data-theme`；`src/main.tsx` 在 React 挂载前恢复主题，避免首帧闪烁。`App` 持有当前主题状态，设置页的 `AppearanceSettings` 使用原生按钮和 `aria-pressed` 提供即时切换，主题更新只改变根元素属性和应用状态，不重新挂载业务工作区。`global.css` 通过颜色、字体、表面、边框、强调和焦点语义变量保留羊皮卷视觉，并为极简黑白主题提供白灰表面、黑灰文字、克制绿色状态色与 Windows 系统无衬线字体。
+
+`SearchWorkspace` 负责搜索输入、来源与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。
+
+主题结果与版本列表、文件预览区使用同一工作区内的可调整分隔线。指针拖动和左右方向键均可修改比例，宽度限制在 32% 到 68%，并保存到 `localStorage` 的 `document-index.workspace-split`；窄屏布局切换为上下排列并隐藏分隔线。预览区域支持折叠、恢复、工作区全宽和恢复分栏，折叠会卸载预览组件并释放当前会话。
+
+`PreviewPane` 以单个已选版本为输入，通过 `create_preview_session` 创建短期会话。切换文件、折叠区域、离开搜索工作区或组件卸载时调用 `close_preview_session`；`ResizeObserver` 和窗口尺寸事件将预览区域同步到 `resize_preview_session`。文本、图片和新版 Office 内容提供只读渲染与缩放，Office 分段支持页面或工作表切换，PDF 使用 WebView 内置查看器，旧版 Office 交给 Windows 原生宿主。受限内容和加载失败状态提供默认程序打开与 Explorer 定位入口，预览二进制 Blob URL 在切换和卸载时撤销。
+
+`TopicDetailPanel` 在主题选择后通过 `get_topic_detail` 按 ID 读取全部已知版本。版本行展示原始文件名、规范化名称、版本标签、创建时间、修改时间、类型、大小、完整路径、可用状态和双时间标记；缺失与不可访问文件保持可见，其选择、打开、定位和回收操作处于禁用状态。四类排序直接重新读取服务端稳定顺序，`modifiedAt` 与 `createdAt` 会保存到 `document-index.default-time-dimension` 作为后续主题的默认时间维度。
+
+版本操作支持单项和批量选择。打开与 Explorer 定位继续只传数据库文档 ID；回收确认层展示主题、数量、文件名和完整路径，确认后使用固定令牌调用 `recycle_documents`。成功后详情和搜索主题摘要同时刷新，并提供打开 Windows 回收站入口；系统失败时确认层保持可见并提示活动索引维持原状。
+
+`SourceManager` 接管“索引位置”工作区，通过 `tauri-plugin-dialog` 的目录模式选择本地位置。应用启动时先读取来源；空来源直接进入该工作区，侧栏显示“请添加索引位置”，页面展示目录选择引导卡。新增来源保存成功后立即启动单源扫描，并向应用外壳回传来源列表和扫描运行，使侧栏立刻切换为排队或扫描状态；来源卡片展示路径、可用状态、添加时间、最近扫描和最近成功时间，并提供暂停、恢复和手动刷新。组件监听 `scan-progress`，运行结束后重新读取来源状态和该次扫描的持久化错误。
+
+同一工作区的扩展名设置读取完整 `ExtensionRule[]`，允许切换内置规则、校验并添加 1 到 16 位字母或数字组成的自定义扩展名，然后原子保存当前启用白名单。扫描错误区域默认读取最近一次扫描运行，也可在当前扫描结束事件后按运行 ID 读取失败路径、错误类型、时间和重试状态。
+
+`OrganizeQueue` 接管“待整理”工作区，按评分分页展示系统建议、候选主题 ID、置信度和逐项归组证据。接受建议调用独立 command，在同一事务中更新建议终态、合并主题、写入人工归组规则、清理源主题并刷新双时间聚合；忽略建议只更新建议终态。建议处理完成后队列、人工主题目录和侧栏索引统计会重新读取权威数据。
+
+`TopicEditor` 以每页 100 条调用主题搜索，使用响应 `total` 展示权威主题总数和分页控件，单次只渲染当前页。翻页保留已选主题 ID 和当前主题详情，因此可跨页选择合并对象，也可在保持源文档选择的同时从另一页指定拆分目标。用户可编辑单个主题显示名、选择多个主题并指定合并名称，也可在主题详情中选择可用文档，将其拆分到现有主题或新主题；缺失和不可访问文档保持展示且不能参与拆分。所有写操作继续调用既有主题服务，并在成功后刷新主题目录和详情。
+
+### SQLite 元数据层
+
+`src-tauri/src/database.rs` 使用 `Mutex<rusqlite::Connection>` 管理单个本地连接，打开连接时启用外键、WAL 和 5 秒 busy timeout，并在事务中按版本执行编译期嵌入的 SQL migrations。桌面进程启动时在应用数据目录打开 `document-index.sqlite3`，数据库由共享 `ScanCoordinator` 持有并通过 Tauri managed state 注册。
+
+初始 schema 包含 `index_sources`、`documents`、`topics`、`grouping_suggestions`、`manual_grouping_rules`、`scan_runs`、`scan_errors` 和 `extension_rules`，并预置 12 个默认文档扩展名。`topic_search` FTS5 虚拟表仅索引主题名、文件名、规范化名称和完整路径；文档增删改与主题显示名更新通过 SQLite triggers 增量同步。第三个迁移为规范化名称候选检索和待整理建议状态增加索引，第四个迁移为来源内文件身份查询增加索引，并允许硬链接对应的人工规则共享同一文件身份。
+
+仓储层按领域拆分为 `IndexSourceRepository`、`DocumentRepository`、`TopicRepository`、`GroupingRepository`、`ScanRepository`、`ExtensionRuleRepository` 和 `SearchRepository`。文档批量 upsert、全源或目录范围缺失标记和主题双时间聚合在同一事务中完成；目录范围使用 `Path::starts_with` 的路径组件边界，避免相似目录名前缀扩大更新范围。人工主题归属和人工主题名称在后续自动更新中保持优先。文档按来源和文件身份执行有界候选查询；身份接管更新原文档路径时，同一事务同步人工规则中的来源、路径和身份。文档列表支持创建时间、修改时间、版本和文件名排序，缺失值统一置后，并以另一时间维度、路径和 ID 稳定决胜。主题、建议和 FTS 搜索分页把单页数量限制为 1 到 100 条。
+
+### 索引源与扫描服务
+
+`SourceService` 负责目录 canonicalize、实时可访问性校验、索引源重叠检测、暂停恢复、扩展名规则读取和白名单替换。添加来源时要求目录当前可访问；启动和来源列表读取会重新打开来源根目录校验访问状态：禁用来源固定为 `paused`，在线启用来源恢复为 `ready`，离线启用来源标记为 `unavailable`，仍关联未完成运行的 `scanning` 来源保留运行状态。状态刷新只更新来源记录，不改变文档和主题可用状态。扩展名统一去除前导点、转为小写并校验为 1 到 16 位字母或数字。
+
+`NameNormalizer` 对文件名执行 Unicode NFKC 规范化，提取数字版本、日期、修订版、最终版、终稿、副本和 copy 标记，并生成规范化名称、原始版本标签及稳定排序键。扫描过程只读取文件系统元数据，正文不会被读取或写入索引。文件身份在 Unix 上由设备号和 inode 构成，在 Windows 上通过只读属性句柄获取卷序列号和文件索引。
+
+`ScanCoordinator` 使用后台线程、原子取消标记和进程内任务表管理扫描。来源和路径采用稳定顺序，允许扩展名过滤，按批次将临时低置信度主题与文档元数据写入同一事务；每次批次提交同步保存来源 ID 与路径游标。协调器还以同一 maintenance 状态原子维护恢复标记和普通写标记：恢复只在扫描来源为空且普通写未活动时开始，普通写只在恢复和其他普通写均未活动时登记，并由 RAII guard 在 command 完成或提前返回时释放。该串行边界覆盖来源状态刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收，避免跨事务校验及文件系统副作用交错。人工归组文档出现新路径时，协调器只在同一来源内存在唯一身份候选、候选仍带人工归属且旧路径已经消失时沿用原文档 ID 和主题；普通自动归组文档继续按新名称重新计算，仍然存在的硬链接也不会被误判为移动。单项目录或元数据访问错误写入 `scan_errors` 并继续处理，来源完整成功且结束时仍可访问才执行缺失标记。离线来源安全记录 `source_unavailable` 并保留全部既有文档和主题，其他来源继续扫描。用户取消会保留已提交批次。应用启动先恢复异常遗留的 `queued` 和 `running` 扫描，再为启用、在线且 `last_scan_at` 为空的来源创建首次扫描；未完成运行中的来源会被排除，已尝试扫描的来源不会重复启动。扫描通过 `scan-progress` Tauri 事件推送进度。
+
+`WatchService` 只为启用且根目录实时可访问的来源持有 `notify 8.2` 递归 watcher，callback 将事件写入容量 1024 的有界队列，单 worker 以 400 毫秒 trailing window 按来源和目录合并处理。Access 事件被忽略；新增、修改、重命名、移动和移除事件映射到受影响目录，祖先目录吸收后代目录。通知层要求重扫、错误或队列溢出时提升为来源根目录复扫。来源暂停、离线、恢复或路径变化会更新 watcher generation，旧 generation 事件不会进入索引；在线恢复后通过来源列表刷新或显式同步重建 watcher。
+
+`ScanCoordinator::reconcile_directories` 校验来源和绝对路径边界，复用扩展名、元数据读取、名称规范化、自动归组和批量事务链路。发现项按协调器 `batch_size` 分批 upsert，批内候选继续参与 transient grouping，根目录溢出复扫的内存占用保持有界。完整遍历成功后只在对应目录范围标记本轮未见文档为 missing；遍历或元数据读取失败时保留既有可用状态。全量扫描活动期间返回 `SCAN_ALREADY_RUNNING`，监听 worker 延迟后从来源根目录重试。桌面启动依次校验来源状态、恢复未完成扫描并同步可访问来源 watcher；来源新增、暂停、恢复和列表刷新成功后同步 watcher 生命周期。
+
+`ScanRepository::index_status` 聚合当前活动文档、对应主题和待整理建议数量，优先选择活动扫描作为状态与进度来源，并读取最近一次成功完成时间。`ScanCoordinator::index_status` 将持久化记录映射为跨语言 `IndexStatus`，`get_index_status` command 负责应用启动时的状态快照；扫描事件完成后前端重新读取快照，以同步最终数据库计数。
+
+### 索引配置备份与恢复
+
+`BackupService` 将索引源、主题、文档元数据与主题关系、人工归组规则、扩展名规则，以及默认时间维度、外观主题和工作区分隔线偏好导出为版本化 JSON。序列化模型使用严格字段白名单，备份不包含文档正文、预览内容、原始文件、扫描运行、扫描错误和待整理建议；写入过程先同步落盘到同目录临时文件，再以原子替换完成导出。
+
+恢复入口先通过 maintenance guard 拒绝活动扫描和活动普通写操作，再完整校验格式版本、偏好值域、记录 ID 唯一性、来源与主题引用、文档来源边界、人工规则关系和扩展名约束。主题只接受 `parchment` 与 `minimal`；缺少主题字段的历史备份通过 serde 默认值恢复为 `parchment`，未知值在数据库替换前返回 `INVALID_INPUT`。恢复期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题重命名与归组写入、文件回收统一返回 `SCAN_ALREADY_RUNNING`，防止旧状态校验、整库替换、watcher 同步及不可回滚文件操作交错。`BackupRepository::replace` 在单个 SQLite 事务中整套替换配置，重新计算来源状态和文档实时可用性、主题双时间标记并重建 FTS；任一写入失败会回滚到恢复前快照。暂停来源保持 `paused`，其路径可访问时文档仍按实时文件状态标记。恢复成功后 `WatchService` 根据新来源配置重建监听，前端写回默认时间维度、工作区分隔线和主题偏好，立即应用主题并刷新索引统计。
+
+`src-tauri/tests/incremental_recovery.rs` 使用临时目录和磁盘 SQLite 串联公开服务边界，覆盖文件新增、修改、重命名、移动和删除后的局部 reconcile，人工归组文档经局部 reconcile 与完整扫描移动后保持文档 ID、主题和规则路径，硬链接保留旧路径时不被误判为移动，重复与祖先目录合并输入、监听溢出后的根目录复扫、离线来源保留、带路径游标的未完成扫描跨来源继续，以及备份恢复后的 FTS、双时间聚合重建和后续局部更新。测试同时以正文标记验证索引和备份始终只包含元数据。
+
+`src-tauri/tests/core_flow_acceptance.rs` 是任务 9.2 的单文件端到端验收，使用 `TempDir`、真实目录和磁盘 SQLite 串联索引源添加、首次扫描、跨目录同主题多版本归组、双时间排序与标记、元数据 FTS、人工重命名/合并/拆分、后续扫描和备份导出。验收覆盖默认扩展名、自定义扩展名启用、内置规则禁用、不支持扩展名和来源边界排除，并使用唯一正文 marker 验证 FTS 与备份均无正文。P1-P8 由端到端断言覆盖，P9-P10 复用扫描协调器的取消持久化和错误隔离测试，P1-P5 的算法级变化继续由现有 `proptest` 生成器覆盖。
+
+`src-tauri/tests/metadata_performance.rs` 是任务 9.3 的独立 release 性能门禁。测试在临时磁盘 SQLite 中以单事务写入 8 个来源、20,000 个主题和每主题 5 个版本，共 100,000 条仅元数据文档；来源、主题、文件名、目录、双时间和版本均按稳定规则分布，现有 FTS triggers 为每条文档真实维护 `topic_search`。测试通过真实 `SearchService` 分别执行空文本主题浏览分页、常用 FTS 前缀检索和来源/目录/双时间组合筛选，每类预热 2 次并测量 7 次，以最大值执行 500 毫秒断言。FTS 查询由 `topic_search` 虚表命中集驱动并连接 `documents`，轻量查询计划测试确保执行计划不回退到逐文档相关子查询。
+
+2026-07-25 当前 Linux 容器 release 实测中，100,000 条 fixture 构建耗时 34.56 秒；预热后 7 次查询最大值分别为空文本浏览 75.18 毫秒、FTS 前缀 119.86 毫秒、组合筛选 42.98 毫秒。该数据只代表当前容器，需求 R10.2 指定的 Windows 10/11、4 核 CPU、8 GB 内存和 SSD 基线仍需实机确认。
+
+`ScanRepository::list_latest_errors` 使用与索引状态相同的运行优先顺序定位最近扫描，并复用按扫描 ID 的错误查询。`list_scan_errors` command 接受可选扫描 ID，省略时返回最近运行错误；`list_extensions` command 返回全部内置和自定义规则，供设置界面恢复当前状态。
+
+### 智能归组
+
+`GroupingService` 为规范化名称生成紧凑前缀和名称关键词阻塞键，通过 `GroupingRepository` 只读取名称完全一致或命中首个关键词的候选，单次最多比较 200 条记录。评分证据包括规范化名称完全一致、关键词 Jaccard 相似度、字符编辑相似度、版本标记、文件类型族和父路径主题词；候选按分数降序和主题 ID 稳定决胜。
+
+分数达到 0.78 的候选自动归入已有主题，达到 0.50 的候选保留独立主题并创建 `pending` 待整理建议，其余文档保持低置信度独立主题。扫描协调器同时比较当前未提交批次中的候选，确保同一批次的跨目录同名文件共享主题。主题、文档和建议在单个事务中写入，扫描进度分别累计新增主题和建议数量。
+
+### 双时间与人工主题整理
+
+`TopicService` 提供主题详情、人工重命名、主题合并、建议接受和文档拆分。人工编辑通过 `TopicRepository` 在单一事务内更新文档归属、`manual_topic` 标记、`manual_grouping_rules`、空主题清理和双时间聚合；合并目标采用去重后稳定排序的首个主题，新主题使用 UUID。普通人工合并会关闭引用被合并主题的待处理建议；建议接受把当前建议标记为 `accepted`，并把其他引用相关主题的待处理建议标记为 `dismissed`。后续扫描按文档路径 upsert 时保留人工主题归属，自动主题更新继续保留人工显示名称。
+
+每个主题分别维护创建时间最大的文档和修改时间最大的文档。时间并列时依次使用版本排序键、另一时间字段、完整路径和文档 ID 决胜；缺少对应时间的文档不参与主题时间标记，并在列表排序中位于已知值之后。
+
+主题详情返回主题中的全部已知版本，包括 `available`、`missing` 和 `inaccessible` 文档，并携带原始文件名、规范化名称、版本标签、版本排序键、创建时间、修改时间、扩展名、大小和完整路径。双时间标记只从 `available` 文档中选择；时间更新更晚的缺失或不可访问文档继续显示在版本列表中，同时标记落到下一份可访问文档。
+
+### 主题检索
+
+`SearchService` 接收 `SearchQuery`，校验创建时间和修改时间范围，将页码归一化到至少 1，并把单页大小限制为 1 到 100。空文本查询返回全部符合筛选条件的可用主题；非空文本被转换为安全的 FTS5 前缀词查询，通过 `topic_search` 匹配主题显示名、文件名、规范化名称和完整路径。
+
+`SearchRepository` 在文档层组合索引源、目录边界、创建时间和修改时间条件，再按主题聚合。目录判断使用大小写不敏感的完整路径或分隔符前缀比较，避免相似目录名和 SQL 通配符扩大范围。主题分页按所选创建时间、修改时间、版本或文件名聚合键排序，空值置后，主题 ID 负责最终稳定决胜；服务随后映射主题版本数量和双时间标记。
+
+### 受控文件 Shell 操作
+
+`ShellService` 只接受数据库文档 ID，通过 `DocumentRepository` 和 `IndexSourceRepository` 解析文档与来源。每次打开或定位前重新校验数据库可用状态、来源目录实时可访问性和文件实时存在性，并 canonicalize 两端路径；规范化后的文件路径必须位于规范化索引源边界内。
+
+生产适配器在 Windows 上以独立参数调用 `explorer.exe`：打开操作传入文档路径，定位操作传入 `/select,` 与文档路径组成的 `OsString`，以保留 Unicode 路径。测试通过注入式 `ShellAdapter` 记录调用，不触发真实 Shell；非 Windows 生产调用返回平台不支持错误。
+
+### 内置按需预览
+
+`PreviewService` 通过文档 ID 复用 `ShellService` 的实时文件与 canonical 来源边界校验，并在进程内维护最多一个活动会话 ID。新会话自动替换旧会话；关闭操作只接受当前活动会话，预览正文仅存在于 command 返回模型和前端会话内存中。
+
+文本、Markdown、CSV 和 JSON 以 2 MB 为上限按 UTF-8 纯文本加载；PDF 上限为 30 MB，PNG、JPEG、GIF、WebP 和 BMP 上限为 20 MB，二进制内容以固定 MIME 和 Base64 返回。DOCX、XLSX 和 PPTX 在 20 MB 文件上限内读取受限 ZIP/XML，单条目限制 4 MB、累计解压限制 8 MB、归档条目限制 2048，并输出文档、工作表或幻灯片分段。超限、格式不支持和内容损坏统一形成可展示的 `limited` 状态。
+
+### Windows Preview Handler 宿主
+
+`WindowsPreviewHost` 为 DOC、XLS 和 PPT 旧版 Office 格式提供原生预览边界。宿主在专用 STA 工作线程中初始化 COM，并通过消息通道串行处理 `start`、`resize` 和 `unload`；同一宿主最多保留一个活动原生会话，切换文件和宿主释放时都会先调用当前 `IPreviewHandler::Unload`。
+
+Windows 后端通过文件扩展名和 `ASSOCSTR_SHELLEXTENSION` 查询系统已注册的 Preview Handler CLSID，在进程内创建 `IPreviewHandler`，使用 `IInitializeWithFile` 只读初始化，并将父窗口句柄和 `PreviewViewport` 同步到处理程序。宿主只接受正尺寸区域和非零父窗口句柄，处理程序缺失或 COM 调用失败统一映射为通用不可用错误；非 Windows 平台保留同一接口并返回平台不可用结果。
+
+### Windows 回收站服务
+
+`RecycleBinService` 接受数据库文档 ID 和明确确认令牌，先去重并复用 `ShellService` 对每个文档执行实时状态、canonical 路径及索引源边界校验。全部路径通过后，服务一次性调用 `RecycleBinAdapter`；系统操作成功后，`DocumentRepository::mark_recycled` 才在单个事务中将对应文档标记为 `missing`，并重算全部受影响主题的版本数量查询基础和双时间标记。
+
+Windows 生产适配器使用 `SHFileOperationW`、`FO_DELETE` 和 `FOF_ALLOWUNDO` 将双空字符结尾的路径列表移入回收站，同时关闭系统二次确认和错误界面，由应用统一反馈结果。打开回收站通过 `explorer.exe shell:RecycleBinFolder` 完成。适配器错误发生时不会启动数据库事务，索引和主题聚合保持调用前状态；测试注入记录型适配器，避免移动真实文件。
+
+### 预览与回收站 command 编排
+
+`commands/preview.rs` 将 `create_preview_session`、`resize_preview_session`、`close_preview_session`、`recycle_documents` 和 `open_recycle_bin` 接入 Tauri。创建预览时 command 从调用方 `WebviewWindow` 获取 Windows HWND，并与 `PreviewViewport` 一起交给 `PreviewService`；内置格式忽略原生句柄，DOC、XLS 和 PPT 使用同一会话 ID 驱动原生处理程序的缩放与释放。
+
+`PreviewService` 统一记录内置和原生活动会话类型，切换格式时释放旧原生处理程序。所有新 command 复用扫描协调器持有的数据库生成响应版本，前端 `CommandContract` 和 `commandClient` 使用 camelCase 参数固定跨语言映射；回收站确认令牌只在用户确认流程后由调用方传入。
+
+任务 5.9 的专项测试固定搜索空查询、组合筛选、时间并列与稳定分页，Shell 越界路径与文件缺失，预览会话替换、关闭后尺寸调整、正文零持久化与系统处理程序不可用，以及回收成功和失败时的数据库状态边界。Windows Preview Host 和回收站测试均使用记录型适配器，不调用真实 COM 处理程序或移动真实文件。
+
+任务 6 的 25 项前端组件测试覆盖搜索筛选与清除、空状态、双时间字段关联、四类排序和偏好恢复、扫描状态转换、人工主题整理、默认两栏布局、分隔线偏好恢复、预览切换与资源释放、全宽模式往返，以及回收站成功和失败确认。组件测试通过类型化 command client mock 隔离 Tauri 系统调用，文件打开、原生预览和回收操作均不会触发真实桌面副作用。
+
 ## 当前架构
 
 多品牌 GEO 管理平台工程位于 `当前工作区/geo-platform/`。当前阶段已完成应用骨架、权限基础能力、品牌工作区、品牌知识库、多来源素材导入、GEO 优化单元管理、用户意图库、Prompt 模板生成、AI 平台配置、Adapter 边界、GEO 监测运行、原始回答记录、AI 回答解析、平台评价、人工复核、GEO 指数计算、看板数据、GEO 画布工作台、竞品监控与压制分析、引用来源分析、评价分析、内容策略中心、内容生成工作台、发布中心、任务复测中心、报告中心、顾问服务工作台和第一版运营后台页面串联，覆盖前端、后端、共享类型、数据库 schema、基础路由、API 边界、错误响应、品牌上下文注入和品牌访问校验。
