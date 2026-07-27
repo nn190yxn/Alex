@@ -2,7 +2,17 @@
 
 ## 资料索引开发与验证
 
-资料索引桌面工程位于 `当前工作区/document-index/`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。
+资料索引桌面工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。首次克隆主仓库时包含 submodule；已有工作区在拉取 gitlink 更新后初始化并同步 submodule：
+
+```bash
+# 首次克隆主仓库及全部子模块
+git clone --recurse-submodules https://github.com/nn190yxn/Alex.git
+
+# 在已有主仓库中初始化并同步子模块
+git submodule update --init --recursive --depth 1
+```
+
+日常源码提交、Windows 构建和版本发布在独立仓库完成。主仓库更新 `document-index` gitlink 后提交对应的版本引用；独立仓库的 `main` 推送生成 Windows 构建 Artifact，`v*` 标签生成 `.exe`、`.msi`、`checksums-sha256.txt` 和 GitHub Release。
 
 ```bash
 cd document-index

@@ -2,7 +2,7 @@
 
 ## 资料索引桌面工程
 
-Windows 本地资料索引工程位于 `当前工作区/document-index/`。任务 1 至任务 11 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及最终前端与 Rust 交付验证。
+Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，源码与发布边界归属独立仓库 `https://github.com/nn190yxn/zhuaomiansousuo`。主仓库保留需求、设计和任务规格，并通过 gitlink 固定已验证的独立仓库提交。任务 1 至任务 11 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及最终前端与 Rust 交付验证。
 
 ```text
 document-index/
@@ -36,7 +36,7 @@ document-index/
 
 Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、预览创建/调整/关闭、文档回收、打开回收站，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务和回收站服务，并接入单实例、窗口状态恢复、原生目录与备份文件对话框和应用数据目录初始化；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
 
-Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。仓库根目录的手动 GitHub Actions 工作流在 Windows MSVC runner 上执行测试、构建并上传两种安装器。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
+Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器；`main` 推送保存构建 Artifact，`v*` 标签生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
 应用外观支持 `parchment` 与 `minimal` 两套稳定主题。`src/features/settings/themePreference.ts` 负责从 `document-index.appearance-theme` 安全读取偏好、校验主题标识并设置根元素 `data-theme`；`src/main.tsx` 在 React 挂载前恢复主题，避免首帧闪烁。`App` 持有当前主题状态，设置页的 `AppearanceSettings` 使用原生按钮和 `aria-pressed` 提供即时切换，主题更新只改变根元素属性和应用状态，不重新挂载业务工作区。`global.css` 通过颜色、字体、表面、边框、强调和焦点语义变量保留羊皮卷视觉，并为极简黑白主题提供白灰表面、黑灰文字、克制绿色状态色与 Windows 系统无衬线字体。
 
