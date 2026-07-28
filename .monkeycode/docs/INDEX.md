@@ -2,7 +2,7 @@
 
 ## 项目概览
 
-当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台、Windows 本地优先专注应用“抵达 Focus”，以及 Windows 本地资料索引桌面工程。资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`。该工程当前已完成本地元数据索引、智能归组、双时间排序、人工整理、检索与预览、安全回收、增量监听、备份恢复、Windows 安装器和自动化验收；生产力增强任务 1 至任务 7 已完成统一偏好与备份边界、桌面系统适配器、全局与应用内快捷键、分级 Escape、最近搜索历史、安全匹配高亮、批量路径复制、批量 Explorer 定位、原子 CSV 元数据导出、系统托盘和窗口退出生命周期，以及定时扫描和授权后桌面通知。独立仓库全部开发分支推送均由 GitHub Actions 执行完整 Windows 门禁并生成安装器 Artifact。
+当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台、Windows 本地优先专注应用“抵达 Focus”，以及 Windows 本地资料索引桌面工程。资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`。该工程当前已完成本地元数据索引、智能归组、双时间排序、人工整理、检索与预览、安全回收、增量监听、备份恢复、Windows 安装器和自动化验收；生产力增强任务 1 至任务 8 已完成统一偏好与备份边界、桌面系统适配器、全局与应用内快捷键、分级 Escape、最近搜索历史、安全匹配高亮、批量路径复制、批量 Explorer 定位、原子 CSV 元数据导出、系统托盘和窗口退出生命周期、定时扫描、授权后桌面通知，以及可跳转搜索筛选的索引统计仪表盘。独立仓库全部开发分支推送均由 GitHub Actions 执行完整 Windows 门禁并生成安装器 Artifact。
 
 ## 核心文档
 
@@ -34,7 +34,7 @@ Windows 本地资料索引规格位于 `当前工作区/.monkeycode/specs/local-
 
 - `requirements.md`：快捷操作、搜索增强、批量处理、托盘、调度通知、统计、拖放、格式扩展、版本比较和自启需求
 - `design.md`：生产力偏好、桌面生命周期、运行时边界和 P1-P11 正确性属性
-- `tasklist.md`：13 组连续实施任务；任务 1 至任务 7 已完成
+- `tasklist.md`：13 组连续实施任务；任务 1 至任务 8 已完成
 
 抵达 Focus Windows 桌面版规格位于 `当前工作区/.monkeycode/specs/arrive-focus-desktop/`。
 

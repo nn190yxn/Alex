@@ -28,6 +28,7 @@ type CommandResult<T> =
 | `cancel_scan` | `{ scanId }` | `ScanRun` | 已实现并注册 |
 | `get_scan_status` | `{ scanId }` | `ScanProgress` | 已实现并注册 |
 | `get_index_status` | 无 | `IndexStatus` | 已实现并注册 |
+| `get_index_statistics` | 无 | `IndexStatistics` | 已实现并注册 |
 | `list_scan_errors` | `{ scanId? }` | `ScanError[]` | 已实现并注册 |
 | `list_extensions` | 无 | `ExtensionRule[]` | 已实现并注册 |
 | `update_extensions` | `{ extensions }` | `ExtensionRule[]` | 已实现并注册 |
@@ -52,7 +53,7 @@ type CommandResult<T> =
 
 TypeScript 中的主题、建议、搜索、详情、文件、预览和回收站边界均已接入 Rust 运行时。`TopicSummary` 可选携带 `searchMatch`，其结构为 `{ field, text, ranges }`；`field` 支持 `topicName`、`fileName`、`normalizedName` 和 `path`，`ranges` 使用 Unicode 字符索引的半开区间 `[start, end)`。后端只返回纯文本和范围，前端不接收或渲染 HTML 标记。
 
-扫描进度通过 `scan-progress` Tauri 事件发送 `ScanProgress`。`start_scan` 接受空 `sourceIds` 时扫描全部启用来源；重复选择同一来源的活动扫描返回 `SCAN_ALREADY_RUNNING`。`cancel_scan` 保留已提交的扫描批次，`get_scan_status` 返回当前路径、计数、状态和已用时间。`get_index_status` 无输入，返回 `IndexStatus`，包含可选扫描状态、发现与处理进度、活动文档数、活动主题数、待整理数、最近扫描失败数和最近成功完成时间。`list_scan_errors` 接受可选 `scanId`，省略时读取最近扫描运行；`list_extensions` 返回完整内置和自定义扩展名规则。
+扫描进度通过 `scan-progress` Tauri 事件发送 `ScanProgress`。`start_scan` 接受空 `sourceIds` 时扫描全部启用来源；重复选择同一来源的活动扫描返回 `SCAN_ALREADY_RUNNING`。`cancel_scan` 保留已提交的扫描批次，`get_scan_status` 返回当前路径、计数、状态和已用时间。`get_index_status` 无输入，返回 `IndexStatus`，包含可选扫描状态、发现与处理进度、活动文档数、活动主题数、待整理数、最近扫描失败数和最近成功完成时间。`get_index_statistics` 无输入，返回全部已知文档与具有文档主题的聚合快照；活动扫描期间仍读取最近终态扫描的失败数和完成时间。`list_scan_errors` 接受可选 `scanId`，省略时读取最近扫描运行；`list_extensions` 返回完整内置和自定义扩展名规则。
 
 稳定错误码包括输入、索引源、路径边界、文档、主题、扫描、数据库、文件系统、调用层和内部错误。前端 invoke 异常只返回归一化错误，不暴露本地路径或原始异常正文。
 
@@ -70,8 +71,9 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `ExtensionRuleRepository` | `upsert`、`replace_enabled`、`list` | 管理内置和自定义扩展名规则及原子白名单替换 |
 | `GroupingRepository` | `find_candidates`、`list_pending_suggestions`、`get_suggestion`、`dismiss_pending_suggestion` | 按规范化名称和首个关键词读取有界归组候选，按分数分页读取、定位和忽略待整理建议 |
 | `SearchRepository` | `search_topic_ids`、`search_topics`、`rebuild` | 查询或重建仅含元数据的 FTS5 索引，组合文档级筛选并稳定分页主题 ID |
+| `StatisticsRepository` | `get` | 在单次数据库读取中聚合总量、总大小、最近终态扫描和四类稳定分布 |
 
-持久化记录包括 `IndexSourceRecord`、`TopicRecord`、`DocumentRecord`、`ScanRunRecord`、`ScanErrorRecord` 和 `ExtensionRuleRecord`。`documents` 使用 `(source_id, absolute_path)` 唯一键；`topics` 分别保存 `newest_created_document_id` 和 `recently_modified_document_id`；搜索只返回仍处于 `available` 状态的文档所属主题，主题与搜索分页上限为 100 条。
+持久化记录包括 `IndexSourceRecord`、`TopicRecord`、`DocumentRecord`、`ScanRunRecord`、`ScanErrorRecord` 和 `ExtensionRuleRecord`。`documents` 使用 `(source_id, absolute_path)` 唯一键；`topics` 分别保存 `newest_created_document_id` 和 `recently_modified_document_id`；搜索默认返回仍处于 `available` 状态的文档所属主题，显式状态筛选可扩展到 `missing` 和 `inaccessible`，主题与搜索分页上限为 100 条。
 
 ## 资料索引服务接口
 
@@ -81,7 +83,8 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `NameNormalizer` | `normalize` | 输出原始文件名、扩展名、规范化名称、版本标签和版本排序键 |
 | `GroupingService` | `classify`、`blocking_keys`、`list_organize_suggestions`、`dismiss_organize_suggestion` | 生成阻塞键，计算元数据证据分数，返回归组决策，映射建议分页并忽略待处理建议 |
 | `TopicService` | `detail`、`rename_topic`、`merge_topics`、`accept_organize_suggestion`、`move_documents_to_topic` | 返回稳定排序主题详情，以事务执行人工重命名、建议接受、合并和拆分 |
-| `SearchService` | `search_topics` | 校验时间范围，执行文本、来源、目录和双时间筛选，返回稳定分页的 `TopicSummary` |
+| `SearchService` | `search_topics` | 校验时间范围，执行文本、来源、扩展名、可用状态、目录和双时间筛选，返回稳定分页的 `TopicSummary` |
+| `StatisticsService` | `get` | 返回文档、主题、大小、待整理、失败、更新时间和来源、扩展名、状态、置信度分布 |
 | `ShellService` | `open_document`、`reveal_document` | 按数据库文档 ID 重新校验实时文件与来源边界，再委托 Windows Shell 打开或定位 |
 | `BatchFileService` | `batch_copy_paths`、`batch_reveal_documents`、`export_document_metadata` | 按稳定去重顺序逐项隔离路径操作，并将数据库元数据原子导出为 UTF-8 BOM CSV |
 | `PreviewService` | `create_session`、`close_session`、`active_session_id`、`shutdown` | 创建单活动短期预览会话，按格式与大小选择内置适配器，并在退出时幂等释放会话与原生宿主 |
@@ -99,9 +102,11 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `accept_organize_suggestion` 只接受状态为 `pending` 且引用至少两个有效主题的建议。目标主题为去重并稳定排序后的首个主题；建议状态、文档迁移、人工规则、源主题清理、相关建议关闭和双时间聚合在同一事务中提交。`dismiss_organize_suggestion` 只把当前待处理建议更新为 `dismissed`，不会改变主题或文档归属。未知建议和已处理建议返回 `INVALID_INPUT`。
 
-`SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。有效查询的最近 20 条历史仅写入前端 `localStorage` 键 `document-index.search-history`，不进入 Tauri command、SQLite 或备份契约。
+`SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`extensions` 去除前导点并转为小写；`availabilities` 未显式提供时默认限制为 `available`，显式提供时可查询 `missing` 和 `inaccessible`；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。有效查询的最近 20 条历史仅写入前端 `localStorage` 键 `document-index.search-history`，不进入 Tauri command、SQLite 或备份契约。
 
-前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源筛选支持多选 ID，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。主题选择仅在前端保存当前展开的 `topicId`；重复选择当前主题会清空该 ID，选择其他主题会切换该 ID，后续详情始终通过 `get_topic_detail` 按 ID 读取权威数据。
+`IndexStatistics` 包含 `documentCount`、`topicCount`、`totalSizeBytes`、`pendingOrganizationCount`、`failureCount`、可选 `updatedAt`、`bySource`、`byExtension`、`byAvailability` 和 `byGroupingConfidence`。`SourceStatistics` 使用 `{ sourceId, displayName, count }`，其他分组使用 `StatisticsBucket { value, count }`。来源、扩展名和可用状态计数分别与 `documentCount` 守恒，归组置信度只统计具有文档的主题并与 `topicCount` 守恒；待整理数只统计 `pending` 建议，失败数与更新时间来自最近一次 `completed`、`cancelled` 或 `failed` 扫描。
+
+前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源、扩展名和可用状态筛选支持多选，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。统计工作区注入的筛选沿用同一表单状态；主题选择仅在前端保存当前展开的 `topicId`，重复选择当前主题会清空该 ID，选择其他主题会切换该 ID，后续详情始终通过 `get_topic_detail` 按 ID 读取权威数据。
 
 前端 `TopicEditor` 使用 `search_topics` 每页读取 100 条主题，根据响应 `total` 计算总页数并只渲染当前页。翻页保留已选主题 ID、活动主题和已选文档，使跨页合并与跨页拆分目标选择继续可用；目录标题始终显示权威主题总数。
 

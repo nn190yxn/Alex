@@ -34,13 +34,13 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、索引统计、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
 
-Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
+Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置、统计和设置六个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
 应用外观支持 `parchment` 与 `minimal` 两套稳定主题。`src/features/settings/productivityPreference.ts` 统一管理界面与生产力偏好，主记录使用 `document-index.preferences`，并继续读取和同步历史时间维度、分隔线与主题键。偏好模型包含默认时间维度、主题、工作区比例、全局搜索快捷键、关闭到托盘、扫描计划、通知和开机自启；默认快捷键为 `Ctrl+Shift+F`，关闭到托盘与通知默认启用，扫描计划与开机自启默认关闭。`themePreference.ts` 继续负责设置根元素 `data-theme`，确保主题在当前会话即时生效。
 
-`SearchWorkspace` 负责搜索输入、来源与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。有效查询写入 `document-index.search-history`，按规范化空白和 Unicode NFKC 小写键去重，最近项置顶且最多保留 20 条；空搜索框获得焦点时可恢复、单条清除或全部清除历史。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。`App` 统一监听 `Ctrl+K`、`Ctrl+1` 至 `Ctrl+5` 和 `Escape`：搜索快捷键保留现有查询并聚焦输入，数字快捷键切换五个主工作区，Escape 依次恢复全宽预览、关闭回收确认、收起主题详情和清空搜索文本。
+`SearchWorkspace` 负责搜索输入、来源、扩展名、可用状态与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。未显式选择可用状态时只搜索当前可用文档，显式筛选可定位缺失或不可访问记录。有效查询写入 `document-index.search-history`，按规范化空白和 Unicode NFKC 小写键去重，最近项置顶且最多保留 20 条；空搜索框获得焦点时可恢复、单条清除或全部清除历史。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。`App` 统一监听 `Ctrl+K`、`Ctrl+1` 至 `Ctrl+6` 和 `Escape`：搜索快捷键保留现有查询并聚焦输入，数字快捷键切换六个主工作区，Escape 依次恢复全宽预览、关闭回收确认、收起主题详情和清空搜索文本。
 
 `ShortcutService` 默认注册 `Ctrl+Shift+F`，重注册时先占用新组合键，再释放旧组合键；新注册或旧注销失败时保留可报告的冲突状态和当前已注册组合键。Tauri 全局快捷键 handler 在按下事件中显示、取消最小化并聚焦主窗口，然后发送 `focus-search`；React 外壳收到事件后切换搜索工作台并聚焦输入。设置页通过 `get_shortcut_state` 展示注册或冲突状态，通过 `update_global_shortcut` 应用新组合键；备份恢复后使用同一入口同步桌面注册状态。
 
@@ -49,6 +49,8 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 `ScanScheduler` 使用单个后台 worker、`Mutex`、`Condvar` 和配置 generation 管理计划。计划支持关闭、每日 `HH:MM` 本地时间及 6、12、24 小时间隔；配置变化即时唤醒 worker 并废弃旧 deadline。每日计划处理本地时间歧义和夏令时不存在时间，下一次时间始终严格晚于当前时间。到期扫描以空来源列表复用 `ScanCoordinator`；已有扫描或缺少可扫描来源时记录稳定跳过原因并继续计算下一次时间。桌面退出会唤醒并 join 调度 worker。
 
 `NotificationService` 消费统一 `progress_sink` 中的扫描终态，仅在前端确认系统权限并启用运行时状态后发送通知。完成和失败通知包含处理数与失败数，同一扫描 ID 在进程内最多通知一次，去重历史限制为 128 项。权限拒绝只关闭通知运行时状态，系统发送失败只写入 `lastNotificationError`，扫描结果继续通过应用内索引状态和 `scan-progress` 展示。设置页持久化计划和通知偏好，展示下一次时间、最近跳过原因及通知错误；启动和备份恢复通过同一 command 同步运行时配置。
+
+`StatisticsRepository` 在单次 `Database::read` 边界中聚合全部文档和具有文档的主题，返回总文档数、主题数、总大小、待处理整理建议数、最近终态扫描失败数和更新时间，以及来源、扩展名、可用状态和归组置信度分布。前三类文档分布分别与总文档数守恒，置信度分布与主题数守恒；分组按数量降序和稳定文本顺序返回。`IndexStatisticsDashboard` 展示摘要、可访问表格、本地 CSS 条形图、扫描期间快照提示和局部空状态；来源、扩展名和状态行可切换搜索工作台并注入对应筛选。
 
 主题结果与版本列表、文件预览区使用同一工作区内的可调整分隔线。指针拖动和左右方向键均可修改比例，宽度限制在 32% 到 68%，并保存到 `localStorage` 的 `document-index.workspace-split`；窄屏布局切换为上下排列并隐藏分隔线。预览区域支持折叠、恢复、工作区全宽和恢复分栏，折叠会卸载预览组件并释放当前会话。
 
@@ -72,7 +74,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 初始 schema 包含 `index_sources`、`documents`、`topics`、`grouping_suggestions`、`manual_grouping_rules`、`scan_runs`、`scan_errors` 和 `extension_rules`，并预置 12 个默认文档扩展名。`topic_search` FTS5 虚拟表仅索引主题名、文件名、规范化名称和完整路径；文档增删改与主题显示名更新通过 SQLite triggers 增量同步。第三个迁移为规范化名称候选检索和待整理建议状态增加索引，第四个迁移为来源内文件身份查询增加索引，并允许硬链接对应的人工规则共享同一文件身份。
 
-仓储层按领域拆分为 `IndexSourceRepository`、`DocumentRepository`、`TopicRepository`、`GroupingRepository`、`ScanRepository`、`ExtensionRuleRepository` 和 `SearchRepository`。文档批量 upsert、全源或目录范围缺失标记和主题双时间聚合在同一事务中完成；目录范围使用 `Path::starts_with` 的路径组件边界，避免相似目录名前缀扩大更新范围。人工主题归属和人工主题名称在后续自动更新中保持优先。文档按来源和文件身份执行有界候选查询；身份接管更新原文档路径时，同一事务同步人工规则中的来源、路径和身份。文档列表支持创建时间、修改时间、版本和文件名排序，缺失值统一置后，并以另一时间维度、路径和 ID 稳定决胜。主题、建议和 FTS 搜索分页把单页数量限制为 1 到 100 条。
+仓储层按领域拆分为 `IndexSourceRepository`、`DocumentRepository`、`TopicRepository`、`GroupingRepository`、`ScanRepository`、`ExtensionRuleRepository`、`SearchRepository` 和 `StatisticsRepository`。文档批量 upsert、全源或目录范围缺失标记和主题双时间聚合在同一事务中完成；目录范围使用 `Path::starts_with` 的路径组件边界，避免相似目录名前缀扩大更新范围。人工主题归属和人工主题名称在后续自动更新中保持优先。文档按来源和文件身份执行有界候选查询；身份接管更新原文档路径时，同一事务同步人工规则中的来源、路径和身份。文档列表支持创建时间、修改时间、版本和文件名排序，缺失值统一置后，并以另一时间维度、路径和 ID 稳定决胜。主题、建议和 FTS 搜索分页把单页数量限制为 1 到 100 条。
 
 ### 索引源与扫描服务
 
