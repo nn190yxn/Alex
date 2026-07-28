@@ -45,7 +45,7 @@ type CommandResult<T> =
 | `recycle_documents` | `{ documentIds, confirmationToken }` | `RecycleResult` | 已实现并注册 |
 | `open_recycle_bin` | 无 | `null` | 已实现并注册 |
 
-TypeScript 中的主题、建议、搜索、详情、文件、预览和回收站边界均已接入 Rust 运行时。
+TypeScript 中的主题、建议、搜索、详情、文件、预览和回收站边界均已接入 Rust 运行时。`TopicSummary` 可选携带 `searchMatch`，其结构为 `{ field, text, ranges }`；`field` 支持 `topicName`、`fileName`、`normalizedName` 和 `path`，`ranges` 使用 Unicode 字符索引的半开区间 `[start, end)`。后端只返回纯文本和范围，前端不接收或渲染 HTML 标记。
 
 扫描进度通过 `scan-progress` Tauri 事件发送 `ScanProgress`。`start_scan` 接受空 `sourceIds` 时扫描全部启用来源；重复选择同一来源的活动扫描返回 `SCAN_ALREADY_RUNNING`。`cancel_scan` 保留已提交的扫描批次，`get_scan_status` 返回当前路径、计数、状态和已用时间。`get_index_status` 无输入，返回 `IndexStatus`，包含可选扫描状态、发现与处理进度、活动文档数、活动主题数、待整理数、最近扫描失败数和最近成功完成时间。`list_scan_errors` 接受可选 `scanId`，省略时读取最近扫描运行；`list_extensions` 返回完整内置和自定义扩展名规则。
 
@@ -90,7 +90,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `accept_organize_suggestion` 只接受状态为 `pending` 且引用至少两个有效主题的建议。目标主题为去重并稳定排序后的首个主题；建议状态、文档迁移、人工规则、源主题清理、相关建议关闭和双时间聚合在同一事务中提交。`dismiss_organize_suggestion` 只把当前待处理建议更新为 `dismissed`，不会改变主题或文档归属。未知建议和已处理建议返回 `INVALID_INPUT`。
 
-`SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。
+`SearchQuery` 的 `text` 为空时浏览全部主题；`sourceIds` 为空时覆盖全部来源；`directory` 采用目录边界匹配；`createdFrom`、`createdTo`、`modifiedFrom` 和 `modifiedTo` 为包含端点。反向时间范围返回 `INVALID_INPUT`。`search_topics` Rust command 已注册并直接复用 `SearchService`。有效查询的最近 20 条历史仅写入前端 `localStorage` 键 `document-index.search-history`，不进入 Tauri command、SQLite 或备份契约。
 
 前端 `SearchWorkspace` 将搜索表单映射为完整 `SearchQuery`：默认按 `modifiedAt` 降序、页码 1、每页 20 条；来源筛选支持多选 ID，目录筛选传递原始目录文本，日期下界和上界分别转换为 UTC 的 `T00:00:00.000Z` 与 `T23:59:59.999Z`。文本输入等待 180 毫秒稳定后发起查询，筛选和排序变化会重置页码。主题选择仅在前端保存当前展开的 `topicId`；重复选择当前主题会清空该 ID，选择其他主题会切换该 ID，后续详情始终通过 `get_topic_detail` 按 ID 读取权威数据。
 

@@ -156,6 +156,8 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-28 生产力增强任务 1 的 Windows Actions `#8` 和任务 2 的 Windows Actions `#9` 已通过前端测试、类型检查、生产构建、Rust 格式、默认测试、`desktop-app` 严格 Clippy 和安装器构建。任务 2 本地定向基线为 4 个前端测试文件、20 个用例通过，完整前端基线为 11 个测试文件、47 个用例通过，覆盖窗口聚焦事件、`Ctrl+K` 查询保留、`Ctrl+1` 至 `Ctrl+5` 导航、四级 Escape 优先顺序、设置页冲突反馈和统一偏好回归；`pnpm exec tsc --noEmit` 与 `git diff --check` 同步通过。快捷键服务 Rust 单元测试已由开发分支 Windows Actions 验证；本地旧 Rust 工具链会在 crates.io 索引更新阶段超时。
 
+2026-07-28 生产力增强任务 3 的 Windows Actions `#10` 已通过 55 项前端测试、类型检查、生产构建、Rust 格式、默认测试、`desktop-app` 严格 Clippy 和安装器构建。本地搜索专项基线为 3 个前端测试文件、15 个用例通过，覆盖最近 20 条历史、空白规范化、Unicode 去重、单条与全部清除、历史恢复检索、字段级高亮和非法范围纯文本回退；SQLite 集成测试覆盖主题名、文件名、规范化名称、路径、Emoji 字符偏移和 HTML 字符。调整搜索匹配时应继续使用 Unicode 字符半开区间，后端只返回纯文本与范围，前端只通过文本节点和 `<mark>` 分段渲染。
+
 调整全局快捷键时应同步 `ShortcutService`、`commands/desktop.rs`、TypeScript `CommandContract`、`commandClient` 和设置页状态。重注册保持先注册新组合键再注销旧组合键，冲突时继续返回当前有效组合键；窗口激活保持显示、取消最小化、聚焦和发送 `focus-search` 的顺序。调整 Escape 行为时应维持全宽预览、确认层、展开详情和搜索文本的优先级。
 
 调整外观主题时应同步 `themePreference.ts` 的稳定标识、`global.css` 的语义变量、设置页主题卡和备份 DTO。新增主题需要同时更新 TypeScript 联合类型、Rust 偏好校验、历史备份策略及前后端往返测试。根元素主题应在 React 挂载前恢复，切换过程应保留当前业务组件状态。
