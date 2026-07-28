@@ -162,6 +162,10 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-28 生产力增强任务 6 本地基线为 13 个前端测试文件共 58 项测试通过，`pnpm typecheck`、`pnpm build`、Rust 格式检查和补丁检查同步通过。Windows Actions `#14` 在提交 `394e580` 上通过 58 项前端测试、63 项 Rust 单元测试、23 项 Rust 集成测试、`desktop-app` 严格 Clippy、EXE/MSI 构建和制品上传。托盘专项单元测试覆盖可用性与退出意图、多个并行扫描持续禁用菜单、shutdown 单次门闩、watcher 状态清理和预览释放；Windows 实机继续承担托盘交互和关闭到托盘体验验收。
 
+2026-07-28 生产力增强任务 7 本地基线为 15 个前端测试文件共 63 项测试、3 项调度器定向测试和 4 项桌面集成定向测试通过，`pnpm typecheck`、`pnpm build`、Rust 格式检查和补丁检查同步通过。Windows Actions `#15` 在提交 `8b3427e` 上通过完整前端与 Rust 测试、`desktop-app` 严格 Clippy、EXE/MSI 构建和制品上传。调度测试覆盖关闭状态、6/12/24 小时间隔及每日下一次时间；通知测试覆盖启停、扫描 ID 去重与失败隔离；前端测试覆盖设置应用、权限拒绝、启动权限检查和官方 Notification Web API 请求路径。
+
+调整计划扫描时应继续复用 `ScanCoordinator` 的全源入口和统一 `progress_sink`，并保持单 worker、配置 generation、可中断等待和退出 join。配置校验失败保留上一份有效计划；扫描冲突记录跳过原因并计算下一次时间。通知权限申请由前端 Notification Web API 完成，Rust `NotificationService` 只接收有效运行时启停状态；权限与发送失败均不改变扫描结果。
+
 调整托盘生命周期时应保持托盘扫描复用 `ScanCoordinator` 和统一 `progress_sink`，活动状态按扫描 ID 集合跟踪。明确退出先设置退出意图，再释放预览、watcher 和托盘；托盘初始化失败时主窗口沿用普通关闭行为。
 
 调整批量文件操作时应保持 command 只接收文档 ID，逐项复用 `ShellService` 的实时文件、来源可访问性与 canonical 边界校验。CSV 导出继续允许 `missing` 和 `inaccessible` 元数据，固定中文列顺序、UTF-8 BOM、CRLF、RFC 4180 转义和同目录原子替换；前端超过 10 个定位项时必须先进入确认层。

@@ -19,6 +19,8 @@ type CommandResult<T> =
 | `restore_index_backup` | `{ path }` | `BackupRestoreResult` | 已实现并注册 |
 | `get_shortcut_state` | 无 | `ShortcutRegistrationState` | 已实现并注册 |
 | `update_global_shortcut` | `{ shortcut }` | `ShortcutRegistrationState` | 已实现并注册 |
+| `configure_scheduled_scan` | `{ schedule, notificationsEnabled }` | `DesktopAutomationState` | 已实现并注册 |
+| `get_scheduled_scan_state` | 无 | `DesktopAutomationState` | 已实现并注册 |
 | `list_sources` | 无 | `IndexSource[]` | 已实现并注册 |
 | `add_source` | `{ path }` | `IndexSource` | 已实现并注册 |
 | `set_source_enabled` | `{ sourceId, enabled }` | `IndexSource` | 已实现并注册 |
@@ -90,6 +92,8 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `BackupService` | `export`、`restore` | 导出版本化元数据 JSON，校验并事务恢复配置，重新检查来源和文档实时状态 |
 | `ShortcutService` | `state`、`register` | 返回稳定注册状态，以先注册新组合键、再注销旧组合键的顺序切换全局快捷键 |
 | `TrayService` | `install`、`should_hide_on_close`、`request_exit`、`track_scan`、`shutdown` | 管理托盘菜单、主窗口隐藏恢复、全源扫描入口、活动扫描菜单状态和幂等退出清理 |
+| `ScanScheduler` | `configure`、`state`、`shutdown` | 以单 worker 调度每日本地时间或固定小时间隔的全源扫描，配置变化即时重排并记录跳过原因 |
+| `NotificationService` | `configure`、`state`、`handle_progress` | 按运行时授权状态发送扫描终态通知，以扫描 ID 去重并隔离系统发送错误 |
 
 `GroupingDecision` 包含 `AutoGroup`、`Suggest` 和 `Independent` 三种结果。`GroupingMatch` 返回目标主题、0 到 1 的总分和 `GroupingEvidence[]`；证据类型沿用 `normalizedName`、`keywords`、`editSimilarity`、`version`、`fileType` 和 `path`。中置信度建议写入 `grouping_suggestions`，来源主题 ID 排序后形成稳定建议 ID，重复扫描会更新同一建议。扫描发现新路径时只对唯一、旧路径已消失的人工归组身份候选执行原记录接管；自动归组记录继续走名称分类流程。
 
@@ -124,6 +128,8 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 `readPreferences()` 从 `document-index.preferences` 安全读取完整偏好，对每个字段独立校验并补齐默认值；首次迁移继续读取 `document-index.default-time-dimension`、`document-index.workspace-split` 和 `document-index.appearance-theme`。`writePreferences()` 与 `updatePreferences()` 同步统一记录和历史键，存储异常不会影响当前索引数据。`readTheme()` 与 `saveTheme()` 继续负责当前会话的根元素主题状态。
 
 `ShortcutRegistrationState` 包含 `status`、可选 `registeredShortcut` 和 `requestedShortcut`。`status` 为 `unregistered`、`registered` 或 `conflict`；冲突响应保留请求值与当前有效注册值，供设置页提供稳定反馈。`get_shortcut_state` 读取进程内服务状态，`update_global_shortcut` 执行原子切换并始终返回最新状态。全局快捷键按下后发送无 payload 的 `focus-search` 事件，前端据此切换搜索工作台并聚焦搜索输入。
+
+`ScanSchedule` 是关闭状态、每日 `{ mode: "daily", localTime: "HH:MM" }` 或间隔 `{ mode: "interval", intervalHours: 6 | 12 | 24 }` 的判别联合。`configure_scheduled_scan` 先校验并重排计划，再同步通知运行时状态；无效配置返回 `INVALID_INPUT` 并保留上一份有效调度。`DesktopAutomationState` 包含可选 `nextScheduledScanAt`、可选 `lastSkippedReason`、`notificationsEnabled` 和可选 `lastNotificationError`。前端通过 Notification Web API 申请权限，仅把已授权状态传入 command。
 
 托盘边界不新增 command。菜单“立即扫描”调用 `ScanCoordinator::start_scan(Vec::new(), progress_sink)`，继续通过 `scan-progress` 事件发送同一 `ScanProgress` 契约；`TrayService::track_scan` 只消费运行 ID 与终态以控制菜单可用性，扫描并发规则继续由协调器负责。托盘“退出”和 Tauri `ExitRequested` 共享资源释放路径，关闭主窗口仅在托盘成功安装且未进入退出状态时隐藏窗口。
 
