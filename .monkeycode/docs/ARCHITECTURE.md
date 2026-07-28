@@ -34,7 +34,7 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务、回收站服务和 `ShortcutService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务、回收站服务和 `ShortcutService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
 
 Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
@@ -48,9 +48,9 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 `PreviewPane` 以单个已选版本为输入，通过 `create_preview_session` 创建短期会话。切换文件、折叠区域、离开搜索工作区或组件卸载时调用 `close_preview_session`；`ResizeObserver` 和窗口尺寸事件将预览区域同步到 `resize_preview_session`。文本、图片和新版 Office 内容提供只读渲染与缩放，Office 分段支持页面或工作表切换，PDF 使用 WebView 内置查看器，旧版 Office 交给 Windows 原生宿主。受限内容和加载失败状态提供默认程序打开与 Explorer 定位入口，预览二进制 Blob URL 在切换和卸载时撤销。
 
-`TopicDetailPanel` 在主题选择后通过 `get_topic_detail` 按 ID 读取全部已知版本。版本行展示原始文件名、规范化名称、版本标签、创建时间、修改时间、类型、大小、完整路径、可用状态和双时间标记；缺失与不可访问文件保持可见，其选择、打开、定位和回收操作处于禁用状态。四类排序直接重新读取服务端稳定顺序，`modifiedAt` 与 `createdAt` 会保存到 `document-index.default-time-dimension` 作为后续主题的默认时间维度。
+`TopicDetailPanel` 在主题选择后通过 `get_topic_detail` 按 ID 读取全部已知版本。版本行展示原始文件名、规范化名称、版本标签、创建时间、修改时间、类型、大小、完整路径、可用状态和双时间标记；缺失与不可访问文件保持可选择以参与元数据导出，其打开、定位、预览和回收操作处于禁用状态。四类排序直接重新读取服务端稳定顺序，`modifiedAt` 与 `createdAt` 会保存到 `document-index.default-time-dimension` 作为后续主题的默认时间维度。
 
-版本操作支持单项和批量选择。打开与 Explorer 定位继续只传数据库文档 ID；回收确认层展示主题、数量、文件名和完整路径，确认后使用固定令牌调用 `recycle_documents`。成功后详情和搜索主题摘要同时刷新，并提供打开 Windows 回收站入口；系统失败时确认层保持可见并提示活动索引维持原状。
+版本操作支持单项和批量选择。批量复制路径和定位只处理选中项中的可用文档，返回成功数、失败数和可展开的逐项稳定错误码；复制操作由后端返回重新校验后的 canonical 路径，再由 WebView 写入系统剪贴板。批量定位 10 个及以下文件时直接执行，超过 10 个时复用应用级确认层和 Escape 关闭链路。CSV 导出可包含缺失与不可访问记录，通过系统保存对话框选择目标。回收确认层展示主题、数量、文件名和完整路径，确认后使用固定令牌调用 `recycle_documents`；成功后详情和搜索主题摘要同时刷新，并提供打开 Windows 回收站入口。
 
 `SourceManager` 接管“索引位置”工作区，通过 `tauri-plugin-dialog` 的目录模式选择本地位置。应用启动时先读取来源；空来源直接进入该工作区，侧栏显示“请添加索引位置”，页面展示目录选择引导卡。新增来源保存成功后立即启动单源扫描，并向应用外壳回传来源列表和扫描运行，使侧栏立刻切换为排队或扫描状态；来源卡片展示路径、可用状态、添加时间、最近扫描和最近成功时间，并提供暂停、恢复和手动刷新。组件监听 `scan-progress`，运行结束后重新读取来源状态和该次扫描的持久化错误。
 
@@ -123,6 +123,8 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 `ShellService` 只接受数据库文档 ID，通过 `DocumentRepository` 和 `IndexSourceRepository` 解析文档与来源。每次打开或定位前重新校验数据库可用状态、来源目录实时可访问性和文件实时存在性，并 canonicalize 两端路径；规范化后的文件路径必须位于规范化索引源边界内。
 
 生产适配器在 Windows 上以独立参数调用 `explorer.exe`：打开操作传入文档路径，定位操作传入 `/select,` 与文档路径组成的 `OsString`，以保留 Unicode 路径。测试通过注入式 `ShellAdapter` 记录调用，不触发真实 Shell；非 Windows 生产调用返回平台不支持错误。
+
+`BatchFileService` 对文档 ID 按首次出现顺序去重，批量复制和定位逐项复用 `ShellService` 校验，因此单项文件失效或 Shell 调用失败不会阻断其他项。CSV 导出直接读取数据库文档与主题元数据，固定输出文件名、主题名、完整路径、扩展名、大小、创建时间、修改时间和可用状态；编码为 UTF-8 BOM，记录使用 CRLF，字段按 RFC 4180 转义。`atomic_file` 以同目录 UUID 临时文件、同步落盘和平台原子替换同时服务 CSV 与 JSON 备份，失败时由临时文件 guard 清理残留并保留既有目标。
 
 ### 内置按需预览
 

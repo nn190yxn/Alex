@@ -39,6 +39,9 @@ type CommandResult<T> =
 | `get_topic_detail` | `{ topicId, sortBy, sortDirection }` | `TopicDetail` | 已实现并注册 |
 | `open_document` | `{ documentId }` | `null` | 已实现并注册 |
 | `reveal_document` | `{ documentId }` | `null` | 已实现并注册 |
+| `batch_copy_paths` | `{ documentIds }` | `BatchOperationResult` | 已实现并注册 |
+| `batch_reveal_documents` | `{ documentIds }` | `BatchOperationResult` | 已实现并注册 |
+| `export_document_metadata` | `{ documentIds, targetPath }` | `ExportResult` | 已实现并注册 |
 | `create_preview_session` | `{ documentId, viewport }` | `PreviewSession` | 已实现并注册 |
 | `resize_preview_session` | `{ sessionId, viewport }` | `null` | 已实现并注册 |
 | `close_preview_session` | `{ sessionId }` | `null` | 已实现并注册 |
@@ -78,6 +81,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `TopicService` | `detail`、`rename_topic`、`merge_topics`、`accept_organize_suggestion`、`move_documents_to_topic` | 返回稳定排序主题详情，以事务执行人工重命名、建议接受、合并和拆分 |
 | `SearchService` | `search_topics` | 校验时间范围，执行文本、来源、目录和双时间筛选，返回稳定分页的 `TopicSummary` |
 | `ShellService` | `open_document`、`reveal_document` | 按数据库文档 ID 重新校验实时文件与来源边界，再委托 Windows Shell 打开或定位 |
+| `BatchFileService` | `batch_copy_paths`、`batch_reveal_documents`、`export_document_metadata` | 按稳定去重顺序逐项隔离路径操作，并将数据库元数据原子导出为 UTF-8 BOM CSV |
 | `PreviewService` | `create_session`、`close_session`、`active_session_id` | 创建单活动短期预览会话，按格式与大小选择内置适配器并释放会话状态 |
 | `WindowsPreviewHost` | `start`、`resize`、`unload` | 在专用 STA 线程托管 DOC、XLS、PPT 的系统 `IPreviewHandler`，同步预览区域并释放活动处理程序 |
 | `RecycleBinService` | `recycle_documents`、`open_recycle_bin` | 校验确认令牌和受控文档路径，成功移入 Windows 回收站后以事务更新文档状态与主题聚合 |
@@ -98,11 +102,13 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `TopicService::detail` 接收主题 ID、`SortField` 和 `SortDirection`，返回 `TopicDetail`。`documents` 包含全部可用状态的版本记录；`newestCreatedDocument` 和 `recentlyModifiedDocument` 只引用当前可访问文档。主题不存在时返回 `TOPIC_NOT_FOUND`。`get_topic_detail` Rust command 已注册。
 
-前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，通过统一偏好模块写入 `document-index.preferences` 并同步历史键；版本号和文件名排序不会覆盖该偏好。版本选择只接受 `available` 文档，单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
+前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，通过统一偏好模块写入 `document-index.preferences` 并同步历史键；版本号和文件名排序不会覆盖该偏好。全部版本均可选择用于 CSV 导出，路径复制、Explorer 定位和回收站操作只使用选中项中的 `available` 文档；单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
 
 前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
 
 `ShellService::open_document` 和 `ShellService::reveal_document` 接收文档 ID。服务拒绝未知文档、非 `available` 状态、实时缺失文件、不可访问来源及 canonical 路径越界；对应错误码包括 `DOCUMENT_NOT_FOUND`、`SOURCE_NOT_FOUND`、`SOURCE_UNAVAILABLE`、`FILE_SYSTEM_ERROR` 和 `PATH_OUTSIDE_SOURCE`。`ShellAdapter` 隔离系统调用，`SystemShellAdapter` 在 Windows 上调用 Explorer；两个 Rust command 已注册，成功结果的 `data` 为 `null`。
+
+`BatchOperationResult` 包含 `successes: { documentId, path }[]` 和 `failures: { documentId, errorCode }[]`，去重后的每个输入 ID 恰好进入一个集合。`batch_copy_paths` 只返回已通过实时状态和来源边界校验的路径，前端以 CRLF 连接成功路径并写入剪贴板；`batch_reveal_documents` 逐项执行 Explorer 定位。`export_document_metadata` 接受任意可用状态的索引记录和保存路径，成功返回 `{ exportedCount, path }`；CSV 固定中文列顺序并采用 UTF-8 BOM、CRLF 和 RFC 4180 转义。
 
 `PreviewSession` 包含短期会话 ID、文档 ID、文件名、扩展名、实时大小和 `PreviewContent`。内容判别联合包括纯文本 `text`、带 MIME 与 Base64 的 `binary`、带 `PreviewSection[]` 的 `office`、携带原生会话 ID 的 `native`，以及原因属于 `unsupportedFormat`、`fileTooLarge` 或 `invalidContent` 的 `limited`。`PreviewViewport` 使用 `x`、`y`、`width` 和 `height` 描述宿主窗口内的预览区域。内置服务、Windows 原生宿主和预览 commands 均已完成并注册。
 
