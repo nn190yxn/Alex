@@ -34,7 +34,7 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务、回收站服务和 `ShortcutService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务、回收站服务、`ShortcutService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
 
 Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
@@ -43,6 +43,8 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 `SearchWorkspace` 负责搜索输入、来源与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。有效查询写入 `document-index.search-history`，按规范化空白和 Unicode NFKC 小写键去重，最近项置顶且最多保留 20 条；空搜索框获得焦点时可恢复、单条清除或全部清除历史。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。`App` 统一监听 `Ctrl+K`、`Ctrl+1` 至 `Ctrl+5` 和 `Escape`：搜索快捷键保留现有查询并聚焦输入，数字快捷键切换五个主工作区，Escape 依次恢复全宽预览、关闭回收确认、收起主题详情和清空搜索文本。
 
 `ShortcutService` 默认注册 `Ctrl+Shift+F`，重注册时先占用新组合键，再释放旧组合键；新注册或旧注销失败时保留可报告的冲突状态和当前已注册组合键。Tauri 全局快捷键 handler 在按下事件中显示、取消最小化并聚焦主窗口，然后发送 `focus-search`；React 外壳收到事件后切换搜索工作台并聚焦输入。设置页通过 `get_shortcut_state` 展示注册或冲突状态，通过 `update_global_shortcut` 应用新组合键；备份恢复后使用同一入口同步桌面注册状态。
+
+`TrayService` 创建“显示主窗口”“立即扫描”和“退出”菜单。托盘图标左键与显示菜单均显示、取消最小化并聚焦 `main` 窗口；立即扫描以空来源列表调用现有 `ScanCoordinator` 全源入口。服务按扫描 ID 集合跟踪所有排队和运行任务，仅在全部活动扫描终止后重新启用菜单项。托盘初始化成功时，主窗口 `CloseRequested` 会阻止销毁并隐藏窗口；初始化失败时保留普通窗口关闭语义。明确退出先设置退出意图，再通过单次 shutdown 门闩依次释放活动预览、文件 watcher registrations 和托盘资源，防止退出事件重复清理或再次隐藏窗口。
 
 主题结果与版本列表、文件预览区使用同一工作区内的可调整分隔线。指针拖动和左右方向键均可修改比例，宽度限制在 32% 到 68%，并保存到 `localStorage` 的 `document-index.workspace-split`；窄屏布局切换为上下排列并隐藏分隔线。预览区域支持折叠、恢复、工作区全宽和恢复分栏，折叠会卸载预览组件并释放当前会话。
 
@@ -77,6 +79,8 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 `ScanCoordinator` 使用后台线程、原子取消标记和进程内任务表管理扫描。来源和路径采用稳定顺序，允许扩展名过滤，按批次将临时低置信度主题与文档元数据写入同一事务；每次批次提交同步保存来源 ID 与路径游标。协调器还以同一 maintenance 状态原子维护恢复标记和普通写标记：恢复只在扫描来源为空且普通写未活动时开始，普通写只在恢复和其他普通写均未活动时登记，并由 RAII guard 在 command 完成或提前返回时释放。该串行边界覆盖来源状态刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收，避免跨事务校验及文件系统副作用交错。人工归组文档出现新路径时，协调器只在同一来源内存在唯一身份候选、候选仍带人工归属且旧路径已经消失时沿用原文档 ID 和主题；普通自动归组文档继续按新名称重新计算，仍然存在的硬链接也不会被误判为移动。单项目录或元数据访问错误写入 `scan_errors` 并继续处理，来源完整成功且结束时仍可访问才执行缺失标记。离线来源安全记录 `source_unavailable` 并保留全部既有文档和主题，其他来源继续扫描。用户取消会保留已提交批次。应用启动先恢复异常遗留的 `queued` 和 `running` 扫描，再为启用、在线且 `last_scan_at` 为空的来源创建首次扫描；未完成运行中的来源会被排除，已尝试扫描的来源不会重复启动。扫描通过 `scan-progress` Tauri 事件推送进度。
 
 `WatchService` 只为启用且根目录实时可访问的来源持有 `notify 8.2` 递归 watcher，callback 将事件写入容量 1024 的有界队列，单 worker 以 400 毫秒 trailing window 按来源和目录合并处理。Access 事件被忽略；新增、修改、重命名、移动和移除事件映射到受影响目录，祖先目录吸收后代目录。通知层要求重扫、错误或队列溢出时提升为来源根目录复扫。来源暂停、离线、恢复或路径变化会更新 watcher generation，旧 generation 事件不会进入索引；在线恢复后通过来源列表刷新或显式同步重建 watcher。
+
+桌面退出时 `PreviewService::shutdown` 幂等释放活动预览及 Windows native preview host，`WatchService::shutdown` 清空 watcher registrations、活动 generations 和溢出状态。Tauri 使用 `Builder::build` 后进入 `app.run`，托盘退出和 `RunEvent::ExitRequested` 共享同一清理边界。
 
 `ScanCoordinator::reconcile_directories` 校验来源和绝对路径边界，复用扩展名、元数据读取、名称规范化、自动归组和批量事务链路。发现项按协调器 `batch_size` 分批 upsert，批内候选继续参与 transient grouping，根目录溢出复扫的内存占用保持有界。完整遍历成功后只在对应目录范围标记本轮未见文档为 missing；遍历或元数据读取失败时保留既有可用状态。全量扫描活动期间返回 `SCAN_ALREADY_RUNNING`，监听 worker 延迟后从来源根目录重试。桌面启动依次校验来源状态、恢复未完成扫描并同步可访问来源 watcher；来源新增、暂停、恢复和列表刷新成功后同步 watcher 生命周期。
 

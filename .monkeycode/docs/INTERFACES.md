@@ -82,13 +82,14 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `SearchService` | `search_topics` | 校验时间范围，执行文本、来源、目录和双时间筛选，返回稳定分页的 `TopicSummary` |
 | `ShellService` | `open_document`、`reveal_document` | 按数据库文档 ID 重新校验实时文件与来源边界，再委托 Windows Shell 打开或定位 |
 | `BatchFileService` | `batch_copy_paths`、`batch_reveal_documents`、`export_document_metadata` | 按稳定去重顺序逐项隔离路径操作，并将数据库元数据原子导出为 UTF-8 BOM CSV |
-| `PreviewService` | `create_session`、`close_session`、`active_session_id` | 创建单活动短期预览会话，按格式与大小选择内置适配器并释放会话状态 |
+| `PreviewService` | `create_session`、`close_session`、`active_session_id`、`shutdown` | 创建单活动短期预览会话，按格式与大小选择内置适配器，并在退出时幂等释放会话与原生宿主 |
 | `WindowsPreviewHost` | `start`、`resize`、`unload` | 在专用 STA 线程托管 DOC、XLS、PPT 的系统 `IPreviewHandler`，同步预览区域并释放活动处理程序 |
 | `RecycleBinService` | `recycle_documents`、`open_recycle_bin` | 校验确认令牌和受控文档路径，成功移入 Windows 回收站后以事务更新文档状态与主题聚合 |
 | `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`start_unscanned_sources`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，为启用且从未扫描的在线来源补启首次扫描，隔离离线来源，并对来源内目录执行有界批量局部更新 |
-| `WatchService` | `new`、`sync_sources` | 只维护启用且实时可访问来源的递归 watcher，通过有界队列、防抖、generation 和溢出根复扫调度局部更新 |
+| `WatchService` | `new`、`sync_sources`、`shutdown` | 只维护启用且实时可访问来源的递归 watcher，通过有界队列、防抖、generation 和溢出根复扫调度局部更新，退出时释放 watcher registrations 和活动状态 |
 | `BackupService` | `export`、`restore` | 导出版本化元数据 JSON，校验并事务恢复配置，重新检查来源和文档实时状态 |
 | `ShortcutService` | `state`、`register` | 返回稳定注册状态，以先注册新组合键、再注销旧组合键的顺序切换全局快捷键 |
+| `TrayService` | `install`、`should_hide_on_close`、`request_exit`、`track_scan`、`shutdown` | 管理托盘菜单、主窗口隐藏恢复、全源扫描入口、活动扫描菜单状态和幂等退出清理 |
 
 `GroupingDecision` 包含 `AutoGroup`、`Suggest` 和 `Independent` 三种结果。`GroupingMatch` 返回目标主题、0 到 1 的总分和 `GroupingEvidence[]`；证据类型沿用 `normalizedName`、`keywords`、`editSimilarity`、`version`、`fileType` 和 `path`。中置信度建议写入 `grouping_suggestions`，来源主题 ID 排序后形成稳定建议 ID，重复扫描会更新同一建议。扫描发现新路径时只对唯一、旧路径已消失的人工归组身份候选执行原记录接管；自动归组记录继续走名称分类流程。
 
@@ -123,6 +124,8 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 `readPreferences()` 从 `document-index.preferences` 安全读取完整偏好，对每个字段独立校验并补齐默认值；首次迁移继续读取 `document-index.default-time-dimension`、`document-index.workspace-split` 和 `document-index.appearance-theme`。`writePreferences()` 与 `updatePreferences()` 同步统一记录和历史键，存储异常不会影响当前索引数据。`readTheme()` 与 `saveTheme()` 继续负责当前会话的根元素主题状态。
 
 `ShortcutRegistrationState` 包含 `status`、可选 `registeredShortcut` 和 `requestedShortcut`。`status` 为 `unregistered`、`registered` 或 `conflict`；冲突响应保留请求值与当前有效注册值，供设置页提供稳定反馈。`get_shortcut_state` 读取进程内服务状态，`update_global_shortcut` 执行原子切换并始终返回最新状态。全局快捷键按下后发送无 payload 的 `focus-search` 事件，前端据此切换搜索工作台并聚焦搜索输入。
+
+托盘边界不新增 command。菜单“立即扫描”调用 `ScanCoordinator::start_scan(Vec::new(), progress_sink)`，继续通过 `scan-progress` 事件发送同一 `ScanProgress` 契约；`TrayService::track_scan` 只消费运行 ID 与终态以控制菜单可用性，扫描并发规则继续由协调器负责。托盘“退出”和 Tauri `ExitRequested` 共享资源释放路径，关闭主窗口仅在托盘成功安装且未进入退出状态时隐藏窗口。
 
 前端回收确认展示选中文档数量、当前主题、文件名和完整路径。成功响应触发当前 `TopicDetail` 与外层 `TopicSummary` 刷新，并显示 `open_recycle_bin` 入口；失败响应保留确认上下文并显示索引状态保持说明。
 
