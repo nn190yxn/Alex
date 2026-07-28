@@ -17,6 +17,8 @@ type CommandResult<T> =
 | `health` | 无 | `"ready"` | 已实现并注册 |
 | `export_index_backup` | `{ path, preferences }` | `BackupExportResult` | 已实现并注册 |
 | `restore_index_backup` | `{ path }` | `BackupRestoreResult` | 已实现并注册 |
+| `get_shortcut_state` | 无 | `ShortcutRegistrationState` | 已实现并注册 |
+| `update_global_shortcut` | `{ shortcut }` | `ShortcutRegistrationState` | 已实现并注册 |
 | `list_sources` | 无 | `IndexSource[]` | 已实现并注册 |
 | `add_source` | `{ path }` | `IndexSource` | 已实现并注册 |
 | `set_source_enabled` | `{ sourceId, enabled }` | `IndexSource` | 已实现并注册 |
@@ -82,6 +84,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`start_unscanned_sources`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，为启用且从未扫描的在线来源补启首次扫描，隔离离线来源，并对来源内目录执行有界批量局部更新 |
 | `WatchService` | `new`、`sync_sources` | 只维护启用且实时可访问来源的递归 watcher，通过有界队列、防抖、generation 和溢出根复扫调度局部更新 |
 | `BackupService` | `export`、`restore` | 导出版本化元数据 JSON，校验并事务恢复配置，重新检查来源和文档实时状态 |
+| `ShortcutService` | `state`、`register` | 返回稳定注册状态，以先注册新组合键、再注销旧组合键的顺序切换全局快捷键 |
 
 `GroupingDecision` 包含 `AutoGroup`、`Suggest` 和 `Independent` 三种结果。`GroupingMatch` 返回目标主题、0 到 1 的总分和 `GroupingEvidence[]`；证据类型沿用 `normalizedName`、`keywords`、`editSimilarity`、`version`、`fileType` 和 `path`。中置信度建议写入 `grouping_suggestions`，来源主题 ID 排序后形成稳定建议 ID，重复扫描会更新同一建议。扫描发现新路径时只对唯一、旧路径已消失的人工归组身份候选执行原记录接管；自动归组记录继续走名称分类流程。
 
@@ -95,7 +98,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `TopicService::detail` 接收主题 ID、`SortField` 和 `SortDirection`，返回 `TopicDetail`。`documents` 包含全部可用状态的版本记录；`newestCreatedDocument` 和 `recentlyModifiedDocument` 只引用当前可访问文档。主题不存在时返回 `TOPIC_NOT_FOUND`。`get_topic_detail` Rust command 已注册。
 
-前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，键名为 `document-index.default-time-dimension`；版本号和文件名排序不会覆盖该偏好。版本选择只接受 `available` 文档，单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
+前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，通过统一偏好模块写入 `document-index.preferences` 并同步历史键；版本号和文件名排序不会覆盖该偏好。版本选择只接受 `available` 文档，单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
 
 前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
 
@@ -109,9 +112,11 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `RecycleBinService::recycle_documents` 接受去重前的文档 ID 列表和固定明确确认令牌。成功返回的 `RecycleResult` 包含 `recycledDocumentIds` 和稳定排序的 `affectedTopicIds`；空选择或无效确认返回 `INVALID_INPUT`，文档、来源和路径错误沿用受控 Shell 校验错误，系统回收失败返回 `FILE_SYSTEM_ERROR`。`open_recycle_bin` 委托同一适配器打开 Windows 回收站。
 
-`export_index_backup` 接受 `.json` 路径和 `BackupPreferences`，偏好包括 `defaultTimeDimension: "modifiedAt" | "createdAt"`、`theme: "parchment" | "minimal"` 与范围为 32 至 68 的 `workspaceSplit`，返回来源、主题和文档数量。`restore_index_backup` 接受用户通过原生文件对话框选择的 `.json` 路径，成功返回同类计数与恢复后的偏好；历史备份缺少 `theme` 时返回 `parchment`。未知主题及其他偏好校验失败返回字段路径明确的 `INVALID_INPUT`，文件读写失败返回 `FILE_SYSTEM_ERROR`，活动扫描或活动普通写返回 `SCAN_ALREADY_RUNNING`，事务失败返回 `DATABASE_ERROR`；恢复 guard 存续期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题写操作和文件回收也返回 `SCAN_ALREADY_RUNNING`。普通写 command 彼此串行，冲突时沿用同一稳定错误码和通用操作进行中文案。成功后 command 同步来源 watcher，前端写回并应用三项偏好。
+`export_index_backup` 接受 `.json` 路径和 `BackupPreferences`。基础字段为 `defaultTimeDimension`、`theme` 与 32 至 68 的 `workspaceSplit`；生产力字段为 `globalSearchShortcut`、`closeToTray`、`scanSchedule`、`notificationsEnabled` 和 `autostartEnabled`。`scanSchedule` 是关闭状态、每日 `localTime` 或 6、12、24 小时 `intervalHours` 的判别联合。`restore_index_backup` 成功返回计数与完整偏好；历史备份默认补齐 `Ctrl+Shift+F`、启用关闭到托盘、关闭扫描计划、启用通知和关闭开机自启。未知主题、快捷键和调度值在数据库替换前返回字段路径明确的 `INVALID_INPUT`。文件读写、扫描互斥、事务恢复和 watcher 同步继续沿用既有错误与串行边界。
 
-外观偏好使用 `document-index.appearance-theme` 本机存储键。`readTheme()` 对缺失值、未知值和存储读取异常返回 `parchment`；`saveTheme(theme)` 先设置根元素 `data-theme`，再尝试持久化，因此存储写入异常不会阻止当前会话完成视觉切换。
+`readPreferences()` 从 `document-index.preferences` 安全读取完整偏好，对每个字段独立校验并补齐默认值；首次迁移继续读取 `document-index.default-time-dimension`、`document-index.workspace-split` 和 `document-index.appearance-theme`。`writePreferences()` 与 `updatePreferences()` 同步统一记录和历史键，存储异常不会影响当前索引数据。`readTheme()` 与 `saveTheme()` 继续负责当前会话的根元素主题状态。
+
+`ShortcutRegistrationState` 包含 `status`、可选 `registeredShortcut` 和 `requestedShortcut`。`status` 为 `unregistered`、`registered` 或 `conflict`；冲突响应保留请求值与当前有效注册值，供设置页提供稳定反馈。`get_shortcut_state` 读取进程内服务状态，`update_global_shortcut` 执行原子切换并始终返回最新状态。全局快捷键按下后发送无 payload 的 `focus-search` 事件，前端据此切换搜索工作台并聚焦搜索输入。
 
 前端回收确认展示选中文档数量、当前主题、文件名和完整路径。成功响应触发当前 `TopicDetail` 与外层 `TopicSummary` 刷新，并显示 `open_recycle_bin` 入口；失败响应保留确认上下文并显示索引状态保持说明。
 

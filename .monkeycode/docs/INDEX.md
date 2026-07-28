@@ -2,7 +2,7 @@
 
 ## 项目概览
 
-当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台、Windows 本地优先专注应用“抵达 Focus”，以及 Windows 本地资料索引桌面工程。资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`。该工程当前已完成 React、TypeScript、Vite、Tauri 2 工程骨架、类型化 command 边界、SQLite 元数据 schema、仓储、FTS5 搜索基础、索引源管理、名称规范化、可取消恢复的后台扫描、智能归组、双时间稳定排序、人工主题整理、分页人工主题目录、主题检索、完整版本详情服务、受控文件 Shell 操作、按需预览、Windows 回收站服务、桌面应用外壳、羊皮卷与极简黑白双主题、完整资料工作区、空来源首次使用引导、首次扫描启动兜底、基于 `notify` 的来源变化监听和局部索引更新、启动来源可访问性校验、离线索引保留、未完成扫描恢复、包含主题偏好的版本化索引配置备份与事务恢复、普通持久写串行与恢复互斥、人工归组文档移动与重命名后的身份保持、增量更新和恢复的跨模块集成测试、Windows NSIS 与 WiX 安装配置、GitHub Actions 自动构建与标签发布、核心流程端到端自动化验收，以及十万条元数据 release 性能门禁。
+当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台、Windows 本地优先专注应用“抵达 Focus”，以及 Windows 本地资料索引桌面工程。资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`。该工程当前已完成本地元数据索引、智能归组、双时间排序、人工整理、检索与预览、安全回收、增量监听、备份恢复、Windows 安装器和自动化验收；生产力增强任务 1 至任务 2 已完成统一偏好与备份边界、桌面系统适配器、全局搜索快捷键、冲突状态、窗口唤起、应用内导航快捷键和分级 Escape 状态机。独立仓库全部开发分支推送均由 GitHub Actions 执行完整 Windows 门禁并生成安装器 Artifact。
 
 ## 核心文档
 
@@ -29,6 +29,12 @@ Windows 本地资料索引规格位于 `当前工作区/.monkeycode/specs/local-
 - `requirements.md`：双主题、即时切换、持久化、备份兼容和无障碍需求
 - `design.md`：根元素主题状态、语义化 CSS 令牌、备份契约和正确性属性
 - `tasklist.md`：主题偏好、设置页视觉、备份恢复和完整质量门禁任务，当前已全部完成
+
+资料索引生产力增强规格位于 `当前工作区/.monkeycode/specs/document-index-productivity-enhancements/`。
+
+- `requirements.md`：快捷操作、搜索增强、批量处理、托盘、调度通知、统计、拖放、格式扩展、版本比较和自启需求
+- `design.md`：生产力偏好、桌面生命周期、运行时边界和 P1-P11 正确性属性
+- `tasklist.md`：13 组连续实施任务；任务 1 至任务 2 已完成
 
 抵达 Focus Windows 桌面版规格位于 `当前工作区/.monkeycode/specs/arrive-focus-desktop/`。
 

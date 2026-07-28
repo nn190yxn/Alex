@@ -8,7 +8,7 @@ Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/
 document-index/
 ├── src/
 │   ├── app/                    React 单窗口应用外壳
-│   ├── domain/                 TypeScript 领域模型与 command 契约
+│   ├── domain/                 TypeScript 领域模型、生产力偏好与 command 契约
 │   ├── features/preview/       文件预览会话、格式渲染与资源释放
 │   ├── features/search/        搜索筛选、主题结果与可调整双栏工作区
 │   ├── features/organize/      待整理建议与人工主题编辑工作区
@@ -24,7 +24,7 @@ document-index/
 │   ├── src/database.rs          SQLite 连接、配置与迁移执行器
 │   ├── src/domain/              Rust DTO、错误码和响应协议
 │   ├── src/repositories/        索引源、文档、主题、扫描、扩展名和搜索仓储
-│   ├── src/services/            索引源、名称规范化、智能归组、主题、搜索、Shell、预览、备份、扫描协调和文件监听服务
+│   ├── src/services/            索引、预览、备份、扫描、监听与桌面系统适配器
 │   ├── tests/                   SQLite 仓储、增量恢复、核心流程验收与十万条元数据性能测试
 │   └── tauri.conf.json          单主窗口与 Windows NSIS、WiX 配置
 ├── app-icon.svg                应用图标源文件
@@ -34,13 +34,15 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、预览创建/调整/关闭、文档回收、打开回收站，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务和回收站服务，并接入单实例、窗口状态恢复、原生目录与备份文件对话框和应用数据目录初始化；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、文件监听器、统一预览服务、回收站服务和 `ShortcutService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open` 与 `dialog:allow-save`。
 
-Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器；`main` 推送保存构建 Artifact，`v*` 标签生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
+Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置和设置五个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
-应用外观支持 `parchment` 与 `minimal` 两套稳定主题。`src/features/settings/themePreference.ts` 负责从 `document-index.appearance-theme` 安全读取偏好、校验主题标识并设置根元素 `data-theme`；`src/main.tsx` 在 React 挂载前恢复主题，避免首帧闪烁。`App` 持有当前主题状态，设置页的 `AppearanceSettings` 使用原生按钮和 `aria-pressed` 提供即时切换，主题更新只改变根元素属性和应用状态，不重新挂载业务工作区。`global.css` 通过颜色、字体、表面、边框、强调和焦点语义变量保留羊皮卷视觉，并为极简黑白主题提供白灰表面、黑灰文字、克制绿色状态色与 Windows 系统无衬线字体。
+应用外观支持 `parchment` 与 `minimal` 两套稳定主题。`src/features/settings/productivityPreference.ts` 统一管理界面与生产力偏好，主记录使用 `document-index.preferences`，并继续读取和同步历史时间维度、分隔线与主题键。偏好模型包含默认时间维度、主题、工作区比例、全局搜索快捷键、关闭到托盘、扫描计划、通知和开机自启；默认快捷键为 `Ctrl+Shift+F`，关闭到托盘与通知默认启用，扫描计划与开机自启默认关闭。`themePreference.ts` 继续负责设置根元素 `data-theme`，确保主题在当前会话即时生效。
 
-`SearchWorkspace` 负责搜索输入、来源与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。
+`SearchWorkspace` 负责搜索输入、来源与目录筛选、创建与修改双时间范围、四类排序和分页。文本输入经 `useDeferredValue` 与 180 毫秒收敛后调用 `search_topics`；日期输入转换为 UTC 当日起止边界，筛选或排序变化会回到第一页。结果卡片展示主题名、版本数量、最新创建、最近修改和路径摘要；首次点击展开对应主题的完整版本详情，再次点击同一卡片收起详情，点击其他卡片则切换当前展开主题，右侧保留文件内容预览。`App` 统一监听 `Ctrl+K`、`Ctrl+1` 至 `Ctrl+5` 和 `Escape`：搜索快捷键保留现有查询并聚焦输入，数字快捷键切换五个主工作区，Escape 依次恢复全宽预览、关闭回收确认、收起主题详情和清空搜索文本。
+
+`ShortcutService` 默认注册 `Ctrl+Shift+F`，重注册时先占用新组合键，再释放旧组合键；新注册或旧注销失败时保留可报告的冲突状态和当前已注册组合键。Tauri 全局快捷键 handler 在按下事件中显示、取消最小化并聚焦主窗口，然后发送 `focus-search`；React 外壳收到事件后切换搜索工作台并聚焦输入。设置页通过 `get_shortcut_state` 展示注册或冲突状态，通过 `update_global_shortcut` 应用新组合键；备份恢复后使用同一入口同步桌面注册状态。
 
 主题结果与版本列表、文件预览区使用同一工作区内的可调整分隔线。指针拖动和左右方向键均可修改比例，宽度限制在 32% 到 68%，并保存到 `localStorage` 的 `document-index.workspace-split`；窄屏布局切换为上下排列并隐藏分隔线。预览区域支持折叠、恢复、工作区全宽和恢复分栏，折叠会卸载预览组件并释放当前会话。
 
@@ -82,9 +84,9 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 ### 索引配置备份与恢复
 
-`BackupService` 将索引源、主题、文档元数据与主题关系、人工归组规则、扩展名规则，以及默认时间维度、外观主题和工作区分隔线偏好导出为版本化 JSON。序列化模型使用严格字段白名单，备份不包含文档正文、预览内容、原始文件、扫描运行、扫描错误和待整理建议；写入过程先同步落盘到同目录临时文件，再以原子替换完成导出。
+`BackupService` 将索引源、主题、文档元数据与主题关系、人工归组规则、扩展名规则，以及完整 `BackupPreferences` 导出为版本化 JSON。偏好包含默认时间维度、外观主题、工作区分隔线、全局搜索快捷键、关闭到托盘、扫描计划、通知和开机自启。序列化模型使用严格字段白名单，备份不包含文档正文、预览内容、原始文件、扫描运行、扫描错误和待整理建议；写入过程先同步落盘到同目录临时文件，再以原子替换完成导出。
 
-恢复入口先通过 maintenance guard 拒绝活动扫描和活动普通写操作，再完整校验格式版本、偏好值域、记录 ID 唯一性、来源与主题引用、文档来源边界、人工规则关系和扩展名约束。主题只接受 `parchment` 与 `minimal`；缺少主题字段的历史备份通过 serde 默认值恢复为 `parchment`，未知值在数据库替换前返回 `INVALID_INPUT`。恢复期间，来源刷新、新增与启停、扫描取消、扩展名更新、主题重命名与归组写入、文件回收统一返回 `SCAN_ALREADY_RUNNING`，防止旧状态校验、整库替换、watcher 同步及不可回滚文件操作交错。`BackupRepository::replace` 在单个 SQLite 事务中整套替换配置，重新计算来源状态和文档实时可用性、主题双时间标记并重建 FTS；任一写入失败会回滚到恢复前快照。暂停来源保持 `paused`，其路径可访问时文档仍按实时文件状态标记。恢复成功后 `WatchService` 根据新来源配置重建监听，前端写回默认时间维度、工作区分隔线和主题偏好，立即应用主题并刷新索引统计。
+恢复入口先通过 maintenance guard 拒绝活动扫描和活动普通写操作，再完整校验格式版本、偏好值域、记录 ID 唯一性、来源与主题引用、文档来源边界、人工规则关系和扩展名约束。主题只接受 `parchment` 与 `minimal`；快捷键只接受规范化修饰键组合；扫描计划只接受关闭、每日 `HH:MM` 或 6、12、24 小时间隔。历史备份通过 serde 默认值补齐增强偏好，未知值在数据库替换前返回字段路径明确的 `INVALID_INPUT`。`BackupRepository::replace` 在单个 SQLite 事务中整套替换配置，重新计算来源状态和文档实时可用性、主题双时间标记并重建 FTS；任一写入失败会回滚到恢复前快照。恢复成功后 `WatchService` 根据新来源配置重建监听，前端通过统一偏好模块写回全部偏好并刷新索引统计。
 
 `src-tauri/tests/incremental_recovery.rs` 使用临时目录和磁盘 SQLite 串联公开服务边界，覆盖文件新增、修改、重命名、移动和删除后的局部 reconcile，人工归组文档经局部 reconcile 与完整扫描移动后保持文档 ID、主题和规则路径，硬链接保留旧路径时不被误判为移动，重复与祖先目录合并输入、监听溢出后的根目录复扫、离线来源保留、带路径游标的未完成扫描跨来源继续，以及备份恢复后的 FTS、双时间聚合重建和后续局部更新。测试同时以正文标记验证索引和备份始终只包含元数据。
 

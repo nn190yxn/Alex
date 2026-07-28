@@ -46,6 +46,8 @@ cargo check --locked --features desktop-app
 cargo clippy --locked --features desktop-app --all-targets -- -D warnings
 ```
 
+独立资料索引仓库的 `.github/workflows/windows-installers.yml` 监听全部开发分支推送，在 `windows-latest` 上执行前端测试、类型检查、生产构建、Rust 格式检查、默认测试、`desktop-app` 严格 Clippy 和 Windows 安装包构建。完整编译优先由 GitHub Actions 承担，本地空间紧张时保留 TypeScript 检查、定向 Vitest 与定向 Rust 测试即可；工作流 Artifact 保存 EXE、MSI 和 SHA-256 文件 14 天。
+
 任务 3 当前验证基线为 2 个前端测试文件共 4 个用例、15 个 Rust 单元测试和 8 个 SQLite 仓储集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all`、`cargo test --all-targets`、默认严格 Clippy、Tauri desktop feature 编译和 desktop feature 严格 Clippy 均通过。测试覆盖名称与版本标记规范化、来源重叠与暂停恢复、默认和自定义扩展名、空目录、元数据扫描、访问错误隔离、取消恢复，以及任务 2 的全部 SQLite 仓储场景。
 
 扫描只读取路径、文件名、扩展名、大小、创建时间和修改时间。调试扫描时可监听 Tauri `scan-progress` 事件，并通过 `get_scan_status` 核对持久化状态；异常退出后重新启动桌面应用会恢复 `queued` 和 `running` 扫描。用户主动取消的运行保持 `cancelled`，不会参与启动恢复。
@@ -151,6 +153,10 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 2026-07-26 首次启动可靠性修复基线为 8 个前端测试文件、31 个前端用例和 86 个 Rust 常规测试通过。前端回归覆盖空来源自动进入索引位置、显著目录选择入口、来源数量回传和扫描运行回传；Rust 回归覆盖启用且从未扫描的在线来源自动启动、`last_scan_at` 防重复和未完成运行来源排除。调整桌面启动流程时保持“刷新来源状态、恢复未完成运行、启动从未扫描来源、同步在线 watcher”的顺序。
 
 2026-07-26 外观主题切换基线为 10 个前端测试文件、40 个前端用例和 88 个 Rust 常规测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --check`、串行完整 `cargo test --locked -- --test-threads=1`、`cargo clippy --locked --all-targets -- -D warnings` 和 `git diff --check` 均通过。前端测试覆盖安全启动恢复、主题卡选择语义、即时切换与持久化；Rust 备份测试覆盖 `minimal` 往返、历史备份默认 `parchment`、未知主题在数据替换前拒绝。
+
+2026-07-28 生产力增强任务 1 的 Windows Actions `#8` 和任务 2 的 Windows Actions `#9` 已通过前端测试、类型检查、生产构建、Rust 格式、默认测试、`desktop-app` 严格 Clippy 和安装器构建。任务 2 本地定向基线为 4 个前端测试文件、20 个用例通过，完整前端基线为 11 个测试文件、47 个用例通过，覆盖窗口聚焦事件、`Ctrl+K` 查询保留、`Ctrl+1` 至 `Ctrl+5` 导航、四级 Escape 优先顺序、设置页冲突反馈和统一偏好回归；`pnpm exec tsc --noEmit` 与 `git diff --check` 同步通过。快捷键服务 Rust 单元测试已由开发分支 Windows Actions 验证；本地旧 Rust 工具链会在 crates.io 索引更新阶段超时。
+
+调整全局快捷键时应同步 `ShortcutService`、`commands/desktop.rs`、TypeScript `CommandContract`、`commandClient` 和设置页状态。重注册保持先注册新组合键再注销旧组合键，冲突时继续返回当前有效组合键；窗口激活保持显示、取消最小化、聚焦和发送 `focus-search` 的顺序。调整 Escape 行为时应维持全宽预览、确认层、展开详情和搜索文本的优先级。
 
 调整外观主题时应同步 `themePreference.ts` 的稳定标识、`global.css` 的语义变量、设置页主题卡和备份 DTO。新增主题需要同时更新 TypeScript 联合类型、Rust 偏好校验、历史备份策略及前后端往返测试。根元素主题应在 React 挂载前恢复，切换过程应保留当前业务组件状态。
 
