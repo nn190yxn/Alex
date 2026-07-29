@@ -34,7 +34,7 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、扩展名白名单、扫描、索引状态快照、索引统计、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、拖放路径分类、扩展名白名单、扫描、索引状态快照、索引统计、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
 
 Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置、统计和设置六个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
@@ -60,7 +60,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 版本操作支持单项和批量选择。批量复制路径和定位只处理选中项中的可用文档，返回成功数、失败数和可展开的逐项稳定错误码；复制操作由后端返回重新校验后的 canonical 路径，再由 WebView 写入系统剪贴板。批量定位 10 个及以下文件时直接执行，超过 10 个时复用应用级确认层和 Escape 关闭链路。CSV 导出可包含缺失与不可访问记录，通过系统保存对话框选择目标。回收确认层展示主题、数量、文件名和完整路径，确认后使用固定令牌调用 `recycle_documents`；成功后详情和搜索主题摘要同时刷新，并提供打开 Windows 回收站入口。
 
-`SourceManager` 接管“索引位置”工作区，通过 `tauri-plugin-dialog` 的目录模式选择本地位置。应用启动时先读取来源；空来源直接进入该工作区，侧栏显示“请添加索引位置”，页面展示目录选择引导卡。新增来源保存成功后立即启动单源扫描，并向应用外壳回传来源列表和扫描运行，使侧栏立刻切换为排队或扫描状态；来源卡片展示路径、可用状态、添加时间、最近扫描和最近成功时间，并提供暂停、恢复和手动刷新。组件监听 `scan-progress`，运行结束后重新读取来源状态和该次扫描的持久化错误。
+`SourceManager` 接管“索引位置”工作区，通过 `tauri-plugin-dialog` 的目录模式选择本地位置，并通过当前 Tauri WebView 的原生拖放事件接收批量路径。拖入期间显示工作区覆盖层；Rust `filter_dropped_source_paths` 只过滤可识别的普通文件，目录与无法预判的路径继续逐项复用 `add_source` 的可访问性和重叠校验。有效目录串行添加后合并为一次首次扫描，单项目录失败不会中断其他项；完成后优先重新读取权威来源列表，并展示成功、忽略文件和逐项错误汇总。应用启动时先读取来源；空来源直接进入该工作区，侧栏显示“请添加索引位置”，页面展示目录选择引导卡。新增来源保存成功后立即启动单源扫描，并向应用外壳回传来源列表和扫描运行，使侧栏立刻切换为排队或扫描状态；来源卡片展示路径、可用状态、添加时间、最近扫描和最近成功时间，并提供暂停、恢复和手动刷新。组件监听 `scan-progress`，运行结束后重新读取来源状态和该次扫描的持久化错误。
 
 同一工作区的扩展名设置读取完整 `ExtensionRule[]`，允许切换内置规则、校验并添加 1 到 16 位字母或数字组成的自定义扩展名，然后原子保存当前启用白名单。扫描错误区域默认读取最近一次扫描运行，也可在当前扫描结束事件后按运行 ID 读取失败路径、错误类型、时间和重试状态。
 
@@ -78,7 +78,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 ### 索引源与扫描服务
 
-`SourceService` 负责目录 canonicalize、实时可访问性校验、索引源重叠检测、暂停恢复、扩展名规则读取和白名单替换。添加来源时要求目录当前可访问；启动和来源列表读取会重新打开来源根目录校验访问状态：禁用来源固定为 `paused`，在线启用来源恢复为 `ready`，离线启用来源标记为 `unavailable`，仍关联未完成运行的 `scanning` 来源保留运行状态。状态刷新只更新来源记录，不改变文档和主题可用状态。扩展名统一去除前导点、转为小写并校验为 1 到 16 位字母或数字。
+`SourceService` 负责目录 canonicalize、实时可访问性校验、索引源重叠检测、拖放普通文件分类、暂停恢复、扩展名规则读取和白名单替换。拖放分类只排除 `metadata.is_file()` 的路径，目录和 metadata 读取失败项继续进入既有来源校验，以返回稳定领域错误。添加来源时要求目录当前可访问；启动和来源列表读取会重新打开来源根目录校验访问状态：禁用来源固定为 `paused`，在线启用来源恢复为 `ready`，离线启用来源标记为 `unavailable`，仍关联未完成运行的 `scanning` 来源保留运行状态。状态刷新只更新来源记录，不改变文档和主题可用状态。扩展名统一去除前导点、转为小写并校验为 1 到 16 位字母或数字。
 
 `NameNormalizer` 对文件名执行 Unicode NFKC 规范化，提取数字版本、日期、修订版、最终版、终稿、副本和 copy 标记，并生成规范化名称、原始版本标签及稳定排序键。扫描过程只读取文件系统元数据，正文不会被读取或写入索引。文件身份在 Unix 上由设备号和 inode 构成，在 Windows 上通过只读属性句柄获取卷序列号和文件索引。
 

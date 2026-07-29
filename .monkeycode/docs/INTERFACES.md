@@ -22,6 +22,7 @@ type CommandResult<T> =
 | `configure_scheduled_scan` | `{ schedule, notificationsEnabled }` | `DesktopAutomationState` | 已实现并注册 |
 | `get_scheduled_scan_state` | 无 | `DesktopAutomationState` | 已实现并注册 |
 | `list_sources` | 无 | `IndexSource[]` | 已实现并注册 |
+| `filter_dropped_source_paths` | `{ paths }` | `DroppedSourcePathFilter` | 已实现并注册 |
 | `add_source` | `{ path }` | `IndexSource` | 已实现并注册 |
 | `set_source_enabled` | `{ sourceId, enabled }` | `IndexSource` | 已实现并注册 |
 | `start_scan` | `{ sourceIds }` | `ScanRun` | 已实现并注册 |
@@ -79,7 +80,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 | 服务 | 主要方法 | 行为 |
 |------|----------|------|
-| `SourceService` | `list_sources`、`add_source`、`set_source_enabled`、`list_extensions`、`update_extensions`、`enabled_extensions` | 实时校验和管理索引源状态与扩展名白名单，保留离线来源索引 |
+| `SourceService` | `list_sources`、`filter_dropped_source_paths`、`add_source`、`set_source_enabled`、`list_extensions`、`update_extensions`、`enabled_extensions` | 分类拖放路径，实时校验和管理索引源状态与扩展名白名单，保留离线来源索引 |
 | `NameNormalizer` | `normalize` | 输出原始文件名、扩展名、规范化名称、版本标签和版本排序键 |
 | `GroupingService` | `classify`、`blocking_keys`、`list_organize_suggestions`、`dismiss_organize_suggestion` | 生成阻塞键，计算元数据证据分数，返回归组决策，映射建议分页并忽略待处理建议 |
 | `TopicService` | `detail`、`rename_topic`、`merge_topics`、`accept_organize_suggestion`、`move_documents_to_topic` | 返回稳定排序主题详情，以事务执行人工重命名、建议接受、合并和拆分 |
@@ -114,7 +115,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 前端 `TopicDetailPanel` 对 `modifiedAt`、`createdAt` 和 `version` 使用降序，对 `fileName` 使用升序。时间维度偏好只保存 `modifiedAt` 或 `createdAt`，通过统一偏好模块写入 `document-index.preferences` 并同步历史键；版本号和文件名排序不会覆盖该偏好。全部版本均可选择用于 CSV 导出，路径复制、Explorer 定位和回收站操作只使用选中项中的 `available` 文档；单项和批量回收最终调用 `recycle_documents`，确认令牌由 `commandClient` 的 `RECYCLE_CONFIRMATION_TOKEN` 提供。
 
-前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描；组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
+前端应用外壳启动时调用 `list_sources` 判断首次使用状态；空来源自动进入“索引位置”。`SourceManager` 启动时并行读取 `list_sources`、`list_extensions` 和最近一次 `list_scan_errors`。`list_sources` 会刷新实时来源状态并同步 watcher，因此离线来源恢复后读取列表即可回到 `ready` 并重建监听。目录选择通过 `open({ directory: true, multiple: false })` 完成，保存来源后调用 `start_scan` 执行首次扫描。原生拖放先调用 `filter_dropped_source_paths({ paths })`，返回 `{ candidatePaths, ignoredFileCount }`；候选路径串行调用 `add_source`，成功来源 ID 合并为一次 `start_scan`，随后重新读取来源并展示批次汇总。组件将来源变化和成功创建的 `ScanRun` 回传应用外壳，手动刷新传递单个来源 ID。扩展名保存传递全部启用规则，扫描终态事件携带的运行 ID 用于刷新本次错误列表。
 
 `ShellService::open_document` 和 `ShellService::reveal_document` 接收文档 ID。服务拒绝未知文档、非 `available` 状态、实时缺失文件、不可访问来源及 canonical 路径越界；对应错误码包括 `DOCUMENT_NOT_FOUND`、`SOURCE_NOT_FOUND`、`SOURCE_UNAVAILABLE`、`FILE_SYSTEM_ERROR` 和 `PATH_OUTSIDE_SOURCE`。`ShellAdapter` 隔离系统调用，`SystemShellAdapter` 在 Windows 上调用 Explorer；两个 Rust command 已注册，成功结果的 `data` 为 `null`。
 

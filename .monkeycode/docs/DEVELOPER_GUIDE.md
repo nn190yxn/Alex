@@ -166,6 +166,10 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-28 生产力增强任务 8 本地基线为 16 个前端测试文件共 66 项测试和 69 项 Rust 测试通过，`pnpm typecheck`、`pnpm build`、Rust 格式检查、统计仓储定向测试、搜索元数据筛选集成测试和补丁检查同步通过。Windows Actions `#16` 在提交 `4cc630e` 上通过完整前端与 Rust 测试、`desktop-app` 严格 Clippy、EXE/MSI 构建、SHA-256 校验和制品上传。统计测试覆盖数据态、空状态、加载失败重试、稳定分布和守恒关系；搜索回归覆盖扩展名与可用状态筛选。
 
+2026-07-28 生产力增强任务 9 本地基线为 16 个前端测试文件共 68 项测试通过，`pnpm typecheck`、`pnpm build`、Rust 格式检查、Cargo 元数据解析和补丁检查同步通过。Windows Actions `#17` 在提交 `91faeea` 上通过完整前端与 Rust 测试、`desktop-app` 严格 Clippy、EXE/MSI 构建和制品上传。拖放回归覆盖工作区覆盖层、普通文件过滤、重叠来源错误隔离、目录串行添加、成功来源批次首次扫描、权威来源刷新、结果汇总和组件卸载时监听释放。
+
+调整目录拖放时应继续由 Rust 分类普通文件，并让目录及 metadata 读取失败路径进入现有 `add_source` 校验。目录添加保持串行执行，单项失败继续处理后续候选；成功来源合并为一次首次扫描，完成后优先通过 `list_sources` 刷新权威状态。Web 预览环境中的原生通道异常应保持受控反馈。
+
 调整索引统计时应保持单次数据库读取边界、全部文档统计口径和稳定分组顺序。来源、扩展名与可用状态分布分别与文档总数守恒，归组置信度只统计具有文档的主题；扫描活动提示使用最近终态扫描时间。统计项跳转搜索时继续传递来源 ID、规范化扩展名或显式可用状态，并保留普通搜索默认只查询 `available` 文档的行为。
 
 调整计划扫描时应继续复用 `ScanCoordinator` 的全源入口和统一 `progress_sink`，并保持单 worker、配置 generation、可中断等待和退出 join。配置校验失败保留上一份有效计划；扫描冲突记录跳过原因并计算下一次时间。通知权限申请由前端 Notification Web API 完成，Rust `NotificationService` 只接收有效运行时启停状态；权限与发送失败均不改变扫描结果。
