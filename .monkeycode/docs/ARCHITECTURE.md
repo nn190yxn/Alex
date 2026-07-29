@@ -2,7 +2,7 @@
 
 ## 资料索引桌面工程
 
-Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，源码与发布边界归属独立仓库 `https://github.com/nn190yxn/zhuaomiansousuo`。主仓库保留需求、设计和任务规格，并通过 gitlink 固定已验证的独立仓库提交。任务 1 至任务 11 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及最终前端与 Rust 交付验证。
+Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，源码与发布边界归属独立仓库 `https://github.com/nn190yxn/zhuaomiansousuo`。主仓库保留需求、设计和任务规格，并通过 gitlink 固定已验证的独立仓库提交。任务 1 至任务 12 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及生产力偏好、当前用户级开机自启和隐藏启动。
 
 ```text
 document-index/
@@ -34,7 +34,7 @@ document-index/
 
 前端使用 React 19、TypeScript strict 和 Vite 7。`src/domain/models.ts` 定义索引源、文档、主题、扫描运行、归组建议、扩展名规则、分页和搜索条件；`src/domain/commands.ts` 定义稳定错误码、`CommandResult<T>` 判别联合与后续业务 command 的参数和输出类型；`src/lib/commandClient.ts` 统一封装 Tauri `invoke`，并把调用层异常归一化为 `COMMAND_INVOCATION_FAILED`。
 
-Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、拖放路径分类、扩展名白名单、扫描、索引状态快照、索引统计、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
+Rust core 使用与前端对称的 serde DTO 和 `{ ok, data, version }` / `{ ok, error }` 响应协议。桌面运行时已注册健康检查、索引源管理、拖放路径分类、扩展名白名单、扫描、索引状态快照、索引统计、主题管理、待整理建议分页、建议接受与忽略、主题搜索、主题详情、文件打开、Explorer 定位、批量路径复制、批量定位、CSV 元数据导出、预览创建/调整/关闭、文档回收、打开回收站、快捷键状态与更新、扫描计划配置与状态、自启状态与配置、关闭到托盘配置，以及索引备份导出和恢复 command。Tauri builder 共享管理扫描协调器、计划调度器、文件监听器、统一预览服务、回收站服务、`ShortcutService`、`NotificationService`、`AutostartService` 和 `TrayService`，并在 `desktop-app` feature 下接入单实例、窗口状态、原生对话框、全局快捷键、桌面通知、当前用户自启和 tray icon 能力。`desktop_integration.rs` 以 `ShortcutAdapter`、`NotificationAdapter` 和 `AutostartAdapter` 隔离系统副作用，并提供基于 Tauri 插件的系统实现；主窗口 capability 开放 `core:default`、`dialog:allow-open`、`dialog:allow-save` 与 `notification:default`。
 
 Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户安装、简体中文与英文安装界面以及 WebView2 bootstrapper。独立仓库的 GitHub Actions 工作流监听全部开发分支，在 Windows MSVC runner 上执行前端与 Rust 门禁并构建两种安装器，每次推送保存 14 天构建 Artifact；`v*` 标签额外生成 SHA-256 校验文件并发布 GitHub Release。React 外壳使用 224px 固定左侧栏和右侧完整工作区，注册搜索工作台、全部资料、待整理、索引位置、统计和设置六个可访问导航入口。侧栏持续展示索引状态、活动文档数、活动主题数、待整理数、最近扫描失败数和最近完成时间，并在扫描期间根据 `scan-progress` 事件显示处理进度；右侧业务区域切换不会中断状态展示。
 
@@ -45,6 +45,8 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 `ShortcutService` 默认注册 `Ctrl+Shift+F`，重注册时先占用新组合键，再释放旧组合键；新注册或旧注销失败时保留可报告的冲突状态和当前已注册组合键。Tauri 全局快捷键 handler 在按下事件中显示、取消最小化并聚焦主窗口，然后发送 `focus-search`；React 外壳收到事件后切换搜索工作台并聚焦输入。设置页通过 `get_shortcut_state` 展示注册或冲突状态，通过 `update_global_shortcut` 应用新组合键；备份恢复后使用同一入口同步桌面注册状态。
 
 `TrayService` 创建“显示主窗口”“立即扫描”和“退出”菜单。托盘图标左键与显示菜单均显示、取消最小化并聚焦 `main` 窗口；立即扫描以空来源列表调用现有 `ScanCoordinator` 全源入口。服务按扫描 ID 集合跟踪所有排队和运行任务，仅在全部活动扫描终止后重新启用菜单项。托盘初始化成功时，主窗口 `CloseRequested` 会阻止销毁并隐藏窗口；初始化失败时保留普通窗口关闭语义。明确退出先设置退出意图，再通过单次 shutdown 门闩依次释放活动预览、文件 watcher registrations 和托盘资源，防止退出事件重复清理或再次隐藏窗口。
+
+`AutostartService` 通过当前用户级 Tauri autostart 插件读取、启用和关闭登录启动项，并以操作锁串行化修改与权威回读。配置前读取原状态，修改后再次读取系统实际值；修改失败返回实际状态和稳定错误，修改成功后的回读失败会尝试恢复原状态。自启项携带精确 `--hidden` 参数，主窗口初始隐藏且 window-state 插件不恢复可见标志；普通启动在桌面 setup 完成后显式显示，隐藏启动仅在托盘安装成功时保持隐藏，托盘不可用时回退显示主窗口。第二实例只有精确隐藏参数才保持现有窗口状态，普通启动继续显示并聚焦窗口。
 
 `ScanScheduler` 使用单个后台 worker、`Mutex`、`Condvar` 和配置 generation 管理计划。计划支持关闭、每日 `HH:MM` 本地时间及 6、12、24 小时间隔；配置变化即时唤醒 worker 并废弃旧 deadline。每日计划处理本地时间歧义和夏令时不存在时间，下一次时间始终严格晚于当前时间。到期扫描以空来源列表复用 `ScanCoordinator`；已有扫描或缺少可扫描来源时记录稳定跳过原因并继续计算下一次时间。桌面退出会唤醒并 join 调度 worker。
 
@@ -96,7 +98,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 `BackupService` 将索引源、主题、文档元数据与主题关系、人工归组规则、扩展名规则，以及完整 `BackupPreferences` 导出为版本化 JSON。偏好包含默认时间维度、外观主题、工作区分隔线、全局搜索快捷键、关闭到托盘、扫描计划、通知和开机自启。序列化模型使用严格字段白名单，备份不包含文档正文、预览内容、原始文件、扫描运行、扫描错误和待整理建议；写入过程先同步落盘到同目录临时文件，再以原子替换完成导出。
 
-恢复入口先通过 maintenance guard 拒绝活动扫描和活动普通写操作，再完整校验格式版本、偏好值域、记录 ID 唯一性、来源与主题引用、文档来源边界、人工规则关系和扩展名约束。主题只接受 `parchment` 与 `minimal`；快捷键只接受规范化修饰键组合；扫描计划只接受关闭、每日 `HH:MM` 或 6、12、24 小时间隔。历史备份通过 serde 默认值补齐增强偏好，未知值在数据库替换前返回字段路径明确的 `INVALID_INPUT`。`BackupRepository::replace` 在单个 SQLite 事务中整套替换配置，重新计算来源状态和文档实时可用性、主题双时间标记并重建 FTS；任一写入失败会回滚到恢复前快照。恢复成功后 `WatchService` 根据新来源配置重建监听，前端通过统一偏好模块写回全部偏好并刷新索引统计。
+恢复入口先通过 maintenance guard 拒绝活动扫描和活动普通写操作，再完整校验格式版本、偏好值域、记录 ID 唯一性、来源与主题引用、文档来源边界、人工规则关系和扩展名约束。主题只接受 `parchment` 与 `minimal`；快捷键只接受规范化修饰键组合；扫描计划只接受关闭、每日 `HH:MM` 或 6、12、24 小时间隔。历史备份通过 serde 默认值补齐增强偏好，未知值在数据库替换前返回字段路径明确的 `INVALID_INPUT`。`BackupRepository::replace` 在单个 SQLite 事务中整套替换配置，重新计算来源状态和文档实时可用性、主题双时间标记并重建 FTS；任一写入失败会回滚到恢复前快照。恢复成功后 `WatchService` 根据新来源配置重建监听，前端依次重注册快捷键、同步托盘行为、重排扫描与通知、同步自启实际状态，失败项保留当前有效值，最后一次性写回最终偏好并刷新索引统计。
 
 `src-tauri/tests/incremental_recovery.rs` 使用临时目录和磁盘 SQLite 串联公开服务边界，覆盖文件新增、修改、重命名、移动和删除后的局部 reconcile，人工归组文档经局部 reconcile 与完整扫描移动后保持文档 ID、主题和规则路径，硬链接保留旧路径时不被误判为移动，重复与祖先目录合并输入、监听溢出后的根目录复扫、离线来源保留、带路径游标的未完成扫描跨来源继续，以及备份恢复后的 FTS、双时间聚合重建和后续局部更新。测试同时以正文标记验证索引和备份始终只包含元数据。
 
