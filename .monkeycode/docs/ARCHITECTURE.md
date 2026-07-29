@@ -148,6 +148,14 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 Windows 后端通过文件扩展名和 `ASSOCSTR_SHELLEXTENSION` 查询系统已注册的 Preview Handler CLSID，在进程内创建 `IPreviewHandler`，使用 `IInitializeWithFile` 只读初始化，并将父窗口句柄和 `PreviewViewport` 同步到处理程序。宿主只接受正尺寸区域和非零父窗口句柄，处理程序缺失或 COM 调用失败统一映射为通用不可用错误；非 Windows 平台保留同一接口并返回平台不可用结果。
 
+### 同主题版本比较
+
+`ComparisonService` 接收两个文档 ID，校验记录存在、ID 不同且属于同一主题，再返回文件名、路径、大小、创建时间、修改时间、版本标记和可用状态的左右值及差异字段。TXT、Markdown、CSV、JSON、XML、YAML、YML、TOML 和 EML 复用预览服务的实时路径校验与安全文本读取边界，在总正文 2 MiB、总行数 20,000 的预算内通过 `similar::TextDiff::from_lines` 生成逐行 `unchanged`、`added` 和 `removed` 片段；其他格式返回两个预览目标。
+
+比较会话按 UUID 保存在进程内并限制为最多 16 个，显式关闭删除对应会话，桌面退出清空全部会话。不可用、超限、行数过多或正文无效时继续返回元数据与稳定 `limited` 原因；正文和差异只保留在短期会话与前端状态中，不进入 SQLite 或备份。服务按文档 ID 的规范方向计算差异，交换显示顺序时只交换左右元数据并反转新增与删除类型，从而保持 P10 对称性。
+
+`TopicDetailPanel` 在恰好选择两个版本时创建比较会话，并将比较加载和错误状态与批量回收确认分离。`ComparisonPanel` 展示元数据差异、文本片段、受限原因和非文本预览入口；非文本内容复用单一 `PreviewPane`，符合 Windows Preview Handler 的单活动会话约束。显式关闭、Escape、主题切换、详情刷新删除比较文档、组件卸载和迟到异步响应都会释放比较及相关预览资源。
+
 ### Windows 回收站服务
 
 `RecycleBinService` 接受数据库文档 ID 和明确确认令牌，先去重并复用 `ShellService` 对每个文档执行实时状态、canonical 路径及索引源边界校验。全部路径通过后，服务一次性调用 `RecycleBinAdapter`；系统操作成功后，`DocumentRepository::mark_recycled` 才在单个事务中将对应文档标记为 `missing`，并重算全部受影响主题的版本数量查询基础和双时间标记。

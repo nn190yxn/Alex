@@ -170,6 +170,10 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 2026-07-29 生产力增强任务 10 本地基线为 76 项 Rust 库测试、10 项预览服务测试和 23 项 SQLite 集成测试通过，备份恢复定向测试、Rust 格式检查、Cargo 元数据解析和补丁检查同步通过。Windows Actions `#20` 在提交 `3c42e31` 上通过完整前端与 Rust 测试、`desktop-app` 严格 Clippy、EXE/MSI 构建、SHA-256 校验和制品上传。扩展格式回归覆盖 ODT/ODS/ODP、EPUB、EML、SVG、XML、YAML/YML/TOML、ZIP 路径穿越、损坏与超限内容，以及预览正文零索引。
 
+2026-07-29 生产力增强任务 11 本地基线为 17 个前端测试文件共 74 项测试、8 项比较服务定向测试和 1 项比较 DTO serde 测试通过，`pnpm typecheck`、`pnpm build`、Rust 格式检查和补丁检查同步通过。Windows Actions `#21`、运行 `30417561876` 在提交 `6c4dc38` 上通过完整前端与 Rust 测试、`desktop-app` 严格 Clippy、EXE/MSI 构建和制品上传。比较回归覆盖同主题校验、全部元数据差异、文本逐行差异、左右交换对称性、非文本预览目标、不可用与超限受限原因、会话释放、会话容量边界和 Escape 关闭。
+
+调整版本比较时应继续复用预览服务的实时路径与正文读取边界，保持总正文 2 MiB、总行数 20,000 和最多 16 个残留会话预算。差异计算需按规范文档顺序执行，再根据调用顺序交换元数据并反转新增与删除；关闭、主题切换、详情刷新、卸载和异步迟到响应都必须释放比较会话。非文本并排入口继续复用单一 `PreviewPane`，避免原生 Preview Handler 会话相互替换。
+
 调整扩展格式时应保持 20 MiB 归档、4 MiB 单条目、8 MiB 累计解压和 2048 条目预算；EPUB 只读取 OPF spine 文本章节，EML 在附件解码前跳过附件，SVG 保持安全文本展示。新增默认扩展需同步 migration、`BUILTIN_EXTENSIONS`、文件类型族映射和恢复后默认项补齐逻辑。
 
 调整目录拖放时应继续由 Rust 分类普通文件，并让目录及 metadata 读取失败路径进入现有 `add_source` 校验。目录添加保持串行执行，单项失败继续处理后续候选；成功来源合并为一次首次扫描，完成后优先通过 `list_sources` 刷新权威状态。Web 预览环境中的原生通道异常应保持受控反馈。

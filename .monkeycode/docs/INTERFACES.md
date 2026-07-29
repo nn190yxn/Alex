@@ -49,6 +49,8 @@ type CommandResult<T> =
 | `create_preview_session` | `{ documentId, viewport }` | `PreviewSession` | 已实现并注册 |
 | `resize_preview_session` | `{ sessionId, viewport }` | `null` | 已实现并注册 |
 | `close_preview_session` | `{ sessionId }` | `null` | 已实现并注册 |
+| `create_comparison_session` | `{ leftDocumentId, rightDocumentId }` | `ComparisonSession` | 已实现并注册 |
+| `close_comparison_session` | `{ sessionId }` | `null` | 已实现并注册 |
 | `recycle_documents` | `{ documentIds, confirmationToken }` | `RecycleResult` | 已实现并注册 |
 | `open_recycle_bin` | 无 | `null` | 已实现并注册 |
 
@@ -89,6 +91,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `ShellService` | `open_document`、`reveal_document` | 按数据库文档 ID 重新校验实时文件与来源边界，再委托 Windows Shell 打开或定位 |
 | `BatchFileService` | `batch_copy_paths`、`batch_reveal_documents`、`export_document_metadata` | 按稳定去重顺序逐项隔离路径操作，并将数据库元数据原子导出为 UTF-8 BOM CSV |
 | `PreviewService` | `create_session`、`close_session`、`active_session_id`、`shutdown` | 创建单活动短期预览会话，按格式与大小选择内置适配器，并在退出时幂等释放会话与原生宿主 |
+| `ComparisonService` | `create_session`、`close_session`、`shutdown` | 校验同主题双版本，生成有界文本差异或双预览目标，并按 ID 管理有界短期会话 |
 | `WindowsPreviewHost` | `start`、`resize`、`unload` | 在专用 STA 线程托管 DOC、XLS、PPT 的系统 `IPreviewHandler`，同步预览区域并释放活动处理程序 |
 | `RecycleBinService` | `recycle_documents`、`open_recycle_bin` | 校验确认令牌和受控文档路径，成功移入 Windows 回收站后以事务更新文档状态与主题聚合 |
 | `ScanCoordinator` | `begin_maintenance`、`begin_mutation`、`start_scan`、`cancel_scan`、`get_scan_status`、`index_status`、`resume_unfinished`、`start_unscanned_sources`、`reconcile_directories` | 以 RAII guard 串行普通持久写并与恢复互斥，启动后台扫描、取消、查询进度与索引快照、恢复异常中断任务，为启用且从未扫描的在线来源补启首次扫描，隔离离线来源，并对来源内目录执行有界批量局部更新 |
@@ -126,6 +129,10 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 前端 `PreviewPane` 只接收主题详情返回的文档记录，并继续以文档 ID 调用预览 command。组件使用单一活动 session ID 驱动创建、区域调整和关闭；切换文件、折叠预览或卸载组件都会关闭会话。文本、图片、PDF、Office 分段、Windows 原生内容和受限状态分别按 `PreviewContent.kind` 渲染，预览正文与 Blob URL 仅保留在组件内存中。
 
 `WindowsPreviewHost::start` 接受旧版 Office 文件路径、父窗口句柄和 `PreviewViewport`，返回短期原生会话 ID；`resize` 与 `unload` 只接受当前活动会话 ID。切换文件时先卸载旧处理程序，处理程序发现、COM 初始化和调用失败统一返回 `FILE_SYSTEM_ERROR`，无效格式、窗口句柄、区域或失效会话返回 `INVALID_INPUT`。
+
+`ComparisonSession` 包含会话 ID、`left` 与 `right` 两份 `ComparisonDocumentMetadata`、`metadataDifferences` 和 `content`。元数据字段包含文档 ID、文件名、绝对路径、扩展名、大小、可空创建时间、可空修改时间、可空版本标记和可用状态。`content` 是 `textDiff`、`previewTargets` 或 `limited` 判别联合：文本差异包含逐行 `unchanged`、`added`、`removed` 片段；预览目标包含两个文档 ID；受限原因支持 `documentUnavailable`、`fileTooLarge`、`tooManyLines` 和 `invalidContent`，并携带稳定排序去重的受限文档 ID。
+
+`create_comparison_session` 拒绝重复文档、未知文档和跨主题文档。可比较文本正文总量限制为 2 MiB，总行数限制为 20,000；交换左右 ID 会交换元数据并反转新增与删除片段。`close_comparison_session` 只释放指定会话，未知或已关闭 ID 返回 `INVALID_INPUT`；应用退出会清空所有残留会话。
 
 `RecycleBinService::recycle_documents` 接受去重前的文档 ID 列表和固定明确确认令牌。成功返回的 `RecycleResult` 包含 `recycledDocumentIds` 和稳定排序的 `affectedTopicIds`；空选择或无效确认返回 `INVALID_INPUT`，文档、来源和路径错误沿用受控 Shell 校验错误，系统回收失败返回 `FILE_SYSTEM_ERROR`。`open_recycle_bin` 委托同一适配器打开 Windows 回收站。
 
