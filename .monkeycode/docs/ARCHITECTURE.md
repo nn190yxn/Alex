@@ -72,7 +72,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 `src-tauri/src/database.rs` 使用 `Mutex<rusqlite::Connection>` 管理单个本地连接，打开连接时启用外键、WAL 和 5 秒 busy timeout，并在事务中按版本执行编译期嵌入的 SQL migrations。桌面进程启动时在应用数据目录打开 `document-index.sqlite3`，数据库由共享 `ScanCoordinator` 持有并通过 Tauri managed state 注册。
 
-初始 schema 包含 `index_sources`、`documents`、`topics`、`grouping_suggestions`、`manual_grouping_rules`、`scan_runs`、`scan_errors` 和 `extension_rules`，并预置 12 个默认文档扩展名。`topic_search` FTS5 虚拟表仅索引主题名、文件名、规范化名称和完整路径；文档增删改与主题显示名更新通过 SQLite triggers 增量同步。第三个迁移为规范化名称候选检索和待整理建议状态增加索引，第四个迁移为来源内文件身份查询增加索引，并允许硬链接对应的人工规则共享同一文件身份。
+初始 schema 包含 `index_sources`、`documents`、`topics`、`grouping_suggestions`、`manual_grouping_rules`、`scan_runs`、`scan_errors` 和 `extension_rules`。`topic_search` FTS5 虚拟表仅索引主题名、文件名、规范化名称和完整路径；文档增删改与主题显示名更新通过 SQLite triggers 增量同步。第三个迁移为规范化名称候选检索和待整理建议状态增加索引，第四个迁移为来源内文件身份查询增加索引，并允许硬链接对应的人工规则共享同一文件身份。第五个迁移新增 ODT、ODS、ODP、EPUB、EML、SVG、XML、YAML、YML 和 TOML，内置默认规则总数为 22；恢复历史备份后以冲突忽略方式补齐缺失内置规则，保留已有同扩展配置。
 
 仓储层按领域拆分为 `IndexSourceRepository`、`DocumentRepository`、`TopicRepository`、`GroupingRepository`、`ScanRepository`、`ExtensionRuleRepository`、`SearchRepository` 和 `StatisticsRepository`。文档批量 upsert、全源或目录范围缺失标记和主题双时间聚合在同一事务中完成；目录范围使用 `Path::starts_with` 的路径组件边界，避免相似目录名前缀扩大更新范围。人工主题归属和人工主题名称在后续自动更新中保持优先。文档按来源和文件身份执行有界候选查询；身份接管更新原文档路径时，同一事务同步人工规则中的来源、路径和身份。文档列表支持创建时间、修改时间、版本和文件名排序，缺失值统一置后，并以另一时间维度、路径和 ID 稳定决胜。主题、建议和 FTS 搜索分页把单页数量限制为 1 到 100 条。
 
@@ -140,7 +140,7 @@ Windows bundle 同时生成 NSIS `.exe` 和 WiX `.msi`；NSIS 使用当前用户
 
 `PreviewService` 通过文档 ID 复用 `ShellService` 的实时文件与 canonical 来源边界校验，并在进程内维护最多一个活动会话 ID。新会话自动替换旧会话；关闭操作只接受当前活动会话，预览正文仅存在于 command 返回模型和前端会话内存中。
 
-文本、Markdown、CSV 和 JSON 以 2 MB 为上限按 UTF-8 纯文本加载；PDF 上限为 30 MB，PNG、JPEG、GIF、WebP 和 BMP 上限为 20 MB，二进制内容以固定 MIME 和 Base64 返回。DOCX、XLSX 和 PPTX 在 20 MB 文件上限内读取受限 ZIP/XML，单条目限制 4 MB、累计解压限制 8 MB、归档条目限制 2048，并输出文档、工作表或幻灯片分段。超限、格式不支持和内容损坏统一形成可展示的 `limited` 状态。
+文本、Markdown、CSV、JSON、XML、YAML、YML 和 TOML 以 2 MB 为上限按 UTF-8 纯文本加载，XML 在展示前完成结构验证。PDF 上限为 30 MB，PNG、JPEG、GIF、WebP 和 BMP 上限为 20 MB，二进制内容以固定 MIME 和 Base64 返回。DOCX、XLSX、PPTX、ODT、ODS、ODP 和 EPUB 在 20 MB 文件上限内读取受限 ZIP/XML，单条目限制 4 MB、累计解压限制 8 MB、归档条目限制 2048；归档拒绝绝对路径、Windows drive、反斜杠、父目录和重复条目。EPUB 只读取 container 指向的 OPF manifest 与 spine 文本章节。EML 在 2 MB 正文、128 个 part 和 4 层嵌套限制内解析文本 MIME，附件在解码前跳过。SVG 只作为安全文本展示，并拒绝动态内容、处理指令、`DOCTYPE`、事件属性、外部资源和 CSS 外部引用。超限、格式不支持和内容损坏统一形成可展示的 `limited` 状态。
 
 ### Windows Preview Handler 宿主
 

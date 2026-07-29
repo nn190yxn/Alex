@@ -69,7 +69,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 | `TopicRepository` | `upsert`、`get`、`list_page`、`rename_manual`、`merge_manual`、`merge_suggestion_manual`、`move_documents_manual` | 保留人工显示名称，以事务维护建议终态、人工归属规则、空主题清理和双时间文档标记 |
 | `DocumentRepository` | `upsert_batch`、`upsert_discovery_batch`、`get`、`get_by_source_path`、`list_by_source_file_identity`、`list_for_topic_sorted`、`mark_missing_not_seen`、`mark_missing_not_seen_under` | 批量写入主题与元数据，按来源和身份读取最多两个移动候选，保留人工主题归属并同步人工规则路径，支持全源和路径组件边界内的缺失标记、四种稳定排序与主题聚合刷新 |
 | `ScanRepository` | `upsert_run`、`get_run`、`list_unfinished`、`index_status`、`add_error`、`list_errors`、`list_latest_errors` | 保存扫描源、恢复游标、计数和逐路径错误，并聚合侧栏状态快照 |
-| `ExtensionRuleRepository` | `upsert`、`replace_enabled`、`list` | 管理内置和自定义扩展名规则及原子白名单替换 |
+| `ExtensionRuleRepository` | `upsert`、`replace_enabled`、`list`、`ensure_builtin_defaults` | 管理 22 条内置规则和自定义扩展名规则、原子白名单替换，并在历史备份恢复后幂等补齐缺失默认项 |
 | `GroupingRepository` | `find_candidates`、`list_pending_suggestions`、`get_suggestion`、`dismiss_pending_suggestion` | 按规范化名称和首个关键词读取有界归组候选，按分数分页读取、定位和忽略待整理建议 |
 | `SearchRepository` | `search_topic_ids`、`search_topics`、`rebuild` | 查询或重建仅含元数据的 FTS5 索引，组合文档级筛选并稳定分页主题 ID |
 | `StatisticsRepository` | `get` | 在单次数据库读取中聚合总量、总大小、最近终态扫描和四类稳定分布 |
@@ -121,7 +121,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 `BatchOperationResult` 包含 `successes: { documentId, path }[]` 和 `failures: { documentId, errorCode }[]`，去重后的每个输入 ID 恰好进入一个集合。`batch_copy_paths` 只返回已通过实时状态和来源边界校验的路径，前端以 CRLF 连接成功路径并写入剪贴板；`batch_reveal_documents` 逐项执行 Explorer 定位。`export_document_metadata` 接受任意可用状态的索引记录和保存路径，成功返回 `{ exportedCount, path }`；CSV 固定中文列顺序并采用 UTF-8 BOM、CRLF 和 RFC 4180 转义。
 
-`PreviewSession` 包含短期会话 ID、文档 ID、文件名、扩展名、实时大小和 `PreviewContent`。内容判别联合包括纯文本 `text`、带 MIME 与 Base64 的 `binary`、带 `PreviewSection[]` 的 `office`、携带原生会话 ID 的 `native`，以及原因属于 `unsupportedFormat`、`fileTooLarge` 或 `invalidContent` 的 `limited`。`PreviewViewport` 使用 `x`、`y`、`width` 和 `height` 描述宿主窗口内的预览区域。内置服务、Windows 原生宿主和预览 commands 均已完成并注册。
+`PreviewSession` 包含短期会话 ID、文档 ID、文件名、扩展名、实时大小和 `PreviewContent`。内容判别联合包括纯文本 `text`、带 MIME 与 Base64 的 `binary`、带 `PreviewSection[]` 的 `office`、携带原生会话 ID 的 `native`，以及原因属于 `unsupportedFormat`、`fileTooLarge` 或 `invalidContent` 的 `limited`。内置适配器覆盖 TXT、Markdown、CSV、JSON、XML、YAML、YML、TOML、SVG、EML、DOCX、XLSX、PPTX、ODT、ODS、ODP 和 EPUB；结构化文本、MIME 和 ZIP/XML 解析遵守固定字节、条目、行数及嵌套预算，拒绝归档路径穿越和外部资源。`PreviewViewport` 使用 `x`、`y`、`width` 和 `height` 描述宿主窗口内的预览区域。预览正文只存在于短期响应与前端会话内存，不进入 SQLite 或备份。
 
 前端 `PreviewPane` 只接收主题详情返回的文档记录，并继续以文档 ID 调用预览 command。组件使用单一活动 session ID 驱动创建、区域调整和关闭；切换文件、折叠预览或卸载组件都会关闭会话。文本、图片、PDF、Office 分段、Windows 原生内容和受限状态分别按 `PreviewContent.kind` 渲染，预览正文与 Blob URL 仅保留在组件内存中。
 
