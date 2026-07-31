@@ -176,7 +176,7 @@ RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo PATH=/usr/local/cargo/
 
 生产力增强任务 13 复用 Windows Actions `#23` 作为最终质量门禁：前端类型检查、79 项前端测试、生产构建、Rust 格式检查、完整 Rust 测试、`desktop-app` Windows 条件代码和严格 Clippy、数据库迁移与备份兼容测试、EXE/MSI 构建及校验文件生成全部成功。任务清单中的 13 个可选 property-based 或集成测试子任务按计划保持跳过，核心行为由常规单元、集成和端到端测试覆盖。
 
-`v0.2.0` 发布提交为 `a8c844d`。分支 Actions `#24`、运行 `30429393327` 对最终版本声明执行完整 Windows 门禁并成功生成 Artifact；标签 Actions `#25`、运行 `30429778358` 再次通过相同门禁并发布正式 GitHub Release。Release 资产为 `document-index_0.2.0_x64-setup.exe`、`document-index_0.2.0_x64_zh-CN.msi` 和 `checksums-sha256.txt`。
+`v0.2.1` 发布提交为 `c6e3bb5`（正式更名为知档）。分支 Actions `#27` 对版本声明执行完整 Windows 门禁并成功生成 Artifact；标签 Actions `#28` 再次通过相同门禁并发布正式 GitHub Release。Release 资产为 `document-index_0.2.1_x64-setup.exe`、`document-index_0.2.1_x64_zh-CN.msi` 和 `checksums-sha256.txt`。
 
 调整开机自启时应保持系统状态作为权威来源，修改前后均通过 `AutostartAdapter` 回读，并使用操作锁避免并发配置交错。隐藏启动只接受精确 `--hidden` 参数，主窗口可见状态不进入 window-state 恢复；托盘初始化失败时必须显示窗口。前端启动回读和设置更新继续使用偏好快照或请求代次隔离迟到响应，备份恢复按快捷键、托盘、扫描通知、自启顺序应用运行时设置，最后只写入一次最终有效偏好。
 
