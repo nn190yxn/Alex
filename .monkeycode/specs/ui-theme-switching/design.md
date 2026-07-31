@@ -1,4 +1,4 @@
-# 资料索引外观主题切换技术设计
+# 知档外观主题切换技术设计
 
 Feature Name: `ui-theme-switching`
 Updated: 2026-07-26

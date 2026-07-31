@@ -1,4 +1,4 @@
-# 资料索引生产力增强技术设计
+# 知档生产力增强技术设计
 
 Feature Name: `document-index-productivity-enhancements`
 Updated: 2026-07-28

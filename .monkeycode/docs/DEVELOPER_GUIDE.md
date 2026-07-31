@@ -1,8 +1,8 @@
 # 开发者指南
 
-## 资料索引开发与验证
+## 知档开发与验证
 
-资料索引桌面工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。首次克隆主仓库时包含 submodule；已有工作区在拉取 gitlink 更新后初始化并同步 submodule：
+知档桌面工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。首次克隆主仓库时包含 submodule；已有工作区在拉取 gitlink 更新后初始化并同步 submodule：
 
 ```bash
 # 首次克隆主仓库及全部子模块
@@ -46,7 +46,7 @@ cargo check --locked --features desktop-app
 cargo clippy --locked --features desktop-app --all-targets -- -D warnings
 ```
 
-独立资料索引仓库的 `.github/workflows/windows-installers.yml` 监听全部开发分支推送，在 `windows-latest` 上执行前端测试、类型检查、生产构建、Rust 格式检查、默认测试、`desktop-app` 严格 Clippy 和 Windows 安装包构建。完整编译优先由 GitHub Actions 承担，本地空间紧张时保留 TypeScript 检查、定向 Vitest 与定向 Rust 测试即可；工作流 Artifact 保存 EXE、MSI 和 SHA-256 文件 14 天。
+独立知档仓库的 `.github/workflows/windows-installers.yml` 监听全部开发分支推送，在 `windows-latest` 上执行前端测试、类型检查、生产构建、Rust 格式检查、默认测试、`desktop-app` 严格 Clippy 和 Windows 安装包构建。完整编译优先由 GitHub Actions 承担，本地空间紧张时保留 TypeScript 检查、定向 Vitest 与定向 Rust 测试即可；工作流 Artifact 保存 EXE、MSI 和 SHA-256 文件 14 天。
 
 任务 3 当前验证基线为 2 个前端测试文件共 4 个用例、15 个 Rust 单元测试和 8 个 SQLite 仓储集成测试通过；`pnpm typecheck`、`pnpm build`、`cargo fmt --all`、`cargo test --all-targets`、默认严格 Clippy、Tauri desktop feature 编译和 desktop feature 严格 Clippy 均通过。测试覆盖名称与版本标记规范化、来源重叠与暂停恢复、默认和自定义扩展名、空目录、元数据扫描、访问错误隔离、取消恢复，以及任务 2 的全部 SQLite 仓储场景。
 

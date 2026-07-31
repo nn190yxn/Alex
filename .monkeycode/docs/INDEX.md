@@ -18,19 +18,19 @@
 
 ## 规格文档
 
-Windows 本地资料索引规格位于 `当前工作区/.monkeycode/specs/local-document-index/`。
+Windows 本地资料索引（知档）规格位于 `当前工作区/.monkeycode/specs/local-document-index/`。
 
 - `requirements.md`：索引源、元数据扫描、智能归组、双时间标记、搜索、预览和安全回收需求
 - `design.md`：Tauri、React、Rust、SQLite、领域边界、安全与测试设计
 - `tasklist.md`：分阶段实施任务清单；任务 1 至任务 12 和最终交付检查点已全部完成
 
-资料索引外观主题切换规格位于 `当前工作区/.monkeycode/specs/ui-theme-switching/`。
+知档外观主题切换规格位于 `当前工作区/.monkeycode/specs/ui-theme-switching/`。
 
 - `requirements.md`：双主题、即时切换、持久化、备份兼容和无障碍需求
 - `design.md`：根元素主题状态、语义化 CSS 令牌、备份契约和正确性属性
 - `tasklist.md`：主题偏好、设置页视觉、备份恢复和完整质量门禁任务，当前已全部完成
 
-资料索引生产力增强规格位于 `当前工作区/.monkeycode/specs/document-index-productivity-enhancements/`。
+知档生产力增强规格位于 `当前工作区/.monkeycode/specs/document-index-productivity-enhancements/`。
 
 - `requirements.md`：快捷操作、搜索增强、批量处理、托盘、调度通知、统计、拖放、格式扩展、版本比较和自启需求
 - `design.md`：生产力偏好、桌面生命周期、运行时边界和 P1-P11 正确性属性

@@ -1,8 +1,8 @@
 # 接口文档
 
-## 资料索引 Tauri Commands
+## 知档 Tauri Commands
 
-资料索引工程的 command 契约定义于 `当前工作区/document-index/src/domain/commands.ts`，前端调用封装位于 `当前工作区/document-index/src/lib/commandClient.ts`。成功与失败响应使用判别联合：
+知档工程的 command 契约定义于 `当前工作区/document-index/src/domain/commands.ts`，前端调用封装位于 `当前工作区/document-index/src/lib/commandClient.ts`。成功与失败响应使用判别联合：
 
 ```ts
 type CommandResult<T> =
@@ -63,7 +63,7 @@ TypeScript 中的主题、建议、搜索、详情、文件、预览和回收站
 
 稳定错误码包括输入、索引源、路径边界、文档、主题、扫描、数据库、文件系统、调用层和内部错误。前端 invoke 异常只返回归一化错误，不暴露本地路径或原始异常正文。
 
-## 资料索引 SQLite 仓储
+## 知档 SQLite 仓储
 
 SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src/database.rs`，记录类型和仓储位于 `当前工作区/document-index/src-tauri/src/repositories/`。所有 `rusqlite` 失败统一映射为 `DATABASE_ERROR`，仓储写操作通过 `Database::transaction` 提交或整体回滚。
 
@@ -81,7 +81,7 @@ SQLite 连接与迁移入口位于 `当前工作区/document-index/src-tauri/src
 
 持久化记录包括 `IndexSourceRecord`、`TopicRecord`、`DocumentRecord`、`ScanRunRecord`、`ScanErrorRecord` 和 `ExtensionRuleRecord`。`documents` 使用 `(source_id, absolute_path)` 唯一键；`topics` 分别保存 `newest_created_document_id` 和 `recently_modified_document_id`；搜索默认返回仍处于 `available` 状态的文档所属主题，显式状态筛选可扩展到 `missing` 和 `inaccessible`，主题与搜索分页上限为 100 条。
 
-## 资料索引服务接口
+## 知档服务接口
 
 | 服务 | 主要方法 | 行为 |
 |------|----------|------|
