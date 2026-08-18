@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "抵达 Focus",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "identifier": "com.arrive.focus",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -51,7 +51,7 @@
     "targets": ["nsis"],
     "windows": {
       "webviewInstallMode": {
-        "type": "downloadBootstrapper",
+        "type": "offlineInstaller",
         "silent": true
       },
       "nsis": {
