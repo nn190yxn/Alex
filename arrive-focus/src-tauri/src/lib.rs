@@ -117,17 +117,12 @@ pub fn run() {
 
     let context = tauri::generate_context!();
     let app_data_dir = dirs::data_dir()
-        .unwrap_or_else(std::env::temp_dir)
+        .expect("failed to resolve application data directory")
         .join(&context.config().identifier);
-    if let Err(error) = std::fs::create_dir_all(&app_data_dir) {
-        startup_failure(&app_data_dir, "create_app_data_dir", &error.to_string());
-    }
-    let database = match repositories::database::Database::open(
-        app_data_dir.join("arrive-focus.sqlite3"),
-    ) {
-        Ok(database) => database,
-        Err(error) => startup_failure(&app_data_dir, "open_database", &error.message),
-    };
+    std::fs::create_dir_all(&app_data_dir).expect("failed to create application data directory");
+    let database =
+        repositories::database::Database::open(app_data_dir.join("arrive-focus.sqlite3"))
+            .expect("failed to open application database");
 
     let app = tauri::Builder::default()
         .manage(database)
@@ -312,9 +307,7 @@ pub fn run() {
             commands::widget::widget_unlock
         ])
         .build(context)
-        .unwrap_or_else(|error| {
-            startup_failure(&app_data_dir, "build_tauri_app", &error.to_string())
-        });
+        .expect("failed to build Arrive Focus");
     app.run(|app_handle, event| match event {
         tauri::RunEvent::Resumed => {
             let database = app_handle.state::<repositories::database::Database>();
@@ -333,18 +326,6 @@ pub fn run() {
         }
         _ => {}
     });
-}
-
-#[cfg(feature = "desktop-app")]
-fn startup_failure(app_data_dir: &std::path::Path, stage: &str, message: &str) -> ! {
-    let diagnostic = format!(
-        "stage={stage}\nmessage={message}\nprocess={}\n",
-        std::process::id()
-    );
-    let _ = std::fs::create_dir_all(app_data_dir);
-    let _ = std::fs::write(app_data_dir.join("startup-error.log"), diagnostic);
-    log::error!("event=startup_failed stage={} message={}", stage, message);
-    std::process::exit(1);
 }
 
 #[cfg(test)]

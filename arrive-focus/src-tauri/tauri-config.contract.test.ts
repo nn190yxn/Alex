@@ -58,9 +58,9 @@ describe("Windows bundle configuration", () => {
     expect(nsis).not.toHaveProperty("template");
   });
 
-  it("bundles an offline WebView2 runtime for reliable first launch", () => {
+  it("bootstraps the evergreen WebView2 runtime when required", () => {
     expect(webviewInstallMode).toEqual({
-      type: "offlineInstaller",
+      type: "downloadBootstrapper",
       silent: true,
     });
   });
