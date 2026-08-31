@@ -40,6 +40,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: arrive-focus
+          args: --features desktop-app
           tagName: v__VERSION__
           releaseName: Arrive Focus v__VERSION__
           releaseBody: Download the Windows installer from the release assets.
