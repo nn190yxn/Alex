@@ -26,6 +26,7 @@ export type ProjectWorkspaceProps = {
   onAddTask?: (project: ProjectRecord) => void;
   onStartFocus?: (task: TaskRecord, project: ProjectRecord) => void;
   onTaskChange?: () => void | Promise<void>;
+  taskRevision?: number;
 };
 
 const filterValues = ["all", "active", "paused", "completed", "archived"] as const;
@@ -40,6 +41,7 @@ export function ProjectWorkspace({
   onAddTask,
   onStartFocus,
   onTaskChange,
+  taskRevision = 0,
 }: ProjectWorkspaceProps) {
   const { t } = useI18n();
   const [projects, setProjects] = useState<ProjectSummary[]>(runtime ? [] : previewProjects);
@@ -77,7 +79,7 @@ export function ProjectWorkspace({
       setLoading(false);
     });
     return () => { active = false; };
-  }, [client, filter, runtime, t, today]);
+  }, [client, filter, runtime, t, taskRevision, today]);
 
   useEffect(() => {
     if (!runtime || !selectedId) {
@@ -93,7 +95,7 @@ export function ProjectWorkspace({
       setLoading(false);
     });
     return () => { active = false; };
-  }, [client, runtime, selectedId, t, today]);
+  }, [client, runtime, selectedId, t, taskRevision, today]);
 
   async function reloadProjects(preferredId: string | null = selectedId, status: ProjectStatus | "all" = filter) {
     const result = await client.list(status === "all" ? null : status, today);

@@ -80,6 +80,7 @@ export function App() {
   const [goalDataRevision, setGoalDataRevision] = useState(0);
   const [backupDataRevision, setBackupDataRevision] = useState(0);
   const [todayDataRevision, setTodayDataRevision] = useState(0);
+  const [projectTaskRevision, setProjectTaskRevision] = useState(0);
   const [editingRecurrence, setEditingRecurrence] = useState<{ instanceId: string; effectiveOn: string; rule: RecurrenceRule } | null>(null);
   const desktopRuntime = isTauriRuntime();
   const theme = generalSettings.theme;
@@ -263,6 +264,7 @@ export function App() {
         visualState: project?.status === "paused" ? "paused" : "normal",
       };
       setTasks((items) => editingTask ? items.map((item) => item.task.id === nextItem.task.id ? nextItem : item) : [...items, nextItem]);
+      setProjectTaskRevision((value) => value + 1);
       setEditingTaskId(null);
       setDraftProjectId(null);
       await refreshDigest();
@@ -493,7 +495,7 @@ export function App() {
         ) : null}
 
         {page === "today" ? <TodayWorkspace tasks={visibleTasks} loading={loadingTasks} noteDate={selectedDate} weekStartsOn={weekStartsOn} noteBody={noteBody} weeklyGoals={weeklyGoals} planningLoading={noteLoading || goalsLoading} onSaveNote={saveNote} onSaveWeeklyGoal={saveWeeklyGoal} onCreate={() => openNewTask()} onEdit={(id) => void openTask(id)} onToggleCompleted={(id, completed) => void toggleTaskCompleted(id, completed)} onStartFocus={startFocus} onSkipInstance={(id) => void skipInstance(id)} onDelayInstance={(id) => void delayInstance(id)} onRescheduleInstance={(id) => void rescheduleInstance(id)} /> : null}
-        {page === "projects" ? <ProjectWorkspace today={today} runtime={desktopRuntime} onProjectsChange={(summaries) => setProjectOptions(summaries.map(projectSummaryToTaskProject))} onAddTask={(project) => openNewTask(project.id)} onStartFocus={startProjectFocus} onTaskChange={async () => { await refreshDigest(); setGoalDataRevision((value) => value + 1); }} /> : null}
+        {page === "projects" ? <ProjectWorkspace today={today} runtime={desktopRuntime} taskRevision={projectTaskRevision} onProjectsChange={(summaries) => setProjectOptions(summaries.map(projectSummaryToTaskProject))} onAddTask={(project) => openNewTask(project.id)} onStartFocus={startProjectFocus} onTaskChange={async () => { await refreshDigest(); setGoalDataRevision((value) => value + 1); }} /> : null}
         {page === "focus" ? <FocusWorkspace tasks={tasks} initialTask={focusedTask} /> : null}
         {page === "settings" ? <SettingsWorkspace general={generalSettings} onSaveGeneral={saveGeneralSettings} /> : null}
         {page === "calendar" ? <CalendarWorkspace selectedDate={selectedDate} onSelectDate={setSelectedDate} runtime={desktopRuntime} onStartFocus={() => setPage("focus")} /> : null}

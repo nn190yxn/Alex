@@ -95,6 +95,22 @@ describe("ProjectWorkspace", () => {
     expect(onAddTask).toHaveBeenCalledWith(alpha);
     await waitFor(() => expect(taskActions.setCompleted).toHaveBeenCalledWith(pendingTask.id, true));
   });
+
+  it("reloads project tasks after a task is saved", async () => {
+    const createdTask = { ...pendingTask, id: "task-2", title: "New project task" };
+    const client = mockClient([alphaSummary], alphaDetail);
+    vi.mocked(client.get)
+      .mockResolvedValueOnce(success(alphaDetail))
+      .mockResolvedValueOnce(success({ ...alphaDetail, tasks: [pendingTask, createdTask] }));
+    const view = renderWorkspace(client, { taskRevision: 0 });
+
+    await screen.findByRole("heading", { name: "Ship persistence" });
+    view.rerender(<I18nProvider locale="zh-CN"><ProjectWorkspace today={today} runtime client={client} taskRevision={1} /></I18nProvider>);
+
+    fireEvent.click(screen.getByRole("radio", { name: "任务" }));
+    expect(await screen.findByText("New project task")).toBeInTheDocument();
+    expect(client.get).toHaveBeenLastCalledWith(alpha.id, today);
+  });
 });
 
 function renderWorkspace(client: ProjectClient, props: Partial<React.ComponentProps<typeof ProjectWorkspace>> = {}) {
