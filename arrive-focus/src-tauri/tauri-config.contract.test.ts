@@ -34,8 +34,10 @@ describe("Windows bundle configuration", () => {
   });
 
   it("provides a deserializable updater plugin configuration", () => {
-    expect(updater.endpoints).toEqual([]);
-    expect(updater.pubkey).toBe("");
+    expect(updater.endpoints).toEqual([
+      "https://github.com/nn190yxn/Alex/releases/latest/download/latest.json",
+    ]);
+    expect(updater.pubkey).toMatch(/^\S+$/);
   });
 
   it("registers the database before setup can create webviews", () => {
