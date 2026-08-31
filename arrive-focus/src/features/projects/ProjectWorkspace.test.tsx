@@ -71,7 +71,7 @@ describe("ProjectWorkspace", () => {
   it("keeps edits open after a failed write and supports task actions", async () => {
     const client = mockClient([alphaSummary], alphaDetail);
     vi.mocked(client.update).mockResolvedValue({ ok: false, error: { code: "PROJECT_NAME_INVALID", message: "sensitive detail" } });
-    const taskActions = { setCompleted: vi.fn(async () => success({ task: { ...pendingTask, status: "completed" as const }, checkItems: [] })) };
+    const taskActions = { setCompleted: vi.fn(async () => success({ task: { ...pendingTask, status: "completed" as const }, checkItems: [] })), remove: vi.fn(async () => success(undefined)) };
     const onAddTask = vi.fn();
     const onStartFocus = vi.fn();
 
@@ -110,6 +110,18 @@ describe("ProjectWorkspace", () => {
     fireEvent.click(screen.getByRole("radio", { name: "任务" }));
     expect(await screen.findByText("New project task")).toBeInTheDocument();
     expect(client.get).toHaveBeenLastCalledWith(alpha.id, today);
+  });
+
+  it("removes a task from the project", async () => {
+    const client = mockClient([alphaSummary], alphaDetail);
+    const taskActions = { setCompleted: vi.fn(), remove: vi.fn(async () => success(undefined)) };
+
+    renderWorkspace(client, { taskActions });
+    await screen.findByRole("heading", { name: "Ship persistence" });
+    fireEvent.click(screen.getByRole("radio", { name: "任务" }));
+    fireEvent.click(screen.getByRole("button", { name: "删除任务：Ship persistence" }));
+
+    await waitFor(() => expect(taskActions.remove).toHaveBeenCalledWith(pendingTask.id));
   });
 });
 

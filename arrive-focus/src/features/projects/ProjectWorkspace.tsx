@@ -15,6 +15,7 @@ type ProjectTab = "overview" | "tasks" | "activity" | "statistics";
 
 type ProjectTaskActions = {
   setCompleted(id: string, completed: boolean): ReturnType<typeof taskClient.setCompleted>;
+  remove(id: string): ReturnType<typeof taskClient.remove>;
 };
 
 export type ProjectWorkspaceProps = {
@@ -192,6 +193,20 @@ export function ProjectWorkspace({
     await onTaskChange?.();
   }
 
+  async function removeTask(task: TaskRecord) {
+    if (!runtime) {
+      setDetail((current) => current ? { ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: "removed" } : item) } : current);
+      return;
+    }
+    const result = await taskActions.remove(task.id);
+    if (!result.ok) {
+      setError(domainErrorMessage(result.error, t));
+      return;
+    }
+    await reloadProjects(selectedId);
+    await onTaskChange?.();
+  }
+
   return (
     <div className="projects-workspace">
       <aside className="project-browser">
@@ -221,7 +236,7 @@ export function ProjectWorkspace({
         <SegmentedControl label={t("project.detailTabs")} options={tabOptions} value={tab} onChange={setTab} />
 
         {tab === "overview" ? <ProjectOverview summary={selectedDetail?.summary ?? selected} saving={saving} onStatusChange={changeStatus} /> : null}
-        {tab === "tasks" ? <ProjectTasks detail={selectedDetail} onAddTask={() => onAddTask?.(selected.project)} onToggleTask={toggleTask} /> : null}
+        {tab === "tasks" ? <ProjectTasks detail={selectedDetail} onAddTask={() => onAddTask?.(selected.project)} onToggleTask={toggleTask} onRemoveTask={removeTask} /> : null}
         {tab === "activity" ? <ProjectActivity detail={selectedDetail} /> : null}
         {tab === "statistics" ? <ProjectStatistics summary={selectedDetail?.summary ?? selected} /> : null}</> : <Panel className="project-tab-panel"><p>{loading ? t("project.loading") : t("project.emptySelection")}</p></Panel>}
       </section>
@@ -254,11 +269,11 @@ function ProjectOverview({ summary, saving, onStatusChange }: { summary: Project
   return <div className="project-overview"><Panel><span className="eyebrow">{t("project.taskProgress")}</span><div className="project-stat"><strong>{aggregation.completionPercent}%</strong><span>{t("project.completedCount", { completed: aggregation.completedTaskCount, total: aggregation.totalTaskCount })}</span></div><Progress label={t("project.taskProgressLabel")} value={aggregation.completionPercent} /></Panel><Panel><span className="eyebrow">{t("project.focusInvestment")}</span><div className="project-stat"><strong>{Math.floor(focusMinutes / 60)}h</strong><span>{t("common.minutes", { count: focusMinutes % 60 })}</span></div></Panel><Panel className="project-brief"><span className="eyebrow">{t("project.description")}</span><p>{project.description || t("project.noDescription")}</p><div className="project-status-actions">{project.status === "active" ? <Button tone="ghost" disabled={saving} onClick={() => onStatusChange("paused")}>{t("project.pause")}</Button> : null}{project.status === "paused" || project.status === "completed" ? <Button tone="ghost" disabled={saving} onClick={() => onStatusChange("active")}>{t("project.resume")}</Button> : null}{project.status === "active" || project.status === "paused" ? <Button tone="ghost" disabled={saving} onClick={() => onStatusChange("completed")}>{t("project.complete")}</Button> : null}{project.status !== "archived" ? <Button tone="ghost" disabled={saving} onClick={() => onStatusChange("archived")}>{t("project.archive")}</Button> : null}</div></Panel></div>;
 }
 
-function ProjectTasks({ detail, onAddTask, onToggleTask }: { detail: ProjectDetail | null; onAddTask: () => void; onToggleTask: (task: TaskRecord) => void }) {
+function ProjectTasks({ detail, onAddTask, onToggleTask, onRemoveTask }: { detail: ProjectDetail | null; onAddTask: () => void; onToggleTask: (task: TaskRecord) => void; onRemoveTask: (task: TaskRecord) => void }) {
   const { t } = useI18n();
   const tasks = detail?.tasks ?? [];
   const pending = tasks.filter((task) => task.status === "pending").length;
-  return <Panel className="project-tab-panel"><div className="section-heading"><div><span className="eyebrow">{t("project.activeTasks")}</span><h2>{t("project.pendingCount", { count: pending })}</h2></div><Button tone="primary" onClick={onAddTask}>{t("project.addTask")}</Button></div>{tasks.length === 0 ? <p>{t("project.noTasks")}</p> : tasks.filter((task) => task.status !== "removed").map((task) => <article className="project-task-item" key={task.id}><button className={`task-check ${task.status === "completed" ? "done" : ""}`} aria-label={t(task.status === "completed" ? "task.restoreLabel" : "task.completeLabel", { title: task.title })} onClick={() => onToggleTask(task)} /><div><strong>{task.title}</strong><small>{task.scheduledDate ?? t("project.unscheduled")}</small></div><Badge>{t(task.status === "completed" ? "task.state.completed" : "task.state.normal")}</Badge></article>)}</Panel>;
+  return <Panel className="project-tab-panel"><div className="section-heading"><div><span className="eyebrow">{t("project.activeTasks")}</span><h2>{t("project.pendingCount", { count: pending })}</h2></div><Button tone="primary" onClick={onAddTask}>{t("project.addTask")}</Button></div>{tasks.length === 0 ? <p>{t("project.noTasks")}</p> : tasks.filter((task) => task.status !== "removed").map((task) => <article className="project-task-item" key={task.id}><button className={`task-check ${task.status === "completed" ? "done" : ""}`} aria-label={t(task.status === "completed" ? "task.restoreLabel" : "task.completeLabel", { title: task.title })} onClick={() => onToggleTask(task)} /><div><strong>{task.title}</strong><small>{task.scheduledDate ?? t("project.unscheduled")}</small></div><Badge>{t(task.status === "completed" ? "task.state.completed" : "task.state.normal")}</Badge><Button className="project-task-item__remove" type="button" tone="ghost" aria-label={t("task.removeLabel", { title: task.title })} onClick={() => onRemoveTask(task)}>{t("task.remove")}</Button></article>)}</Panel>;
 }
 
 function ProjectActivity({ detail }: { detail: ProjectDetail | null }) {
