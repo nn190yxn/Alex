@@ -1,6 +1,7 @@
 import type { TaskRecord } from "../tasks/types";
 
 export type ProjectStatus = "active" | "paused" | "completed" | "archived";
+export type ProjectRemovalResolution = "archive" | "detachHistory" | "delete";
 
 export interface ProjectInput {
   name: string;

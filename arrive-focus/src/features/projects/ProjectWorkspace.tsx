@@ -9,7 +9,7 @@ import { taskClient } from "../tasks/taskClient";
 import type { TaskRecord } from "../tasks/types";
 import { localDateString } from "../today/todayModel";
 import { projectClient, type ProjectClient } from "./projectClient";
-import type { ProjectDetail, ProjectInput, ProjectRecord, ProjectStatus, ProjectSummary } from "./types";
+import type { ProjectDetail, ProjectInput, ProjectRecord, ProjectRemovalResolution, ProjectStatus, ProjectSummary } from "./types";
 
 type ProjectTab = "overview" | "tasks" | "activity" | "statistics";
 
@@ -51,6 +51,7 @@ export function ProjectWorkspace({
   const [detail, setDetail] = useState<ProjectDetail | null>(runtime ? null : previewDetails[previewProjects[0].project.id]);
   const [tab, setTab] = useState<ProjectTab>("overview");
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
+  const [removalOpen, setRemovalOpen] = useState(false);
   const [loading, setLoading] = useState(runtime);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,6 +179,30 @@ export function ProjectWorkspace({
     setSaving(false);
   }
 
+  async function removeProject(resolution: ProjectRemovalResolution) {
+    if (!selected) return;
+    setSaving(true);
+    setError(null);
+    if (!runtime) {
+      setProjects((items) => items.filter((item) => item.project.id !== selected.project.id));
+      setDetail(null);
+      setSelectedId(null);
+      setRemovalOpen(false);
+      setSaving(false);
+      return;
+    }
+    const result = await client.remove(selected.project.id, resolution);
+    if (!result.ok) {
+      setError(domainErrorMessage(result.error, t));
+      setSaving(false);
+      return;
+    }
+    setRemovalOpen(false);
+    await reloadProjects(null);
+    await onTaskChange?.();
+    setSaving(false);
+  }
+
   async function toggleTask(task: TaskRecord) {
     const completed = task.status !== "completed";
     if (!runtime) {
@@ -231,7 +256,7 @@ export function ProjectWorkspace({
         {selected ? <><header className="project-detail__header" style={{ "--project-color": selected.project.color } as CSSProperties}>
           <div className="project-symbol">{selected.project.icon.slice(0, 2).toUpperCase()}</div>
           <div><Badge tone={selected.project.status === "active" ? "accent" : "neutral"}>{t(`project.status.${selected.project.status}`)}</Badge><h2>{selected.project.name}</h2><p>{selected.project.description}</p></div>
-          <Button tone="ghost" onClick={() => setDialogMode("edit")}>{t("common.edit")}</Button>
+           <div className="project-detail__actions"><Button tone="ghost" onClick={() => setDialogMode("edit")}>{t("common.edit")}</Button><Button tone="danger" onClick={() => setRemovalOpen(true)}>{t("project.remove")}</Button></div>
         </header>
         <SegmentedControl label={t("project.detailTabs")} options={tabOptions} value={tab} onChange={setTab} />
 
@@ -257,6 +282,9 @@ export function ProjectWorkspace({
           {error ? <small className="field__error" role="alert">{error}</small> : null}
           <footer><Button type="button" tone="ghost" onClick={() => setDialogMode(null)}>{t("common.cancel")}</Button><Button type="submit" tone="primary" disabled={saving}>{saving ? t("common.saving") : t("project.save")}</Button></footer>
         </form>
+      </Dialog>
+      <Dialog open={removalOpen} title={t("project.removeTitle")} onClose={() => setRemovalOpen(false)}>
+        <div className="project-removal-dialog"><p>{t("project.removeHint", { name: selected?.project.name ?? "" })}</p><div className="project-removal-dialog__actions"><Button tone="danger" disabled={saving} onClick={() => void removeProject("delete")}>{t("project.removeDelete")}</Button><Button tone="ghost" disabled={saving} onClick={() => void removeProject("detachHistory")}>{t("project.removeDetach")}</Button><Button tone="ghost" disabled={saving} onClick={() => void removeProject("archive")}>{t("project.removeArchive")}</Button></div></div>
       </Dialog>
     </div>
   );

@@ -123,6 +123,18 @@ describe("ProjectWorkspace", () => {
 
     await waitFor(() => expect(taskActions.remove).toHaveBeenCalledWith(pendingTask.id));
   });
+
+  it("removes a project with the selected resolution", async () => {
+    const client = mockClient([alphaSummary], alphaDetail);
+    vi.mocked(client.remove).mockResolvedValue(success(undefined));
+
+    renderWorkspace(client);
+    await screen.findByRole("heading", { name: "Alpha" });
+    fireEvent.click(screen.getByRole("button", { name: "删除项目" }));
+    fireEvent.click(screen.getByRole("button", { name: "删除项目及其内容" }));
+
+    await waitFor(() => expect(client.remove).toHaveBeenCalledWith(alpha.id, "delete"));
+  });
 });
 
 function renderWorkspace(client: ProjectClient, props: Partial<React.ComponentProps<typeof ProjectWorkspace>> = {}) {
@@ -134,9 +146,10 @@ function mockClient(projects: ProjectSummary[], detail: ProjectDetail): ProjectC
     list: vi.fn(async () => success(projects)),
     get: vi.fn(async () => success(detail)),
     create: vi.fn(),
-    update: vi.fn(),
-    setStatus: vi.fn(),
-  };
+      update: vi.fn(),
+      setStatus: vi.fn(),
+      remove: vi.fn(),
+    };
 }
 
 function success<T>(data: T) {

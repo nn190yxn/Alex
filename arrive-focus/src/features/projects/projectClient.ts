@@ -1,5 +1,5 @@
 import { invokeCommand, type CommandResult } from "../../lib/commandClient";
-import type { ProjectDetail, ProjectInput, ProjectRecord, ProjectStatus, ProjectSummary } from "./types";
+import type { ProjectDetail, ProjectInput, ProjectRecord, ProjectRemovalResolution, ProjectStatus, ProjectSummary } from "./types";
 
 export interface ProjectClient {
   list(status: ProjectStatus | null, today: string): Promise<CommandResult<ProjectSummary[]>>;
@@ -7,6 +7,7 @@ export interface ProjectClient {
   create(input: ProjectInput): Promise<CommandResult<ProjectRecord>>;
   update(id: string, input: ProjectInput): Promise<CommandResult<ProjectRecord>>;
   setStatus(id: string, status: ProjectStatus): Promise<CommandResult<ProjectRecord>>;
+  remove(id: string, resolution: ProjectRemovalResolution): Promise<CommandResult<void>>;
 }
 
 export const projectClient: ProjectClient = {
@@ -24,5 +25,8 @@ export const projectClient: ProjectClient = {
   },
   setStatus(id, status) {
     return invokeCommand<ProjectRecord>("project_set_status", { id, status });
+  },
+  remove(id, resolution) {
+    return invokeCommand<void>("project_remove", { id, resolution });
   },
 };

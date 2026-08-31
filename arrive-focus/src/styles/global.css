@@ -290,6 +290,7 @@ svg { width: 20px; height: 20px; }
 .project-form input, .project-form textarea { width: 100%; min-height: 40px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 11px; color: var(--color-text); background: var(--color-surface); }
 .project-form textarea { min-height: 90px; resize: vertical; }.project-form footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 5px; }
 .project-tab-panel { min-height: 328px; }.project-task-item { min-height: 62px; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; gap: 11px; align-items: center; padding: 10px 3px; border-top: 1px solid var(--color-border); }
+.project-detail__actions { display: flex; gap: 8px; }.project-removal-dialog { display: grid; gap: 16px; }.project-removal-dialog p { color: var(--color-text-muted); line-height: 1.6; }.project-removal-dialog__actions { display: grid; gap: 8px; }
 .project-task-item div { display: grid; gap: 3px; }.project-task-item strong { font-size: 13px; }.project-task-item small { color: var(--color-text-muted); font-size: 10px; }
 .project-task-item__remove { color: var(--color-danger); }
 .activity-item { display: grid; grid-template-columns: 10px 1fr; gap: 12px; padding: 16px 3px; border-bottom: 1px solid var(--color-border); }.activity-item > span { width: 9px; height: 9px; margin-top: 3px; border: 2px solid var(--color-accent); border-radius: 50%; }.activity-item div { display: grid; gap: 4px; }.activity-item strong { font-size: 12px; }.activity-item small { color: var(--color-text-muted); font-size: 10px; }
