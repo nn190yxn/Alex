@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge, Button, Dialog, Panel, Toast } from "../../components/ui";
 import { useI18n } from "../../i18n/I18nContext";
 import { isTauriRuntime } from "../../lib/commandClient";
 import { domainErrorMessage } from "../../lib/domainError";
-import { backupClient, type BackupClient, type BackupInspection } from "./backupClient";
+import { backupClient, type BackupClient, type BackupInspection, type BackupSnapshotRecord } from "./backupClient";
 
 export function DataSettingsPanel({ client = backupClient }: { client?: BackupClient }) {
   const { t, formatDate } = useI18n();
@@ -13,6 +13,25 @@ export function DataSettingsPanel({ client = backupClient }: { client?: BackupCl
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [snapshots, setSnapshots] = useState<BackupSnapshotRecord[]>([]);
+
+  async function refreshSnapshots() {
+    if (!desktopRuntime) return;
+    try {
+      const result = await client.listSnapshots();
+      if (result.ok) {
+        setSnapshots(result.data);
+      } else {
+        setError(domainErrorMessage(result.error, t));
+      }
+    } catch {
+      setError(t("settings.data.operationFailed"));
+    }
+  }
+
+  useEffect(() => {
+    void refreshSnapshots();
+  }, [client, desktopRuntime]);
 
   async function exportBackup() {
     if (!desktopRuntime || busy) return;
@@ -21,7 +40,10 @@ export function DataSettingsPanel({ client = backupClient }: { client?: BackupCl
     setSuccess(null);
     try {
       const result = await client.exportBackup();
-      if (result.ok && result.data) setSuccess(t("settings.data.exportSuccess"));
+      if (result.ok && result.data) {
+        setSuccess(t("settings.data.exportSuccess"));
+        await refreshSnapshots();
+      }
       if (!result.ok) setError(domainErrorMessage(result.error, t));
     } catch {
       setError(t("settings.data.operationFailed"));
@@ -55,6 +77,7 @@ export function DataSettingsPanel({ client = backupClient }: { client?: BackupCl
       if (result.ok) {
         setInspection(null);
         setSuccess(t("settings.data.restoreSuccess"));
+        await refreshSnapshots();
       } else {
         setError(domainErrorMessage(result.error, t));
       }
@@ -80,6 +103,10 @@ export function DataSettingsPanel({ client = backupClient }: { client?: BackupCl
             <Button tone="secondary" disabled={!desktopRuntime || busy} onClick={() => void exportBackup()}>{t("settings.data.export")}</Button>
             <Button tone="ghost" disabled={!desktopRuntime || busy} onClick={() => void inspectBackup()}>{t("settings.data.restore")}</Button>
           </div>
+        </div>
+        <div className="settings-data-card">
+          <strong>{t("settings.data.snapshotTitle")}</strong>
+          {snapshots.length === 0 ? <span>{t("settings.data.snapshotEmpty")}</span> : <ul>{snapshots.map((snapshot) => <li key={snapshot.id}><strong>{snapshot.kind === "pre_restore" ? t("settings.data.snapshotKindPreRestore") : t("settings.data.snapshotKindManual")}</strong><span>{formatDate(snapshot.createdAt, { dateStyle: "medium", timeStyle: "short" })}</span><small>{snapshot.path}</small></li>)}</ul>}
         </div>
         {error ? <Toast tone="danger">{error}</Toast> : null}
         {success ? <Toast tone="success">{success}</Toast> : null}

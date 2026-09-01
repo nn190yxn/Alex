@@ -5,7 +5,8 @@ use tauri_plugin_dialog::DialogExt;
 use uuid::Uuid;
 
 use crate::{
-    domain::backup::{BackupExportResult, BackupInspection, BackupRestoreResult, ValidatedBackup},
+    domain::backup::{BackupExportResult, BackupInspection, BackupRestoreResult, BackupSnapshotRecord, ValidatedBackup},
+    repositories::backup_repository::BackupRepository,
     repositories::database::Database,
     services::backup_service::BackupService,
     CommandResult, DomainError,
@@ -138,6 +139,17 @@ pub fn backup_restore(
         let _ = app.emit(BACKUP_RESTORED_EVENT, &restored);
         let _ = super::settings::emit_current_settings(&app, &database);
         Ok(restored)
+    })())
+}
+
+#[tauri::command]
+pub fn backup_list_snapshots(
+    database: tauri::State<'_, Database>,
+    window: tauri::WebviewWindow,
+) -> CommandResult<Vec<BackupSnapshotRecord>> {
+    result((|| {
+        ensure_main_window(&window)?;
+        BackupRepository::new(&database).list_history()
     })())
 }
 

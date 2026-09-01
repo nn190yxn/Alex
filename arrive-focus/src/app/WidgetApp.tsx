@@ -143,12 +143,18 @@ export function WidgetApp() {
       if (disposed) unlisten();
       else unlisteners.push(unlisten);
     });
-    void listen("today://changed", () => {
-      void refreshToday();
-    }).then((unlisten) => {
-      if (disposed) unlisten();
-      else unlisteners.push(unlisten);
-    });
+     void listen("today://changed", () => {
+       void refreshToday();
+     }).then((unlisten) => {
+       if (disposed) unlisten();
+       else unlisteners.push(unlisten);
+     });
+     void listen("focus://completed", () => {
+       void refreshToday();
+     }).then((unlisten) => {
+       if (disposed) unlisten();
+       else unlisteners.push(unlisten);
+     });
     void listen<FocusState>("focus://state-changed", (event) => {
       setFocusState(event.payload);
     }).then((unlisten) => {

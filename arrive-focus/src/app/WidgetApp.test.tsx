@@ -131,7 +131,7 @@ describe("WidgetApp", () => {
     expect(widget).toHaveStyle({ "--widget-opacity": "80%" });
 
     unmount();
-    expect(mocks.unlisten).toHaveBeenCalledTimes(7);
+    expect(mocks.unlisten).toHaveBeenCalledTimes(8);
   });
 
   it("refreshes focus and today data after a backup restore", async () => {
@@ -159,6 +159,18 @@ describe("WidgetApp", () => {
 
     await waitFor(() => expect(mocks.getDigest).toHaveBeenCalledTimes(2));
     expect(mocks.getFocusState).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes today data after focus completion", async () => {
+    render(<WidgetApp />);
+    await waitFor(() => expect(mocks.listeners.has("focus://completed")).toBe(true));
+    await waitFor(() => expect(mocks.getDigest).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      mocks.listeners.get("focus://completed")?.({ payload: {} });
+    });
+
+    await waitFor(() => expect(mocks.getDigest).toHaveBeenCalledTimes(2));
   });
 
   it("follows focus state changes from another window", async () => {

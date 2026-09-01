@@ -1,4 +1,5 @@
 pub mod backup_repository;
+pub mod analysis_repository;
 pub mod calendar_repository;
 pub mod database;
 pub mod focus_repository;

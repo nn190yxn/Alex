@@ -175,7 +175,7 @@ impl<'a> RecurrenceRepository<'a> {
     ) -> Result<bool, DomainError> {
         self.database.write(|tx| {
             Ok(tx.execute(
-                "UPDATE task_instances SET status = ?2, completed_at = ?3, updated_at = ?4 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)",
+                "UPDATE task_instances SET status = ?2, completed_at = ?3, updated_at = ?4 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')",
                 params![id, instance_status_name(status), completed_at, updated_at],
             )? == 1)
         })
@@ -189,7 +189,7 @@ impl<'a> RecurrenceRepository<'a> {
     ) -> Result<bool, DomainError> {
         self.database.write(|tx| {
             Ok(tx.execute(
-                "UPDATE task_instances SET scheduled_at = ?2, updated_at = ?3 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)",
+                "UPDATE task_instances SET scheduled_at = ?2, updated_at = ?3 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')",
                 params![id, scheduled_at, updated_at],
             )? == 1)
         })
@@ -203,7 +203,7 @@ impl<'a> RecurrenceRepository<'a> {
     ) -> Result<bool, DomainError> {
         self.database.write(|tx| {
             let source_actionable = tx.query_row(
-                "SELECT EXISTS(SELECT 1 FROM task_instances WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id))",
+                "SELECT EXISTS(SELECT 1 FROM task_instances WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled'))",
                 [source_id],
                 |row| row.get::<_, bool>(0),
             )?;
@@ -211,7 +211,7 @@ impl<'a> RecurrenceRepository<'a> {
                 return Ok(false);
             }
             let target_actionable = tx.query_row(
-                "SELECT NOT EXISTS(SELECT 1 FROM task_instances WHERE recurrence_rule_id = ?1 AND scheduled_date = ?2 AND (status != 'pending' OR EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) OR EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)))",
+                "SELECT NOT EXISTS(SELECT 1 FROM task_instances WHERE recurrence_rule_id = ?1 AND scheduled_date = ?2 AND (status != 'pending' OR EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) OR EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')))",
                 params![target.recurrence_rule_id, target.scheduled_date],
                 |row| row.get::<_, bool>(0),
             )?;
@@ -219,11 +219,11 @@ impl<'a> RecurrenceRepository<'a> {
                 return Ok(false);
             }
             let target_affected = tx.execute(
-                "INSERT INTO task_instances(id, recurrence_rule_id, rule_version, scheduled_date, scheduled_at, snapshot_title, snapshot_project_id, status, completed_at, source_instance_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', NULL, ?8, ?9, ?10) ON CONFLICT(recurrence_rule_id, scheduled_date) DO UPDATE SET source_instance_id = COALESCE(task_instances.source_instance_id, excluded.source_instance_id), updated_at = excluded.updated_at WHERE task_instances.status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)",
+                "INSERT INTO task_instances(id, recurrence_rule_id, rule_version, scheduled_date, scheduled_at, snapshot_title, snapshot_project_id, status, completed_at, source_instance_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', NULL, ?8, ?9, ?10) ON CONFLICT(recurrence_rule_id, scheduled_date) DO UPDATE SET source_instance_id = COALESCE(task_instances.source_instance_id, excluded.source_instance_id), updated_at = excluded.updated_at WHERE task_instances.status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')",
                 params![target.id, target.recurrence_rule_id, target.rule_version, target.scheduled_date, target.scheduled_at, target.snapshot_title, target.snapshot_project_id, source_id, target.created_at, target.updated_at],
             )?;
             let source_affected = tx.execute(
-                "UPDATE task_instances SET status = 'rescheduled', completed_at = NULL, updated_at = ?2 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)",
+                "UPDATE task_instances SET status = 'rescheduled', completed_at = NULL, updated_at = ?2 WHERE id = ?1 AND status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')",
                 params![source_id, updated_at],
             )?;
             Ok(target_affected == 1 && source_affected == 1)
@@ -293,7 +293,7 @@ fn upsert_instance(
     refresh_pending: bool,
 ) -> rusqlite::Result<usize> {
     let sql = if refresh_pending {
-        "INSERT INTO task_instances(id, recurrence_rule_id, rule_version, scheduled_date, scheduled_at, snapshot_title, snapshot_project_id, status, completed_at, source_instance_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) ON CONFLICT(recurrence_rule_id, scheduled_date) DO UPDATE SET rule_version = excluded.rule_version, scheduled_at = excluded.scheduled_at, snapshot_title = excluded.snapshot_title, snapshot_project_id = excluded.snapshot_project_id, updated_at = excluded.updated_at WHERE task_instances.status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id)"
+        "INSERT INTO task_instances(id, recurrence_rule_id, rule_version, scheduled_date, scheduled_at, snapshot_title, snapshot_project_id, status, completed_at, source_instance_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) ON CONFLICT(recurrence_rule_id, scheduled_date) DO UPDATE SET rule_version = excluded.rule_version, scheduled_at = excluded.scheduled_at, snapshot_title = excluded.snapshot_title, snapshot_project_id = excluded.snapshot_project_id, updated_at = excluded.updated_at WHERE task_instances.status = 'pending' AND NOT EXISTS (SELECT 1 FROM active_focus WHERE task_instance_id = task_instances.id) AND NOT EXISTS (SELECT 1 FROM focus_sessions WHERE task_instance_id = task_instances.id AND completion_kind != 'cancelled')"
     } else {
         "INSERT INTO task_instances(id, recurrence_rule_id, rule_version, scheduled_date, scheduled_at, snapshot_title, snapshot_project_id, status, completed_at, source_instance_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) ON CONFLICT(recurrence_rule_id, scheduled_date) DO NOTHING"
     };

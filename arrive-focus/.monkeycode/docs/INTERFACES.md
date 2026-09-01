@@ -195,6 +195,14 @@ interface TodayDigestItem {
 
 `StatisticsSummary` 与日历命令共享 `CalendarQuery`，返回 `period`、`startsOn`、`endsOn`、`plannedTaskCount`、`completedTaskCount`、整数 `completionPercent`、`focusSeconds`、向下取整的 `focusMinutes`、`effectiveSessionCount` 和 `activeDayCount`。`trend` 保留每个本地日期的计划数、完成数、专注秒数和有效轮次；`projectInvestments` 按项目专注秒数降序返回项目摘要、专注秒数、有效轮次和占总专注时长的整数百分比。无项目轮次计入总专注，项目投入列表仅包含具有关联项目的轮次。
 
+## 分析命令
+
+| 命令 | 输入 | 输出 |
+|------|------|------|
+| `statistics_get_task_breakdown` | `AnalysisQuery` | `CommandResult<AnalysisSummary>` |
+
+分析命令的前端契约位于 `src/features/analysis/types.ts`，查询包含含边界的 `startsOn`、`endsOn`、IANA `timezone` 和 `completedCount | focusSeconds | effectiveSessionCount | title` 排序值。结果包含任务级 `rows` 与总计字段；`focusSeconds` 只计入有效 `deadline`/`early` 专注，取消轮次单独统计。Rust `AnalysisService` 将本地日期范围转换为 UTC 半开区间，`AnalysisRepository` 通过参数绑定查询普通任务、重复实例和专注记录，并以重复任务模板标识聚合实例。日期错误、范围错误和时区错误分别返回 `ANALYSIS_DATE_INVALID`、`ANALYSIS_RANGE_INVALID` 和 `ANALYSIS_TIMEZONE_INVALID`；命令已注册到 Tauri invoke handler。
+
 ## 便签与周目标命令
 
 | 命令 | 输入 | 输出 |

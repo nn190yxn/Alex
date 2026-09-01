@@ -1097,6 +1097,34 @@ mod tests {
     }
 
     #[test]
+    fn allows_pending_instance_actions_after_cancelled_focus() {
+        let (database, _) = setup(RecurrencePattern::Daily { interval: 1 }, "2026-07-20");
+        RecurrenceScheduler::new(&database)
+            .run(
+                GenerationTrigger::Startup,
+                date("2026-07-20"),
+                date("2026-07-21"),
+            )
+            .unwrap();
+        let repository = RecurrenceRepository::new(&database);
+        let instances = repository.list_instances_for_rule("rule-1").unwrap();
+        database
+            .write(|tx| {
+                tx.execute(
+                    "INSERT INTO focus_sessions(id, task_instance_id, planned_seconds, actual_seconds, interruption_count, completion_kind, started_at, ended_at, created_at) VALUES ('cancelled-session', ?1, 1500, 300, 1, 'cancelled', '2026-07-21T01:00:00Z', '2026-07-21T01:05:00Z', '2026-07-21T01:05:00Z')",
+                    [&instances[1].id],
+                )?;
+                Ok(())
+            })
+            .unwrap();
+
+        let completed = RecurrenceService::new(&database)
+            .complete_instance(&instances[1].id)
+            .unwrap();
+        assert_eq!(completed.status, TaskInstanceStatus::Completed);
+    }
+
+    #[test]
     fn delays_today_and_reschedules_to_the_unique_tomorrow_instance() {
         let (database, _) = setup(RecurrencePattern::Daily { interval: 1 }, "2026-07-20");
         RecurrenceScheduler::new(&database)

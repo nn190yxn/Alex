@@ -113,6 +113,21 @@ describe("TodayWorkspace", () => {
     expect(onSaveNote).toHaveBeenLastCalledWith("继续输入的新内容");
   });
 
+  it("ignores a note save that completes after switching dates", async () => {
+    vi.useFakeTimers();
+    let finishSave: (() => void) | undefined;
+    const pendingSave = new Promise<void>((resolve) => { finishSave = resolve; });
+    const onSaveNote = vi.fn().mockReturnValueOnce(pendingSave);
+    const view = render(<TodayWorkspace tasks={tasks} noteDate="2026-07-18" noteBody="旧日期" onSaveNote={onSaveNote} onCreate={() => undefined} onEdit={() => undefined} onToggleCompleted={() => undefined} onStartFocus={() => undefined} />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "随手便签" }), { target: { value: "旧日期的新内容" } });
+    await act(async () => vi.advanceTimersByTime(500));
+    view.rerender(<TodayWorkspace tasks={tasks} noteDate="2026-07-19" noteBody="新日期" onSaveNote={onSaveNote} onCreate={() => undefined} onEdit={() => undefined} onToggleCompleted={() => undefined} onStartFocus={() => undefined} />);
+    await act(async () => finishSave?.());
+
+    expect(screen.getByRole("textbox", { name: "随手便签" })).toHaveValue("新日期");
+  });
+
   it("saves the current note with the visible save button", async () => {
     vi.useFakeTimers();
     const onSaveNote = vi.fn(async () => undefined);

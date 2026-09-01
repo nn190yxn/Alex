@@ -34,6 +34,14 @@ pub struct BackupData {
     pub notes: Vec<BackupNote>,
     pub weekly_goals: Vec<BackupWeeklyGoal>,
     pub preferences: Vec<BackupPreference>,
+    #[serde(default)]
+    pub memos: Vec<BackupMemo>,
+    #[serde(default)]
+    pub memo_tags: Vec<BackupMemoTag>,
+    #[serde(default)]
+    pub memo_tag_links: Vec<BackupMemoTagLink>,
+    #[serde(default)]
+    pub memo_reminders: Vec<BackupMemoReminder>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -176,6 +184,53 @@ pub struct BackupPreference {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BackupMemo {
+    pub id: String,
+    pub title: String,
+    pub body: String,
+    pub pinned_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BackupMemoTag {
+    pub id: String,
+    pub name: String,
+    pub normalized_name: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BackupMemoTagLink {
+    pub memo_id: String,
+    pub tag_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BackupMemoReminder {
+    pub id: String,
+    pub memo_id: String,
+    pub schedule_kind: String,
+    pub frequency: Option<String>,
+    pub interval_value: Option<i64>,
+    pub weekdays_json: Option<String>,
+    pub monthly_day: Option<i64>,
+    pub local_time: String,
+    pub starts_on: String,
+    pub ends_on: Option<String>,
+    pub timezone: String,
+    pub next_scheduled_for: Option<String>,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BackupRecordCounts {
     pub projects: usize,
@@ -188,6 +243,10 @@ pub struct BackupRecordCounts {
     pub notes: usize,
     pub weekly_goals: usize,
     pub preferences: usize,
+    pub memos: usize,
+    pub memo_tags: usize,
+    pub memo_tag_links: usize,
+    pub memo_reminders: usize,
     pub total: usize,
 }
 
@@ -222,6 +281,17 @@ pub struct BackupRestoreResult {
     pub source_path: String,
     pub snapshot_path: String,
     pub summary: BackupImportSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupSnapshotRecord {
+    pub id: String,
+    pub kind: String,
+    pub path: String,
+    pub format_version: u32,
+    pub checksum: String,
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -277,11 +347,19 @@ impl BackupData {
             "preferences",
             self.preferences.iter().map(|item| item.key.as_str()),
         )?;
+        validate_unique_ids("memos", self.memos.iter().map(|item| item.id.as_str()))?;
+        validate_unique_ids("memoTags", self.memo_tags.iter().map(|item| item.id.as_str()))?;
+        validate_unique_ids(
+            "memoReminders",
+            self.memo_reminders.iter().map(|item| item.id.as_str()),
+        )?;
 
         let project_ids = ids(self.projects.iter().map(|item| item.id.as_str()));
         let task_ids = ids(self.tasks.iter().map(|item| item.id.as_str()));
         let rule_ids = ids(self.recurrence_rules.iter().map(|item| item.id.as_str()));
         let instance_ids = ids(self.task_instances.iter().map(|item| item.id.as_str()));
+        let memo_ids = ids(self.memos.iter().map(|item| item.id.as_str()));
+        let memo_tag_ids = ids(self.memo_tags.iter().map(|item| item.id.as_str()));
 
         for project in &self.projects {
             validate_project(project)?;
@@ -388,6 +466,37 @@ impl BackupData {
             }
             parse_timestamp(&preference.updated_at, "preferences.updatedAt")?;
         }
+        for memo in &self.memos {
+            validate_required_id(&memo.id, "memos.id")?;
+            validate_text(&memo.title, 0, 200, "memos.title")?;
+            validate_text(&memo.body, 0, 20_000, "memos.body")?;
+            validate_optional_timestamp(memo.pinned_at.as_deref(), "memos.pinnedAt")?;
+            validate_timestamps(&memo.created_at, &memo.updated_at, "memos")?;
+        }
+        for tag in &self.memo_tags {
+            validate_required_id(&tag.id, "memoTags.id")?;
+            validate_text(&tag.name, 1, 30, "memoTags.name")?;
+            validate_required_id(&tag.normalized_name, "memoTags.normalizedName")?;
+            validate_timestamps(&tag.created_at, &tag.created_at, "memoTags")?;
+        }
+        for link in &self.memo_tag_links {
+            validate_reference("memoTagLinks.memoId", &link.memo_id, &memo_ids)?;
+            validate_reference("memoTagLinks.tagId", &link.tag_id, &memo_tag_ids)?;
+        }
+        for reminder in &self.memo_reminders {
+            validate_required_id(&reminder.id, "memoReminders.id")?;
+            validate_reference("memoReminders.memoId", &reminder.memo_id, &memo_ids)?;
+            if !["once", "recurring"].contains(&reminder.schedule_kind.as_str())
+                || !["active", "completed", "cancelled"].contains(&reminder.status.as_str())
+            {
+                return Err(invalid_field("memoReminders"));
+            }
+            parse_date(&reminder.starts_on, "memoReminders.startsOn")?;
+            if let Some(ends_on) = &reminder.ends_on {
+                parse_date(ends_on, "memoReminders.endsOn")?;
+            }
+            validate_timestamps(&reminder.created_at, &reminder.updated_at, "memoReminders")?;
+        }
 
         let (earliest_date, latest_date) = self.date_range()?;
         Ok(BackupImportSummary {
@@ -407,6 +516,10 @@ impl BackupData {
             ("focusSessions", self.focus_sessions.len()),
             ("notes", self.notes.len()),
             ("weeklyGoals", self.weekly_goals.len()),
+            ("memos", self.memos.len()),
+            ("memoTags", self.memo_tags.len()),
+            ("memoTagLinks", self.memo_tag_links.len()),
+            ("memoReminders", self.memo_reminders.len()),
         ];
         for (field, count) in collections {
             if count > MAX_COLLECTION_RECORDS {
@@ -427,6 +540,10 @@ impl BackupData {
         let active_focus = usize::from(self.active_focus.is_some());
         let total = collections.iter().map(|(_, count)| count).sum::<usize>()
             + self.preferences.len()
+            + self.memos.len()
+            + self.memo_tags.len()
+            + self.memo_tag_links.len()
+            + self.memo_reminders.len()
             + active_focus;
         if total > MAX_TOTAL_RECORDS {
             return Err(backup_error(
@@ -446,6 +563,10 @@ impl BackupData {
             notes: self.notes.len(),
             weekly_goals: self.weekly_goals.len(),
             preferences: self.preferences.len(),
+            memos: self.memos.len(),
+            memo_tags: self.memo_tags.len(),
+            memo_tag_links: self.memo_tag_links.len(),
+            memo_reminders: self.memo_reminders.len(),
             total,
         })
     }

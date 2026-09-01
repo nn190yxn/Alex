@@ -33,6 +33,7 @@ type CalendarWorkspaceProps = {
   runtime?: boolean;
   client?: CalendarCommandClient;
   statisticsCommandClient?: StatisticsCommandClient;
+  refreshRevision?: number;
   onStartFocus?: () => void;
 };
 
@@ -42,6 +43,7 @@ export function CalendarWorkspace({
   runtime = isTauriRuntime(),
   client = calendarClient,
   statisticsCommandClient = statisticsClient,
+  refreshRevision = 0,
   onStartFocus,
 }: CalendarWorkspaceProps) {
   const { formatDate, locale, t } = useI18n();
@@ -79,7 +81,7 @@ export function CalendarWorkspace({
       setLoading(false);
     });
     return () => { active = false; };
-  }, [anchor, category, client, period, projectId, runtime, statisticsCommandClient]);
+  }, [anchor, category, client, period, projectId, refreshRevision, runtime, statisticsCommandClient]);
 
   const selectedDay = result.days.find((day) => day.date === selectedDate) ?? emptyDay(selectedDate);
   const activeDays = result.days.filter((day) => dayActivity(day) > 0).length;

@@ -6,7 +6,7 @@ import { useI18n } from "../../i18n/I18nContext";
 import { isTauriRuntime } from "../../lib/commandClient";
 import { domainErrorMessage } from "../../lib/domainError";
 import type { WorkspaceTask } from "../today/todayModel";
-import { focusClient } from "./focusClient";
+import { focusClient, type FocusCommandClient } from "./focusClient";
 import { availableFocusTasks, focusTargetForTask, focusTaskKey, formatFocusTime, isEditableTarget, remainingSeconds } from "./focusModel";
 import type { FocusCompletionKind, FocusSession, FocusState } from "./types";
 
@@ -15,13 +15,14 @@ type DurationMode = "15" | "25" | "50" | "custom";
 type FocusWorkspaceProps = {
   tasks: WorkspaceTask[];
   initialTask: WorkspaceTask | null;
+  client?: FocusCommandClient;
 };
 
 const durationOptions = ["15", "25", "50"] as const;
 
 class UserFacingFocusError extends Error {}
 
-export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
+export function FocusWorkspace({ tasks, initialTask, client = focusClient }: FocusWorkspaceProps) {
   const { formatTime, t } = useI18n();
   const focusTasks = availableFocusTasks(tasks);
   const [state, setState] = useState<FocusState>(() => readyState());
@@ -52,7 +53,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
   useEffect(() => {
     if (!desktopRuntime) return;
     let active = true;
-    void focusClient.reconcile().then((result) => {
+    void client.reconcile().then((result) => {
       if (!active) return;
       if (result.ok) {
         setState(result.data.state);
@@ -68,7 +69,20 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
       }
     });
     return () => { active = false; };
-  }, [desktopRuntime]);
+  }, [client, desktopRuntime]);
+
+  useEffect(() => {
+    if (!desktopRuntime) return;
+    let active = true;
+    void client.listHistory().then((result) => {
+      if (!active) return;
+      if (result.ok) setRecentSessions(result.data);
+      else setError(domainErrorMessage(result.error, t));
+    }).catch(() => {
+      if (active) setError(t("focus.error.load"));
+    });
+    return () => { active = false; };
+  }, [client, desktopRuntime]);
 
   useEffect(() => {
     if (!desktopRuntime) return;
@@ -152,7 +166,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
     if (!selectedTask || !durationValid) return;
     await runAction(async () => {
       if (desktopRuntime) {
-        const result = await focusClient.start(focusTargetForTask(selectedTask), durationMinutes);
+        const result = await client.start(focusTargetForTask(selectedTask), durationMinutes);
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         return result.data;
       }
@@ -174,7 +188,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
     if (state.state !== "running") return;
     await runAction(async () => {
       if (desktopRuntime) {
-        const result = await focusClient.pause();
+        const result = await client.pause();
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         return result.data;
       }
@@ -197,7 +211,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
     if (state.state !== "paused") return;
     await runAction(async () => {
       if (desktopRuntime) {
-        const result = await focusClient.resume();
+        const result = await client.resume();
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         return result.data;
       }
@@ -220,7 +234,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
     if (state.state === "ready") return;
     await runAction(async () => {
       if (desktopRuntime) {
-        const result = await focusClient.reset();
+        const result = await client.reset();
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         return result.data;
       }
@@ -236,7 +250,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
     try {
       let session: FocusSession;
       if (desktopRuntime) {
-        const result = await focusClient.finish(completionKind);
+        const result = await client.finish(completionKind);
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         session = result.data;
       } else {
@@ -254,7 +268,7 @@ export function FocusWorkspace({ tasks, initialTask }: FocusWorkspaceProps) {
   async function reconcileFocus() {
     try {
       if (desktopRuntime) {
-        const result = await focusClient.reconcile();
+        const result = await client.reconcile();
         if (!result.ok) throw new UserFacingFocusError(domainErrorMessage(result.error, t));
         setState(result.data.state);
         if (result.data.completedSession) addRecentSession(result.data.completedSession);

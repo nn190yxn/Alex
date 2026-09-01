@@ -11,6 +11,10 @@ export type BackupRecordCounts = {
   notes: number;
   weeklyGoals: number;
   preferences: number;
+  memos: number;
+  memoTags: number;
+  memoTagLinks: number;
+  memoReminders: number;
   total: number;
 };
 
@@ -39,14 +43,25 @@ export type BackupRestoreResult = {
   summary: BackupImportSummary;
 };
 
+export type BackupSnapshotRecord = {
+  id: string;
+  kind: string;
+  path: string;
+  formatVersion: number;
+  checksum: string;
+  createdAt: string;
+};
+
 export type BackupClient = {
   exportBackup: () => Promise<CommandResult<BackupExportResult | null>>;
   inspectBackup: () => Promise<CommandResult<BackupInspection | null>>;
   restoreBackup: (token: string) => Promise<CommandResult<BackupRestoreResult>>;
+  listSnapshots: () => Promise<CommandResult<BackupSnapshotRecord[]>>;
 };
 
 export const backupClient: BackupClient = {
   exportBackup: () => invokeCommand("backup_export"),
   inspectBackup: () => invokeCommand("backup_inspect"),
   restoreBackup: (token) => invokeCommand("backup_restore", { token }),
+  listSnapshots: () => invokeCommand("backup_list_snapshots"),
 };

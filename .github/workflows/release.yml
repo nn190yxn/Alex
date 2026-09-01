@@ -32,6 +32,30 @@ jobs:
         working-directory: arrive-focus
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck frontend
+        working-directory: arrive-focus
+        run: pnpm typecheck
+
+      - name: Test frontend
+        working-directory: arrive-focus
+        run: pnpm test -- --run
+
+      - name: Build frontend
+        working-directory: arrive-focus
+        run: pnpm build
+
+      - name: Check Rust formatting
+        working-directory: arrive-focus
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+
+      - name: Test Rust core and desktop feature
+        working-directory: arrive-focus
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features desktop-app --lib
+
+      - name: Lint Rust
+        working-directory: arrive-focus
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features desktop-app -- -D warnings
+
       - name: Build and publish release
         uses: tauri-apps/tauri-action@v1
         env:

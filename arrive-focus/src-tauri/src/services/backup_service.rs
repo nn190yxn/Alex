@@ -474,6 +474,10 @@ mod tests {
         assert_eq!(parsed.summary.counts.notes, 1);
         assert_eq!(parsed.summary.counts.weekly_goals, 1);
         assert_eq!(parsed.summary.counts.preferences, 1);
+        assert_eq!(parsed.summary.counts.memos, 1);
+        assert_eq!(parsed.summary.counts.memo_tags, 1);
+        assert_eq!(parsed.summary.counts.memo_tag_links, 1);
+        assert_eq!(parsed.summary.counts.memo_reminders, 1);
         assert!(json.find("\"projects\"").unwrap() < json.find("\"tasks\"").unwrap());
     }
 
@@ -556,6 +560,12 @@ mod tests {
                     })?,
                     1
                 );
+                assert_eq!(
+                    connection.query_row("SELECT COUNT(*) FROM memos", [], |row| {
+                        row.get::<_, i64>(0)
+                    })?,
+                    1
+                );
                 Ok(())
             })
             .unwrap();
@@ -627,7 +637,7 @@ mod tests {
             .export_to_path(&path, Utc.with_ymd_and_hms(2026, 7, 21, 10, 0, 0).unwrap())
             .unwrap();
 
-        assert_eq!(exported.summary.counts.total, 10);
+        assert_eq!(exported.summary.counts.total, 14);
         assert_eq!(
             BackupService::inspect_path(&path).unwrap().summary,
             exported.summary
@@ -743,6 +753,22 @@ mod tests {
                 tx.execute(
                     "INSERT INTO preferences(key, value_json, updated_at) VALUES ('generalPreferences', ?1, ?2)",
                     params![r#"{"language":"system","appearance":"system","theme":"mint","backgroundRunning":true}"#, NOW],
+                )?;
+                tx.execute(
+                    "INSERT INTO memos(id, title, body, pinned_at, created_at, updated_at) VALUES ('memo-1', 'Backup memo', 'Portable memo data', ?1, ?2, ?2)",
+                    params![NOW, NOW],
+                )?;
+                tx.execute(
+                    "INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES ('tag-1', 'Backup', 'backup', ?1)",
+                    [NOW],
+                )?;
+                tx.execute(
+                    "INSERT INTO memo_tag_links(memo_id, tag_id) VALUES ('memo-1', 'tag-1')",
+                    [],
+                )?;
+                tx.execute(
+                    "INSERT INTO memo_reminders(id, memo_id, schedule_kind, local_time, starts_on, timezone, status, created_at, updated_at) VALUES ('reminder-1', 'memo-1', 'once', '09:00', '2026-07-22', 'Asia/Shanghai', 'completed', ?1, ?1)",
+                    [NOW],
                 )?;
                 Ok(())
             })

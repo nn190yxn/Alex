@@ -138,6 +138,16 @@ impl<'a> FocusRepository<'a> {
         })
     }
 
+    pub fn list_recent(&self, limit: u32) -> Result<Vec<FocusSession>, DomainError> {
+        self.database.read(|connection| {
+            let mut statement = connection.prepare(
+                "SELECT id, task_id, task_instance_id, project_id, planned_seconds, actual_seconds, interruption_count, completion_kind, started_at, ended_at, created_at FROM focus_sessions ORDER BY ended_at DESC, id DESC LIMIT ?1",
+            )?;
+            let rows = statement.query_map([limit], map_session)?;
+            rows.collect()
+        })
+    }
+
     #[cfg(test)]
     pub fn get_session(&self, id: &str) -> Result<Option<FocusSession>, DomainError> {
         self.database.read(|connection| {
@@ -203,7 +213,6 @@ fn map_active(row: &rusqlite::Row<'_>) -> rusqlite::Result<ActiveFocus> {
     })
 }
 
-#[cfg(test)]
 fn map_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<FocusSession> {
     let completion_kind = match row.get::<_, String>(7)?.as_str() {
         "deadline" => FocusCompletionKind::Deadline,

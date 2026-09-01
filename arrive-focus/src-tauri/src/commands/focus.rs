@@ -4,6 +4,7 @@ use crate::{
         FocusCompletionKind, FocusReconcileResult, FocusSession, FocusState, FocusTarget,
     },
     repositories::database::Database,
+    repositories::focus_repository::FocusRepository,
     services::focus_service::FocusService,
     CommandResult, DomainError,
 };
@@ -24,6 +25,12 @@ pub fn focus_reconcile(
     app: tauri::AppHandle,
 ) -> CommandResult<FocusReconcileResult> {
     result(reconcile_and_emit(&database, &app))
+}
+
+#[cfg(feature = "desktop-app")]
+#[tauri::command]
+pub fn focus_list_history(database: tauri::State<'_, Database>) -> CommandResult<Vec<FocusSession>> {
+    result(FocusRepository::new(&database).list_recent(20))
 }
 
 #[cfg(feature = "desktop-app")]

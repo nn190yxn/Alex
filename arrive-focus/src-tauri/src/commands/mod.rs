@@ -1,5 +1,6 @@
 #[cfg(feature = "desktop-app")]
 pub mod backup;
+pub mod analysis;
 pub mod calendar;
 #[cfg(feature = "desktop-app")]
 pub mod desktop_integration;

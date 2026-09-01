@@ -13,11 +13,11 @@ type TodayWorkspaceProps = {
   loading?: boolean;
   onCreate: () => void;
   onEdit: (id: string) => void;
-  onToggleCompleted: (id: string, completed: boolean) => void;
+  onToggleCompleted: (id: string, completed: boolean) => void | Promise<void>;
   onStartFocus: (id: string) => void;
-  onSkipInstance?: (id: string) => void;
-  onDelayInstance?: (id: string) => void;
-  onRescheduleInstance?: (id: string) => void;
+  onSkipInstance?: (id: string) => void | Promise<void>;
+  onDelayInstance?: (id: string) => void | Promise<void>;
+  onRescheduleInstance?: (id: string) => void | Promise<void>;
   noteDate?: string;
   weekStartsOn?: string;
   noteBody?: string;
@@ -33,6 +33,7 @@ const goalCategories: WeeklyGoalCategory[] = ["completedTasks", "focusMinutes", 
 export function TodayWorkspace({ tasks, loading = false, onCreate, onEdit, onToggleCompleted, onStartFocus, onSkipInstance, onDelayInstance, onRescheduleInstance, noteDate = "", weekStartsOn = "", noteBody = "", weeklyGoals = [], planningLoading = false, onSaveNote = async () => undefined, onSaveWeeklyGoal = async () => undefined }: TodayWorkspaceProps) {
   const { t } = useI18n();
   const [completion, setCompletion] = useState<(typeof completionValues)[number]>("all");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const completionOptions = completionValues.map((value) => ({ value, label: t(value === "all" ? "common.all" : `today.filter.${value}` as MessageKey) }));
   const categoryLabels = { work: t("task.category.work"), study: t("task.category.study"), health: t("task.category.health"), life: t("task.category.life") };
   const completedCount = tasks.filter((item) => item.task.status === "completed").length;
@@ -41,6 +42,17 @@ export function TodayWorkspace({ tasks, loading = false, onCreate, onEdit, onTog
   const goalCompleted = weeklyGoals.reduce((total, goal) => total + goal.completedCount, 0);
   const goalTarget = weeklyGoals.reduce((total, goal) => total + goal.targetCount, 0);
   const goalProgress = goalTarget === 0 ? 0 : Math.round((goalCompleted / goalTarget) * 100);
+
+  function runTaskAction(key: string, action: () => void | Promise<void>) {
+    if (busyKey) return;
+    setBusyKey(key);
+    const result = action();
+    if (result && typeof result.then === "function") {
+      void result.finally(() => setBusyKey(null));
+    } else {
+      setBusyKey(null);
+    }
+  }
 
   return (
     <div className="today-grid" aria-busy={loading}>
@@ -69,7 +81,7 @@ export function TodayWorkspace({ tasks, loading = false, onCreate, onEdit, onTog
           <section className="task-section" key={section.category} aria-labelledby={`task-section-${section.category}`}>
             <header><h3 id={`task-section-${section.category}`}>{section.label}</h3><span>{t("common.items", { count: section.tasks.length })}</span></header>
             <div className="task-list">
-              {section.tasks.map((item) => <TaskRow key={`${item.sourceKind}:${item.sourceId}`} item={item} state={item.visualState} recurrenceLabel={item.sourceKind === "recurringInstance" ? t("task.recurring") : item.recurrenceLabel} completionLocked={item.sourceKind === "recurringInstance"} onOpen={onEdit} onToggleCompleted={onToggleCompleted} onStartFocus={onStartFocus} onSkip={item.sourceKind === "recurringInstance" ? onSkipInstance : undefined} onDelay={item.sourceKind === "recurringInstance" ? onDelayInstance : undefined} onRescheduleTomorrow={item.sourceKind === "recurringInstance" ? onRescheduleInstance : undefined} />)}
+               {section.tasks.map((item) => <TaskRow key={`${item.sourceKind}:${item.sourceId}`} item={item} state={item.visualState} recurrenceLabel={item.sourceKind === "recurringInstance" ? t("task.recurring") : item.recurrenceLabel} completionLocked={item.sourceKind === "recurringInstance"} onOpen={onEdit} onToggleCompleted={(id, completed) => void runTaskAction(`complete:${id}`, () => onToggleCompleted(id, completed))} onStartFocus={(id) => void runTaskAction(`focus:${id}`, () => onStartFocus(id))} onSkip={item.sourceKind === "recurringInstance" && onSkipInstance ? (id) => void runTaskAction(`skip:${id}`, () => onSkipInstance(id)) : undefined} onDelay={item.sourceKind === "recurringInstance" && onDelayInstance ? (id) => void runTaskAction(`delay:${id}`, () => onDelayInstance(id)) : undefined} onRescheduleTomorrow={item.sourceKind === "recurringInstance" && onRescheduleInstance ? (id) => void runTaskAction(`reschedule:${id}`, () => onRescheduleInstance(id)) : undefined} busyKey={busyKey?.endsWith(`:${item.sourceId}`) ? busyKey : null} />)}
             </div>
           </section>
         )) : null}
@@ -102,10 +114,12 @@ function DailyNoteEditor({ noteDate, body, onSave }: { noteDate: string; body: s
   const activeDate = useRef(noteDate);
   const draftValue = useRef(body);
   const lastSavedValue = useRef(body);
+  const saveSequence = useRef(0);
 
   useEffect(() => {
     const dateChanged = activeDate.current !== noteDate;
     activeDate.current = noteDate;
+    if (dateChanged) saveSequence.current += 1;
     if (!dateChanged && (body === draftValue.current || draftValue.current !== lastSavedValue.current)) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
@@ -120,14 +134,18 @@ function DailyNoteEditor({ noteDate, body, onSave }: { noteDate: string; body: s
   }, []);
 
   async function save(value: string) {
+    const sequence = ++saveSequence.current;
+    const date = activeDate.current;
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
     setStatus("saving");
     try {
       await onSave(value);
+      if (sequence !== saveSequence.current || date !== activeDate.current) return;
       lastSavedValue.current = value;
       setStatus("saved");
     } catch {
+      if (sequence !== saveSequence.current || date !== activeDate.current) return;
       setStatus("error");
     }
   }

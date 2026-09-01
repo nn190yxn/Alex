@@ -3,8 +3,9 @@ use rusqlite::{params, types::Type, OptionalExtension, Transaction};
 use super::database::Database;
 use crate::{
     domain::backup::{
-        BackupActiveFocus, BackupCheckItem, BackupData, BackupFocusSession, BackupNote,
-        BackupPreference, BackupProject, BackupRecurrenceRule, BackupTask, BackupTaskInstance,
+        BackupActiveFocus, BackupCheckItem, BackupData, BackupFocusSession, BackupMemo,
+        BackupMemoReminder, BackupMemoTag, BackupMemoTagLink, BackupNote, BackupPreference,
+        BackupProject, BackupRecurrenceRule, BackupSnapshotRecord, BackupTask, BackupTaskInstance,
         BackupWeeklyGoal,
     },
     DomainError,
@@ -38,6 +39,25 @@ impl<'a> BackupRepository<'a> {
             .write(|transaction| insert_history(transaction, entry))
     }
 
+    pub fn list_history(&self) -> Result<Vec<BackupSnapshotRecord>, DomainError> {
+        self.database.read(|connection| {
+            let mut statement = connection.prepare(
+                "SELECT id, kind, path, format_version, checksum, created_at FROM backup_history ORDER BY created_at DESC, id DESC",
+            )?;
+            let rows = statement.query_map([], |row| {
+                Ok(BackupSnapshotRecord {
+                    id: row.get(0)?,
+                    kind: row.get(1)?,
+                    path: row.get(2)?,
+                    format_version: row.get(3)?,
+                    checksum: row.get(4)?,
+                    created_at: row.get(5)?,
+                })
+            })?;
+            rows.collect()
+        })
+    }
+
     pub fn restore_with_snapshot(
         &self,
         data: &BackupData,
@@ -65,6 +85,10 @@ pub fn snapshot_from(connection: &rusqlite::Connection) -> rusqlite::Result<Back
         notes: query_notes(connection)?,
         weekly_goals: query_weekly_goals(connection)?,
         preferences: query_preferences(connection)?,
+        memos: query_memos(connection)?,
+        memo_tags: query_memo_tags(connection)?,
+        memo_tag_links: query_memo_tag_links(connection)?,
+        memo_reminders: query_memo_reminders(connection)?,
     })
 }
 
@@ -95,7 +119,11 @@ fn replace_business_data(
              DELETE FROM projects;
              DELETE FROM notes;
              DELETE FROM weekly_goals;
-             DELETE FROM preferences;",
+             DELETE FROM preferences;
+             DELETE FROM memo_reminders;
+             DELETE FROM memo_tag_links;
+             DELETE FROM memo_tags;
+             DELETE FROM memos;",
         )
         .map_err(restore_sql_error)?;
 
@@ -170,6 +198,38 @@ fn replace_business_data(
             .execute(
                 "INSERT INTO preferences(key, value_json, updated_at) VALUES (?1, ?2, ?3)",
                 params![item.key, value, item.updated_at],
+            )
+            .map_err(restore_sql_error)?;
+    }
+    for item in &data.memos {
+        transaction
+            .execute(
+                "INSERT INTO memos(id, title, body, pinned_at, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![item.id, item.title, item.body, item.pinned_at, item.created_at, item.updated_at],
+            )
+            .map_err(restore_sql_error)?;
+    }
+    for item in &data.memo_tags {
+        transaction
+            .execute(
+                "INSERT INTO memo_tags(id, name, normalized_name, created_at) VALUES (?1, ?2, ?3, ?4)",
+                params![item.id, item.name, item.normalized_name, item.created_at],
+            )
+            .map_err(restore_sql_error)?;
+    }
+    for item in &data.memo_tag_links {
+        transaction
+            .execute(
+                "INSERT INTO memo_tag_links(memo_id, tag_id) VALUES (?1, ?2)",
+                params![item.memo_id, item.tag_id],
+            )
+            .map_err(restore_sql_error)?;
+    }
+    for item in &data.memo_reminders {
+        transaction
+            .execute(
+                "INSERT INTO memo_reminders(id, memo_id, schedule_kind, frequency, interval_value, weekdays_json, monthly_day, local_time, starts_on, ends_on, timezone, next_scheduled_for, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                params![item.id, item.memo_id, item.schedule_kind, item.frequency, item.interval_value, item.weekdays_json, item.monthly_day, item.local_time, item.starts_on, item.ends_on, item.timezone, item.next_scheduled_for, item.status, item.created_at, item.updated_at],
             )
             .map_err(restore_sql_error)?;
     }
@@ -412,6 +472,81 @@ fn query_preferences(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<
             key: row.get(0)?,
             value: parse_json_column(&raw_value, 1)?,
             updated_at: row.get(2)?,
+        })
+    })?;
+    rows.collect()
+}
+
+fn query_memos(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<BackupMemo>> {
+    let mut statement = connection.prepare(
+        "SELECT id, title, body, pinned_at, created_at, updated_at FROM memos ORDER BY id",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(BackupMemo {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            body: row.get(2)?,
+            pinned_at: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    })?;
+    rows.collect()
+}
+
+fn query_memo_tags(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<BackupMemoTag>> {
+    let mut statement = connection.prepare(
+        "SELECT id, name, normalized_name, created_at FROM memo_tags ORDER BY id",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(BackupMemoTag {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            normalized_name: row.get(2)?,
+            created_at: row.get(3)?,
+        })
+    })?;
+    rows.collect()
+}
+
+fn query_memo_tag_links(
+    connection: &rusqlite::Connection,
+) -> rusqlite::Result<Vec<BackupMemoTagLink>> {
+    let mut statement = connection.prepare(
+        "SELECT memo_id, tag_id FROM memo_tag_links ORDER BY memo_id, tag_id",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(BackupMemoTagLink {
+            memo_id: row.get(0)?,
+            tag_id: row.get(1)?,
+        })
+    })?;
+    rows.collect()
+}
+
+fn query_memo_reminders(
+    connection: &rusqlite::Connection,
+) -> rusqlite::Result<Vec<BackupMemoReminder>> {
+    let mut statement = connection.prepare(
+        "SELECT id, memo_id, schedule_kind, frequency, interval_value, weekdays_json, monthly_day, local_time, starts_on, ends_on, timezone, next_scheduled_for, status, created_at, updated_at FROM memo_reminders ORDER BY id",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(BackupMemoReminder {
+            id: row.get(0)?,
+            memo_id: row.get(1)?,
+            schedule_kind: row.get(2)?,
+            frequency: row.get(3)?,
+            interval_value: row.get(4)?,
+            weekdays_json: row.get(5)?,
+            monthly_day: row.get(6)?,
+            local_time: row.get(7)?,
+            starts_on: row.get(8)?,
+            ends_on: row.get(9)?,
+            timezone: row.get(10)?,
+            next_scheduled_for: row.get(11)?,
+            status: row.get(12)?,
+            created_at: row.get(13)?,
+            updated_at: row.get(14)?,
         })
     })?;
     rows.collect()

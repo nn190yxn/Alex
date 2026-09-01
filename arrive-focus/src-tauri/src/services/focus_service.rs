@@ -198,14 +198,22 @@ impl<'a> FocusService<'a> {
         let Some(project_id) = project_id else {
             return Ok(());
         };
-        if ProjectRepository::new(self.database)
-            .get(project_id)?
-            .is_some_and(|project| project.status == "paused")
-        {
-            return Err(focus_error(
-                "FOCUS_PROJECT_PAUSED",
-                "the target project is paused",
-            ));
+        if let Some(project) = ProjectRepository::new(self.database).get(project_id)? {
+            match project.status.as_str() {
+                "paused" => {
+                    return Err(focus_error(
+                        "FOCUS_PROJECT_PAUSED",
+                        "the target project is paused",
+                    ));
+                }
+                "archived" => {
+                    return Err(focus_error(
+                        "FOCUS_PROJECT_ARCHIVED",
+                        "the target project is archived",
+                    ));
+                }
+                _ => {}
+            }
         }
         Ok(())
     }

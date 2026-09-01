@@ -24,6 +24,10 @@ const inspection: BackupInspection = {
       notes: 1,
       weeklyGoals: 1,
       preferences: 2,
+      memos: 0,
+      memoTags: 0,
+      memoTagLinks: 0,
+      memoReminders: 0,
       total: 16,
     },
     earliestDate: "2026-07-01",
@@ -51,6 +55,7 @@ function createClient(overrides: Partial<BackupClient> = {}): BackupClient {
       },
       version: 1,
     }),
+    listSnapshots: async () => ({ ok: true, data: [], version: 1 }),
     ...overrides,
   };
 }
@@ -104,5 +109,39 @@ describe("DataSettingsPanel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("数据恢复失败，原数据和恢复前快照已保留。");
     expect(screen.queryByText(/机密任务标题/)).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "确认恢复备份" })).toBeInTheDocument();
+  });
+
+  it("refreshes the local snapshot list after a successful restore", async () => {
+    desktopRuntime();
+    const listSnapshots = vi.fn()
+      .mockResolvedValueOnce({ ok: true as const, data: [], version: 1 })
+      .mockResolvedValueOnce({
+        ok: true as const,
+        data: [{
+          id: "snapshot-1",
+          kind: "pre_restore",
+          path: "C:\\AppData\\backups\\pre-restore.json",
+          formatVersion: 1,
+          checksum: "checksum",
+          createdAt: "2026-07-21T09:01:00.000Z",
+        }],
+        version: 1,
+      });
+    render(<DataSettingsPanel client={createClient({ listSnapshots })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "从备份恢复" }));
+    fireEvent.click(await screen.findByRole("button", { name: "确认替换并恢复" }));
+
+    expect(await screen.findByText("恢复前快照")).toBeInTheDocument();
+    expect(listSnapshots).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows an error when loading snapshots throws", async () => {
+    desktopRuntime();
+    render(<DataSettingsPanel client={createClient({
+      listSnapshots: async () => { throw new Error("database unavailable"); },
+    })} />);
+
+    expect(await screen.findByText("备份操作失败，请稍后重试。")).toBeInTheDocument();
   });
 });

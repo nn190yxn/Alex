@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 import { Icon, type IconName } from "../components/Icon";
 import { Button, Dialog, SegmentedControl, Toast } from "../components/ui";
 import { CalendarWorkspace } from "../features/calendar/CalendarWorkspace";
+import { AnalysisWorkspace } from "../features/analysis/AnalysisWorkspace";
 import { FocusWorkspace } from "../features/focus/FocusWorkspace";
+import { MemoWorkspace } from "../features/memos/MemoWorkspace";
 import { ProjectWorkspace } from "../features/projects/ProjectWorkspace";
 import { projectClient } from "../features/projects/projectClient";
 import type { ProjectRecord, ProjectSummary } from "../features/projects/types";
@@ -34,6 +36,8 @@ const pages = [
   { id: "projects", labelKey: "nav.projects", icon: "projects" },
   { id: "focus", labelKey: "nav.focus", icon: "focus" },
   { id: "calendar", labelKey: "nav.calendar", icon: "calendar" },
+  { id: "analysis", labelKey: "nav.analysis", icon: "analysis" },
+  { id: "memos", labelKey: "nav.memos", icon: "notes" },
   { id: "settings", labelKey: "nav.settings", icon: "settings" },
 ] as const satisfies readonly { id: string; labelKey: `nav.${string}`; icon: IconName }[];
 
@@ -68,6 +72,7 @@ export function App() {
   const [tasks, setTasks] = useState(initialTasks);
   const [projectOptions, setProjectOptions] = useState(previewTaskProjects);
   const [selectedDate, setSelectedDate] = useState(initialToday);
+  const previousToday = useRef(initialToday);
   const [editingTaskId, setEditingTaskId] = useState<string | "new" | null>(null);
   const [draftProjectId, setDraftProjectId] = useState<string | null>(null);
   const [focusedTask, setFocusedTask] = useState<WorkspaceTask | null>(null);
@@ -79,8 +84,11 @@ export function App() {
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalDataRevision, setGoalDataRevision] = useState(0);
   const [backupDataRevision, setBackupDataRevision] = useState(0);
+  const [memoDataRevision, setMemoDataRevision] = useState(0);
   const [todayDataRevision, setTodayDataRevision] = useState(0);
   const [projectTaskRevision, setProjectTaskRevision] = useState(0);
+  const [calendarDataRevision, setCalendarDataRevision] = useState(0);
+  const [analysisDataRevision, setAnalysisDataRevision] = useState(0);
   const [editingRecurrence, setEditingRecurrence] = useState<{ instanceId: string; effectiveOn: string; rule: RecurrenceRule } | null>(null);
   const desktopRuntime = isTauriRuntime();
   const theme = generalSettings.theme;
@@ -194,6 +202,19 @@ export function App() {
 
   useEffect(() => {
     if (!desktopRuntime) return;
+    const timer = window.setInterval(() => {
+      const nextToday = localDateString();
+      const lastToday = previousToday.current;
+      previousToday.current = nextToday;
+      setSelectedDate((current) => current === lastToday ? nextToday : current);
+      setTodayDataRevision((value) => value + 1);
+      setGoalDataRevision((value) => value + 1);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [desktopRuntime]);
+
+  useEffect(() => {
+    if (!desktopRuntime) return;
     let disposed = false;
     const unlisteners: (() => void)[] = [];
     void listen("tray://quick-task", () => {
@@ -203,15 +224,32 @@ export function App() {
     }).then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
     void listen("tray://open-focus", () => setPage("focus"))
       .then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
-    void listen("focus://completed", () => setGoalDataRevision((value) => value + 1))
-      .then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
-    void listen("backup://restored", () => setBackupDataRevision((value) => value + 1))
-      .then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
+     void listen("focus://completed", () => {
+       setGoalDataRevision((value) => value + 1);
+       setTodayDataRevision((value) => value + 1);
+       setProjectTaskRevision((value) => value + 1);
+        setCalendarDataRevision((value) => value + 1);
+        setAnalysisDataRevision((value) => value + 1);
+     })
+       .then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
+     void listen("backup://restored", () => {
+        setBackupDataRevision((value) => value + 1);
+        setMemoDataRevision((value) => value + 1);
+       setProjectTaskRevision((value) => value + 1);
+        setCalendarDataRevision((value) => value + 1);
+        setAnalysisDataRevision((value) => value + 1);
+     })
+       .then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
     void listen("today://changed", () => {
       const nextToday = localDateString();
-      setSelectedDate((current) => current === today ? nextToday : current);
-      setTodayDataRevision((value) => value + 1);
-      setGoalDataRevision((value) => value + 1);
+      const lastToday = previousToday.current;
+      previousToday.current = nextToday;
+       setSelectedDate((current) => current === lastToday ? nextToday : current);
+       setTodayDataRevision((value) => value + 1);
+       setGoalDataRevision((value) => value + 1);
+       setProjectTaskRevision((value) => value + 1);
+        setCalendarDataRevision((value) => value + 1);
+        setAnalysisDataRevision((value) => value + 1);
     }).then((unlisten) => disposed ? unlisten() : unlisteners.push(unlisten));
     return () => {
       disposed = true;
@@ -496,9 +534,11 @@ export function App() {
 
         {page === "today" ? <TodayWorkspace tasks={visibleTasks} loading={loadingTasks} noteDate={selectedDate} weekStartsOn={weekStartsOn} noteBody={noteBody} weeklyGoals={weeklyGoals} planningLoading={noteLoading || goalsLoading} onSaveNote={saveNote} onSaveWeeklyGoal={saveWeeklyGoal} onCreate={() => openNewTask()} onEdit={(id) => void openTask(id)} onToggleCompleted={(id, completed) => void toggleTaskCompleted(id, completed)} onStartFocus={startFocus} onSkipInstance={(id) => void skipInstance(id)} onDelayInstance={(id) => void delayInstance(id)} onRescheduleInstance={(id) => void rescheduleInstance(id)} /> : null}
         {page === "projects" ? <ProjectWorkspace today={today} runtime={desktopRuntime} taskRevision={projectTaskRevision} onProjectsChange={(summaries) => setProjectOptions(summaries.map(projectSummaryToTaskProject))} onAddTask={(project) => openNewTask(project.id)} onStartFocus={startProjectFocus} onTaskChange={async () => { await refreshDigest(); setGoalDataRevision((value) => value + 1); }} /> : null}
-        {page === "focus" ? <FocusWorkspace tasks={tasks} initialTask={focusedTask} /> : null}
-        {page === "settings" ? <SettingsWorkspace general={generalSettings} onSaveGeneral={saveGeneralSettings} /> : null}
-        {page === "calendar" ? <CalendarWorkspace selectedDate={selectedDate} onSelectDate={setSelectedDate} runtime={desktopRuntime} onStartFocus={() => setPage("focus")} /> : null}
+         {page === "focus" ? <FocusWorkspace tasks={tasks} initialTask={focusedTask} /> : null}
+         {page === "settings" ? <SettingsWorkspace general={generalSettings} onSaveGeneral={saveGeneralSettings} /> : null}
+         {page === "memos" ? <MemoWorkspace runtime={desktopRuntime} refreshRevision={memoDataRevision} /> : null}
+          {page === "calendar" ? <CalendarWorkspace selectedDate={selectedDate} onSelectDate={setSelectedDate} runtime={desktopRuntime} refreshRevision={calendarDataRevision} onStartFocus={() => setPage("focus")} /> : null}
+          {page === "analysis" ? <AnalysisWorkspace tasks={tasks} runtime={desktopRuntime} refreshRevision={analysisDataRevision} /> : null}
       </main>
 
       <Dialog open={editingTaskId !== null} title={i18n.t(editingTask ? "task.edit" : "task.create")} onClose={() => { setEditingTaskId(null); setDraftProjectId(null); }}>
@@ -569,7 +609,9 @@ function formatDateHeading(value: string, i18n: I18nValue): string {
 function pageDescription(page: (typeof pages)[number]["id"], focusedTask: WorkspaceTask | null, i18n: I18nValue): string {
   if (page === "today") return i18n.t("page.todayDescription");
   if (page === "calendar") return i18n.t("page.calendarDescription");
+  if (page === "analysis") return i18n.t("page.analysisDescription");
   if (page === "focus") return focusedTask ? i18n.t("page.focusTaskDescription", { title: focusedTask.task.title }) : i18n.t("page.focusDescription");
+  if (page === "memos") return i18n.t("page.memosDescription");
   return i18n.t("page.futureDescription");
 }
 

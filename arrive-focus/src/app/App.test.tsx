@@ -29,6 +29,7 @@ vi.mock("../features/focus/focusClient", () => ({
       data: { state: { state: "ready", serverTime: "2026-07-19T10:00:00Z" }, completedSession: null },
       version: 1,
     })),
+    listHistory: vi.fn(async () => ({ ok: true, data: [], version: 1 })),
   },
 }));
 

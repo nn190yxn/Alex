@@ -6,8 +6,6 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 
 use crate::{desktop, CommandResult, DomainError};
 
-const UPDATE_ENDPOINT: Option<&str> = option_env!("ARRIVE_FOCUS_UPDATE_ENDPOINT");
-const UPDATE_PUBLIC_KEY: Option<&str> = option_env!("ARRIVE_FOCUS_UPDATE_PUBLIC_KEY");
 const UPDATE_EVENT: &str = "update://download-progress";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -44,9 +42,7 @@ enum PendingUpdate {
 pub struct PendingUpdateState(Mutex<PendingUpdate>);
 
 pub fn plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R, tauri_plugin_updater::Config> {
-    tauri_plugin_updater::Builder::new()
-        .pubkey(UPDATE_PUBLIC_KEY.unwrap_or_default())
-        .build()
+    tauri_plugin_updater::Builder::new().build()
 }
 
 #[tauri::command]
@@ -96,15 +92,12 @@ async fn check(
     app: &tauri::AppHandle,
     state: &PendingUpdateState,
 ) -> Result<Option<UpdateMetadata>, DomainError> {
-    let endpoint = release_endpoint()?;
     transition_to_busy(state, PendingUpdate::Checking)?;
 
     let checked = async {
         let updater = app
             .updater_builder()
             .timeout(Duration::from_secs(30))
-            .endpoints(vec![endpoint])
-            .map_err(|_| update_error("UPDATE_CONFIGURATION_INVALID"))?
             .build()
             .map_err(|_| update_error("UPDATE_CONFIGURATION_INVALID"))?;
         updater
@@ -167,22 +160,6 @@ async fn download(
             Err(update_error("UPDATE_DOWNLOAD_FAILED"))
         }
     }
-}
-
-fn release_endpoint() -> Result<tauri::Url, DomainError> {
-    let endpoint = UPDATE_ENDPOINT
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| update_error("UPDATE_NOT_CONFIGURED"))?;
-    if !matches!(UPDATE_PUBLIC_KEY, Some(value) if !value.trim().is_empty()) {
-        return Err(update_error("UPDATE_NOT_CONFIGURED"));
-    }
-    let endpoint = endpoint
-        .parse::<tauri::Url>()
-        .map_err(|_| update_error("UPDATE_CONFIGURATION_INVALID"))?;
-    if endpoint.scheme() != "https" {
-        return Err(update_error("UPDATE_CONFIGURATION_INVALID"));
-    }
-    Ok(endpoint)
 }
 
 fn transition_to_busy(state: &PendingUpdateState, next: PendingUpdate) -> Result<(), DomainError> {

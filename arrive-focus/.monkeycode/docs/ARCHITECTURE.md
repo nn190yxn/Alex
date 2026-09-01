@@ -144,6 +144,10 @@ arrive-focus/
 
 `StatisticsService` 调用 `CalendarService::get_period`，再由 `StatisticsSummary::from_calendar` 执行纯聚合。计划完成率以周期内状态为 `completed` 的计划条目除以全部计划条目；完成任务数按周期内完成事件计数；活跃日要求存在完成任务或有效专注；总专注包含无项目轮次，项目投入仅列出具有关联项目的有效轮次，并按实际秒数降序排列。趋势保留周期内完整日序列，前端仅在年度视图把日数据汇总为月数据。
 
+### 分析工作区
+
+分析工作区位于 `features/analysis/`，前端提供独立导航入口、自定义起止日期、完成次数/有效专注/有效轮次/取消轮次汇总、稳定排序、空状态、加载状态和错误重试。浏览器预览通过 `buildPreviewAnalysis` 使用当前任务样例数据；桌面运行时由 `AnalysisService` 校验日期与 IANA 时区，通过 `AnalysisRepository` 查询普通任务、重复实例和专注记录，再按模板任务聚合后提供 `statistics_get_task_breakdown` command。有效专注只统计 `deadline` 与 `early`，取消轮次单独统计；软删除任务的历史完成与专注记录仍可进入结果。分析结果通过 App 的数据 revision 在任务、专注和备份恢复事件后重新请求。
+
 ### 便签与周目标域
 
 `DailyNoteInput` 校验 `YYYY-MM-DD` 日期和最多 4000 个 Unicode 字符。`PlanningRepository` 读取同日记录时按 `updated_at` 与 `id` 倒序选择最近一条，保存时更新该记录并兼容旧数据库中可能存在的同日多条数据。

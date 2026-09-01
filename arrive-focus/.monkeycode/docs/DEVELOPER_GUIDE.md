@@ -122,6 +122,8 @@ P7 属性测试位于 `services/notification_service.rs`，使用 64 组临时 S
 
 便签与周目标类型、仓储、服务和命令分别位于 `domain/planning.rs`、`repositories/planning_repository.rs`、`services/planning_service.rs` 与 `commands/planning.rs`。周目标进度必须复用 `CalendarService` 和 `StatisticsSummary`，保证自然周、IANA 时区、日界线与有效专注定义一致。前端类型和命令封装位于 `src/features/today/planningTypes.ts` 与 `planningClient.ts`；`TodayWorkspace` 负责 500ms 防抖、`Ctrl+Enter` 保存反馈和目标表单，`App` 负责按选中日期与所在周加载数据。planning 服务测试验证完成任务、专注分钟与活跃天数在关联数据写入后重算，并检查目标封顶和回写值可再次读取。定向验证可运行 `cargo test --manifest-path src-tauri/Cargo.toml planning` 和 `pnpm exec vitest run src/features/today/TodayWorkspace.test.tsx src/app/App.test.tsx`。
 
+分析前端位于 `src/features/analysis/`。`AnalysisWorkspace` 负责日期范围和状态展示，`analysisModel.ts` 负责格式校验、预览聚合与确定性排序，`analysisClient.ts` 调用 `statistics_get_task_breakdown`。Rust 分析 DTO 位于 `domain/analysis.rs`，SQLite 查询位于 `repositories/analysis_repository.rs`，日期与时区校验、事件合并和汇总位于 `services/analysis_service.rs`，命令边界位于 `commands/analysis.rs`。`AnalysisWorkspace.test.tsx` 覆盖真实 runtime command 成功载荷、错误码映射、重试和父级 revision 刷新。实现分析后端时应保持日期范围含边界、有效专注排除 `cancelled`、汇总等于明细总和，并覆盖跨日期、重复实例、取消轮次、软删除历史和空数据测试。
+
 ## 测试策略
 
 - 领域单元测试：任务状态、日期边界、计时状态机、统计聚合和备份校验。
