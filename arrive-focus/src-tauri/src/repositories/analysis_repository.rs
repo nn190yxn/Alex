@@ -51,9 +51,10 @@ impl<'a> AnalysisRepository<'a> {
                    AND julianday(i.completed_at) >= julianday(?1)
                    AND julianday(i.completed_at) < julianday(?2)",
             )?;
-            statement
+            let events = statement
                 .query_map(params![utc_start, utc_end], map_completed)?
-                .collect()
+                .collect();
+            events
         })
     }
 
@@ -79,9 +80,10 @@ impl<'a> AnalysisRepository<'a> {
                    AND julianday(f.ended_at) < julianday(?2)
                    AND COALESCE(f.task_id, r.task_template_id) IS NOT NULL",
             )?;
-            statement
+            let events = statement
                 .query_map(params![utc_start, utc_end], map_focus)?
-                .collect()
+                .collect();
+            events
         })
     }
 }
