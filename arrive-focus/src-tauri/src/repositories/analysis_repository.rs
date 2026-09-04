@@ -52,7 +52,7 @@ impl<'a> AnalysisRepository<'a> {
                    AND julianday(i.completed_at) < julianday(?2)",
             )?;
             statement
-                .query_map(params![utc_start, utc_end], map_completed)
+                .query_map(params![utc_start, utc_end], map_completed)?
                 .collect()
         })
     }
@@ -80,7 +80,7 @@ impl<'a> AnalysisRepository<'a> {
                    AND COALESCE(f.task_id, r.task_template_id) IS NOT NULL",
             )?;
             statement
-                .query_map(params![utc_start, utc_end], map_focus)
+                .query_map(params![utc_start, utc_end], map_focus)?
                 .collect()
         })
     }
