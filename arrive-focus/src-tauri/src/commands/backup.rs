@@ -5,7 +5,10 @@ use tauri_plugin_dialog::DialogExt;
 use uuid::Uuid;
 
 use crate::{
-    domain::backup::{BackupExportResult, BackupInspection, BackupRestoreResult, BackupSnapshotRecord, ValidatedBackup},
+    domain::backup::{
+        BackupExportResult, BackupInspection, BackupRestoreResult, BackupSnapshotRecord,
+        ValidatedBackup,
+    },
     repositories::backup_repository::BackupRepository,
     repositories::database::Database,
     services::backup_service::BackupService,

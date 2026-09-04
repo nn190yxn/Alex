@@ -29,7 +29,9 @@ pub fn focus_reconcile(
 
 #[cfg(feature = "desktop-app")]
 #[tauri::command]
-pub fn focus_list_history(database: tauri::State<'_, Database>) -> CommandResult<Vec<FocusSession>> {
+pub fn focus_list_history(
+    database: tauri::State<'_, Database>,
+) -> CommandResult<Vec<FocusSession>> {
     result(FocusRepository::new(&database).list_recent(20))
 }
 

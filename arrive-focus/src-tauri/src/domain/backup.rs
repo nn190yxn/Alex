@@ -348,7 +348,10 @@ impl BackupData {
             self.preferences.iter().map(|item| item.key.as_str()),
         )?;
         validate_unique_ids("memos", self.memos.iter().map(|item| item.id.as_str()))?;
-        validate_unique_ids("memoTags", self.memo_tags.iter().map(|item| item.id.as_str()))?;
+        validate_unique_ids(
+            "memoTags",
+            self.memo_tags.iter().map(|item| item.id.as_str()),
+        )?;
         validate_unique_ids(
             "memoReminders",
             self.memo_reminders.iter().map(|item| item.id.as_str()),

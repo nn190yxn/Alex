@@ -110,7 +110,8 @@ fn map_focus(row: &Row<'_>) -> rusqlite::Result<AnalysisEvent> {
         category: row.get(3)?,
         project: map_project(row, 4)?,
         completed_at: None,
-        actual_seconds: u64::try_from(actual_seconds).map_err(|_| invalid_type(9, "actual_seconds"))?,
+        actual_seconds: u64::try_from(actual_seconds)
+            .map_err(|_| invalid_type(9, "actual_seconds"))?,
         effective: matches!(completion_kind.as_str(), "deadline" | "early"),
         cancelled: completion_kind == "cancelled",
     })

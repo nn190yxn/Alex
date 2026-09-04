@@ -495,9 +495,8 @@ fn query_memos(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<Backup
 }
 
 fn query_memo_tags(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<BackupMemoTag>> {
-    let mut statement = connection.prepare(
-        "SELECT id, name, normalized_name, created_at FROM memo_tags ORDER BY id",
-    )?;
+    let mut statement = connection
+        .prepare("SELECT id, name, normalized_name, created_at FROM memo_tags ORDER BY id")?;
     let rows = statement.query_map([], |row| {
         Ok(BackupMemoTag {
             id: row.get(0)?,
@@ -512,9 +511,8 @@ fn query_memo_tags(connection: &rusqlite::Connection) -> rusqlite::Result<Vec<Ba
 fn query_memo_tag_links(
     connection: &rusqlite::Connection,
 ) -> rusqlite::Result<Vec<BackupMemoTagLink>> {
-    let mut statement = connection.prepare(
-        "SELECT memo_id, tag_id FROM memo_tag_links ORDER BY memo_id, tag_id",
-    )?;
+    let mut statement = connection
+        .prepare("SELECT memo_id, tag_id FROM memo_tag_links ORDER BY memo_id, tag_id")?;
     let rows = statement.query_map([], |row| {
         Ok(BackupMemoTagLink {
             memo_id: row.get(0)?,
