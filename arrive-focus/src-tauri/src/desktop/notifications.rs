@@ -28,7 +28,7 @@ impl NotificationPublisher for TauriNotificationPublisher<'_> {
         #[cfg(target_os = "windows")]
         {
             // The desktop notification plugin delegates permission management to Windows.
-            return Ok(NotificationPermissionState::Unknown);
+            Ok(NotificationPermissionState::Unknown)
         }
 
         #[cfg(not(target_os = "windows"))]
@@ -214,13 +214,14 @@ pub fn open_notification_settings() -> Result<(), DomainError> {
             )
         } as isize;
         if result > 32 {
-            return Ok(());
+            Ok(())
+        } else {
+            Err(DomainError {
+                code: "NOTIFICATION_SETTINGS_OPEN_FAILED".into(),
+                message: format!("Windows settings returned code {result}"),
+                field: None,
+            })
         }
-        return Err(DomainError {
-            code: "NOTIFICATION_SETTINGS_OPEN_FAILED".into(),
-            message: format!("Windows settings returned code {result}"),
-            field: None,
-        });
     }
 
     #[cfg(not(target_os = "windows"))]

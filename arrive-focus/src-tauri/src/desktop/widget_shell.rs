@@ -57,7 +57,7 @@ pub struct WidgetShellRuntime {
 impl Default for WidgetShellRuntime {
     fn default() -> Self {
         Self {
-            manager: Mutex::new(ShellAttachmentManager::new(PlatformShellAdapter::default())),
+            manager: Mutex::new(ShellAttachmentManager::new(PlatformShellAdapter)),
         }
     }
 }

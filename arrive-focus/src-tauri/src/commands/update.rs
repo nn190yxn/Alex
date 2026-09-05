@@ -46,6 +46,7 @@ pub fn plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R, tauri_plugin
 }
 
 #[tauri::command]
+#[allow(clippy::result_unit_err)]
 pub async fn update_check(
     app: tauri::AppHandle,
     state: tauri::State<'_, PendingUpdateState>,
@@ -54,6 +55,7 @@ pub async fn update_check(
 }
 
 #[tauri::command]
+#[allow(clippy::result_unit_err)]
 pub async fn update_download(
     app: tauri::AppHandle,
     state: tauri::State<'_, PendingUpdateState>,
