@@ -83,7 +83,6 @@ fn show_windows_memo_notification(
     notification: &SystemNotification,
     memo_id: &str,
 ) -> Result<(), DomainError> {
-    use tauri::Manager;
     use tauri_winrt_notification::{Sound, Toast};
 
     let app_handle = app.clone();

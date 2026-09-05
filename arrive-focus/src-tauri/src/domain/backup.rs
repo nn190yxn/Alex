@@ -543,10 +543,6 @@ impl BackupData {
         let active_focus = usize::from(self.active_focus.is_some());
         let total = collections.iter().map(|(_, count)| count).sum::<usize>()
             + self.preferences.len()
-            + self.memos.len()
-            + self.memo_tags.len()
-            + self.memo_tag_links.len()
-            + self.memo_reminders.len()
             + active_focus;
         if total > MAX_TOTAL_RECORDS {
             return Err(backup_error(
