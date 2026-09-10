@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>文档资料中心</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    main { min-width: 0; }
+    .chapter-panel { margin-top: 16px; }
+    .chapter-layout { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, 3fr); gap: 20px; }
+    .chapter-list { display: grid; gap: 8px; padding-left: 24px; }
+    .chapter-list button { width: 100%; text-align: left; overflow-wrap: anywhere; }
+    .chapter-fields { display: grid; gap: 10px; }
+    .chapter-fields input, .chapter-fields textarea, .chapter-panel select { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px; font: inherit; color: var(--ink); background: var(--panel); }
+    .chapter-fields textarea { min-height: 300px; resize: vertical; line-height: 1.7; }
+    .chapter-panel button:disabled { opacity: .5; cursor: default; }
+    .metadata-fields { display: grid; gap: 10px; margin-top: 16px; }
+    .metadata-fields input, .metadata-fields select { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px; font: inherit; color: var(--ink); background: var(--panel); }
+    .diagnosis-summary { display: flex; gap: 18px; flex-wrap: wrap; margin: 12px 0; }
+    .diagnosis-summary b { font-size: 1.35rem; display: block; }
+    .diagnosis-results { display: grid; gap: 8px; }
+    .diagnosis-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 90px 90px; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 9px; }
+    .diagnosis-row p { margin: 0; overflow-wrap: anywhere; }
+    .diagnosis-row small { color: var(--muted); }
+    @media (max-width: 800px) { .chapter-layout { grid-template-columns: 1fr; } main { padding: 20px; } .toolbar { flex-wrap: wrap; } .search { max-width: 100%; } }
+  </style>
+</head>
+<body>
+<div class="app"><aside class="side"><div class="logo"><span class="mark">文</span><b>个人表达工作台</b></div><nav><button>⌂ 工作台首页</button><button>✦ 新建改写</button><button>◈ 我的方案语言</button><button>⌘ 行业知识库</button><button>◌ 多行业多场景</button><button>✓ 内容诊断</button><button>▤ 历史任务</button><button class="active">▣ 文档资料中心</button><button>◇ 行业框架编辑器</button><button>↗ 表达规则发布中心</button><button>☑ 团队审核</button></nav></aside><main><div class="top">工作台 / 文档资料中心</div><div class="hero"><div><h1>文档资料中心</h1><p class="sub">集中管理行业材料、表达样本与审核依据。下方文件列表为示例；当前支持粘贴纯文本和 Markdown 内容，暂不支持直接读取 PDF、Word 文件或网页链接。</p></div><button class="btn primary" data-toggle-status="off">上传状态示例</button></div><div class="toolbar"><input class="search" placeholder="搜索资料名称"><div class="tabs"><button class="active" data-filter="all">全部</button><button data-filter="样本">表达样本</button><button data-filter="行业">行业资料</button></div></div><section class="panel"><div class="entry" data-category="行业"><h2>商业地产招商案例集.pdf</h2><p>示例资料 · PDF 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">归档状态示例</button></div><div class="entry" data-category="样本"><h2>林然方案表达样本.docx</h2><p>示例样本 · Word 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">处理状态示例</button></div><div class="entry" data-category="行业"><h2>经营指标口径.md</h2><p>示例资料 · 32 KB · 7 月 08 日</p><button class="btn" data-toggle-status="off">归档状态示例</button></div></section>
+  <section class="panel chapter-panel" aria-labelledby="chapter-heading">
+    <div class="toolbar"><h2 id="chapter-heading">文档章节</h2><button type="button" class="btn primary" id="add-chapter">新章节</button></div>
+    <label for="chapter-document">选择文档</label>
+    <select id="chapter-document"></select>
+    <div class="chapter-layout">
+      <div><h3>章节列表</h3><ol class="chapter-list" id="chapter-list"></ol></div>
+      <div class="chapter-fields">
+        <label for="chapter-title">章节标题</label><input id="chapter-title" disabled>
+        <label for="chapter-content">章节内容</label><textarea id="chapter-content" placeholder="支持纯文本和 Markdown，输入后自动保存" disabled></textarea>
+      </div>
+    </div>
+     <p id="chapter-status" role="status" aria-live="polite"></p>
+     </section>
+     <section class="panel"><div class="toolbar"><h2>读取资料正文</h2><button type="button" class="btn primary" id="parse-document">读取当前资料</button></div><p id="parse-status-message">选择已保存的文本资料后读取正文。</p><pre id="parse-result" style="white-space:pre-wrap;overflow:auto"></pre></section>
+   <section class="panel metadata-panel" aria-labelledby="metadata-heading">
+     <div class="toolbar"><h2 id="metadata-heading">资料信息</h2><button type="button" class="btn primary" id="save-metadata">保存资料信息</button></div>
+     <div class="metadata-fields">
+       <label for="source-url">来源链接</label><input id="source-url" type="url" placeholder="https://example.com/source">
+       <label for="parse-status">解析状态</label><select id="parse-status"><option value="待解析">待解析</option><option value="解析中">解析中</option><option value="已解析">已解析</option><option value="解析失败">解析失败</option></select>
+       <label for="fragments">材料片段标签</label><input id="fragments" placeholder="招商, 客群, 运营（用逗号分隔）">
+     </div>
+    <p id="metadata-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="panel" aria-labelledby="diagnosis-heading"><div class="toolbar"><h2 id="diagnosis-heading">批量诊断</h2><button type="button" class="btn primary" id="start-diagnosis">开始诊断</button></div><div class="diagnosis-summary"><div><small>片段总数</small><b id="diagnosis-total">0</b></div><div><small>已完成</small><b id="diagnosis-completed">0</b></div><div><small>事实总数</small><b id="diagnosis-facts">0</b></div><div><small>数字总数</small><b id="diagnosis-numbers">0</b></div></div><div class="diagnosis-results" id="diagnosis-results"><p>选择文档后点击“开始诊断”。</p></div><p id="diagnosis-status" role="status" aria-live="polite"></p></section>
+ </main></div>
+<script src="data-model.js"></script>
+<script src="app.js"></script>
+<script>
+(function () {
+  'use strict';
+  var store = window.ExpressionStore;
+  var state = store.state;
+  var selector = document.getElementById('chapter-document');
+  var list = document.getElementById('chapter-list');
+  var title = document.getElementById('chapter-title');
+  var content = document.getElementById('chapter-content');
+  var status = document.getElementById('chapter-status');
+   var add = document.getElementById('add-chapter');
+   var sourceUrl = document.getElementById('source-url');
+   var parseStatus = document.getElementById('parse-status');
+   var fragments = document.getElementById('fragments');
+   var metadataStatus = document.getElementById('metadata-status');
+   var saveMetadata = document.getElementById('save-metadata');
+   var startDiagnosis = document.getElementById('start-diagnosis');
+   var diagnosisResults = document.getElementById('diagnosis-results');
+   var diagnosisStatus = document.getElementById('diagnosis-status');
+   var diagnosisTotal = document.getElementById('diagnosis-total');
+   var diagnosisCompleted = document.getElementById('diagnosis-completed');
+   var diagnosisFacts = document.getElementById('diagnosis-facts');
+   var diagnosisNumbers = document.getElementById('diagnosis-numbers');
+   var parseButton = document.getElementById('parse-document'); var parseMessage = document.getElementById('parse-status-message'); var parseResult = document.getElementById('parse-result');
+  var active = null;
+  state.documentChapters = state.documentChapters || [];
+
+  function chapters() {
+    var doc = state.documents[selector.value];
+    return doc ? state.documentChapters.filter(function (chapter) {
+      return !chapter.documentId || chapter.documentId === doc.id;
+    }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); }) : [];
+  }
+
+  function save() {
+    try {
+      store.save();
+      status.textContent = '章节已保存到本机';
+    } catch (error) {
+      status.textContent = '保存失败，请检查浏览器存储空间后重试。';
+    }
+  }
+
+  function renderList() {
+    list.replaceChildren();
+    chapters().forEach(function (chapter) {
+      var item = document.createElement('li');
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn' + (chapter === active ? ' active' : '');
+      button.textContent = chapter.title || '未命名章节';
+      button.setAttribute('aria-pressed', String(chapter === active));
+      button.onclick = function () { active = chapter; renderEditor(); };
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+  }
+
+   function renderEditor() {
+    title.disabled = content.disabled = !active;
+    title.value = active ? active.title || '' : '';
+    content.value = active ? active.content || '' : '';
+    status.textContent = active ? '输入后自动保存到本机' : '点击“新章节”开始编辑。';
+    renderList();
+   }
+
+    function renderMetadata() {
+     var doc = state.documents[selector.value];
+     sourceUrl.value = doc ? doc.sourceUrl || '' : '';
+     parseStatus.value = doc && doc.parseStatus ? doc.parseStatus : '待解析';
+     fragments.value = doc && Array.isArray(doc.fragments) ? doc.fragments.join(', ') : '';
+     sourceUrl.disabled = parseStatus.disabled = fragments.disabled = saveMetadata.disabled = !doc;
+     metadataStatus.textContent = doc ? '编辑后点击“保存资料信息”。' : '暂无可编辑文档。';
+    }
+    function resetDiagnosis() { diagnosisTotal.textContent = diagnosisCompleted.textContent = diagnosisFacts.textContent = diagnosisNumbers.textContent = '0'; diagnosisResults.innerHTML = '<p>选择文档后点击“开始诊断”。</p>'; diagnosisStatus.textContent = ''; }
+    function diagnose() {
+      var doc = state.documents[selector.value], items = doc && Array.isArray(doc.fragments) ? doc.fragments.filter(Boolean) : [], totals = { facts: 0, numbers: 0, completed: 0 };
+      diagnosisResults.replaceChildren(); diagnosisTotal.textContent = String(items.length); diagnosisCompleted.textContent = diagnosisFacts.textContent = diagnosisNumbers.textContent = '0';
+      if (!items.length) { diagnosisResults.innerHTML = '<p>当前文档没有材料片段，请先填写并保存“材料片段标签”。</p>'; return; }
+      startDiagnosis.disabled = true; diagnosisStatus.textContent = '正在诊断 0 / ' + items.length + ' 条片段';
+      items.reduce(function (promise, fragment) { return promise.then(function () {
+        var row = document.createElement('div'); row.className = 'diagnosis-row'; row.innerHTML = '<p></p><span>事实：<b data-facts>—</b></span><span>数字：<b data-numbers>—</b></span><small data-result-status>诊断中</small>'; row.querySelector('p').textContent = fragment; diagnosisResults.appendChild(row);
+        return fetch('/api/rewrite/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fragment: fragment, documentId: doc.id }) }).then(function (response) { return response.json().then(function (result) { if (!response.ok) throw new Error(result.error || '诊断失败'); return result; }); }).then(function (result) {
+          var facts = Number(result.factCount !== undefined ? result.factCount : result.factsCount) || 0, numbers = Number(result.numberCount !== undefined ? result.numberCount : result.numbersCount) || 0; totals.facts += facts; totals.numbers += numbers; totals.completed += 1; row.querySelector('[data-facts]').textContent = String(facts); row.querySelector('[data-numbers]').textContent = String(numbers); row.querySelector('[data-result-status]').textContent = '已完成';
+        }).catch(function (error) { row.querySelector('[data-result-status]').textContent = '诊断未完成，请检查资料后重试'; }).then(function () { diagnosisCompleted.textContent = String(totals.completed); diagnosisFacts.textContent = String(totals.facts); diagnosisNumbers.textContent = String(totals.numbers); diagnosisStatus.textContent = '正在诊断 ' + totals.completed + ' / ' + items.length + ' 条片段'; });
+      }); }, Promise.resolve()).then(function () { startDiagnosis.disabled = false; diagnosisStatus.textContent = '诊断完成：' + items.length + ' 条片段'; });
+    }
+
+  function refreshDocuments() {
+    var previous = selector.value;
+    selector.replaceChildren();
+    state.documents.forEach(function (doc, index) {
+      var option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = doc.name || '未命名文档';
+      selector.appendChild(option);
+    });
+    if (previous && selector.options[previous]) selector.value = previous;
+    selector.disabled = !state.documents.length;
+     active = chapters()[0] || null;
+     renderEditor();
+     renderMetadata();
+   }
+
+   selector.onchange = function () { active = chapters()[0] || null; renderEditor(); renderMetadata(); resetDiagnosis(); };
+   startDiagnosis.onclick = diagnose;
+   parseButton.onclick = function () { var doc = state.documents[selector.value]; if (!doc) return; fetch('/api/documents/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: (doc.name || '').toLowerCase().endsWith('.md') ? 'markdown' : 'txt', text: doc.content || '' }) }).then(function (r) { return r.json().then(function (x) { if (!r.ok) throw new Error(x.error); return x; }); }).then(function (x) { parseMessage.textContent = x.status === 'unsupported' ? '暂不支持此格式，请粘贴纯文本或 Markdown 内容。' : '正文读取完成'; parseResult.textContent = (x.documents || []).map(function (item) { return item.text; }).join('\n\n'); }).catch(function (e) { parseMessage.textContent = '读取未完成，请确认资料包含文本正文后重试。'; }); };
+   saveMetadata.onclick = function () {
+     var doc = state.documents[selector.value];
+     if (!doc) return;
+     doc.sourceUrl = sourceUrl.value.trim();
+     doc.parseStatus = parseStatus.value;
+     doc.fragments = fragments.value.split(',').map(function (tag) { return tag.trim(); }).filter(Boolean);
+     try { store.save(); metadataStatus.textContent = '资料信息已保存到本机'; }
+     catch (error) { metadataStatus.textContent = '保存失败，请检查浏览器存储空间后重试。'; }
+   };
+  title.oninput = function () { if (active) { active.title = title.value; save(); renderList(); } };
+  content.oninput = function () { if (active) { active.content = content.value; save(); } };
+  add.onclick = function () {
+    var doc = state.documents[selector.value];
+    if (!doc) {
+      doc = { id: crypto.randomUUID(), name: '未命名文档', content: '', status: '启用' };
+      state.documents.push(doc);
+   refreshDocuments();
+      selector.value = String(state.documents.length - 1);
+    }
+    if (!doc.id) doc.id = crypto.randomUUID();
+    var existing = chapters();
+    // Preserve the original body when export begins using chapters.
+    if (!existing.length && doc.content) {
+      state.documentChapters.push({ id: crypto.randomUUID(), documentId: doc.id, title: '原文', content: doc.content, order: 0 });
+      existing = chapters();
+    }
+    active = { id: crypto.randomUUID(), documentId: doc.id, title: '新章节 ' + (existing.length + 1), content: '', order: existing.reduce(function (max, chapter) { return Math.max(max, Number(chapter.order) || 0); }, -1) + 1 };
+    state.documentChapters.push(active);
+    renderEditor();
+    save();
+    title.focus();
+    title.select();
+  };
+  document.querySelectorAll('[data-toggle-status]').forEach(function (button) {
+    button.addEventListener('click', refreshDocuments);
+  });
+  refreshDocuments();
+})();
+</script>
+</body>
+</html>

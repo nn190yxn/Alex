@@ -1,0 +1,7 @@
+{
+  "name": "personal-expression-preview",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal expression workbench MVP",
+  "scripts": { "start": "node server.js", "check": "node --check app.js && node --check data-model.js && node --check server.js && node --check test-api.js", "test": "node test-api.js" }
+}
