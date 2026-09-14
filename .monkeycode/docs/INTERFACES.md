@@ -1,5 +1,9 @@
 # 接口文档
 
+## 个人表达工作台 HTTP API
+
+服务默认监听 `http://localhost:3000`，通过 `x-user-id` 隔离用户，`x-user-role` 支持 `owner`、`editor`、`reviewer` 和 `viewer`。主要接口覆盖健康与状态、样本/文档/规则/场景资源、改写分析与异步任务、Markdown 导出、Skill 导出、评论、发布、审计和团队信息。`POST /api/documents/parse` 支持 Markdown/TXT，PDF、DOCX、URL 返回 `unsupported`；行业语义提炼和规则生成标记为 `local-demo`，需要人工确认。
+
 ## 资料索引 Tauri Commands
 
 资料索引工程的 command 契约定义于 `当前工作区/document-index/src/domain/commands.ts`，前端调用封装位于 `当前工作区/document-index/src/lib/commandClient.ts`。成功与失败响应使用判别联合：

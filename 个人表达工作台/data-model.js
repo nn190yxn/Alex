@@ -3,7 +3,7 @@
 
   var STORAGE_KEY = 'expression-workbench-state';
   var LEGACY_KEY = 'expression-workbench-mvp';
-  var SCHEMA_VERSION = 7;
+  var SCHEMA_VERSION = 8;
   var RETIRED_SKILL_IDS = {
     'skill-qingtaolu': 'skill-humanizer-zh',
     'skill-zhongwenquqiang': 'skill-humanizer-zh',
@@ -13,9 +13,10 @@
   var seed = {
     schemaVersion: SCHEMA_VERSION,
     theme: 'blue',
-    rewrite: { source: '', candidate: '', final: '', status: 'draft', confirmed: false, scenario: '', intent: '', selectedSkillIds: [], applyStyle: false, applyIndustry: false, industryPackId: '', results: [] },
-    expressionRules: { sampleCount: 0, confirmedCount: 86, pendingCount: 12 },
-    industries: { activeContext: '地产', entries: [], frameworks: [], frameworkVersions: [] },
+    rewrite: { source: '', candidate: '', final: '', status: 'draft', confirmed: false, scenario: '', intent: '', audiences: [], selectedSkillIds: [], applyStyle: false, applyIndustry: false, industryPackId: '', results: [] },
+    expressionRules: { sampleCount: 0 },
+    industries: { activeContext: '地产', entries: [], frameworks: [], frameworkVersions: [], presets: [] },
+    audiences: [],
     documents: [], documentProjects: [], documentChapters: [], exportRecords: [], rules: [], comments: [], diagnosis: { factsLocked: false },
     releases: [],
     reviews: [],

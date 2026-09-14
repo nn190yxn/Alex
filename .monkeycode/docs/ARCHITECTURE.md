@@ -1,5 +1,9 @@
 # 系统架构文档
 
+## 个人表达工作台预览
+
+`当前工作区/personal-expression-preview/` 使用 Node.js 22 内置 `node:sqlite` 提供单进程 HTTP API，静态 HTML 由同一服务托管。`server.js` 负责 SQLite、用户隔离、资源 CRUD、异步任务、权限和审计；`data-model.js` 负责 localStorage 状态迁移；`app.js` 负责页面交互与服务端同步。解析器仅支持 Markdown/TXT，PDF、DOCX 和 URL 返回 `unsupported`；模型调用使用用户项目的 `USER_LLM_*` 配置，缺少配置时显式 `demoMode=true` 才运行演示模式。
+
 ## 资料索引桌面工程
 
 Windows 本地资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，源码与发布边界归属独立仓库 `https://github.com/nn190yxn/zhuaomiansousuo`。主仓库保留需求、设计和任务规格，并通过 gitlink 固定已验证的独立仓库提交。任务 1 至任务 11 已全部完成，覆盖工程与类型化边界、SQLite 元数据仓储、索引源与后台扫描、智能归组与人工整理、检索预览与安全回收、完整桌面工作区、首次使用引导、增量监听与启动恢复、首次扫描启动兜底、索引配置备份恢复、Windows NSIS 与 WiX 安装、核心流程自动化验收、十万条元数据性能门禁，以及最终前端与 Rust 交付验证。

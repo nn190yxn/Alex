@@ -1,10 +1,31 @@
  'use strict';
 
+ const { extractDocument } = require('./doc-extract');
+ const { buildDocx, buildPptx } = require('./ooxml-export');
+
  const COMMERCIAL_TYPES = [
    { id: 'nonstandard', name: '非标商业' },
    { id: 'curated', name: '策展式商业' },
    { id: 'cluster', name: '集中商业' },
    { id: 'department', name: '传统百货' }
+ ];
+
+ const AUDIENCES = [
+   { id: '给政府看', label: '给政府看', hint: '讲区域价值、就业、税收、产业带动和政策契合；少讲租金与商业机密，语气克制。' },
+   { id: '给品牌方看', label: '给品牌方看', hint: '讲客群、客流、消费力、周边配套、同层品牌和开业节奏，写清品牌能得到什么。' },
+   { id: '给内部看', label: '给内部看', hint: '讲租金测算、成本、出租率、风险、退出条件和进度责任；用「我方」，数字完整可追责。' }
+ ];
+
+ const FRAMEWORK_PRESETS = [
+   { name: '项目判断与定位', description: '一句话说清这是什么项目、给谁、凭什么是它。先给结论，再给依据。', priority: '高优先级' },
+   { name: '区位与客群', description: '周边人口、消费力、交通与配套；核心客群是谁，有多大，为什么来。', priority: '高优先级' },
+   { name: '市场与同类项目', description: '同类项目现状、空档和借鉴点。客观陈述，不做绝对化比较。', priority: '中优先级' },
+   { name: '业态配比', description: '各业态占比、面积和主力店。给出配比表，说明每个业态承担什么。', priority: '高优先级' },
+   { name: '品牌落位', description: '分层落位、首店与主力品牌、意向与储备名单。标清哪些已谈、哪些在谈。', priority: '高优先级' },
+   { name: '租金测算', description: '面积、单价、出租率和年租金；分业态测算，给出区间与假设。', priority: '高优先级' },
+   { name: '招商政策与合作条件', description: '免租期、装补、扣点与联营条件；分品牌层级给政策。', priority: '中优先级' },
+   { name: '开业节奏与分期', description: '筹备、招商、装修、开业的时间节点与阶段目标。', priority: '中优先级' },
+   { name: '风险与应对', description: '招商、租金、工期和竞争风险，逐条给应对与责任。', priority: '中优先级' }
  ];
 
  const DRILL_KINDS = [
@@ -373,6 +394,96 @@
     });
   }
 
+  const UNIT_BASE = { '亿元': '亿', '亿': '亿', '万元': '万', '万': '万', '元': '元', '平方米': '平方米', '平米': '平方米', '㎡': '平方米', '方': '平方米', '个': '个', '家': '家', '人': '人', '%': '%', '％': '%' };
+  const UNIT_SCALE = { '亿元': 1e8, '亿': 1e8, '万元': 1e4, '万': 1e4, '元': 1, '平方米': 1, '平米': 1, '㎡': 1, '方': 1, '个': 1, '家': 1, '人': 1, '%': 1, '％': 1 };
+  const CN_NUM = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10, '两': 2 };
+   const NUMBER_RE = /([\u4e00-\u9fff]{0,12}?)\s*(\d[\d,]*(?:\.\d+)?)\s*(亿元|万元|平方米|平米|㎡|亿|万|元|%|％|个|家|人|方)/g;
+
+  function collectNumbers(text, title) {
+    const out = [];
+    let match;
+    const re = new RegExp(NUMBER_RE.source, 'g');
+    while ((match = re.exec(text)) !== null) {
+      const label = match[1].replace(/[的了在与和及或等约为是达共超过将近、，,]/g, '').slice(-3);
+      const value = Number(match[2].replace(/,/g, ''));
+      if (!Number.isFinite(value)) continue;
+      out.push({
+        label,
+        raw: (match[1] + match[2] + match[3]).trim(),
+        base: UNIT_BASE[match[3]],
+        scaled: value * UNIT_SCALE[match[3]],
+        section: title || '',
+        snippet: text.slice(Math.max(0, match.index - 10), match.index + match[0].length).trim()
+      });
+    }
+    return out;
+  }
+
+  function consistencyReport(sections) {
+    const list = (sections || []).map(section => ({ title: String(section.title || ''), text: String(section.text || '') })).filter(section => section.text.trim());
+    if (!list.length) fail('先贴至少一段正文，再做核对');
+    const tokens = [];
+    list.forEach(section => collectNumbers(section.text, section.title).forEach(token => tokens.push(token)));
+    const groups = new Map();
+    tokens.forEach(token => {
+      if (token.label.length < 2) return;
+      const key = token.label + '|' + token.base;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(token);
+    });
+    const conflicts = [];
+    groups.forEach((rows, key) => {
+      const distinct = [...new Set(rows.map(row => row.scaled))];
+      if (distinct.length < 2) return;
+      conflicts.push({
+        type: 'number',
+        level: 'high',
+        label: key.split('|')[0] + '（' + key.split('|')[1] + '）',
+        message: '同一指标出现了不同数值，需统一',
+        values: rows.map(row => ({ value: row.raw, section: row.section, snippet: row.snippet }))
+      });
+    });
+    const allText = list.map(section => section.text).join('\n');
+    const countRe = /([一二三四五六七八九十两\d]+)\s*[个套种项]\s*(方案|板块|业态|章节|部分|项目|品牌)/g;
+    let countMatch;
+    while ((countMatch = countRe.exec(allText)) !== null) {
+      const stated = CN_NUM[countMatch[1]] || Number(countMatch[1]);
+      if (!stated || stated > 30) continue;
+      const noun = countMatch[2];
+      const pattern = noun === '方案' ? /方案[一二三四五六七八九十\d]/g : new RegExp(noun + '[一二三四五六七八九十\\d]', 'g');
+      const found = [...new Set(allText.match(pattern) || [])];
+      if (found.length && found.length !== stated) conflicts.push({ type: 'count', level: 'high', label: '数量对不上', message: '文中写「' + countMatch[0] + '」，实际只能数出 ' + found.length + ' 个', values: found.map(item => ({ value: item, section: '', snippet: item })) });
+    }
+    const entities = [...new Set(allText.match(/[\u4e00-\u9fff]{2,8}(?:购物中心|广场|天地|中心|街区|商场|项目|城|里)/g) || [])];
+    const byHead = new Map();
+    entities.forEach(name => {
+      if (name.length < 4) return;
+      const head = name.slice(0, 2);
+      if (!byHead.has(head)) byHead.set(head, []);
+      byHead.get(head).push(name);
+    });
+    byHead.forEach((names, head) => {
+      const distinct = [...new Set(names)];
+      if (distinct.length > 1) conflicts.push({ type: 'name', level: 'low', label: head + '…', message: '同一对象可能有两种写法，确认用哪一个', values: distinct.map(item => ({ value: item, section: '', snippet: item })) });
+    });
+    conflicts.sort((a, b) => (a.level === 'high' ? 0 : 1) - (b.level === 'high' ? 0 : 1));
+    return { checked: { sections: list.length, numbers: tokens.length, entities: entities.length }, conflicts, summary: conflicts.length ? '发现 ' + conflicts.length + ' 处需要核对' : '没发现明显不一致' };
+  }
+
+  function readRawBody(req, limit) {
+    return new Promise((resolve, reject) => {
+      let size = 0;
+      const chunks = [];
+      req.on('data', chunk => {
+        size += chunk.length;
+        if (size > limit) { reject(Object.assign(new Error('文件太大，请压缩后再传'), { status: 413 })); req.destroy(); return; }
+        chunks.push(chunk);
+      });
+      req.on('end', () => resolve(Buffer.concat(chunks)));
+      req.on('error', reject);
+    });
+  }
+
   async function handle(req, res, url, api) {
    const parts = url.pathname.split('/').filter(Boolean);
    const method = req.method;
@@ -503,6 +614,13 @@
         const articles = api.listResources(user, 'article');
         const articleIds = uniqueBy([].concat(Array.isArray(body.articleIds) ? body.articleIds : [], articleIdsForName(articles, name)), String);
         const features = String(body.features || '').trim();
+        const detail = {
+          location: String(body.location || '').trim(),
+          area: String(body.area || '').trim(),
+          openedAt: String(body.openedAt || '').trim(),
+          anchorBrands: uniqueBy(Array.isArray(body.anchorBrands) ? body.anchorBrands : [], String),
+          highlights: uniqueBy(Array.isArray(body.highlights) ? body.highlights : [], String)
+        };
         const existing = api.listResources(user, 'project').find(row => row.name === name);
         const payload = {
           name,
@@ -512,14 +630,20 @@
           articleIds,
           articleCount: articleIds.length || 1,
           domain: 'commercial-ops',
-          status: body.status === 'candidate' ? 'candidate' : 'accepted'
+          status: body.status === 'candidate' ? 'candidate' : 'accepted',
+          ...detail
         };
         if (existing) {
           payload.commercialTypes = uniqueBy([].concat(existing.commercialTypes || [], types), String);
           payload.terms = uniqueBy([].concat(existing.terms || [], terms), String);
           payload.articleIds = uniqueBy([].concat(existing.articleIds || [], articleIds), String);
           payload.articleCount = payload.articleIds.length || existing.articleCount || 1;
+          payload.anchorBrands = uniqueBy([].concat(existing.anchorBrands || [], detail.anchorBrands), String);
+          payload.highlights = uniqueBy([].concat(existing.highlights || [], detail.highlights), String);
           if (!features) payload.features = existing.features || '';
+          if (!detail.location) payload.location = existing.location || '';
+          if (!detail.area) payload.area = existing.area || '';
+          if (!detail.openedAt) payload.openedAt = existing.openedAt || '';
           const updated = api.updateResource(user, 'project', existing.id, payload);
           writeLinks(api, user, updated);
           return api.json(res, 200, updated);
@@ -546,6 +670,11 @@
        if (body.terms) patch.terms = Array.isArray(body.terms) ? body.terms : [];
         if (body.status === 'accepted' || body.status === 'candidate') patch.status = body.status;
         if (body.commercialTypes || body.types) patch.commercialTypes = normalizeCommercialTypes(body.commercialTypes || body.types);
+        if (body.location != null) patch.location = String(body.location);
+        if (body.area != null) patch.area = String(body.area);
+        if (body.openedAt != null) patch.openedAt = String(body.openedAt);
+        if (body.anchorBrands) patch.anchorBrands = uniqueBy(Array.isArray(body.anchorBrands) ? body.anchorBrands : [], String);
+        if (body.highlights) patch.highlights = uniqueBy(Array.isArray(body.highlights) ? body.highlights : [], String);
         const updated = api.updateResource(user, 'project', parts[2], patch);
         writeLinks(api, user, updated);
         return api.json(res, 200, updated);
@@ -623,8 +752,77 @@
       const types = normalizeCommercialTypes(body.commercialTypes || body.types || []);
       const source = String(body.source || body.article || '');
       const projects = linkAcceptedTerms(api, user, acceptedTerms, types, source);
-      return api.json(res, 200, { terms: acceptedTerms, projects });
-    }
+   return api.json(res, 200, { terms: acceptedTerms, projects });
+ }
+
+   if (method === 'GET' && url.pathname === '/api/rewrite/audiences') {
+     return api.json(res, 200, AUDIENCES);
+   }
+
+   if (method === 'GET' && url.pathname === '/api/frameworks/presets') {
+     return api.json(res, 200, FRAMEWORK_PRESETS);
+   }
+
+   if (method === 'POST' && url.pathname === '/api/reports/consistency') {
+     api.requirePermission(req, 'read');
+     const body = await api.parseBody(req);
+     let sections = Array.isArray(body.sections) ? body.sections : [];
+     if (!sections.length && body.text) sections = [{ title: body.title || '正文', text: String(body.text) }];
+     if (!sections.length && Array.isArray(body.documentIds) && body.documentIds.length) {
+       const ids = body.documentIds.map(String);
+       sections = api.listResources(user, 'document')
+         .filter(doc => ids.includes(doc.id))
+         .map(doc => ({ title: doc.name || '材料', text: doc.content || '' }));
+     }
+     return api.json(res, 200, consistencyReport(sections));
+   }
+
+   if (method === 'POST' && url.pathname === '/api/documents/extract') {
+     api.requirePermission(req, 'write');
+     const raw = await readRawBody(req, 25 * 1024 * 1024);
+     let body;
+     try { body = JSON.parse(raw.toString('utf8') || '{}'); } catch (_) { fail('上传内容读不出来'); }
+     const filename = String(body.filename || '').slice(0, 200);
+     const base64 = String(body.base64 || '').replace(/^data:[^,]*,/, '');
+     if (!base64) fail('没有收到文件内容');
+     let result;
+     try { result = extractDocument(filename, Buffer.from(base64, 'base64')); } catch (error) { fail(error.message || '这个文件解析不了'); }
+     const name = filename.replace(/\.[^.]+$/, '') || '未命名材料';
+     const document = result.text
+       ? api.resource(user, 'document', {
+         name,
+         category: '材料',
+         content: result.text,
+         kind: result.format,
+         chars: result.text.length,
+         source: filename,
+         status: 'active'
+       })
+       : null;
+     return api.json(res, 200, { filename, format: result.format, chars: result.text.length, warnings: result.warnings || [], text: result.text, document });
+   }
+
+   if (method === 'POST' && url.pathname === '/api/exports/document') {
+     api.requirePermission(req, 'write');
+     const body = await api.parseBody(req);
+     const format = String(body.format || '').toLowerCase();
+     if (format !== 'docx' && format !== 'pptx') fail('导出格式只支持 docx 或 pptx');
+     const markdown = String(body.markdown || body.content || '');
+     if (!markdown.trim()) fail('先有内容再导出');
+     const title = String(body.title || '商业运营工作台').slice(0, 120);
+     const buffer = format === 'docx' ? buildDocx({ title, markdown }) : buildPptx({ title, markdown });
+     const safeTitle = title.replace(/[\\/:*?"<>|\s]+/g, '-').slice(0, 60) || '方案';
+     res.writeHead(200, {
+       'Content-Type': format === 'docx'
+         ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+         : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+       'Content-Disposition': "attachment; filename*=UTF-8''" + encodeURIComponent(safeTitle + '.' + format),
+       'Content-Length': buffer.length,
+       'Cache-Control': 'no-store'
+     });
+     res.end(buffer);
+     return true;
+   }
 
 return false;
  }
@@ -632,7 +830,10 @@ return false;
  module.exports = {
    COMMERCIAL_TYPES,
    DRILL_KINDS,
+   AUDIENCES,
+   FRAMEWORK_PRESETS,
    normalizeCommercialTypes,
+   consistencyReport,
    extractProjects,
     countArticlesWithName,
     articleIdsForName,

@@ -19,12 +19,17 @@
   <div class="app">
     <aside class="side">
       <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
-      <nav><button>⌂ 工作台首页</button><button>✦ 新建改写</button><button>◈ 我的方案语言</button><button>⌘ 行业知识库</button><button>◌ 多行业多场景</button><button>✓ 内容诊断</button><button>▤ 历史任务</button><button>▣ 文档资料中心</button><button class="active">◇ 行业框架编辑器</button><button>↗ 表达规则发布中心</button><button>☑ 团队审核</button></nav>
+      <nav></nav>
     </aside>
     <main>
       <div class="top">方案目录</div>
       <div class="hero"><div><h1>方案目录</h1><p class="sub">这篇方案先写哪几块，按这个顺序铺。</p></div><button type="button" class="btn primary" data-framework-save>保存版本</button></div>
       <p data-framework-status role="status" aria-live="polite"></p>
+      <section class="panel">
+        <h2>套用骨架</h2>
+        <p class="sub">先点一份骨架，把这份方案要先写哪几块铺好，再逐块改。点单个章节，只加这一块。</p>
+        <div data-framework-presets style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </section>
       <section class="panel" data-framework-nodes aria-label="框架节点"></section>
       <form class="panel inline-form" data-framework-form>
         <h2>再加一块</h2>

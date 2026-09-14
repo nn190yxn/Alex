@@ -3,7 +3,7 @@
   var store = window.ExpressionStore;
   if (!store) {
     var fallbackKey = 'expression-workbench-state';
-    var fallback = { schemaVersion: 4, theme: 'blue', rewrite: { source: '', candidate: '', final: '', status: 'draft', confirmed: false, scenario: '' }, expressionRules: { sampleCount: 0, confirmedCount: 86, pendingCount: 12 }, industries: { activeContext: '地产', entries: [], frameworks: [] }, documents: [], documentProjects: [], documentChapters: [], exportRecords: [], rules: [], comments: [], diagnosis: { factsLocked: false }, releases: [], reviews: [] };
+    var fallback = { schemaVersion: 8, theme: 'blue', rewrite: { source: '', candidate: '', final: '', status: 'draft', confirmed: false, scenario: '', audiences: [] }, expressionRules: { sampleCount: 0 }, industries: { activeContext: '地产', entries: [], frameworks: [], presets: [] }, audiences: [], documents: [], documentProjects: [], documentChapters: [], exportRecords: [], rules: [], comments: [], diagnosis: { factsLocked: false }, releases: [], reviews: [] };
     try { var old = JSON.parse(localStorage.getItem(fallbackKey) || localStorage.getItem('expression-workbench-mvp') || 'null'); if (old) { fallback.theme = old.theme || fallback.theme; fallback.rewrite.source = old.source || ''; fallback.rewrite.candidate = old.candidate || ''; fallback.rewrite.final = old.final || ''; fallback.rewrite.confirmed = old.confirmed === true; fallback.rewrite.status = fallback.rewrite.confirmed ? 'confirmed' : (fallback.rewrite.candidate ? 'generated' : 'draft'); fallback.expressionRules.sampleCount = Number(old.samples) || 0; } } catch (e) {}
     if (old && old.schemaVersion >= 2) Object.assign(fallback, old);
     store = window.ExpressionStore = { state: fallback, save: function () { localStorage.setItem(fallbackKey, JSON.stringify(fallback)); } };
@@ -326,7 +326,8 @@
       });
   var confirm = Array.from(document.querySelectorAll('button')).find(function (x) { return x.textContent.indexOf('确认最终稿') >= 0; });
   if (confirm) confirm.addEventListener('click', function () { state.rewrite.confirmed = true; state.rewrite.status = 'confirmed'; state.expressionRules.sampleCount += 1; save(); confirm.textContent = '已确认最终稿'; });
-   if((document.title.indexOf('项目材料')>=0)&&!document.querySelector('[data-doc-form]')){document.querySelector('main').insertAdjacentHTML('beforeend','<form class="panel inline-form" data-doc-form><h2>贴一份材料进来</h2><input name="name" placeholder="材料名称，例如：6号馆招商口径" required><input name="category" placeholder="用在哪一块，例如：招商" required><textarea name="content" placeholder="把正文贴在这里" required><button class="btn primary">收进材料</button></form><section class="panel" data-documents></section>');}
+   if((document.title.indexOf('项目材料')>=0)&&!document.querySelector('[data-doc-form]')){document.querySelector('main').insertAdjacentHTML('beforeend','<form class="panel inline-form" data-doc-form><h2>收一份材料</h2><input name="name" placeholder="材料名称，例如：6号馆招商口径" required><input name="category" placeholder="用在哪一块，例如：招商" required><label class="extract-label">或选一个文件（Word、PPT、Excel、PDF、Markdown、txt）<input type="file" data-doc-upload accept=".docx,.pptx,.xlsx,.pdf,.md,.txt"></label><textarea name="content" placeholder="正文。选文件后会自动读进来" required></textarea><button class="btn primary">收进材料</button></form><section class="panel" data-documents></section>');}
+   (function setupDocUpload(){ var up=document.querySelector('[data-doc-upload]'); var form=document.querySelector('[data-doc-form]'); if(!up||!form) return; var ta=form.querySelector('textarea[name=content]'); var nameField=form.querySelector('input[name=name]'); up.onchange=function(){ var file=up.files&&up.files[0]; if(!file) return; var reader=new FileReader(); reader.onload=function(){ var base64=String(reader.result||'').split(',')[1]||''; if(nameField&&!nameField.value) nameField.value=file.name.replace(/\.[^.]+$/,''); ta.value='正在读…'; fetch('/api/documents/extract',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name,base64:base64})}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'读不出来');return d;});}).then(function(d){ta.value=d.text||'';}).catch(function(e){ta.value='';if(window.banner)banner('error',e.message);}); }; reader.readAsDataURL(file); }; })();
     function setupRewriteScenes() {
       var host = document.querySelector('[data-scene-chips]');
       var required = document.getElementById('scene-required');
@@ -388,21 +389,35 @@
       var statusEl = document.getElementById('generate-status');
       var intentStatus = document.getElementById('intent-status');
       var results = document.querySelector('[data-results]');
-      var intents = ['给领导的工作汇报', '对外沟通', '公众号长文', '论文'];
+      var AUDIENCES = [
+        { id: '给政府看', label: '给政府看', hint: '主管单位、评审、备案材料' },
+        { id: '给品牌方看', label: '给品牌方看', hint: '品牌方、合作方、招商洽谈' },
+        { id: '给内部看', label: '给内部看', hint: '公司内部、领导汇报' }
+      ];
+      state.rewrite.intents = (state.rewrite.intents || []).filter(function (name) { return AUDIENCES.some(function (a) { return a.id === name; }); });
+      if (!state.rewrite.intents.length && state.rewrite.intent) {
+        var legacyIntent = { '给领导的工作汇报': '给内部看', '招商对内汇报': '给内部看', '正式项目汇报': '给内部看', '论文': '给内部看', '对外沟通': '给品牌方看', '招商对外演讲': '给品牌方看', '运营方案': '给品牌方看', '营销活动方案': '给品牌方看', '沟通方案': '给品牌方看', '公众号长文': '给品牌方看' }[state.rewrite.intent];
+        if (legacyIntent) state.rewrite.intents = [legacyIntent];
+      }
       var chips = document.querySelector('[data-intent-chips]');
-      chips.innerHTML = intents.map(function (name) {
-        return '<button type="button" class="chip' + (state.rewrite.intent === name ? ' active' : '') + '" data-intent="' + name + '">' + name + '</button>';
+      chips.innerHTML = AUDIENCES.map(function (a) {
+        var on = state.rewrite.intents.indexOf(a.id) >= 0;
+        return '<button type="button" class="chip' + (on ? ' active' : '') + '" data-intent="' + a.id + '" title="' + esc(a.hint) + '">' + a.label + '</button>';
       }).join('');
       function syncGenerate() {
-        generateBtn.disabled = !state.rewrite.intent;
-        generateBtn.textContent = state.rewrite.intent ? '出稿' : '先选这篇写给谁';
-        if (intentStatus) intentStatus.textContent = state.rewrite.intent ? '这篇按「' + state.rewrite.intent + '」来写' : '先点选这篇写给谁，再出稿。';
+        var count = state.rewrite.intents.length;
+        generateBtn.disabled = !count;
+        generateBtn.textContent = count ? '出稿' : '先选这篇写给谁';
+        if (intentStatus) intentStatus.textContent = count ? '这篇写给：' + state.rewrite.intents.join('、') : '先点选这篇写给谁（可多选），再出稿。';
       }
       chips.querySelectorAll('[data-intent]').forEach(function (b) {
         b.onclick = function () {
-          state.rewrite.intent = b.dataset.intent;
+          var id = b.dataset.intent;
+          var list = state.rewrite.intents;
+          list = list.indexOf(id) >= 0 ? list.filter(function (x) { return x !== id; }) : list.concat([id]);
+          state.rewrite.intents = list;
+          b.classList.toggle('active', list.indexOf(id) >= 0);
           save();
-          chips.querySelectorAll('[data-intent]').forEach(function (x) { x.classList.toggle('active', x === b); });
           syncGenerate();
         };
       });
@@ -499,8 +514,13 @@
         return fetch('/api/tasks/' + taskId).then(function (r) { return r.json(); }).then(function (task) {
           if (task.status === 'completed') {
             var text = (task.data && task.data.candidate) || '';
+            var isDemo = (task.data && task.data.demo) === true || /\[演示模式/.test(text);
+            if (isDemo) {
+              col.setAttribute('data-demo', '1');
+              col.querySelector('h3').textContent = (col.querySelector('h3').textContent || '成稿') + '（示例稿）';
+            }
             var diff = task.data && task.data.factDiff;
-            col.querySelector('[data-result-text]').textContent = text + (diff && diff.intact === false ? '\n\n[数字：缺 ' + (diff.missing || []).join('、') + '；多 ' + (diff.added || []).join('、') + ']' : '');
+            col.querySelector('[data-result-text]').textContent = text + (diff && diff.intact === false ? '\n\n[数字：缺 ' + (diff.missing || []).join('、') + '；多 ' + (diff.added || []).join('、') + ']' : '') + (isDemo ? '\n\n[这是示例稿，没有调用你的模型]' : '');
             var host = col.querySelector('[data-replacements]');
             var list = (task.data && task.data.industryReplacements) || [];
             if (host) {
@@ -557,14 +577,14 @@
         });
       }
       generateBtn.onclick = function () {
-        if (!state.rewrite.intent) { syncGenerate(); return; }
+        if (!state.rewrite.intents.length) { syncGenerate(); return; }
         var text = (source && source.value || '').trim();
         if (!text) { statusEl.textContent = '先把原文贴进来'; return; }
         state.rewrite.source = text;
         var skillIds = mapRetiredSkillIds(state.rewrite.selectedSkillIds || []);
         state.rewrite.selectedSkillIds = skillIds;
         save();
-        var payloadBase = { source: text, intent: state.rewrite.intent, applyStyle: applyStyle.checked, applyIndustry: applyIndustry.checked, industryPackId: (packSelect && packSelect.value) || state.rewrite.industryPackId || '', demoMode: window.llmConfigured ? false : true, skillIds: skillIds };
+        var payloadBase = { source: text, intents: state.rewrite.intents, applyStyle: applyStyle.checked, applyIndustry: applyIndustry.checked, industryPackId: (packSelect && packSelect.value) || state.rewrite.industryPackId || '', demoMode: window.llmConfigured ? false : true, skillIds: skillIds };
         generateBtn.disabled = true;
         statusEl.textContent = '正在出稿';
         fetch('/api/rewrite/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadBase) }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '这一稿还没出来'); return d; }); }).then(function (d) {
@@ -596,7 +616,8 @@
           }).then(function () {
             generateBtn.disabled = false;
             syncGenerate();
-            statusEl.textContent = ids.length > 1 ? '几稿都出了，挑一版收下。' : '稿已出';
+            var demo = Array.prototype.some.call(cols, function (c) { return c.getAttribute('data-demo') === '1'; });
+            statusEl.textContent = demo ? '出的是示例稿，没有调用你的模型。要按你的口气写，先在上面填模型服务。' : (ids.length > 1 ? '几稿都出了，挑一版收下。' : '稿已出');
           });
         }).catch(function (e) {
           generateBtn.disabled = false;
@@ -753,6 +774,130 @@
       })();
     }
     setupRewriteBoard();
+    function setupRewriteTools() {
+      var board = document.querySelector('[data-rewrite-board]');
+      if (!board || document.querySelector('[data-rewrite-tools]')) return;
+      var anchor = document.querySelector('[data-correct-panel]') || board.querySelector('section:last-of-type') || board;
+      var host = document.createElement('div');
+      host.setAttribute('data-rewrite-tools', '');
+      host.innerHTML = [
+        '<section class="panel" data-consistency-panel>',
+        '<h2>全稿口径核对</h2>',
+        '<p class="sub">把各章正文一起贴进来，或直接点「带上成稿」。会挑出同一指标数值不一致、方案数量对不上、同一对象两种写法。</p>',
+        '<textarea data-consistency-source placeholder="把整份稿子的正文按章节贴在这里"></textarea>',
+        '<div class="extract-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">',
+        '<button class="btn primary" type="button" data-consistency-run>核对全稿</button>',
+        '<button class="btn" type="button" data-consistency-fill>带上成稿</button>',
+        '</div>',
+        '<p data-consistency-status role="status"></p>',
+        '<div data-consistency-result></div>',
+        '</section>',
+        '<section class="panel" data-material-panel>',
+        '<h2>材料读进来 / 稿子导出</h2>',
+        '<p class="sub">支持 Word、PPT、Excel、PDF、Markdown、txt。上传后自动抽正文放进「贴稿」。成稿可导出 Word 或 PPT 继续改。</p>',
+        '<div class="extract-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">',
+        '<input type="file" data-upload accept=".docx,.pptx,.xlsx,.pdf,.md,.txt" style="display:none">',
+        '<button class="btn" type="button" data-upload-btn>上传 Word/PPT/Excel/PDF</button>',
+        '<button class="btn" type="button" data-export="docx">导出 Word</button>',
+        '<button class="btn" type="button" data-export="pptx">导出 PPT</button>',
+        '</div>',
+        '<p data-upload-status role="status"></p>',
+        '</section>'
+      ].join('');
+      anchor.parentNode.insertBefore(host, anchor.nextSibling);
+
+      var consSource = host.querySelector('[data-consistency-source]');
+      var consStatus = host.querySelector('[data-consistency-status]');
+      var consResult = host.querySelector('[data-consistency-result]');
+      var uploadStatus = host.querySelector('[data-upload-status]');
+      var fileInput = host.querySelector('[data-upload]');
+
+      host.querySelector('[data-consistency-fill]').onclick = function () {
+        var draft = state.rewrite.final || state.rewrite.candidate || '';
+        if (!draft.trim()) { consStatus.textContent = '还没有成稿可带，先出一稿。'; return; }
+        consSource.value = draft;
+        consStatus.textContent = '已带上成稿。可再补上其他章节，然后核对。';
+      };
+      host.querySelector('[data-consistency-run]').onclick = function () {
+        var text = consSource.value.trim();
+        if (!text) { consStatus.textContent = '先把整份正文贴进来'; return; }
+        var sections = text.split(/\n(?=#{1,3}\s)/).map(function (chunk) {
+          var heading = chunk.match(/^#{1,3}\s*(.+)/);
+          return { title: heading ? heading[1].trim() : '', text: chunk.replace(/^#{1,3}\s*.+\n?/, '') };
+        });
+        consStatus.textContent = '正在核对';
+        fetch('/api/reports/consistency', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sections: sections }) })
+          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '核对失败'); return d; }); })
+          .then(function (d) {
+            consStatus.textContent = d.summary;
+            if (!(d.conflicts || []).length) { consResult.innerHTML = '<p class="sub">没发现明显不一致。</p>'; return; }
+            consResult.innerHTML = d.conflicts.map(function (conflict) {
+              return '<div class="entry"><b>' + esc(conflict.label) + '</b><p>' + esc(conflict.message) + '</p><p class="sub">' + conflict.values.map(function (v) { return esc(v.value) + (v.section ? '（' + esc(v.section) + '）' : ''); }).join(' · ') + '</p></div>';
+            }).join('');
+          })
+          .catch(function (e) { consStatus.textContent = e.message; });
+      };
+
+      host.querySelector('[data-upload-btn]').onclick = function () { fileInput.click(); };
+      function fillSource(text) {
+        var source = document.querySelector('[data-source]');
+        state.rewrite.source = text;
+        if (source) source.value = text;
+        save();
+      }
+      function readFile(file) {
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var base64 = String(reader.result || '').split(',')[1] || '';
+          uploadStatus.textContent = '正在读「' + file.name + '」…';
+          fetch('/api/documents/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: file.name, base64: base64 }) })
+            .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '这个文件读不出来'); return d; }); })
+            .then(function (d) {
+              if (d.text) fillSource(d.text);
+              uploadStatus.textContent = '读进来了，' + d.chars + ' 字' + (d.warnings && d.warnings.length ? '（' + d.warnings.join('；') + '）' : '') + '，已放进「贴稿」。';
+            })
+            .catch(function (e) { uploadStatus.textContent = e.message; });
+        };
+        reader.onerror = function () { uploadStatus.textContent = '这个文件读不出来'; };
+        reader.readAsDataURL(file);
+      }
+      fileInput.onchange = function () { if (fileInput.files && fileInput.files[0]) readFile(fileInput.files[0]); };
+      var panel = host.querySelector('[data-material-panel]');
+      if (panel) {
+        ['dragover', 'dragenter'].forEach(function (name) { panel.addEventListener(name, function (e) { e.preventDefault(); panel.classList.add('on'); }); });
+        ['dragleave', 'drop'].forEach(function (name) { panel.addEventListener(name, function (e) { e.preventDefault(); panel.classList.remove('on'); }); });
+        panel.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+      }
+
+      host.querySelectorAll('[data-export]').forEach(function (b) {
+        b.onclick = function () {
+          var source = document.querySelector('[data-source]');
+          var markdown = state.rewrite.final || state.rewrite.candidate || (source && source.value) || '';
+          if (!markdown.trim()) { uploadStatus.textContent = '还没有成稿可导出，先出一稿或贴上正文。'; return; }
+          var format = b.getAttribute('data-export');
+          var original = b.textContent;
+          b.disabled = true;
+          b.textContent = '正在导出';
+          fetch('/api/exports/document', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: format, title: document.title || '商业运营工作台', markdown: markdown }) })
+            .then(function (r) { if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || '导出失败'); }); return r.blob(); })
+            .then(function (blob) {
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = (document.title || '商业运营工作台') + '.' + format;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+              uploadStatus.textContent = '导出好了：' + a.download;
+            })
+            .catch(function (e) { uploadStatus.textContent = e.message; })
+            .then(function () { b.disabled = false; b.textContent = original; });
+        };
+      });
+    }
+    setupRewriteTools();
     function setupSkillsPage() {
       var host = document.querySelector('[data-skills]');
       if (!host) return;
@@ -1152,7 +1297,7 @@
           var articles = item.articles || [];
           var status = item.status === 'accepted' ? '已收下' : (item.status === 'candidate' ? '候选 · 出现 ' + (item.articleCount || 0) + ' 篇' : '待建档');
           detail.hidden = false;
-          detail.innerHTML = '<h2>' + esc(item.name) + '</h2><p>' + esc(status + (typeNames(item.commercialTypes) ? ' · ' + typeNames(item.commercialTypes) : '')) + '</p><p>相关用词：' + esc((item.terms || []).join('、') || '还没记下') + '</p><label class="extract-label">特征摘要</label><textarea data-case-features>' + esc(item.features || '') + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">' + (item.status !== 'accepted' ? '<button class="btn primary" type="button" data-accept-project="' + esc(item.id) + '">收下</button>' : '') + '<button class="btn" type="button" data-save-features>记下特征</button></div><h3>出现在这些资讯里</h3>' + (articles.length ? articles.map(function (article) {
+          detail.innerHTML = '<h2>' + esc(item.name) + '</h2><p>' + esc(status + (typeNames(item.commercialTypes) ? ' · ' + typeNames(item.commercialTypes) : '')) + '</p><p>相关用词：' + esc((item.terms || []).join('、') || '还没记下') + '</p><div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:10px 0"><label class="extract-label">所在城市 / 区位<input data-case-location value="' + esc(item.location || '') + '"></label><label class="extract-label">体量<input data-case-area value="' + esc(item.area || '') + '" placeholder="例如：12 万平方米"></label><label class="extract-label">开业时间<input data-case-opened value="' + esc(item.openedAt || '') + '" placeholder="例如：2024 年 9 月"></label><label class="extract-label">主力品牌（用、分开）<input data-case-brands value="' + esc((item.anchorBrands || []).join('、')) + '"></label></div><label class="extract-label">亮点（用、分开）</label><textarea data-case-highlights rows="2">' + esc((item.highlights || []).join('、')) + '</textarea><label class="extract-label">特征摘要</label><textarea data-case-features rows="3">' + esc(item.features || '') + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">' + (item.status !== 'accepted' ? '<button class="btn primary" type="button" data-accept-project="' + esc(item.id) + '">收下</button>' : '') + '<button class="btn" type="button" data-save-features>记下这份案例</button></div><h3>出现在这些资讯里</h3>' + (articles.length ? articles.map(function (article) {
             return '<div class="entry"><h2>' + esc(article.title || '资讯') + '</h2><p>' + esc(String(article.body || '').slice(0, 160)) + '</p></div>';
           }).join('') : '<p>还没有记下来源资讯。</p>');
           var acceptBtn = detail.querySelector('[data-accept-project]');
@@ -1161,8 +1306,9 @@
           };
           var saveBtn = detail.querySelector('[data-save-features]');
           if (saveBtn) saveBtn.onclick = function () {
-            var features = (detail.querySelector('[data-case-features]') || {}).value || '';
-            fetch('/api/projects/' + encodeURIComponent(item.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ features: features }) }).then(function () { openCase(item.id); });
+            function field(selector) { var el = detail.querySelector(selector); return el ? el.value : ''; }
+            function splitList(value) { return String(value || '').split(/[、,，;；\n]/).map(function (x) { return x.trim(); }).filter(Boolean); }
+            fetch('/api/projects/' + encodeURIComponent(item.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ features: field('[data-case-features]'), location: field('[data-case-location]'), area: field('[data-case-area]'), openedAt: field('[data-case-opened]'), anchorBrands: splitList(field('[data-case-brands]')), highlights: splitList(field('[data-case-highlights]')) }) }).then(function () { openCase(item.id); });
           };
         }).catch(function () { detail.hidden = false; detail.innerHTML = '<p>档暂时读不出。</p>'; });
       }
@@ -1689,6 +1835,27 @@
       versions.push(version);
       if (!persist('已保存版本 v' + version.version + ' · ' + new Date(version.savedAt).toLocaleString())) versions.pop();
     });
+    var presetHost = document.querySelector('[data-framework-presets]');
+    if (presetHost) {
+      function addPresetNodes(presets, label) {
+        presets.forEach(function (preset) {
+          nodes.push({ id: 'framework-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), name: preset.name, description: preset.description || '', priority: preset.priority || '中优先级' });
+        });
+        render();
+        persist('已套用' + label + '，可继续改');
+      }
+      fetch('/api/frameworks/presets').then(function (r) { return r.json(); }).then(function (list) {
+        var presets = Array.isArray(list) ? list : [];
+        if (!presets.length) { presetHost.innerHTML = '<p class="sub">骨架暂时读不出来。</p>'; return; }
+        presetHost.innerHTML = '<button type="button" class="chip active" data-preset-all>套用整份骨架（' + presets.length + ' 节）</button>' + presets.map(function (preset, index) {
+          return '<button type="button" class="chip" data-preset="' + index + '" title="' + esc(preset.description || '') + '">' + esc(preset.name) + '</button>';
+        }).join('');
+        presetHost.querySelector('[data-preset-all]').onclick = function () { addPresetNodes(presets, '整份骨架'); };
+        presetHost.querySelectorAll('[data-preset]').forEach(function (b) {
+          b.onclick = function () { addPresetNodes([presets[Number(b.getAttribute('data-preset'))]], '这一节'); };
+        });
+      }).catch(function () { presetHost.innerHTML = '<p class="sub">骨架暂时读不出来。</p>'; });
+    }
     render();
     persist(versions.length ? '最近保存版本 v' + versions[versions.length - 1].version : '框架草稿已保存到本地');
   }

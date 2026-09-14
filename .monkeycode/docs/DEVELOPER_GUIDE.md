@@ -1,5 +1,19 @@
 # 开发者指南
 
+## 个人表达工作台预览
+
+工程位于 `当前工作区/personal-expression-preview/`，要求 Node.js 22，无需第三方依赖。
+
+```bash
+cd personal-expression-preview
+npm start
+npm test
+npm run check
+git diff --check
+```
+
+当前验证结果为 API smoke tests 通过、JavaScript 语法检查通过、补丁检查通过。测试覆盖健康检查、SQLite 状态、文本解析、演示改写任务、资源 CRUD、Skill 导出、评论、发布、权限、审计、术语冲突和任务恢复。PDF/DOCX/网页解析、真实 LLM 评估和插件连接属于未完成范围。
+
 ## 资料索引开发与验证
 
 资料索引桌面工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`，使用 pnpm 11、Vite 7、React 19、TypeScript 和 Tauri 2。首次克隆主仓库时包含 submodule；已有工作区在拉取 gitlink 更新后初始化并同步 submodule：

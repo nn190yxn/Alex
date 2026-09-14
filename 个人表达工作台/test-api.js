@@ -46,9 +46,9 @@ async function waitForServer() {
   const batch = await request('POST', '/api/documents/parse', { format: 'txt', texts: ['甲', '乙'] });
   assert.strictEqual(batch.body.documents.length, 2);
   const unsupported = await request('POST', '/api/documents/parse', { format: 'pdf', text: 'x' });
-  assert.strictEqual(unsupported.body.status, 'unsupported');
+  assert.strictEqual(unsupported.status, 400);
   const initial = await request('GET', '/api/state');
-  const exported = await request('GET', '/api/backup'); assert.strictEqual(exported.body.schemaVersion, 7); assert.ok(Array.isArray(exported.body.resources));
+  const exported = await request('GET', '/api/backup'); assert.strictEqual(exported.body.schemaVersion, 8); assert.ok(Array.isArray(exported.body.resources));
   exported.body.state.theme = 'restored'; const restored = await request('POST', '/api/backup/restore', exported.body); assert.strictEqual(restored.body.state.theme, 'restored');
   assert.strictEqual((await request('POST', '/api/backup/restore', exported.body, 'viewer', 'viewer')).status, 403);
   assert.strictEqual((await request('POST', '/api/backup/restore', { ...exported.body, schemaVersion: 999 })).status, 400);
@@ -115,7 +115,17 @@ async function waitForServer() {
   assert.strictEqual(leakTask.body.status, 'completed');
   assert.ok(!JSON.stringify(leakTask.body).includes(secret));
   assert.deepStrictEqual(task.body.data.ruleReferences, []);
-  assert.deepStrictEqual(task.body.data.semanticLayers, { industry: '地产', expression: '个人表达规则', scenario: '给领导的工作汇报', intent: '给领导的工作汇报' });
+  assert.deepStrictEqual(task.body.data.semanticLayers, { industry: '地产', expression: '个人表达规则', scenario: '给内部看', intent: '给内部看' });
+  const audiences = await request('GET', '/api/rewrite/audiences');
+  assert.strictEqual(audiences.status, 200);
+  assert.deepStrictEqual(audiences.body.map(item => item.id), ['给政府看', '给品牌方看', '给内部看']);
+  const multi = await request('POST', '/api/rewrite/generate', { source: '原始内容', intents: ['给政府看', '给内部看'], demoMode: true });
+  assert.strictEqual(multi.status, 202);
+  let multiTask;
+  for (let i = 0; i < 30; i += 1) { multiTask = await request('GET', `/api/tasks/${multi.body.taskId}`); if (multiTask.body.status === 'completed') break; await new Promise(resolve => setTimeout(resolve, 20)); }
+  assert.strictEqual(multiTask.body.status, 'completed');
+  assert.strictEqual(multiTask.body.data.semanticLayers.intent, '给政府看、给内部看');
+  assert.ok(String(multiTask.body.data.candidate).includes('[这篇写给谁：给政府看、给内部看]'));
   assert.ok(task.body.data.contentAnalysis);
   const sceneTask = await request('POST', '/api/rewrite/generate', { source: '原始内容', scenario: '招商对内汇报', demoMode: true });
   assert.strictEqual(sceneTask.status, 202);
@@ -535,6 +545,33 @@ async function waitForServer() {
   assert.strictEqual(drillOk.status, 200);
   assert.ok(drillOk.body.habits.length >= 1);
   assert.strictEqual(drillOk.body.habits[0].dimension, 'syntax');
+  const presets = await request('GET', '/api/frameworks/presets');
+  assert.strictEqual(presets.status, 200);
+  assert.ok(Array.isArray(presets.body) && presets.body.length >= 8);
+  assert.ok(presets.body.every(item => item.name && item.priority));
+  const consistency = await request('POST', '/api/reports/consistency', { sections: [{ title: '方案二', text: '7.2 预计节约 446 万元，出租率 95%。结论：本次共给出四个方案。' }, { title: '方案三', text: '7.3 预计节约 433 万，出租率 90%。方案一、方案二、方案三如下。' }] });
+  assert.strictEqual(consistency.status, 200);
+  assert.ok(consistency.body.conflicts.some(item => item.type === 'number'));
+  assert.ok(consistency.body.conflicts.some(item => item.type === 'count'));
+  const extractTxt = await request('POST', '/api/documents/extract', { filename: '口径.txt', base64: Buffer.from('# 标题\n正文 12%。').toString('base64') });
+  assert.strictEqual(extractTxt.status, 200);
+  assert.ok(extractTxt.body.text.includes('正文 12%'));
+  assert.ok(extractTxt.body.document && extractTxt.body.document.id);
+  const parseDocx = await request('POST', '/api/documents/parse', { filename: '口径.txt', base64: Buffer.from('正文 12%').toString('base64') });
+  assert.strictEqual(parseDocx.status, 200);
+  assert.ok(parseDocx.body.text.includes('12%'));
+  for (const format of ['docx', 'pptx']) {
+    const exported = await fetch(`http://127.0.0.1:${port}/api/exports/document`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-user-id': 'local-user', 'x-user-role': 'owner' }, body: JSON.stringify({ format: format, title: '测试方案', markdown: '# 方案一\n\n- 要点 A\n- 要点 B\n\n| 指标 | 值 |\n| --- | --- |\n| 租金 | 800 |\n' }) });
+    assert.strictEqual(exported.status, 200);
+    assert.ok(String(exported.headers.get('content-disposition')).includes('attachment'));
+    const buffer = Buffer.from(await exported.arrayBuffer());
+    assert.strictEqual(buffer.slice(0, 2).toString('latin1'), 'PK');
+  }
+  const caseDetailPatch = await request('PATCH', `/api/projects/${accepted.body.id}`, { location: '贵阳', area: '12 万平方米', openedAt: '2024 年 9 月', anchorBrands: ['A', 'B'], highlights: ['首店', '策展'] });
+  assert.strictEqual(caseDetailPatch.status, 200);
+  assert.strictEqual(caseDetailPatch.body.location, '贵阳');
+  assert.deepStrictEqual(caseDetailPatch.body.anchorBrands, ['A', 'B']);
+  assert.deepStrictEqual(caseDetailPatch.body.highlights, ['首店', '策展']);
   console.log('API smoke tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; })
   .finally(() => server.kill());

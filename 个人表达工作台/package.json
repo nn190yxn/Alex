@@ -1,7 +1,7 @@
 {
-  "name": "personal-expression-preview",
+  "name": "commercial-ops-workbench",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal expression workbench MVP",
+  "description": "商业运营工作台",
   "scripts": { "start": "node server.js", "check": "node --check app.js && node --check data-model.js && node --check server.js && node --check commercial-ops.js && node --check test-api.js", "test": "node test-api.js" }
 }
