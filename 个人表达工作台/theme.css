@@ -1,0 +1,12 @@
+html[data-theme="blue"],body[data-theme="blue"]{
+  --bg:#f4f7fb;--brand:#2f6fed;--soft:#eaf1ff;--accent:#31a98d;--brand-soft:#eaf1ff;
+  --b:#2f6fed;--s:#eaf1ff;--g:#31a98d
+}
+html[data-theme="orange"],body[data-theme="orange"]{
+  --bg:#fff8f1;--brand:#ed733c;--soft:#fff0e7;--accent:#24a887;--brand-soft:#fff0e7;
+  --b:#ed733c;--s:#fff0e7;--g:#24a887
+}
+html[data-theme="purple"],body[data-theme="purple"]{
+  --bg:#f7f5ff;--brand:#6857d9;--soft:#efedff;--accent:#18aaca;--brand-soft:#efedff;
+  --b:#6857d9;--s:#efedff;--g:#18aaca
+}

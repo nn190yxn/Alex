@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
+<head><script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script><link rel="stylesheet" href="theme.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>文档资料中心</title>
+  <title>项目材料</title>
   <link rel="stylesheet" href="style.css">
   <style>
     main { min-width: 0; }
@@ -27,7 +27,7 @@
   </style>
 </head>
 <body>
-<div class="app"><aside class="side"><div class="logo"><span class="mark">文</span><b>个人表达工作台</b></div><nav><button>⌂ 工作台首页</button><button>✦ 新建改写</button><button>◈ 我的方案语言</button><button>⌘ 行业知识库</button><button>◌ 多行业多场景</button><button>✓ 内容诊断</button><button>▤ 历史任务</button><button class="active">▣ 文档资料中心</button><button>◇ 行业框架编辑器</button><button>↗ 表达规则发布中心</button><button>☑ 团队审核</button></nav></aside><main><div class="top">工作台 / 文档资料中心</div><div class="hero"><div><h1>文档资料中心</h1><p class="sub">集中管理行业材料、表达样本与审核依据。下方文件列表为示例；当前支持粘贴纯文本和 Markdown 内容，暂不支持直接读取 PDF、Word 文件或网页链接。</p></div><button class="btn primary" data-toggle-status="off">上传状态示例</button></div><div class="toolbar"><input class="search" placeholder="搜索资料名称"><div class="tabs"><button class="active" data-filter="all">全部</button><button data-filter="样本">表达样本</button><button data-filter="行业">行业资料</button></div></div><section class="panel"><div class="entry" data-category="行业"><h2>商业地产招商案例集.pdf</h2><p>示例资料 · PDF 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">归档状态示例</button></div><div class="entry" data-category="样本"><h2>林然方案表达样本.docx</h2><p>示例样本 · Word 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">处理状态示例</button></div><div class="entry" data-category="行业"><h2>经营指标口径.md</h2><p>示例资料 · 32 KB · 7 月 08 日</p><button class="btn" data-toggle-status="off">归档状态示例</button></div></section>
+<div class="app"><aside class="side"><div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div><nav><button>⌂ 工作台首页</button><button>✦ 新建改写</button><button>◈ 我的方案语言</button><button>⌘ 行业知识库</button><button>◌ 多行业多场景</button><button>✓ 内容诊断</button><button>▤ 历史任务</button><button class="active">▣ 文档资料中心</button><button>◇ 行业框架编辑器</button><button>↗ 表达规则发布中心</button><button>☑ 团队审核</button></nav></aside><main><div class="top">项目材料</div><div class="hero"><div><h1>项目材料</h1><p class="sub">把招商、客群、运营材料贴进来。PDF 和 Word 请先复制正文。下面列表是示例。</p></div><button class="btn primary" data-toggle-status="off">示例按钮</button></div><div class="toolbar"><input class="search" placeholder="搜材料名称"><div class="tabs"><button class="active" data-filter="all">全部</button><button data-filter="样本">我认的方案</button><button data-filter="行业">行业材料</button></div></div><section class="panel"><div class="entry" data-category="行业"><h2>商业地产招商案例集.pdf</h2><p>示例资料 · PDF 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">归档状态示例</button></div><div class="entry" data-category="样本"><h2>林然认的那篇方案.docx</h2><p>示例样本 · Word 暂不支持直接读取，请粘贴正文</p><button class="btn" data-toggle-status="off">处理状态示例</button></div><div class="entry" data-category="行业"><h2>经营指标口径.md</h2><p>示例资料 · 32 KB · 7 月 08 日</p><button class="btn" data-toggle-status="off">归档状态示例</button></div></section>
   <section class="panel chapter-panel" aria-labelledby="chapter-heading">
     <div class="toolbar"><h2 id="chapter-heading">文档章节</h2><button type="button" class="btn primary" id="add-chapter">新章节</button></div>
     <label for="chapter-document">选择文档</label>
@@ -41,17 +41,17 @@
     </div>
      <p id="chapter-status" role="status" aria-live="polite"></p>
      </section>
-     <section class="panel"><div class="toolbar"><h2>读取资料正文</h2><button type="button" class="btn primary" id="parse-document">读取当前资料</button></div><p id="parse-status-message">选择已保存的文本资料后读取正文。</p><pre id="parse-result" style="white-space:pre-wrap;overflow:auto"></pre></section>
+     <section class="panel"><div class="toolbar"><h2>把这份材料的正文读出来</h2><button type="button" class="btn primary" id="parse-document">读这份材料</button></div><p id="parse-status-message">先选一份已经贴进来的材料，再读正文。</p><pre id="parse-result" style="white-space:pre-wrap;overflow:auto"></pre></section>
    <section class="panel metadata-panel" aria-labelledby="metadata-heading">
      <div class="toolbar"><h2 id="metadata-heading">资料信息</h2><button type="button" class="btn primary" id="save-metadata">保存资料信息</button></div>
      <div class="metadata-fields">
        <label for="source-url">来源链接</label><input id="source-url" type="url" placeholder="https://example.com/source">
-       <label for="parse-status">解析状态</label><select id="parse-status"><option value="待解析">待解析</option><option value="解析中">解析中</option><option value="已解析">已解析</option><option value="解析失败">解析失败</option></select>
-       <label for="fragments">材料片段标签</label><input id="fragments" placeholder="招商, 客群, 运营（用逗号分隔）">
+       <label for="parse-status">材料收进来了没</label><select id="parse-status"><option value="待解析">还没看</option><option value="解析中">正在看</option><option value="已解析">已经看过</option><option value="解析失败">没看成</option></select>
+       <label for="fragments">这份材料分哪几块</label><input id="fragments" placeholder="招商, 客群, 运营（用逗号分隔）">
      </div>
     <p id="metadata-status" role="status" aria-live="polite"></p>
     </section>
-    <section class="panel" aria-labelledby="diagnosis-heading"><div class="toolbar"><h2 id="diagnosis-heading">批量诊断</h2><button type="button" class="btn primary" id="start-diagnosis">开始诊断</button></div><div class="diagnosis-summary"><div><small>片段总数</small><b id="diagnosis-total">0</b></div><div><small>已完成</small><b id="diagnosis-completed">0</b></div><div><small>事实总数</small><b id="diagnosis-facts">0</b></div><div><small>数字总数</small><b id="diagnosis-numbers">0</b></div></div><div class="diagnosis-results" id="diagnosis-results"><p>选择文档后点击“开始诊断”。</p></div><p id="diagnosis-status" role="status" aria-live="polite"></p></section>
+    <section class="panel" aria-labelledby="diagnosis-heading"><div class="toolbar"><h2 id="diagnosis-heading">看材料里的数字</h2><button type="button" class="btn primary" id="start-diagnosis">看一遍数字</button></div><div class="diagnosis-summary"><div><small>一共几块</small><b id="diagnosis-total">0</b></div><div><small>看过几块</small><b id="diagnosis-completed">0</b></div><div><small>判断句</small><b id="diagnosis-facts">0</b></div><div><small>数字</small><b id="diagnosis-numbers">0</b></div></div><div class="diagnosis-results" id="diagnosis-results"><p>选一份材料，再点“看一遍数字”。</p></div><p id="diagnosis-status" role="status" aria-live="polite"></p></section>
  </main></div>
 <script src="data-model.js"></script>
 <script src="app.js"></script>
@@ -129,18 +129,18 @@
      sourceUrl.disabled = parseStatus.disabled = fragments.disabled = saveMetadata.disabled = !doc;
      metadataStatus.textContent = doc ? '编辑后点击“保存资料信息”。' : '暂无可编辑文档。';
     }
-    function resetDiagnosis() { diagnosisTotal.textContent = diagnosisCompleted.textContent = diagnosisFacts.textContent = diagnosisNumbers.textContent = '0'; diagnosisResults.innerHTML = '<p>选择文档后点击“开始诊断”。</p>'; diagnosisStatus.textContent = ''; }
+    function resetDiagnosis() { diagnosisTotal.textContent = diagnosisCompleted.textContent = diagnosisFacts.textContent = diagnosisNumbers.textContent = '0'; diagnosisResults.innerHTML = '<p>选一份材料，再点“看一遍数字”。</p>'; diagnosisStatus.textContent = ''; }
     function diagnose() {
       var doc = state.documents[selector.value], items = doc && Array.isArray(doc.fragments) ? doc.fragments.filter(Boolean) : [], totals = { facts: 0, numbers: 0, completed: 0 };
       diagnosisResults.replaceChildren(); diagnosisTotal.textContent = String(items.length); diagnosisCompleted.textContent = diagnosisFacts.textContent = diagnosisNumbers.textContent = '0';
-      if (!items.length) { diagnosisResults.innerHTML = '<p>当前文档没有材料片段，请先填写并保存“材料片段标签”。</p>'; return; }
-      startDiagnosis.disabled = true; diagnosisStatus.textContent = '正在诊断 0 / ' + items.length + ' 条片段';
+      if (!items.length) { diagnosisResults.innerHTML = '<p>这份材料还没分块。先在上面填「招商, 客群, 运营」再保存。</p>'; return; }
+      startDiagnosis.disabled = true; diagnosisStatus.textContent = '正在看 0 / ' + items.length + ' 块';
       items.reduce(function (promise, fragment) { return promise.then(function () {
-        var row = document.createElement('div'); row.className = 'diagnosis-row'; row.innerHTML = '<p></p><span>事实：<b data-facts>—</b></span><span>数字：<b data-numbers>—</b></span><small data-result-status>诊断中</small>'; row.querySelector('p').textContent = fragment; diagnosisResults.appendChild(row);
-        return fetch('/api/rewrite/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fragment: fragment, documentId: doc.id }) }).then(function (response) { return response.json().then(function (result) { if (!response.ok) throw new Error(result.error || '诊断失败'); return result; }); }).then(function (result) {
+        var row = document.createElement('div'); row.className = 'diagnosis-row'; row.innerHTML = '<p></p><span>事实：<b data-facts>—</b></span><span>数字：<b data-numbers>—</b></span><small data-result-status>正在看</small>'; row.querySelector('p').textContent = fragment; diagnosisResults.appendChild(row);
+        return fetch('/api/rewrite/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fragment: fragment, documentId: doc.id }) }).then(function (response) { return response.json().then(function (result) { if (!response.ok) throw new Error(result.error || '没看成，请再试一次'); return result; }); }).then(function (result) {
           var facts = Number(result.factCount !== undefined ? result.factCount : result.factsCount) || 0, numbers = Number(result.numberCount !== undefined ? result.numberCount : result.numbersCount) || 0; totals.facts += facts; totals.numbers += numbers; totals.completed += 1; row.querySelector('[data-facts]').textContent = String(facts); row.querySelector('[data-numbers]').textContent = String(numbers); row.querySelector('[data-result-status]').textContent = '已完成';
-        }).catch(function (error) { row.querySelector('[data-result-status]').textContent = '诊断未完成，请检查资料后重试'; }).then(function () { diagnosisCompleted.textContent = String(totals.completed); diagnosisFacts.textContent = String(totals.facts); diagnosisNumbers.textContent = String(totals.numbers); diagnosisStatus.textContent = '正在诊断 ' + totals.completed + ' / ' + items.length + ' 条片段'; });
-      }); }, Promise.resolve()).then(function () { startDiagnosis.disabled = false; diagnosisStatus.textContent = '诊断完成：' + items.length + ' 条片段'; });
+        }).catch(function (error) { row.querySelector('[data-result-status]').textContent = '这块没看成，请再试一次'; }).then(function () { diagnosisCompleted.textContent = String(totals.completed); diagnosisFacts.textContent = String(totals.facts); diagnosisNumbers.textContent = String(totals.numbers); diagnosisStatus.textContent = '正在看 ' + totals.completed + ' / ' + items.length + ' 块'; });
+      }); }, Promise.resolve()).then(function () { startDiagnosis.disabled = false; diagnosisStatus.textContent = '看完了：' + items.length + ' 块'; });
     }
 
   function refreshDocuments() {

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>我的写法</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .calib-head{margin:0 0 14px}
+    .calib-head h2{margin:0 0 4px}
+    .calib-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fff}
+    .calib-card-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
+    .calib-badge{font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+    .calib-badge.fixed{border-color:var(--brand);background:var(--soft);color:var(--brand)}
+    .calib-badge.counter{border-color:#e0b34a;background:#fdf6e3;color:#a5791a}
+    .calib-human{margin:0 0 10px;color:var(--ink);line-height:1.7;font-size:15px}
+    .calib-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .calib-actions .btn,.calib-actions button{padding:6px 10px;width:auto}
+    .calib-note{width:100%;min-height:64px}
+    .inbox-panel{border-color:var(--brand);background:var(--soft)}
+    .practice-bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:0 0 12px}
+    .practice-bar label{display:grid;gap:6px;color:var(--muted);font-size:13px}
+    .practice-bar select{min-width:150px}
+    .practice-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fff}
+    .practice-card.done{border-color:var(--brand);background:var(--soft)}
+    .practice-card-head{display:flex;gap:8px;align-items:center;margin:0 0 8px}
+    .practice-index{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--soft);color:var(--brand);font-size:12px;font-weight:800}
+    .practice-prompt{margin:0 0 8px;color:var(--ink);line-height:1.65}
+    .practice-card textarea{min-height:64px;margin:0 0 8px}
+    .practice-count{color:var(--muted);font-size:12px}
+    .practice-corrected{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;line-height:1.75;white-space:pre-wrap;background:#fbfcfe}
+    .practice-finding{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:0 0 8px}
+    .practice-finding small{color:var(--muted);display:block;margin-top:3px}
+    .practice-finding code{background:#f2f5fa;border-radius:5px;padding:1px 5px;color:var(--ink)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
+      <nav></nav>
+    </aside>
+    <main>
+      <div class="top">我的写法</div>
+      <div class="hero">
+        <div>
+          <h1>我的写法</h1>
+          <p class="sub">这里是你说话的习惯。系统从你改稿里自动学，觉得对就收下，不对就划掉。要改哪条，直接在「改一稿」里点改，它会跟着变。</p>
+        </div>
+      </div>
+      <section class="panel inbox-panel" data-calib-inbox></section>
+      <section class="panel">
+        <h2>我的写法</h2>
+        <p class="sub">按你说的话归类，不必记字段。收下的会用进出稿。</p>
+        <div data-calib-groups></div>
+      </section>
+      <section class="panel">
+        <h2>记一条我发现的写法</h2>
+        <p class="sub">一句话写下你想固定下来的说法，系统自动归类。</p>
+        <textarea class="calib-note" data-calib-note placeholder="例如：不说核心竞争力，直接说课时和续费率"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary" type="button" data-calib-add>记下</button>
+        </div>
+      </section>
+      <section class="panel" data-calib-practice>
+        <h2>练一练（可选）</h2>
+        <p class="sub">用题练手，或用稿做二轮校准。题库一次十几道，边改边收；文稿按你说的话扫一篇。</p>
+        <div class="tabs" data-practice-modes>
+          <button type="button" class="chip active" data-practice-mode="drill">题库校准</button>
+          <button type="button" class="chip" data-practice-mode="draft">文稿校准</button>
+        </div>
+        <div data-practice-drill>
+          <div class="practice-bar">
+            <label>维度<select data-practice-kind></select></label>
+            <label>题量<select data-practice-count>
+              <option value="6">6 道</option>
+              <option value="12" selected>12 道</option>
+              <option value="18">18 道</option>
+            </select></label>
+            <button class="btn primary" type="button" data-practice-start>开始一轮</button>
+          </div>
+          <p class="sub" data-practice-hint></p>
+          <p class="sub" data-practice-progress role="status"></p>
+          <div data-practice-list></div>
+        </div>
+        <div data-practice-draft hidden>
+          <textarea data-practice-source placeholder="把一篇稿贴进来，按维度扫一遍。"></textarea>
+          <div class="practice-bar">
+            <button class="btn primary" type="button" data-practice-scan>扫一遍</button>
+            <button class="btn" type="button" data-practice-apply disabled>采纳勾上的，生成校正稿</button>
+            <button class="btn" type="button" data-practice-record disabled>把勾上的记成规则</button>
+          </div>
+          <p class="sub" data-practice-draft-status role="status"></p>
+          <div data-practice-findings></div>
+          <h3>校正稿</h3>
+          <div class="practice-corrected" data-practice-corrected></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

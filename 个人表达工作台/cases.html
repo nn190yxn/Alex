@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>案例</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
+      <nav></nav>
+    </aside>
+    <main>
+      <div class="top">案例</div>
+      <div class="hero">
+        <div>
+          <h1>案例</h1>
+          <p class="sub">同一项目在两篇或更多资讯里出现后，升为案例候选。收下后，改一稿会按重复率自动写入口径，不用单独勾选。</p>
+        </div>
+      </div>
+      <div class="range" data-case-types></div>
+      <section class="panel" data-case-detail hidden></section>
+      <section class="panel" data-case-list></section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

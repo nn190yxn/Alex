@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>常用语</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
+      <nav></nav>
+    </aside>
+    <main>
+      <div class="top">常用语</div>
+      <div class="hero">
+        <div>
+          <h1>常用语</h1>
+          <p class="sub">行业常说的短句，例如「因地制宜」。按类查看，反复出现的说法会标出来。</p>
+        </div>
+      </div>
+      <section class="panel">
+        <div class="lexicon-bar">
+          <input class="search" data-phrase-search type="search" placeholder="找一句常用语" aria-label="找一句常用语">
+          <span class="lexicon-count" data-phrase-count></span>
+        </div>
+        <div class="tabs lexicon-filters" data-phrase-filters></div>
+        <div data-phrase-list></div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

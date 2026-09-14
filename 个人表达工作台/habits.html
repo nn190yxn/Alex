@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script>
+  <link rel="stylesheet" href="theme.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>用词习惯</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
+      <nav></nav>
+    </aside>
+    <main>
+      <div class="top">用词习惯</div>
+      <div class="hero">
+        <div>
+          <h1>用词习惯</h1>
+          <p class="sub">你说话的习惯，按立场、用词、句式、篇章等风格维度分开看。这里的条目由工作台从改稿里学，要加一条去「我的写法」页记。</p>
+        </div>
+      </div>
+      <section class="panel" data-drill-panel>
+        <h2>人工校对</h2>
+        <p class="sub">工作台用你收下的行业用词出一段不合适的话。你改写成自己的口气。勾上修正再收下。多练几次，个人口气会越来越准。</p>
+        <div class="range" data-drill-kinds></div>
+        <p class="sub" data-drill-hint></p>
+        <p data-drill-prompt></p>
+        <textarea data-drill-answer placeholder="按你平时的说法改写这一段"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+          <button class="btn primary" type="button" data-drill-run>出一道题</button>
+          <button class="btn" type="button" data-drill-confirm disabled>对照并列出修正</button>
+          <button class="btn" type="button" data-drill-accept disabled>收下勾上的修正</button>
+        </div>
+        <p data-drill-status role="status"></p>
+        <div data-drill-groups></div>
+      </section>
+      <section class="panel" data-rules></section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
