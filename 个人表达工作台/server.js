@@ -1095,14 +1095,36 @@ function industryPack(user, input) {
 }
 function confirmedRules(user) { return listResources(user, 'rule').filter(rule => rule.confirmed === true || rule.status === 'confirmed'); }
 function matchingSamples(user, scenario) {
-  const samples = listResources(user, 'sample');
-  const matched = samples.filter(sample => sample.scene === scenario);
-  const pick = (matched.length ? matched : samples).slice(0, 3);
+  const samples = listResources(user, 'sample').filter(sample => !looksLikeOutline(sample.body));
+  // 语料场景档可能是旧标签（招商对内汇报），出稿传的是三档（给内部看），
+  // 比较前先按别名归一，否则同档语料永远匹配不上，退化成随便取几篇。
+  const wanted = normalizeScenes(scenario);
+  const matched = samples.filter(sample => {
+    const scenes = normalizeScenes(sample.scene);
+    return scenes.some(name => wanted.includes(name));
+  });
+  const pool = (matched.length ? matched : samples).slice();
+  // 越像「成段口气」的语料越靠前；标题、整篇排后面，避免长文挤掉口气示范。
+  const rankOf = sample => (SAMPLE_KIND_RANK[sample.kind] === undefined ? 9 : SAMPLE_KIND_RANK[sample.kind]);
+  pool.sort((a, b) => rankOf(a) - rankOf(b));
+  const pick = pool.slice(0, 3);
   if (!pick.length) return '';
   return '个人语料（按这篇怎么写）：\n' + pick.map(sample => {
     const tags = [sample.kind, sample.style, sample.rhythm, sample.logic].filter(Boolean).join(' · ');
     return '- ' + (tags || '语料') + '\n' + String(sample.body || '').slice(0, 280);
   }).join('\n');
+}
+const SAMPLE_KIND_RANK = { '一段口气': 0, '判断句': 1, '标题写法': 2, '表格说明': 3, '整篇方案': 4 };
+// 目录体语料只能教出提纲，教不出口气。行首多为符号或编号的正文按提纲剔除。
+function looksLikeOutline(body) {
+  const lines = String(body || '').split('\n').map(line => line.trim()).filter(Boolean);
+  if (lines.length < 8) return false;
+  const outlineLines = lines.filter(line => /^([#>*\-•]|\d+[.、])/.test(line)).length;
+  return outlineLines / lines.length > 0.5;
+}
+function normalizeScenes(value) {
+  const raw = String(value || '').split(/[、,+，\/]/).map(item => item.trim()).filter(Boolean);
+  return [...new Set(raw.map(item => INTENT_ALIAS[item] || item))];
 }
 function buildSystemPrompt(user, input) {
   const scenario = resolveScenario(input);
