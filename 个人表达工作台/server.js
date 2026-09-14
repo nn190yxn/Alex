@@ -69,13 +69,14 @@ function memberRow(user) { return db.prepare('SELECT id,team_owner teamOwner,use
 function ensureMember(user) {
   const existing = memberRow(user);
   if (existing) return existing;
-  const ownerCount = db.prepare("SELECT COUNT(*) count FROM team_members WHERE role='owner'").get().count;
-  const assigned = ownerCount === 0 ? 'owner' : 'viewer';
   const ownerRow = db.prepare("SELECT user_id FROM team_members WHERE role='owner' ORDER BY created_at LIMIT 1").get();
-  const teamOwner = assigned === 'owner' ? user : ((ownerRow && ownerRow.user_id) || user);
+  // 已有 owner 时，没登记过的用户一律按访客处理，不落库。
+  // 否则每个没有 cookie 的请求都会留下一个空账号：首屏并发几个接口就是几个，
+  // 团队页很快堆满从未真正使用过的 viewer。
+  if (ownerRow && ownerRow.user_id) return { id: '', teamOwner: ownerRow.user_id, userId: user, role: 'viewer', createdAt: '', updatedAt: '' };
   const stamp = now();
-  db.prepare('INSERT OR IGNORE INTO team_members(id,team_owner,user_id,role,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(id(), teamOwner, user, assigned, stamp, stamp);
-  return memberRow(user) || { id: '', teamOwner, userId: user, role: assigned, createdAt: stamp, updatedAt: stamp };
+  db.prepare('INSERT OR IGNORE INTO team_members(id,team_owner,user_id,role,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(id(), user, user, 'owner', stamp, stamp);
+  return memberRow(user) || { id: '', teamOwner: user, userId: user, role: 'owner', createdAt: stamp, updatedAt: stamp };
 }
 function role(req) { const row = ensureMember(identity(req)); return ROLES.includes(row.role) ? row.role : 'viewer'; }
 function teamOwnerOf(user) { return ensureMember(user).teamOwner || user; }

@@ -344,6 +344,9 @@ async function waitForServer() {
   assert.strictEqual((await request('POST', '/api/team/members', { userId: 'local-user', role: 'viewer' })).status, 409);
   const members = await request('GET', '/api/team/members');
   assert.ok(members.body.some(function (row) { return row.userId === 'local-user' && row.role === 'owner'; }));
+  // 未登记用户只按访客处理，不落库：否则首屏并发接口会各留一个空账号。
+  assert.strictEqual((await request('GET', '/api/team/me', undefined, 'passer-by')).body.role, 'viewer');
+  assert.ok(!(await request('GET', '/api/team/members')).body.some(function (row) { return row.userId === 'passer-by'; }));
   const anon = await fetch(`http://127.0.0.1:${port}/api/rewrite/generate`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-user-id': 'local-user', 'x-user-role': 'owner' }, body: JSON.stringify({ source: '原始内容', intent: '给领导的工作汇报', demoMode: true }) });
   assert.strictEqual(anon.status, 202);
   const noHeader = await fetch(`http://127.0.0.1:${port}/api/rewrite/generate`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: '原始内容', demoMode: true }) });
