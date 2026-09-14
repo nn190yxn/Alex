@@ -40,7 +40,7 @@ async function waitForServer() {
   assert.strictEqual(openapi.status, 200);
   assert.strictEqual(openapi.body.openapi, '3.0.3');
   assert.strictEqual(openapi.body.info.title, '商业运营工作台 API');
-  for (const route of ['/api/health', '/api/state', '/api/rewrite/analyze', '/api/rewrite/generate', '/api/samples', '/api/documents/parse', '/api/rules/resolve', '/api/backup', '/api/audit', '/api/providers', '/api/team/members']) assert.ok(openapi.body.paths[route]);
+  for (const route of ['/api/health', '/api/state', '/api/rewrite/analyze', '/api/rewrite/detect', '/api/rewrite/generate', '/api/samples', '/api/documents/parse', '/api/rules/resolve', '/api/backup', '/api/audit', '/api/providers', '/api/team/members']) assert.ok(openapi.body.paths[route]);
   const parsed = await request('POST', '/api/documents/parse', { format: 'markdown', text: '# 标题\n正文' });
   assert.strictEqual(parsed.body.status, 'parsed'); assert.strictEqual(parsed.body.documents[0].lines, 2);
   const batch = await request('POST', '/api/documents/parse', { format: 'txt', texts: ['甲', '乙'] });
@@ -94,6 +94,12 @@ async function waitForServer() {
   assert.ok(grouped.body.lockedContent.numbers.includes('4.1'));
   assert.ok(!grouped.body.lockedContent.numbers.includes('000'));
   assert.strictEqual(fragment.body.factsLocked, false);
+  const taste = await request('POST', '/api/rewrite/detect', { source: '我们打造完整生态，形成商业矩阵。', intents: ['给内部看'] });
+  assert.strictEqual(taste.status, 200);
+  assert.ok(taste.body.hits.some(function (hit) { return hit.id === 'buzzwords'; }));
+  // 专名里的包装词不算：站名「国际生态会议中心」的「生态」不是作者用词。
+  const proper = await request('POST', '/api/rewrite/detect', { source: '从地铁1号线「国际生态会议中心」站步行约10分钟，紧邻贵阳国际生态会议中心。', intents: ['给内部看'] });
+  assert.ok(!proper.body.hits.some(function (hit) { return hit.id === 'buzzwords'; }));
   assert.strictEqual((await request('POST', '/api/rewrite/generate', { source: '原始内容', demoMode: true })).status, 400);
   const generated = await request('POST', '/api/rewrite/generate', { source: '原始内容', intent: '给领导的工作汇报', applyStyle: true, demoMode: true });
   assert.strictEqual(generated.status, 202);

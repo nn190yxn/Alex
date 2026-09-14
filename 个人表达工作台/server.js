@@ -800,7 +800,7 @@ const AI_TASTE_RULES = [
   // 单个「最后」「首先」是正常用法，连着出现两次以上才算三段式。
   minCount: 2,
   fix: '删掉顺序词，直接写下一句；顺序靠内容本身。' },
-  { id: 'buzzwords', dim: '用词', name: '包装词', level: 'high', re: /(赋能|抓手|闭环|打法|打造|矩阵|生态|护城河|心智|势能|颗粒度|对齐|拉通|复盘|沉淀|深耕|破局|突围|引爆|爆点|组合拳|抢占先机|蓄势)/g, fix: '换成具体的人、事、数；说不清就删。' },
+  { id: 'buzzwords', dim: '用词', name: '包装词', level: 'high', nounLike: true, re: /(赋能|抓手|闭环|打法|打造|矩阵|生态|护城河|心智|势能|颗粒度|对齐|拉通|复盘|沉淀|深耕|破局|突围|引爆|爆点|组合拳|抢占先机|蓄势)/g, fix: '换成具体的人、事、数；说不清就删。' },
   { id: 'translationese', dim: '用词', name: '翻译腔', level: 'high', re: /(进行(?:了)?[\u4e00-\u9fff]{0,6}|通过[\u4e00-\u9fff]{0,8}来|对于[\u4e00-\u9fff]{0,6}而言|在[\u4e00-\u9fff]{0,6}方面|基于[\u4e00-\u9fff]{0,6}的事实|具有[\u4e00-\u9fff]{0,6}的能力|作为一个[\u4e00-\u9fff]{0,8})/g, fix: '「进行」直接删；「通过…来」改成「用」；「对于…而言」改成「对…」；「具有…的能力」改成「能」。' },
   { id: 'emphasis', dim: '详略', name: '无信息强调', level: 'medium', re: /(非常|极其|真正地|至关重要|不可磨灭|令人叹为观止|前所未有|史无前例|首屈一指)/g, fix: '删掉强调词，用数字或事实替代。' },
   { id: 'formula', dim: '详略', name: '公式对比句', level: 'high', re: /(不仅[\u4e00-\u9fff]{1,20}?(而且|更是|还)|不是[\u4e00-\u9fff]{1,20}?而是|既是[\u4e00-\u9fff]{1,20}?也是)/g, fix: '拆成两句直接说事，或只留一半。' },
@@ -820,10 +820,48 @@ function excerptAround(text, index, length) {
   return (start > 0 ? '…' : '') + text.slice(start, end).replace(/\s+/g, '') + (end < text.length ? '…' : '');
 }
 
+// 引号、书名号里是专名或引用，不代表作者自己的用词。
+function quotedMask(text) {
+  const mask = new Array(text.length).fill(false);
+  const pairs = { '「': '」', '『': '』', '《': '》', '“': '”' };
+  let close = '';
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (close) { mask[i] = true; if (ch === close) close = ''; continue; }
+    if (pairs[ch]) { close = pairs[ch]; mask[i] = true; continue; }
+    if (ch === '"') { close = '"'; mask[i] = true; }
+  }
+  return mask;
+}
+const CJK_CHAR = /[\u4e00-\u9fff]/;
+// 专名里常夹着包装词：地铁「国际生态会议中心」的「生态」不是作者用词。
+const PLACE_SUFFIX = /(中心|广场|公园|园区|大厦|大道|车站|路口)$/;
+function insideProperNoun(text, index, length) {
+  let start = index;
+  let end = index + length;
+  while (start > 0 && CJK_CHAR.test(text[start - 1])) start -= 1;
+  while (end < text.length && CJK_CHAR.test(text[end])) end += 1;
+  return PLACE_SUFFIX.test(text.slice(start, end));
+}
+// 按词表取词，跳过引号内与专名里的命中。
+function matchedWords(text, pattern) {
+  const mask = quotedMask(text);
+  const out = [];
+  const re = new RegExp(pattern.source, 'g');
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    if (mask[match.index]) continue;
+    if (insideProperNoun(text, match.index, match[0].length)) continue;
+    out.push(match[0]);
+  }
+  return out;
+}
+
 function detectAITaste(text, options) {
   const body = String(text || '').trim();
   if (!body) fail('先贴一段正文，再做体检');
   const intent = String((options && options.intent) || '');
+  const mask = quotedMask(body);
   const sentences = body.split(/[。！？!?]+/).map(item => item.replace(/\s+/g, '')).filter(Boolean);
   const lengths = sentences.map(item => item.length);
   const totalChars = body.length;
@@ -838,6 +876,8 @@ function detectAITaste(text, options) {
     let count = 0;
     while ((match = re.exec(body)) !== null) {
       if (rule.guard && !rule.guard(match, body)) continue;
+      if (mask[match.index]) continue;
+      if (rule.nounLike && insideProperNoun(body, match.index, match[0].length)) continue;
       count += 1;
       if (found.length < 6) found.push({ text: match[0], excerpt: excerptAround(body, match.index, match[0].length) });
     }
@@ -914,7 +954,7 @@ const BRIEF_ACTION_RE = /(完成|推进|签订|引进|调整|改造|招募|洽�
 function analyzeBrief(source) {
   const body = String(source || '').trim();
   const chars = body.length;
-  const slogans = [...new Set(body.match(SLOGAN_WORDS) || [])];
+  const slogans = [...new Set(matchedWords(body, SLOGAN_WORDS))];
   const numbers = [...new Set(body.match(/\d[\d,]*(?:\.\d+)?\s*(?:亿元|万元|平方米|平米|㎡|亿|万|元|%|％|个|家|人|方|次|天|层|栋|座)/g) || [])];
   const timeAnchors = [...new Set(body.match(BRIEF_TIME_RE) || [])];
   const actions = [...new Set(body.match(BRIEF_ACTION_RE) || [])];
