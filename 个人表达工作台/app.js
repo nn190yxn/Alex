@@ -43,13 +43,26 @@
       if (!window.fetch) return Promise.resolve();
       return request('GET', '/api/state').then(function (remote) {
         var theme = readStoredTheme();
-        Object.keys(remote || {}).forEach(function (key) { state[key] = remote[key]; });
+        // 远端整份覆盖会冲掉页面初始化时已经写进 state 的改动（练习题自动选中的读者
+        // 写在 rewrite.intents 里，远端旧记录没有这个字段，覆盖后变成 undefined，
+        // 点「出稿」直接报错）。对象逐键合并，数组和标量仍以远端为准，本地独有的字段保留。
+        Object.keys(remote || {}).forEach(function (key) {
+          var local = state[key], incoming = remote[key];
+          if (local && incoming && typeof local === 'object' && typeof incoming === 'object' && !Array.isArray(local) && !Array.isArray(incoming)) {
+            Object.keys(incoming).forEach(function (inner) { local[inner] = incoming[inner]; });
+          } else {
+            state[key] = incoming;
+          }
+        });
         if (theme) state.theme = theme;
         applyTheme(state.theme);
         store.save();
         if (remote && remote.theme !== state.theme) save();
       }).catch(function () { banner('error', '服务暂不可用，当前使用本机草稿'); });
     }
+    // 先把远端状态同步起来，页面初始化里依赖它的异步步骤（例如练习题自动填充）挂在
+    // stateReady 后面，避免被同步结果覆盖。
+    var stateReady = syncState();
    state.industries = state.industries || { activeContext: '地产', entries: [], frameworks: [] };
    state.documents = state.documents || []; state.rules = state.rules || []; state.comments = state.comments || [];
      var saveTimer;
@@ -421,7 +434,9 @@
           scheduleRelated();
           scheduleTaste();
         });
-        if (!String(source.value || '').trim()) {
+        function loadExercise() {
+          source.value = state.rewrite.source || '';
+          if (String(source.value || '').trim()) return;
           fetch('/api/rewrite/exercise').then(function (r) { return r.json(); }).then(function (ex) {
             if (!ex || !ex.source || String(source.value || '').trim()) return;
             state.rewrite.source = ex.source;
@@ -443,6 +458,8 @@
             if (typeof scheduleRelated === 'function') scheduleRelated();
           }).catch(function () {});
         }
+        // 同步完成后再填练习题：否则同步结果会把这里写进 state 的读者覆盖掉。
+        if (stateReady && typeof stateReady.then === 'function') stateReady.then(loadExercise); else loadExercise();
       }
       var relatedEl = document.querySelector('[data-related-list]');
       var relatedTimer;
@@ -2184,5 +2201,5 @@
     }
    setupCorpus();
    setupPublish();
-   syncState().then(function () { setupCorpus(); });
+   stateReady.then(function () { setupCorpus(); });
  })();
