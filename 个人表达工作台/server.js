@@ -788,7 +788,17 @@ function diffFacts(locked, text) {
 }
 // 去 AI 味：白名单检测。只列出命中的痕迹，改写时只动这些句子，其余逐字保留。
 const AI_TASTE_RULES = [
-  { id: 'transitions', dim: '顺序', name: '三段式转场', level: 'high', re: /(首先|其次|再次|最后|一方面|另一方面|综上所述|总而言之|总的来说|由此可见|值得注意的是|值得一提的是|需要注意的是|不难看出|在此基础上|与此同时|简而言之|换句话说)/g, fix: '删掉转场词，直接写下一句；顺序靠内容本身，不靠连接词。' },
+  { id: 'transitions', dim: '顺序', name: '三段式转场', level: 'high', re: /(一方面|另一方面|综上所述|总而言之|总的来说|由此可见|值得注意的是|值得一提的是|需要注意的是|不难看出|在此基础上|与此同时|简而言之|换句话说)/g, fix: '删掉转场词，直接写下一句；顺序靠内容本身，不靠连接词。' },
+  { id: 'sequence', dim: '顺序', name: '首先其次式顺序', level: 'medium', re: /(首先|其次|最后)/g, guard: (match, body) => {
+    // 只在句首且后面接顿号/逗号时算顺序词；「最后落实到条款」这类正常用法不算。
+    const prev = match.index === 0 ? '' : body[match.index - 1];
+    const atStart = match.index === 0 || /[。！？；\n]/.test(prev);
+    const next = body[match.index + match[0].length] || '';
+    return atStart && /[、，,]/.test(next);
+  },
+  // 单个「最后」「首先」是正常用法，连着出现两次以上才算三段式。
+  minCount: 2,
+  fix: '删掉顺序词，直接写下一句；顺序靠内容本身。' },
   { id: 'buzzwords', dim: '用词', name: '包装词', level: 'high', re: /(赋能|抓手|闭环|打法|打造|矩阵|生态|护城河|心智|势能|颗粒度|对齐|拉通|复盘|沉淀|深耕|破局|突围|引爆|爆点|组合拳|抢占先机|蓄势)/g, fix: '换成具体的人、事、数；说不清就删。' },
   { id: 'translationese', dim: '用词', name: '翻译腔', level: 'high', re: /(进行(?:了)?[\u4e00-\u9fff]{0,6}|通过[\u4e00-\u9fff]{0,8}来|对于[\u4e00-\u9fff]{0,6}而言|在[\u4e00-\u9fff]{0,6}方面|基于[\u4e00-\u9fff]{0,6}的事实|具有[\u4e00-\u9fff]{0,6}的能力|作为一个[\u4e00-\u9fff]{0,8})/g, fix: '「进行」直接删；「通过…来」改成「用」；「对于…而言」改成「对…」；「具有…的能力」改成「能」。' },
   { id: 'emphasis', dim: '详略', name: '无信息强调', level: 'medium', re: /(非常|极其|真正地|至关重要|不可磨灭|令人叹为观止|前所未有|史无前例|首屈一指)/g, fix: '删掉强调词，用数字或事实替代。' },
@@ -796,8 +806,7 @@ const AI_TASTE_RULES = [
   { id: 'closer', dim: '详略', name: '口号式收尾', level: 'medium', re: /(前景广阔|迈出重要一步|奠定了坚实基础|开启(了)?新篇章|注入(了)?新动能|树立(了)?标杆|具有重要意义|未来可期)/g, fix: '改成已经发生的具体事，或下一步具体动作。' },
   { id: 'empty-attr', dim: '立场', name: '无出处归因', level: 'high', re: /(专家认为|行业报告显示|数据显示|研究表明|业内人士(表示|认为)|相关人士(表示|认为))/g, fix: '没有具体出处就删归因，只留能核对的事实。' },
   { id: 'inanimate', dim: '立场', name: '无生命主语', level: 'medium', re: /(方案|项目|策略|举措|机制|体系|规划)(解决|推动|实现|带来|提升|优化|保障|赋能)了?/g, fix: '改成「谁做了什么」，主语落到人。' },
-  { id: 'we', dim: '立场', name: '对内用「我们」', level: 'medium', re: /我们(?=[^，。]{0,10}(认为|建议|判断|决定|将|会|要|需要))/g, fix: '对内汇报统一用「我方」。', intent: '给内部看' },
-  { id: 'dash', dim: '用词', name: '破折号堆叠', level: 'low', re: /——/g, fix: '改成逗号、句号或括号。' }
+  { id: 'we', dim: '立场', name: '对内用「我们」', level: 'medium', re: /我们(?=[^，。]{0,10}(认为|建议|判断|决定|将|会|要|需要))/g, fix: '对内汇报统一用「我方」。', intent: '给内部看' }
 ];
 const AI_TASTE_LEVEL_WEIGHT = { high: 3, medium: 2, low: 1 };
 
@@ -822,17 +831,20 @@ function detectAITaste(text, options) {
     const re = new RegExp(rule.re.source, 'g');
     const found = [];
     let match;
+    let count = 0;
     while ((match = re.exec(body)) !== null) {
-      found.push({ text: match[0], excerpt: excerptAround(body, match.index, match[0].length) });
-      if (found.length >= 6) break;
+      if (rule.guard && !rule.guard(match, body)) continue;
+      count += 1;
+      if (found.length < 6) found.push({ text: match[0], excerpt: excerptAround(body, match.index, match[0].length) });
     }
-    if (!found.length) return;
+    if (!count) return;
+    if (rule.minCount && count < rule.minCount) return;
     hits.push({
       id: rule.id,
       dimension: rule.dim,
       name: rule.name,
       level: rule.level,
-      count: found.length,
+      count: count,
       samples: found.map(item => item.excerpt),
       fix: rule.fix
     });
