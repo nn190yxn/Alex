@@ -119,6 +119,10 @@ async function waitForServer() {
   const audiences = await request('GET', '/api/rewrite/audiences');
   assert.strictEqual(audiences.status, 200);
   assert.deepStrictEqual(audiences.body.map(item => item.id), ['给政府看', '给品牌方看', '给内部看']);
+  const exercise = await request('GET', '/api/rewrite/exercise');
+  assert.strictEqual(exercise.status, 200);
+  assert.ok(String(exercise.body.source).includes('2.1 万'));
+  assert.deepStrictEqual(exercise.body.audience, ['给内部看']);
   const multi = await request('POST', '/api/rewrite/generate', { source: '原始内容', intents: ['给政府看', '给内部看'], demoMode: true });
   assert.strictEqual(multi.status, 202);
   let multiTask;

@@ -229,3 +229,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 每条记录记：出处、原句、改句、归属维度、提炼规则、状态（待确认/已固化/反例）。
   - 确认后的规则固化，并进入出稿口径。
   - 工作台「风格校准」页承载固定维度与逐轮沟通记录；维度定义随代码维护，不在此重复。
+
+[环境限制：文档解析与浏览器验证]
+- Date: 2026-09-14
+- Context: Discovered by Agent while doing document parsing and UI verification in this environment
+- Category: Environment Configuration
+- Instructions:
+  - 本机无 LibreOffice / soffice，PDF 只能走正则兜底提取正文，无法还原排版。
+  - Word / PPT / Excel 解析优先用已安装的 python-docx、python-pptx、openpyxl，或项目自研 OOXML 解析；不要为解析引入重量级依赖。
+  - Playwright / Chromium 首次下载约 186MB 且极慢，系统图形库（libnss3 等）缺失需 --with-deps；不要把浏览器截图作为验证前置条件，改用 curl 调接口加 Node 脚本校验页面与渲染。
+  - 预览统一起在 3000 端口（PORT=3000 node server.js），预览地址形如 https://3000-xxxx.monkeycode-ai.online。

@@ -1,20 +1,57 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script><link rel="stylesheet" href="theme.css"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>表达规则发布中心</title><link rel="stylesheet" href="style.css"><style>main{width:100%;min-width:0;margin:auto}main>.panel{margin-bottom:16px}pre{white-space:pre-wrap;overflow-wrap:anywhere}.inline-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;align-items:end}.inline-form input,.inline-form textarea,.inline-form select{min-width:0;max-width:100%;width:100%}.card-heading{gap:12px;flex-wrap:wrap}</style></head>
-<body><main><div class="top">工作台 / 发布中心</div><section class="hero"><h1>发布中心</h1><p class="sub">查看接口能力、插件调用协议与接入说明。模型服务在「改一稿」页配置。</p></section>
- <section class="panel"><div class="card-heading"><div><span class="tag">开发者专用</span><h2>接口能力清单</h2></div><button class="btn primary" data-download>下载接口文档（JSON）</button></div><p>统一入口：<code>GET /api/openapi</code>。文档覆盖健康检查、状态、改写、样本、文档解析、规则、备份、操作记录和模型服务。</p><pre data-api-result>读取接口目录中...</pre><h3>请求示例</h3><pre>fetch('/api/rewrite/analyze', {
+<head>
+  <script>try{var t=localStorage.getItem("expression-workbench-theme");if(t!=="orange"&&t!=="purple")t="blue";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","blue")}</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>发布中心</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div>
+      <nav></nav>
+    </aside>
+    <main>
+      <div class="top">工作台 / 发布中心</div>
+      <section class="hero">
+        <div>
+          <h1>发布中心</h1>
+          <p class="sub">查看接口能力、插件调用协议与接入说明。模型服务在「改一稿」页配置。</p>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="card-heading">
+          <div><span class="tag">开发者专用</span><h2>接口能力清单</h2></div>
+          <button class="btn primary" data-download>下载接口文档（JSON）</button>
+        </div>
+        <p>统一入口：<code>GET /api/openapi</code>。文档覆盖健康检查、状态、改写、样本、文档解析、规则、备份、操作记录和模型服务。</p>
+        <pre data-api-result>读取接口目录中...</pre>
+        <h3>请求示例</h3>
+        <pre>fetch('/api/rewrite/analyze', {
   method: 'POST',
   headers: {'content-type': 'application/json'},
   body: JSON.stringify({source: '待分析文本'})
-})</pre></section>
- <section class="panel"><span class="tag">开发者专用</span><h2>插件调用协议</h2><p>创建任务使用 <code>POST /api/integrations/tasks</code>，查询使用 <code>GET /api/integrations/tasks/:id</code>，失败任务使用 <code>POST /api/integrations/tasks/:id/retry</code>。返回体固定为 <code>{ok,data}</code>，状态包括 queued、running、completed、failed；创建和重试需要 write 权限。以下示例设置 <code>demoMode:true</code>，模型未配置时返回示例内容。</p><pre>const created = await fetch('/api/integrations/tasks', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({source:'待改写文本', demoMode:true})}).then(r => r.json());
+})</pre>
+      </section>
+      <section class="panel">
+        <span class="tag">开发者专用</span>
+        <h2>插件调用协议</h2>
+        <p>创建任务使用 <code>POST /api/integrations/tasks</code>，查询使用 <code>GET /api/integrations/tasks/:id</code>，失败任务使用 <code>POST /api/integrations/tasks/:id/retry</code>。返回体固定为 <code>{ok,data}</code>，状态包括 queued、running、completed、failed；创建和重试需要 write 权限。以下示例设置 <code>demoMode:true</code>，模型未配置时返回示例内容。</p>
+        <pre>const created = await fetch('/api/integrations/tasks', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({source:'待改写文本', demoMode:true})}).then(r => r.json());
 const status = await fetch(`/api/integrations/tasks/${created.data.taskId}`).then(r => r.json());
-const retried = await fetch(`/api/integrations/tasks/${created.data.taskId}/retry`, {method:'POST'}).then(r => r.json());</pre></section></main>
+const retried = await fetch(`/api/integrations/tasks/${created.data.taskId}/retry`, {method:'POST'}).then(r => r.json());</pre>
+      </section>
+    </main>
+  </div>
   <script src="app.js"></script>
   <script>
 document.querySelectorAll('section.panel').forEach(function(panel){
   if(!Array.from(panel.querySelectorAll('.tag')).some(function(tag){return tag.textContent==='开发者专用';})) return;
   var details=document.createElement('details');
+  details.className='tech-details';
   var summary=document.createElement('summary');
   summary.textContent='技术接入资料：'+panel.querySelector('h2').textContent;
   details.appendChild(summary);
@@ -23,4 +60,6 @@ document.querySelectorAll('section.panel').forEach(function(panel){
 });
 const request=(method,url,body)=>fetch(url,{method,headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined}).then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||'请求失败');return data});
  request('GET','/api/openapi').then(data=>{const paths=Object.entries(data.paths).map(([path,methods])=>`${Object.keys(methods).join(', ').toUpperCase()} ${path}`).join('\n');document.querySelector('[data-api-result]').textContent=paths;document.querySelector('[data-download]').onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='openapi.json';link.click();URL.revokeObjectURL(link.href)}}).catch(error=>{document.querySelector('[data-api-result]').textContent=error.message});
-</script></body></html>
+  </script>
+</body>
+</html>

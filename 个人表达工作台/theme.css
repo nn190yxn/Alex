@@ -1,12 +1,89 @@
-html[data-theme="blue"],body[data-theme="blue"]{
-  --bg:#f4f7fb;--brand:#2f6fed;--soft:#eaf1ff;--accent:#31a98d;--brand-soft:#eaf1ff;
-  --b:#2f6fed;--s:#eaf1ff;--g:#31a98d
+/* 设计令牌：颜色、圆角、间距、字号、阴影、字体。
+   主题只覆盖颜色令牌，其余令牌全局一致，保证各页密度统一。 */
+:root {
+  /* 颜色 */
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --panel-2: #f7f9fc;
+  --ink: #151b26;
+  --ink-2: #3c4757;
+  --muted: #6b7686;
+  --line: #e3e8ef;
+  --line-2: #eef1f6;
+  --brand: #2f6fed;
+  --brand-ink: #ffffff;
+  --brand-soft: #eaf1ff;
+  --brand-line: #c8daff;
+  --accent: #0f9f7c;
+  --accent-soft: #e6f6f1;
+  --warn: #a97a14;
+  --warn-soft: #fdf5e2;
+  --warn-line: #e6cf95;
+  --danger: #c43c2e;
+  --danger-soft: #fdecea;
+  --danger-line: #f0c3bb;
+
+  /* 圆角 */
+  --r-1: 8px;
+  --r-2: 12px;
+  --r-3: 16px;
+  --r-pill: 999px;
+
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+
+  /* 阴影 */
+  --sh-1: 0 1px 2px rgba(21, 27, 38, 0.04);
+  --sh-2: 0 1px 2px rgba(21, 27, 38, 0.04), 0 10px 28px -16px rgba(21, 27, 38, 0.2);
+
+  /* 字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+
+  /* 布局 */
+  --sidebar-w: 238px;
+  --content-w: 1120px;
+
+  /* 兼容旧变量名，页面内联样式仍在使用 */
+  --soft: var(--brand-soft);
+  --b: var(--brand);
+  --s: var(--brand-soft);
+  --g: var(--accent);
 }
-html[data-theme="orange"],body[data-theme="orange"]{
-  --bg:#fff8f1;--brand:#ed733c;--soft:#fff0e7;--accent:#24a887;--brand-soft:#fff0e7;
-  --b:#ed733c;--s:#fff0e7;--g:#24a887
+
+html[data-theme="blue"],
+body[data-theme="blue"] {
+  --bg: #f5f7fa;
+  --brand: #2f6fed;
+  --brand-soft: #eaf1ff;
+  --brand-line: #c8daff;
+  --accent: #0f9f7c;
+  --accent-soft: #e6f6f1;
 }
-html[data-theme="purple"],body[data-theme="purple"]{
-  --bg:#f7f5ff;--brand:#6857d9;--soft:#efedff;--accent:#18aaca;--brand-soft:#efedff;
-  --b:#6857d9;--s:#efedff;--g:#18aaca
+
+html[data-theme="orange"],
+body[data-theme="orange"] {
+  --bg: #fdf7f3;
+  --brand: #ed733c;
+  --brand-soft: #fdeee7;
+  --brand-line: #f6d2bd;
+  --accent: #0f9f7c;
+  --accent-soft: #e6f6f1;
+}
+
+html[data-theme="purple"],
+body[data-theme="purple"] {
+  --bg: #f6f5fd;
+  --brand: #6857d9;
+  --brand-soft: #eeecfb;
+  --brand-line: #d6d0f7;
+  --accent: #0d9dbd;
+  --accent-soft: #e3f5fa;
 }

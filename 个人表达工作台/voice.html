@@ -7,36 +7,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>我的语料</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .corpus-dim{margin:0 0 16px}
-    .corpus-dim label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px}
-    .corpus-dim .range{display:flex;gap:6px;flex-wrap:wrap}
-    .corpus-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .corpus-hint{margin:0 0 14px;color:var(--muted);font-size:13px}
-    .corpus-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 6px}
-    .corpus-upload input[type=file]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
-    .corpus-upload span{color:var(--muted);font-size:13px}
-    .corpus-upload .btn{display:inline-flex;align-items:center}
-    .corpus-card{padding:16px 0;border-bottom:1px solid var(--line)}
-    .corpus-card:last-child{border:0}
-    .corpus-card p{margin:8px 0 0;color:var(--muted);line-height:1.7}
-    #corpus-status{margin:10px 0 0;font-size:13px;color:var(--muted)}
-    .corpus-card .meta{margin-top:6px;font-size:12px}
-    .catalog-filters{display:grid;gap:10px;margin:12px 0 0}
-    .filter-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .filter-row > span{flex:0 0 64px;color:var(--muted);font-size:12px}
-    .corpus-more{margin:8px 0 4px;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
-    .corpus-more > summary{cursor:pointer;color:var(--muted);font-size:13px}
-    .catalog-scene{margin:0 0 18px}
-    .catalog-scene > h3{margin:0 0 8px;font-size:15px}
-    .catalog-scene > h3 small{color:var(--muted);font-weight:400}
-    .catalog-group{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:#fff;overflow:hidden}
-    .catalog-group > summary{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;font-weight:700;list-style:none}
-    .catalog-group > summary::-webkit-details-marker{display:none}
-    .catalog-group > summary small{font-weight:400;color:var(--muted)}
-    .catalog-group .corpus-card{padding:12px 16px;border-bottom:0;border-top:1px solid var(--line)}
-    .catalog-group .corpus-card p{margin:4px 0 0;font-size:13px;line-height:1.6}
-  </style>
 </head>
 <body>
   <div class="app">
@@ -52,6 +22,13 @@
           <p class="sub">贴一篇你认的写法，或上传 txt、Markdown。先按写给谁收纳，再按什么料分开看。出稿时按同类语料改口气。</p>
         </div>
       </div>
+      <details class="corpus-more" data-corpus-howto>
+        <summary>语料怎么攒（点开看一遍）</summary>
+        <p>攒三种料：你认的成稿当正例；出稿后你又改过的地方当改稿对；你明确不要的写法当反例。反例只做提醒，不进取材池。</p>
+        <p>你只做三个动作：收下、不要了、再用回来。分档、抽特征、去重、算分布都后台自动跑。</p>
+        <p>够用的量：每个场景档 5–8 篇整篇起步，攒到 20–50 篇算稳定。政府、品牌方、内部三档各要有料，单档再多也只管那一档。</p>
+        <p>改稿对会沉淀成规则：抽出「改前 → 改后」，先进「我的写法」待确认，你确认后才进规则集。</p>
+      </details>
       <form class="panel" data-corpus-form>
         <h2>收下一篇语料</h2>
         <p class="corpus-hint">按固定规则先分一档，你再改标签。数字和专名按原文收下。PDF 和 Word 现在读不了，请另存成 txt 或 Markdown。</p>
@@ -61,7 +38,7 @@
           <input id="corpus-file" type="file" accept=".txt,.md,.markdown,.text,text/plain,text/markdown" multiple>
           <span>一次可选一篇，也可以一次选多篇直接收下。</span>
         </div>
-        <input name="title" placeholder="这篇叫什么，可空" style="margin:10px 0 16px">
+        <input name="title" class="mt-3 mb-4" placeholder="这篇叫什么，可空">
         <div class="corpus-dim" data-corpus-dim="kind">
           <label>这篇是什么料</label>
           <div class="range">
@@ -118,7 +95,7 @@
       </form>
       <section class="panel">
         <div class="toolbar">
-          <h2 style="margin:0">已收下的语料</h2>
+          <h2>已收下的语料</h2>
         </div>
         <div class="catalog-filters">
           <div class="filter-row" data-corpus-filter="scene">

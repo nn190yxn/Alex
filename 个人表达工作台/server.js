@@ -786,6 +786,105 @@ function diffFacts(locked, text) {
   });
   return { locked: expected, found: classify(text || '').numbers, missing, added: unused, intact: missing.length === 0 };
 }
+// 去 AI 味：白名单检测。只列出命中的痕迹，改写时只动这些句子，其余逐字保留。
+const AI_TASTE_RULES = [
+  { id: 'transitions', dim: '顺序', name: '三段式转场', level: 'high', re: /(首先|其次|再次|最后|一方面|另一方面|综上所述|总而言之|总的来说|由此可见|值得注意的是|值得一提的是|需要注意的是|不难看出|在此基础上|与此同时|简而言之|换句话说)/g, fix: '删掉转场词，直接写下一句；顺序靠内容本身，不靠连接词。' },
+  { id: 'buzzwords', dim: '用词', name: '包装词', level: 'high', re: /(赋能|抓手|闭环|打法|打造|矩阵|生态|护城河|心智|势能|颗粒度|对齐|拉通|复盘|沉淀|深耕|破局|突围|引爆|爆点|组合拳|抢占先机|蓄势)/g, fix: '换成具体的人、事、数；说不清就删。' },
+  { id: 'translationese', dim: '用词', name: '翻译腔', level: 'high', re: /(进行(?:了)?[\u4e00-\u9fff]{0,6}|通过[\u4e00-\u9fff]{0,8}来|对于[\u4e00-\u9fff]{0,6}而言|在[\u4e00-\u9fff]{0,6}方面|基于[\u4e00-\u9fff]{0,6}的事实|具有[\u4e00-\u9fff]{0,6}的能力|作为一个[\u4e00-\u9fff]{0,8})/g, fix: '「进行」直接删；「通过…来」改成「用」；「对于…而言」改成「对…」；「具有…的能力」改成「能」。' },
+  { id: 'emphasis', dim: '详略', name: '无信息强调', level: 'medium', re: /(非常|极其|真正地|至关重要|不可磨灭|令人叹为观止|前所未有|史无前例|首屈一指)/g, fix: '删掉强调词，用数字或事实替代。' },
+  { id: 'formula', dim: '详略', name: '公式对比句', level: 'high', re: /(不仅[\u4e00-\u9fff]{1,20}?(而且|更是|还)|不是[\u4e00-\u9fff]{1,20}?而是|既是[\u4e00-\u9fff]{1,20}?也是)/g, fix: '拆成两句直接说事，或只留一半。' },
+  { id: 'closer', dim: '详略', name: '口号式收尾', level: 'medium', re: /(前景广阔|迈出重要一步|奠定了坚实基础|开启(了)?新篇章|注入(了)?新动能|树立(了)?标杆|具有重要意义|未来可期)/g, fix: '改成已经发生的具体事，或下一步具体动作。' },
+  { id: 'empty-attr', dim: '立场', name: '无出处归因', level: 'high', re: /(专家认为|行业报告显示|数据显示|研究表明|业内人士(表示|认为)|相关人士(表示|认为))/g, fix: '没有具体出处就删归因，只留能核对的事实。' },
+  { id: 'inanimate', dim: '立场', name: '无生命主语', level: 'medium', re: /(方案|项目|策略|举措|机制|体系|规划)(解决|推动|实现|带来|提升|优化|保障|赋能)了?/g, fix: '改成「谁做了什么」，主语落到人。' },
+  { id: 'we', dim: '立场', name: '对内用「我们」', level: 'medium', re: /我们(?=[^，。]{0,10}(认为|建议|判断|决定|将|会|要|需要))/g, fix: '对内汇报统一用「我方」。', intent: '给内部看' },
+  { id: 'dash', dim: '用词', name: '破折号堆叠', level: 'low', re: /——/g, fix: '改成逗号、句号或括号。' }
+];
+const AI_TASTE_LEVEL_WEIGHT = { high: 3, medium: 2, low: 1 };
+
+function excerptAround(text, index, length) {
+  const start = Math.max(0, index - 12);
+  const end = Math.min(text.length, index + length + 12);
+  return (start > 0 ? '…' : '') + text.slice(start, end).replace(/\s+/g, '') + (end < text.length ? '…' : '');
+}
+
+function detectAITaste(text, options) {
+  const body = String(text || '').trim();
+  if (!body) fail('先贴一段正文，再做体检');
+  const intent = String((options && options.intent) || '');
+  const sentences = body.split(/[。！？!?]+/).map(item => item.replace(/\s+/g, '')).filter(Boolean);
+  const lengths = sentences.map(item => item.length);
+  const totalChars = body.length;
+  const avg = lengths.length ? Math.round(lengths.reduce((sum, value) => sum + value, 0) / lengths.length) : 0;
+  const longest = lengths.length ? Math.max.apply(null, lengths) : 0;
+  const hits = [];
+  AI_TASTE_RULES.forEach(rule => {
+    if (rule.intent && intent && !intent.split('、').includes(rule.intent)) return;
+    const re = new RegExp(rule.re.source, 'g');
+    const found = [];
+    let match;
+    while ((match = re.exec(body)) !== null) {
+      found.push({ text: match[0], excerpt: excerptAround(body, match.index, match[0].length) });
+      if (found.length >= 6) break;
+    }
+    if (!found.length) return;
+    hits.push({
+      id: rule.id,
+      dimension: rule.dim,
+      name: rule.name,
+      level: rule.level,
+      count: found.length,
+      samples: found.map(item => item.excerpt),
+      fix: rule.fix
+    });
+  });
+  hits.sort((a, b) => AI_TASTE_LEVEL_WEIGHT[b.level] - AI_TASTE_LEVEL_WEIGHT[a.level] || b.count - a.count);
+
+  // 节奏：连续三句长度接近，读起来像同一个模子。
+  let uniformRuns = 0;
+  for (let i = 0; i + 2 < lengths.length; i += 1) {
+    const a = lengths[i], b = lengths[i + 1], c = lengths[i + 2];
+    const max = Math.max(a, b, c), min = Math.min(a, b, c);
+    if (max > 0 && max - min <= 2) uniformRuns += 1;
+  }
+  const variance = lengths.length ? lengths.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / lengths.length : 0;
+  const flatRun = lengths.length >= 4 && Math.sqrt(variance) <= 3;
+  const rhythmUniform = uniformRuns > 0 || flatRun;
+
+  // 浓度：命中权重按千字归一，再叠加节奏项。
+  const weighted = hits.reduce((sum, hit) => sum + AI_TASTE_LEVEL_WEIGHT[hit.level] * hit.count, 0);
+  const density = totalChars ? weighted / (totalChars / 1000) : 0;
+  let score = Math.round(Math.min(100, 100 * (1 - Math.exp(-density / 30)) + (rhythmUniform ? 10 : 0)));
+  if (!weighted && !rhythmUniform) score = 0;
+  const level = score >= 55 ? 'high' : score >= 25 ? 'medium' : 'low';
+
+  const dimensions = ['节奏', '顺序', '详略', '立场', '用词'].map(name => {
+    const mine = hits.filter(hit => hit.dimension === name);
+    const count = mine.reduce((sum, hit) => sum + hit.count, 0);
+    const flagged = name === '节奏' ? rhythmUniform : count > 0;
+    return { name, count, flagged, note: name === '节奏' ? (uniformRuns > 0 ? '有连续三句长度接近' : flatRun ? '全篇句子长度太齐' : '句子长短有变化') : (count ? mine.map(hit => hit.name).join('、') : '没命中') };
+  });
+
+  const review = [
+    '数字、专名、引用逐字比对原文，保持原值。',
+    '只改上面列出的命中句，其余句子、段落顺序、标题层级原样保留。',
+    '没有添上原文没有的判断、结论和事实。',
+    '正式稿保留书面判断句；对内汇报统一用「我方」。'
+  ];
+  if (hits.some(hit => hit.id === 'empty-attr')) review.unshift('归因句要么补上具体出处，要么删掉归因只留事实。');
+  if (hits.some(hit => hit.id === 'inanimate')) review.unshift('把无生命主语的句子改回「谁做了什么」。');
+
+  return {
+    score,
+    level,
+    summary: score === 0 ? '没撞上常见的 AI 腔痕迹' : '命中 ' + hits.reduce((sum, hit) => sum + hit.count, 0) + ' 处，集中在' + [...new Set(hits.map(hit => hit.dimension))].join('、'),
+    whitelist: '本次只改命中的句子，未命中的逐字保留。',
+    stats: { chars: totalChars, sentences: lengths.length, avgSentence: avg, longestSentence: longest, uniformRuns, density: Math.round(density * 10) / 10 },
+    dimensions,
+    hits,
+    review
+  };
+}
+
 function persistLock(user, source, lockedContent) {
   const current = state(user);
   current.diagnosis = { factsLocked: true, source, lockedContent, lockedAt: now() };
@@ -962,6 +1061,11 @@ function buildSystemPrompt(user, input) {
   const skill = selectedSkill(user, input);
   const layers = [styleGuide(intent)];
   if (skill) layers.push('通用写法包（' + skill.name + '）：\n' + (skill.rulesMarkdown || skill.summary || ''));
+  const taste = detectAITaste(input && input.source, { intent });
+  if (taste.hits.length) {
+    layers.push('AI 味体检（白名单：只改下面命中的句子，未命中的句子逐字保留，不改段落顺序和标题层级）：\n' + taste.hits.map(hit => '- [' + hit.dimension + '] ' + hit.name + '：' + hit.fix + '\n  命中：' + hit.samples.slice(0, 3).join(' / ')).join('\n'));
+  }
+  if (taste.hits.length || taste.stats.uniformRuns) layers.push('发布前复核：\n' + taste.review.map(item => '- ' + item).join('\n'));
   if (intent.split('、').includes('给内部看')) layers.push('对内口径用「我方」，不用随笔「我」。');
   if (applyIndustry) {
     const pack = industryPack(user, input);
@@ -1072,7 +1176,7 @@ async function generate(input, user) {
 function state(user) { const settings = db.prepare('SELECT key,value FROM settings WHERE key=?').get(`state:${user}`); const value = settings ? JSON.parse(settings.value) : structuredClone(seed); value.samples = listResources(user, 'sample'); value.documents = listResources(user, 'document'); value.rules = listResources(user, 'rule'); value.contexts = listResources(user, 'context'); value.skills = listActiveSkills(user); return value; }
 function backup(user) { return { schemaVersion: seed.schemaVersion, state: state(user), resources: db.prepare('SELECT id,kind,data,version,status,created_at createdAt,updated_at updatedAt FROM resources WHERE owner=? ORDER BY id').all(user).map(row => ({ id: row.id, kind: row.kind, data: JSON.parse(row.data), version: row.version, status: row.status, createdAt: row.createdAt, updatedAt: row.updatedAt })) }; }
 function restore(user, body) { if (body.schemaVersion !== seed.schemaVersion) fail(`unsupported schemaVersion: ${body.schemaVersion}`, 400); if (!body.state || typeof body.state !== 'object' || !Array.isArray(body.resources)) fail('invalid backup format'); db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(`state:${user}`, JSON.stringify(body.state)); const statement = db.prepare('INSERT INTO resources(id,kind,owner,data,version,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,version=excluded.version,status=excluded.status,updated_at=excluded.updated_at WHERE resources.owner=excluded.owner'); for (const item of body.resources) { if (!item.id || !item.kind || !item.data || item.owner) fail('invalid backup resource'); const stamp = now(); statement.run(String(item.id), String(item.kind), user, JSON.stringify(item.data), Number.isInteger(item.version) ? item.version : 1, item.status || 'active', item.createdAt || stamp, item.updatedAt || stamp); } audit(user, 'restore', 'backup', { schemaVersion: body.schemaVersion, resourceCount: body.resources.length }); return backup(user); }
-function openapi() { const operation = (summary, requestBody, response = 'object') => ({ summary, ...(requestBody ? { requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' }, example: requestBody } } } } : {}), responses: { '200': { description: 'Success', content: { 'application/json': { schema: { type: response } } } }, '400': { description: 'Invalid request' } } }); return { openapi: '3.0.3', info: { title: '商业运营工作台 API', version: '1.0.0', description: '商业运营工作台的开发者接口目录。' }, servers: [{ url: '/' }], paths: { '/api/health': { get: operation('检查服务健康状态') }, '/api/state': { get: operation('读取当前用户工作台状态'), put: operation('保存当前用户工作台状态', { theme: 'blue' }) }, '/api/rewrite/analyze': { post: operation('分析原文并锁定事实', { source: '待分析文本' }) }, '/api/rewrite/generate': { post: operation('创建异步改写任务', { source: '待改写文本', intents: ['给政府看'], demoMode: true }, 'object') }, '/api/skills': { get: operation('列出通用写法包'), post: operation('启用或登记写法包', { name: '去 AI 腔', enabled: true }) }, '/api/contexts': { get: operation('列出用户自建行业包'), post: operation('创建行业包', { name: '教培', terms: ['课时'] }) }, '/api/integrations/tasks': { post: operation('创建插件改写任务', { source: '待改写文本', demoMode: true }) }, '/api/integrations/tasks/{id}': { get: operation('查询插件任务状态') }, '/api/integrations/tasks/{id}/retry': { post: operation('重试插件任务') }, '/api/samples': { get: operation('读取表达样本'), post: operation('创建表达样本', { title: '样本', body: '正文' }) }, '/api/documents/parse': { post: operation('解析 Markdown 或 TXT 文本', { format: 'markdown', text: '# 标题' }) }, '/api/documents/extract': { post: operation('读取 Word、PPT、Excel、PDF 等文件的正文', { filename: '材料.docx', base64: '...' }) }, '/api/exports/document': { post: operation('把成稿导出为 Word 或 PPT', { format: 'docx', title: '方案', markdown: '# 标题' }) }, '/api/reports/consistency': { post: operation('跨章节核对全稿数字与口径', { sections: [{ title: '方案一', text: '正文' }] }) }, '/api/rewrite/audiences': { get: operation('列出这篇写给谁的三档对象') }, '/api/frameworks/presets': { get: operation('列出方案骨架预置章节') }, '/api/rules/resolve': { post: operation('合并个人规则与团队规则', { personalRules: [], teamRules: [], decisions: {} }) }, '/api/backup': { get: operation('导出当前用户备份') }, '/api/audit': { get: operation('读取当前用户审计记录') }, '/api/team/me': { get: operation('读取当前用户角色') }, '/api/team/members': { get: operation('读取团队成员'), post: operation('添加或更新团队成员', { userId: 'editor-1', role: 'editor' }) }, '/api/providers': { get: operation('读取模型 Provider'), post: operation('创建模型 Provider', { name: 'Provider', baseUrl: 'https://example.com/v1', model: 'model' }), patch: operation('更新模型 Provider', { id: 'provider-id', status: 'enabled' }) } } }; }
+function openapi() { const operation = (summary, requestBody, response = 'object') => ({ summary, ...(requestBody ? { requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' }, example: requestBody } } } } : {}), responses: { '200': { description: 'Success', content: { 'application/json': { schema: { type: response } } } }, '400': { description: 'Invalid request' } } }); return { openapi: '3.0.3', info: { title: '商业运营工作台 API', version: '1.0.0', description: '商业运营工作台的开发者接口目录。' }, servers: [{ url: '/' }], paths: { '/api/health': { get: operation('检查服务健康状态') }, '/api/state': { get: operation('读取当前用户工作台状态'), put: operation('保存当前用户工作台状态', { theme: 'blue' }) }, '/api/rewrite/analyze': { post: operation('分析原文并锁定事实', { source: '待分析文本' }) }, '/api/rewrite/detect': { post: operation('按白名单检测 AI 味', { source: '待检测文本' }) }, '/api/rewrite/generate': { post: operation('创建异步改写任务', { source: '待改写文本', intents: ['给政府看'], demoMode: true }, 'object') }, '/api/skills': { get: operation('列出通用写法包'), post: operation('启用或登记写法包', { name: '去 AI 腔', enabled: true }) }, '/api/contexts': { get: operation('列出用户自建行业包'), post: operation('创建行业包', { name: '教培', terms: ['课时'] }) }, '/api/integrations/tasks': { post: operation('创建插件改写任务', { source: '待改写文本', demoMode: true }) }, '/api/integrations/tasks/{id}': { get: operation('查询插件任务状态') }, '/api/integrations/tasks/{id}/retry': { post: operation('重试插件任务') }, '/api/samples': { get: operation('读取表达样本'), post: operation('创建表达样本', { title: '样本', body: '正文' }) }, '/api/documents/parse': { post: operation('解析 Markdown 或 TXT 文本', { format: 'markdown', text: '# 标题' }) }, '/api/documents/extract': { post: operation('读取 Word、PPT、Excel、PDF 等文件的正文', { filename: '材料.docx', base64: '...' }) }, '/api/exports/document': { post: operation('把成稿导出为 Word 或 PPT', { format: 'docx', title: '方案', markdown: '# 标题' }) }, '/api/reports/consistency': { post: operation('跨章节核对全稿数字与口径', { sections: [{ title: '方案一', text: '正文' }] }) }, '/api/rewrite/audiences': { get: operation('列出这篇写给谁的三档对象') }, '/api/frameworks/presets': { get: operation('列出方案骨架预置章节') }, '/api/rules/resolve': { post: operation('合并个人规则与团队规则', { personalRules: [], teamRules: [], decisions: {} }) }, '/api/backup': { get: operation('导出当前用户备份') }, '/api/audit': { get: operation('读取当前用户审计记录') }, '/api/team/me': { get: operation('读取当前用户角色') }, '/api/team/members': { get: operation('读取团队成员'), post: operation('添加或更新团队成员', { userId: 'editor-1', role: 'editor' }) }, '/api/providers': { get: operation('读取模型 Provider'), post: operation('创建模型 Provider', { name: 'Provider', baseUrl: 'https://example.com/v1', model: 'model' }), patch: operation('更新模型 Provider', { id: 'provider-id', status: 'enabled' }) } } }; }
 async function api(req, res, url) { if (req.method === 'GET' && url.pathname === '/api/openapi') return json(res, 200, openapi()); if (req.method === "GET" && url.pathname === "/api/backup") { requirePermission(req, 'read'); return json(res, 200, backup(owner(req))); } if (req.method === "POST" && url.pathname === "/api/backup/restore") { requirePermission(req, 'write'); return json(res, 200, restore(owner(req), await parseBody(req))); } const user = owner(req); const parts = url.pathname.split('/').filter(Boolean); const handled = await commercialOps.handle(req, res, url, { user, json, fail, parseBody, requirePermission, listResources, resource, updateResource, validateText }); if (handled !== false) return handled; if (req.method === 'GET' && url.pathname === '/api/health') return json(res, 200, { ok: true, service: 'personal-expression-preview', persistence: 'sqlite', llmConfigured: configuredLLM(user) }); if (req.method === 'GET' && url.pathname === '/api/team/me') return json(res, 200, { userId: user, role: role(req), permissions: permissions[role(req)] }); if (req.method === 'GET' && url.pathname === '/api/state') { requirePermission(req, 'read'); return json(res, 200, state(user)); } if (req.method === 'PUT' && url.pathname === '/api/state') { requirePermission(req, 'write'); const body = await parseBody(req); db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(`state:${user}`, JSON.stringify({ ...seed, ...body })); audit(user, 'update', 'state', { keys: Object.keys(body), role: role(req) }); return json(res, 200, state(user)); }
    if (parts[1] === 'providers' && ['GET', 'POST', 'PATCH'].includes(req.method)) {
      requirePermission(req, req.method === 'GET' ? 'read' : 'write');
@@ -1110,6 +1214,13 @@ async function api(req, res, url) { if (req.method === 'GET' && url.pathname ===
   if (parts[1] === 'state' && parts.length === 3 && req.method === 'PUT') { requirePermission(req, 'write'); const body = await parseBody(req); const current = state(user); current[parts[2]] = body; db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(`state:${user}`, JSON.stringify(current)); audit(user, 'update', 'state', { section: parts[2] }); return json(res, 200, body); }
     const kindMap = { samples: 'sample', documents: 'document', rules: 'rule', contexts: 'context', industries: 'industry', scenarios: 'scenario', skills: 'skill' }; if (parts[1] && kindMap[parts[1]] && parts.length === 2) { const kind = kindMap[parts[1]]; requirePermission(req, req.method === 'GET' ? 'read' : 'write'); if (kind === 'skill') ensureBuiltinSkills(user); if (kind === 'context') ensureDefaultIndustryPack(user); if (req.method === 'GET') return json(res, 200, kind === 'skill' ? listActiveSkills(user) : listResources(user, kind)); if (req.method === 'POST') { const body = await parseBody(req); if (kind === 'sample') { validateText(body.body, 'body'); const voice = classifyVoice(body.body); body.kind = body.kind || voice.kind; body.style = body.style || voice.style; body.rhythm = body.rhythm || voice.rhythm; body.logic = body.logic || voice.logic; body.scene = body.scene || body.context || voice.scene; } if (kind === 'document') validateText(body.content, 'content'); if (kind === 'rule') { validateText(body.statement || body.text, 'statement'); body.priority = Number.isFinite(Number(body.priority)) ? Number(body.priority) : 0; body.status = body.status || 'active'; } if (kind === 'context') { validateText(body.name, 'name'); body.domain = body.domain || 'commercial-ops'; body.terms = Array.isArray(body.terms) ? body.terms.map(term => String(term).trim()).filter(Boolean) : String(body.terms || '').split(/[\n，,、]/).map(term => term.trim()).filter(Boolean); body.phrases = Array.isArray(body.phrases) ? body.phrases.map(term => String(term).trim()).filter(Boolean) : String(body.phrases || '').split(/[\n，,、]/).map(term => term.trim()).filter(Boolean); body.status = body.status || 'active'; } if (kind === 'skill') { if (body.id) { const existing = listResources(user, 'skill').find(item => item.id === body.id); if (existing) return json(res, 200, patchSkill(user, body.id, { enabled: body.enabled !== false })); } body.kind = body.kind || 'generic-deai'; body.enabled = body.enabled !== false; body.source = body.source || 'custom'; } if (!body.name && kind !== 'sample') fail('name is required'); return json(res, 201, resource(user, kind, body)); } }
     if (parts[1] && kindMap[parts[1]] && req.method === 'PATCH' && parts[2]) { requirePermission(req, 'write'); const body = await parseBody(req); if (kindMap[parts[1]] === 'skill') return json(res, 200, patchSkill(user, parts[2], body)); return json(res, 200, updateResource(user, kindMap[parts[1]], parts[2], body)); }
+  if (req.method === 'POST' && url.pathname === '/api/rewrite/detect') {
+    requirePermission(req, 'read');
+    const input = await parseBody(req);
+    const source = validateText(input.source || input.text || input.candidate, 'source', 200000);
+    const report = detectAITaste(source, { intent: resolveIntent(input, false) });
+    return json(res, 200, { source, ...report, checkedAt: now() });
+  }
   if (req.method === 'POST' && url.pathname === '/api/rewrite/analyze') { const input = await parseBody(req); const source = validateText(input.source || input.fragment || input.text, 'source'); const analysis = classify(source); const lockedContent = { numbers: analysis.numbers, facts: analysis.facts }; const shouldLock = input.lock === true || input.lockFacts === true; if (shouldLock) { requirePermission(req, 'write'); persistLock(user, source, lockedContent); } const diagnosis = state(user).diagnosis || {}; return json(res, 200, { source, ready: true, lockedContent, issues: [], analyzedAt: now(), factCount: analysis.facts.length, numberCount: analysis.numbers.length, factsCount: analysis.facts.length, numbersCount: analysis.numbers.length, factsLocked: shouldLock || diagnosis.factsLocked === true, contentAnalysis: analysis }); }
     if (req.method === 'POST' && url.pathname === '/api/rewrite/generate') { requirePermission(req, 'write'); const input = await parseBody(req); validateText(input.source, 'source'); resolveIntent(input, true); const skillIds = mapRetiredSkillIds(normalizeSkillIds(input)); skillIds.forEach(skillId => selectedSkill(user, { skillIds: [skillId] })); const enqueue = (payload) => { const source = payload.source; const snapshot = { ...references(user, payload), semanticLayers: semanticLayers(payload), contentAnalysis: classify(source) }; const storedInput = sanitizeTaskInput(payload); const task = resource(user, 'task', { source, input: storedInput, ...snapshot, status: 'queued', demoMode: payload.demoMode === true }, id()); db.prepare('INSERT INTO tasks(id,owner,data,status,attempts,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').run(task.id, user, JSON.stringify(task), 'queued', 0, now(), now()); runTask(task.id, user, payload); return { taskId: task.id, status: 'queued', ...snapshot }; }; if (skillIds.length > 1) { const tasks = skillIds.map(skillId => enqueue({ ...input, skillIds: [skillId] })); return json(res, 202, { taskId: tasks[0].taskId, taskIds: tasks.map(item => item.taskId), status: 'queued', ...tasks[0] }); } return json(res, 202, enqueue({ ...input, skillIds })); }
     if (parts[1] === 'tasks' && parts[2] && req.method === 'GET') { const task = db.prepare('SELECT id,status,error,data,attempts,created_at createdAt,updated_at updatedAt FROM tasks WHERE id=? AND owner=?').get(parts[2], user); if (!task) fail('task not found', 404); return json(res, 200, { ...task, data: publicTaskData(task.data) }); }

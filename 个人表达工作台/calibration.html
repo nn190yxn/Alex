@@ -7,34 +7,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>我的写法</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .calib-head{margin:0 0 14px}
-    .calib-head h2{margin:0 0 4px}
-    .calib-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fff}
-    .calib-card-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 8px}
-    .calib-badge{font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
-    .calib-badge.fixed{border-color:var(--brand);background:var(--soft);color:var(--brand)}
-    .calib-badge.counter{border-color:#e0b34a;background:#fdf6e3;color:#a5791a}
-    .calib-human{margin:0 0 10px;color:var(--ink);line-height:1.7;font-size:15px}
-    .calib-actions{display:flex;gap:8px;flex-wrap:wrap}
-    .calib-actions .btn,.calib-actions button{padding:6px 10px;width:auto}
-    .calib-note{width:100%;min-height:64px}
-    .inbox-panel{border-color:var(--brand);background:var(--soft)}
-    .practice-bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:0 0 12px}
-    .practice-bar label{display:grid;gap:6px;color:var(--muted);font-size:13px}
-    .practice-bar select{min-width:150px}
-    .practice-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fff}
-    .practice-card.done{border-color:var(--brand);background:var(--soft)}
-    .practice-card-head{display:flex;gap:8px;align-items:center;margin:0 0 8px}
-    .practice-index{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--soft);color:var(--brand);font-size:12px;font-weight:800}
-    .practice-prompt{margin:0 0 8px;color:var(--ink);line-height:1.65}
-    .practice-card textarea{min-height:64px;margin:0 0 8px}
-    .practice-count{color:var(--muted);font-size:12px}
-    .practice-corrected{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;line-height:1.75;white-space:pre-wrap;background:#fbfcfe}
-    .practice-finding{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:0 0 8px}
-    .practice-finding small{color:var(--muted);display:block;margin-top:3px}
-    .practice-finding code{background:#f2f5fa;border-radius:5px;padding:1px 5px;color:var(--ink)}
-  </style>
 </head>
 <body>
   <div class="app">
@@ -60,7 +32,7 @@
         <h2>记一条我发现的写法</h2>
         <p class="sub">一句话写下你想固定下来的说法，系统自动归类。</p>
         <textarea class="calib-note" data-calib-note placeholder="例如：不说核心竞争力，直接说课时和续费率"></textarea>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <div class="actions mt-3">
           <button class="btn primary" type="button" data-calib-add>记下</button>
         </div>
       </section>

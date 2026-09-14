@@ -7,31 +7,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>改一稿</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .board{display:grid;gap:16px}
-    .source-box{min-height:220px}
-    .tool-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:8px 0}
-    .tool-row label{display:flex;align-items:center;gap:8px;color:var(--ink);cursor:pointer}
-    .tool-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--brand)}
-    .skill-list{display:grid;gap:8px;margin:8px 0 12px}
-    .skill-list label{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
-    .skill-list label.on{border-color:var(--brand);background:var(--soft)}
-    .skill-list label.disabled{opacity:.55;cursor:not-allowed}
-    .skill-list small{display:block;color:var(--muted);margin-top:4px}
-    .range{display:flex;gap:6px;flex-wrap:wrap}
-    .chip{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--muted);background:#fff;cursor:pointer}
-    .chip.active{background:var(--soft);border-color:var(--brand);color:var(--brand);font-weight:700}
-    .results{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-    .result-col{overflow-wrap:anywhere;line-height:1.7}
-    .result-col h3{margin:0 0 8px;font-size:16px}
-    .result-col [data-result-text]{white-space:pre-wrap}
-    .term-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0;white-space:normal}
-    .term-row .btn{padding:4px 10px;font-size:12px}
-    .term-row label{flex:1;min-width:200px}
-    .term-row.absorbed{opacity:.55}
-    #llm-config{margin:0 0 8px}
-    #generate-status,#industry-hint,#intent-status{font-size:13px;color:var(--muted);margin:8px 0 0}
-  </style>
 </head>
 <body>
   <div class="app">
@@ -63,6 +38,11 @@
         <h2>贴稿</h2>
         <textarea class="source-box" data-source placeholder="把原文贴在这里"></textarea>
       </section>
+      <section class="panel" data-taste-panel>
+        <h2>AI 味体检</h2>
+        <p class="sub">按白名单扫一遍。只标出命中的痕迹，改写时只动这些句子，其余逐字保留；数字、专名、引用不改。</p>
+        <div data-taste-result></div>
+      </section>
       <section class="panel" data-related-panel>
         <h2>这篇会用到的案例和用词</h2>
         <p class="sub">按正文命中，重复出现的排在前面。出稿时自动写入已收下的案例，不用单独勾。</p>
@@ -92,7 +72,7 @@
         <h2>把你改过的这一稿收回来</h2>
         <p class="sub">出稿后你又改过用词或术语，把改完的正文贴回来。对照这一稿列出修正，勾上再收下。</p>
         <textarea data-correct-source placeholder="把你改过的正文贴在这里"></textarea>
-        <div class="extract-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+        <div class="extract-actions">
           <button class="btn primary" type="button" data-correct-run>对照这一稿，列出修正</button>
           <button class="btn" type="button" data-correct-accept disabled>收下勾上的修正</button>
         </div>

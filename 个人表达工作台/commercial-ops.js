@@ -10,11 +10,19 @@
    { id: 'department', name: '传统百货' }
  ];
 
- const AUDIENCES = [
-   { id: '给政府看', label: '给政府看', hint: '讲区域价值、就业、税收、产业带动和政策契合；少讲租金与商业机密，语气克制。' },
-   { id: '给品牌方看', label: '给品牌方看', hint: '讲客群、客流、消费力、周边配套、同层品牌和开业节奏，写清品牌能得到什么。' },
-   { id: '给内部看', label: '给内部看', hint: '讲租金测算、成本、出租率、风险、退出条件和进度责任；用「我方」，数字完整可追责。' }
- ];
+  const AUDIENCES = [
+    { id: '给政府看', label: '给政府看', hint: '讲区域价值、就业、税收、产业带动和政策契合；少讲租金与商业机密，语气克制。' },
+    { id: '给品牌方看', label: '给品牌方看', hint: '讲客群、客流、消费力、周边配套、同层品牌和开业节奏，写清品牌能得到什么。' },
+    { id: '给内部看', label: '给内部看', hint: '讲租金测算、成本、出租率、风险、退出条件和进度责任；用「我方」，数字完整可追责。' }
+  ];
+
+  const WRITING_EXERCISE = {
+    title: '第三季度招商运营汇报',
+    brief: '场景：向公司领导汇报 A 项目第三季度招商和运营情况。',
+    notes: '草稿里没写、但汇报该讲的三个问题：四层动线冷区、餐饮同质化、会员复购率 18%。',
+    audience: ['给内部看'],
+    source: '我们打造了区域独树一帜的非标商业标杆。三季度客流全面爆发，日均从 2.1 万涨到 3.4 万人次；出租率大幅提升，从 78% 提到 91%；品牌矩阵不断完善，新签 26 家，其中首店 12 家。我们牢牢抢占年轻客群心智，平均租金提到 96 元/㎡/月。竞品完全无法复制我们的闭环，团队赋能商户取得显著成果。下一步要打赢流量争夺战，继续打造商业新标杆。'
+  };
 
  const FRAMEWORK_PRESETS = [
    { name: '项目判断与定位', description: '一句话说清这是什么项目、给谁、凭什么是它。先给结论，再给依据。', priority: '高优先级' },
@@ -195,67 +203,90 @@
    return terms.slice(0, count);
  }
 
+  const DRILL_NOUNS = ['主力店', '客流', '租金', '首店', '会员', '动线', '业态组合', '招商节奏'];
+  const DRILL_STOP = /^(打造|赋能|抢|做|提升|优化|构建|形成|打通|实现|推动|聚焦|深化|强化|做好|发力|抢占|突破|打赢|闭环|抓手)/;
+
+  function isSlotSafe(term) {
+    const value = String(term || '').trim();
+    if (value.length < 2 || value.length > 10) return false;
+    if (/[，。！？、；：（）()「」“”"'·\-]/.test(value)) return false;
+    if (DRILL_STOP.test(value)) return false;
+    return true;
+  }
+
   function pickFour(terms, offset) {
-    const pool = (terms && terms.length) ? terms : ['非标商业', '主力店', '客流', '租金'];
+    const safe = (terms || []).filter(isSlotSafe);
+    const pool = safe.length ? safe : DRILL_NOUNS;
     const start = Math.abs(Number(offset) || 0) % pool.length;
-    return [0, 1, 2, 3].map(step => pool[(start + step) % pool.length]);
+    const out = [];
+    for (let step = 0; step < pool.length && out.length < 4; step += 1) {
+      const item = pool[(start + step) % pool.length];
+      if (!out.includes(item)) out.push(item);
+    }
+    let fill = 0;
+    while (out.length < 4) {
+      const item = DRILL_NOUNS[fill % DRILL_NOUNS.length];
+      if (!out.includes(item)) out.push(item);
+      fill += 1;
+    }
+    return out;
   }
 
   function makeDrill(kindId, pack, variant) {
     const kind = DRILL_KINDS.find(item => item.id === kindId) || DRILL_KINDS[0];
-    const terms = pickTerms(pack, 4);
-    const index = Math.abs(Number(variant) || 0);
+    const terms = pickTerms(pack, 24);
+    const index = variant === undefined || variant === null ? Math.floor(Math.random() * 36) : Math.abs(Number(variant) || 0);
     const [a, b, c, d] = pickFour(terms, Math.floor(index / 3));
     const templates = {
       stance: [
-        '我们打造了' + a + '，我们抢客流，竞品做不到，我们能打赢。',
-        '我们不必再组' + b + '团队，合作方会把' + c + '做起来，我们省心。',
-        '我方认为' + a + '是我们的核心优势，别人复制不了。'
+        '我方认为，' + a + '这块由我们主导，合作方配合，出了问题也由他们担。',
+        '关于' + a + '，我们不必再跟合作方细谈，按我们的方案推进就行。',
+        '我方认为，' + a + '这块我们说了算，合作方照着执行。'
       ],
       wording: [
-        '通过优化' + c + '结构，可以有效提升项目的核心竞争力和综合价值。',
-        '以' + a + '为引擎，以' + b + '为抓手，打造' + c + '闭环，全面赋能招商。',
-        '本项目致力于打造区域标杆，构建' + a + '生态矩阵。'
+        '通过优化' + a + '，可以有效提升项目的核心竞争力和综合价值。',
+        '以' + a + '为引擎，以' + b + '为抓手，打造闭环，全面赋能招商。',
+        '本项目致力于打造区域标杆，在' + a + '上形成可复制的打法。'
       ],
       syntax: [
-        a + '依托' + b + '形成全天候消费场景并在此基础上持续放大' + c + '价值最终实现场内品牌协同发展。',
-        '项目整体定位清晰，但是在' + b + '落位上仍有调整空间，不过不影响' + c + '的基本盘。',
-        '我们要把' + a + '做好，同时把' + b + '做好，并且把' + c + '做好，最终把' + d + '做好。'
+        '我们先把' + a + '做好同时把' + b + '做好并且把' + c + '做好最终把整体工作做好。',
+        '项目整体定位清晰，但是在' + a + '上仍有调整空间，不过不影响' + b + '的基本盘。',
+        '我们不是不重视' + a + '，也不是没有考虑' + b + '，只是目前条件还不成熟。'
       ],
       order: [
-        '我们已和' + b + '谈成合作，参考了成都太古里的做法，效果值得期待。',
-        '先说' + c + '的增长数据，再说我们怎么对接' + a + '，最后说结论。',
-        '项目周边' + c + '一般，但我们是' + a + '，所以能站住。'
+        '参考了同类项目的做法，也看了' + a + '的情况，反复讨论之后，我们建议先不动' + b + '。',
+        '从' + a + '的情况看，结合' + b + '的现状，再对照年初的目标，总体上是向好的。',
+        '在' + a + '上我们一般，但在' + b + '上有积累，所以认为可以站住。'
       ],
       rhetoric: [
-        a + '拥有独特的核心优势，赋能商家、打造闭环、抓手清晰，别人复制不了。',
-        '本项目将构建' + a + '的生态矩阵，形成' + b + '的强力抓手，打通' + c + '的任督二脉。',
-        '以' + a + '为引擎，以' + b + '为闭环，全方位赋能' + c + '，打造行业标杆。'
+        '在' + a + '上我们拥有独特优势，赋能商户、打造闭环、抓手清晰，别人复制不了。',
+        '本项目将围绕' + a + '构建生态矩阵，形成' + b + '的强力抓手，打通任督二脉。',
+        '以' + a + '为引擎，以' + b + '为闭环，全方位赋能，打造行业标杆。'
       ],
       rhythm: [
         '接下来汇报项目情况。项目位于核心区位。周边客群稳定。' + a + '有基础。' + b + '待优化。',
-        a + '的定位、' + b + '的组合、' + c + '的动线、' + d + '的口径，都要在今天这页讲清楚，而且要讲得让领导听得明白、记得住、能复述。',
+        '关于' + a + '、' + b + '，还有动线和口径，都要在今天这页讲清楚，而且要讲得让领导听得明白、记得住、能复述，会后还能直接拿去用。',
         '关于' + a + '，我们做了大量调研，形成了完整判断，下面分三个方面汇报。'
       ],
       discourse: [
         '调研结论。以下是本次调研的主要内容。',
-        '关于' + b + '落位的说明：' + b + '落位受多因素影响，需要综合判断。',
+        '关于' + a + '的说明：' + a + '受多因素影响，需要综合判断。',
         '本页介绍' + a + '相关情况，包括背景、现状和后续计划。'
       ],
       facts: [
-        a + '约 20000 平方米，预计出租率能到 95%，年租金大概 2000 万左右。',
+        a + '大约两万平，出租率估计能到九成五，一年租金两千万上下。',
         '项目已于去年开业，面积约 3.8 万方，客流达到每天五万人。',
-        a + '占比约 45%，' + b + '约 30%，其余为' + c + '，合计约 1.2 亿元。'
+        '几块业务里，' + a + '占到大头，其余为其他业态，合计约 1.2 亿元。'
       ],
       boundary: [
-        a + '是区域内最大的' + b + '中心，也是唯一一家，竞争优势明显。',
-        '本项目拥有国内一流的' + a + '，是最具价值的' + b + '，别人复制不了。',
-        '我们的' + c + '是最好的，租金一定谈得下来，底线不能退。'
+        '在' + a + '上我们是区域内最强的，也是唯一能做到的，别人复制不了。',
+        '本项目拥有国内一流水平，是最具价值的，没有之一。',
+        '我们的' + a + '是最好的，' + b + '一定谈得下来，底线不能退。'
       ]
     };
     const list = templates[kind.id] || templates.wording;
     const picked = index % list.length;
-    return { kind: kind.id, name: kind.name, hint: kind.hint, prompt: list[picked], terms: terms, variant: index };
+    return { kind: kind.id, name: kind.name, hint: kind.hint, prompt: list[picked], terms: terms.slice(0, 4), variant: index };
   }
 
   function makeDrills(kindId, pack, count) {
@@ -512,7 +543,7 @@
        const prompts = makeDrills(body.kind || body.type, pack, body.count);
        return api.json(res, 200, { kind: prompts[0].kind, name: prompts[0].name, hint: prompts[0].hint, prompts });
      }
-     const drill = makeDrill(body.kind || body.type, pack);
+      const drill = makeDrill(body.kind || body.type, pack, body.variant);
      return api.json(res, 200, drill);
    }
 
@@ -759,6 +790,10 @@
      return api.json(res, 200, AUDIENCES);
    }
 
+   if (method === 'GET' && url.pathname === '/api/rewrite/exercise') {
+     return api.json(res, 200, WRITING_EXERCISE);
+   }
+
    if (method === 'GET' && url.pathname === '/api/frameworks/presets') {
      return api.json(res, 200, FRAMEWORK_PRESETS);
    }
@@ -831,6 +866,7 @@ return false;
    COMMERCIAL_TYPES,
    DRILL_KINDS,
    AUDIENCES,
+   WRITING_EXERCISE,
    FRAMEWORK_PRESETS,
    normalizeCommercialTypes,
    consistencyReport,

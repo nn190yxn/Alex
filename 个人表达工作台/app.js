@@ -218,45 +218,51 @@
        button.classList.toggle('active', button.dataset.set === next);
      });
    }
-   function injectWorkbenchStyles() {
-     if (document.getElementById('workbench-ui-style')) return;
-     var style = document.createElement('style');
-     style.id = 'workbench-ui-style';
-     style.textContent = 'html[data-theme="blue"],body[data-theme="blue"]{--bg:#f4f7fb;--brand:#2f6fed;--soft:#eaf1ff;--accent:#31a98d;--brand-soft:#eaf1ff;--b:#2f6fed;--s:#eaf1ff;--g:#31a98d}html[data-theme="orange"],body[data-theme="orange"]{--bg:#fff8f1;--brand:#ed733c;--soft:#fff0e7;--accent:#24a887;--brand-soft:#fff0e7;--b:#ed733c;--s:#fff0e7;--g:#24a887}html[data-theme="purple"],body[data-theme="purple"]{--bg:#f7f5ff;--brand:#6857d9;--soft:#efedff;--accent:#18aaca;--brand-soft:#efedff;--b:#6857d9;--s:#efedff;--g:#18aaca}input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=button]):not([type=submit]):not([type=file]),select,textarea{width:100%;min-width:0;max-width:100%;box-sizing:border-box;font:inherit;color:var(--ink,#172033);background:var(--panel,#fff);border:1px solid var(--line,#e5eaf2);border-radius:10px;padding:11px 13px;line-height:1.45;outline:none}input:not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--soft)}textarea{min-height:112px;resize:vertical}select{appearance:none;-webkit-appearance:none;padding-right:36px;background-image:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path fill=\'%23718096\' d=\'M1 1l5 5 5-5\'/></svg>");background-repeat:no-repeat;background-position:right 12px center}.inline-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;align-items:end}.inline-form textarea{grid-column:1/-1}.inline-form .btn,.inline-form button{min-height:42px}input.search,.search{width:min(260px,100%)}.layout{min-width:0}#llm-config form{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;align-items:end}#llm-config input{width:100%;min-width:0 !important;flex:1 1 160px}.chip.active{border-color:var(--brand);color:var(--brand);background:var(--soft)}@media (max-width:900px){.layout{grid-template-columns:1fr}.inline-form{grid-template-columns:1fr}.inline-form .btn,.inline-form button{width:100%}.actions{flex-wrap:wrap}#llm-config form{grid-template-columns:1fr}#llm-config input{width:100% !important;min-width:0 !important;flex:none}}';
-     document.head.appendChild(style);
-   }
-   injectWorkbenchStyles();
-    if (!document.getElementById('catalog-ui-style')) {
-      var catalogStyle = document.createElement('style');
-      catalogStyle.id = 'catalog-ui-style';
-      catalogStyle.textContent = '.skill-group,.habit-group{margin:0 0 18px}.skill-group>h3,.habit-group>h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:700}.skill-list .skill-group{display:grid;gap:8px;margin:0 0 12px}.catalog-group{border:1px solid var(--line,#e5eaf2);border-radius:12px;margin:0 0 8px;background:#fff;overflow:hidden}.catalog-group>summary{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;font-weight:700;list-style:none}.catalog-group>summary::-webkit-details-marker{display:none}.catalog-group>summary small{font-weight:400;color:var(--muted,#718096)}.lexicon-bar{display:flex;gap:12px;align-items:center;margin:0 0 14px;flex-wrap:wrap}.lexicon-bar .search{flex:1;min-width:180px;max-width:420px}.lexicon-count{color:var(--muted);font-size:13px}.lexicon-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.lexicon-filters .chip,.tabs .chip{border:1px solid var(--line,#e5eaf2);border-radius:999px;padding:7px 12px;font-size:13px;color:var(--muted);background:#fff;cursor:pointer}.lexicon-filters .chip.active,.tabs .chip.active{background:var(--soft);border-color:var(--brand);color:var(--brand);font-weight:700}.lexicon-group{margin:0 0 22px}.lexicon-group h3{margin:0 0 10px;font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700}.term-cloud{display:flex;flex-wrap:wrap;gap:8px}.term-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#e5eaf2);background:#f7f9fc;border-radius:999px;padding:7px 12px;line-height:1.2;max-width:100%}.term-chip b{font-size:13px;font-weight:650;color:var(--ink,#172033)}.term-chip small{font-size:11px;color:var(--muted);font-weight:400}.term-chip[data-hot="1"]{border-color:var(--brand);background:var(--soft);color:var(--brand)}.term-chip[data-hot="1"] b{color:var(--brand)}.fold-group{margin:0 0 10px}.fold-group>summary>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fold-group>summary>small{flex:0 0 auto;margin-left:10px}.fold-group>summary::after{content:"▸";color:var(--muted,#718096);font-size:12px;margin-left:8px;transition:transform .15s ease}.fold-group[open]>summary::after{transform:rotate(90deg)}.fold-group>.fold-body{padding:2px 14px 14px}.fold-group>.fold-body>:first-child{margin-top:0}.fold-group>.fold-body>:last-child{margin-bottom:0}';
-      document.head.appendChild(catalogStyle);
-    }
     applyTheme(readStoredTheme());
    document.querySelectorAll('[data-set]').forEach(function (button) {
      button.addEventListener('click', function () { applyTheme(button.dataset.set); save(); });
    });
+      var NAV_ICONS = {
+        edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+        layers: '<path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+        file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+        list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+        feed: '<path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/>',
+        book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+        quote: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+        case: '<path d="M2 7h20v13H2z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>',
+        text: '<path d="M17 10H3M21 6H3M21 14H3M17 18H3"/>',
+        sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+        target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+        users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        send: '<path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7Z"/>'
+      };
+      function navIcon(name) {
+        var body = NAV_ICONS[name];
+        if (!body) return '';
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+      }
       var navGroups = [
         { name: '写作', items: [
-          { name: '改一稿', href: 'rewrite.html', icon: '✦' },
-          { name: '写法包', href: 'skills.html', icon: '☰' },
-          { name: '项目材料', href: 'documents.html', icon: '▤' },
-          { name: '方案目录', href: 'framework.html', icon: '☷' }
+          { name: '改一稿', href: 'rewrite.html', icon: 'edit' },
+          { name: '写法包', href: 'skills.html', icon: 'layers' },
+          { name: '项目材料', href: 'documents.html', icon: 'file' },
+          { name: '方案目录', href: 'framework.html', icon: 'list' }
         ]},
         { name: '行业', items: [
-          { name: '资讯', href: 'industry.html', icon: '⌘' },
-          { name: '术语', href: 'terms.html', icon: '▣' },
-          { name: '常用语', href: 'phrases.html', icon: '◇' },
-          { name: '案例', href: 'cases.html', icon: '▤' }
+          { name: '资讯', href: 'industry.html', icon: 'feed' },
+          { name: '术语', href: 'terms.html', icon: 'book' },
+          { name: '常用语', href: 'phrases.html', icon: 'quote' },
+          { name: '案例', href: 'cases.html', icon: 'case' }
         ]},
         { name: '个人', items: [
-          { name: '语料', href: 'voice.html', icon: '◈' },
-          { name: '用词习惯', href: 'habits.html', icon: '✎' },
-          { name: '我的写法', href: 'calibration.html', icon: '◎' }
+          { name: '语料', href: 'voice.html', icon: 'text' },
+          { name: '用词习惯', href: 'habits.html', icon: 'sliders' },
+          { name: '我的写法', href: 'calibration.html', icon: 'target' }
         ]},
         { name: '协作', items: [
-          { name: '同事看稿', href: 'team.html', icon: '☑' },
-          { name: '发布中心', href: 'publish.html', icon: '↗' }
+          { name: '同事看稿', href: 'team.html', icon: 'users' },
+          { name: '发布中心', href: 'publish.html', icon: 'send' }
         ]}
       ];
       var CASE_TYPES = [
@@ -269,19 +275,13 @@
       navGroups.forEach(function (group) {
         group.items.forEach(function (item) { catalog[item.name] = item; });
       });
-    if (!document.getElementById('side-nav-style')) {
-      var navStyle = document.createElement('style');
-      navStyle.id = 'side-nav-style';
-       navStyle.textContent = 'html{scrollbar-gutter:stable}.app{align-items:stretch}.side{width:248px;flex:0 0 248px;box-sizing:border-box}.side .nav,.side nav{display:grid;gap:4px}.nav-group{margin:0 0 10px}.nav-group-title{padding:10px 13px 4px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700}.side .nav button,.side nav button{border:0;background:transparent;color:var(--muted);padding:10px 13px;border-radius:10px;text-align:left;font:inherit;font-size:14px;cursor:pointer}.side .nav button.active,.side .nav button.on,.side .nav button:hover,.side nav button.active,.side nav button:hover{color:var(--brand);background:var(--soft,#eaf1ff);font-weight:700}.nav-type{padding:6px 13px 6px 28px !important;font-size:12px !important}.logo{cursor:pointer}';
-      document.head.appendChild(navStyle);
-    }
       var currentPage = (location.pathname.split('/').pop() || 'index.html');
       document.querySelectorAll('.side .nav, .side nav').forEach(function (nav) {
         var typeParam = new URLSearchParams(location.search).get('type') || '';
         nav.innerHTML = navGroups.map(function (group) {
           return '<div class="nav-group"><div class="nav-group-title">' + group.name + '</div>' + group.items.map(function (item) {
             var on = item.href === currentPage;
-            var html = '<button class="' + (on ? 'active on' : '') + '" data-href="' + item.href + '">' + item.icon + ' <span>' + item.name + '</span></button>';
+            var html = '<button class="' + (on ? 'active on' : '') + '" data-href="' + item.href + '"><span class="nav-ic">' + navIcon(item.icon) + '</span><span>' + item.name + '</span></button>';
             if (item.name === '案例') {
               html += CASE_TYPES.map(function (type) {
                 var typeOn = currentPage === 'cases.html' && typeParam === type.id;
@@ -306,14 +306,6 @@
        }
        if (href) item.addEventListener('click', function () { location.href = href; });
      });
-      if (!document.getElementById('page-focus-style')) {
-        var focusStyle = document.createElement('style');
-        focusStyle.id = 'page-focus-style';
-         var extra = '';
-         if (currentPage === 'industry.html') extra = 'main>.layout,.head>.btn{display:none!important}';
-         focusStyle.textContent = extra;
-        document.head.appendChild(focusStyle);
-      }
     var generate = document.querySelector('[data-rewrite-board]') ? null : Array.from(document.querySelectorAll('button')).find(function (x) { return x.textContent.indexOf('出一稿') >= 0 || x.textContent.indexOf('生成改写稿') >= 0; });
       if (generate) generate.addEventListener('click', function () {
         var required = document.getElementById('scene-required');
@@ -427,10 +419,76 @@
           state.rewrite.source = source.value;
           saveSoon();
           scheduleRelated();
+          scheduleTaste();
         });
+        if (!String(source.value || '').trim()) {
+          fetch('/api/rewrite/exercise').then(function (r) { return r.json(); }).then(function (ex) {
+            if (!ex || !ex.source || String(source.value || '').trim()) return;
+            state.rewrite.source = ex.source;
+            source.value = ex.source;
+            if (Array.isArray(ex.audience) && ex.audience.length && !state.rewrite.intents.length) {
+              state.rewrite.intents = ex.audience.filter(function (name) { return AUDIENCES.some(function (a) { return a.id === name; }); });
+              chips.querySelectorAll('[data-intent]').forEach(function (b) { b.classList.toggle('active', state.rewrite.intents.indexOf(b.dataset.intent) >= 0); });
+              syncGenerate();
+            }
+            save();
+            var brief = document.querySelector('[data-exercise-brief]');
+            if (!brief && source.parentNode) {
+              brief = document.createElement('p');
+              brief.className = 'sub';
+              brief.setAttribute('data-exercise-brief', '');
+              source.parentNode.appendChild(brief);
+            }
+            if (brief) brief.textContent = (ex.title ? ex.title + '。' : '') + (ex.brief || '') + (ex.notes ? ' ' + ex.notes : '') + ' 想换成自己的稿，直接清空重写。';
+            if (typeof scheduleRelated === 'function') scheduleRelated();
+          }).catch(function () {});
+        }
       }
       var relatedEl = document.querySelector('[data-related-list]');
       var relatedTimer;
+      var tasteEl = document.querySelector('[data-taste-result]');
+      var tasteTimer;
+      var TASTE_LEVEL = { high: '偏重', medium: '中等', low: '轻' };
+      function tastePlaceholder(text) {
+        if (tasteEl) tasteEl.innerHTML = '<p>' + (text || '贴稿后，这里会列出命中的 AI 腔痕迹。') + '</p>';
+      }
+      function scheduleTaste() {
+        clearTimeout(tasteTimer);
+        tasteTimer = setTimeout(runTaste, 500);
+      }
+      function runTaste() {
+        if (!tasteEl) return;
+        var text = (source && source.value || '').trim();
+        if (text.length < 12) { tastePlaceholder(); return; }
+        fetch('/api/rewrite/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: text, intents: state.rewrite.intents || [] })
+        }).then(function (r) {
+          return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '体检失败'); return d; });
+        }).then(renderTaste).catch(function (e) { tastePlaceholder(e.message || '体检暂时不可用。'); });
+      }
+      function renderTaste(d) {
+        if (!tasteEl) return;
+        var head = '<div class="taste-head"><b class="taste-score lv-' + esc(d.level) + '">' + d.score + '</b>' +
+          '<span>AI 味' + (TASTE_LEVEL[d.level] || '') + ' · ' + esc(d.summary) + '</span></div>';
+        var dims = '<div class="taste-dims">' + (d.dimensions || []).map(function (item) {
+          return '<span class="taste-dim' + (item.flagged ? ' on' : '') + '" title="' + esc(item.note) + '">' +
+            esc(item.name) + (item.count ? ' ' + item.count : '') + '</span>';
+        }).join('') + '</div>';
+        var stats = '<p class="sub">共 ' + d.stats.chars + ' 字 / ' + d.stats.sentences + ' 句 · 平均句长 ' +
+          d.stats.avgSentence + ' 字 · 最长 ' + d.stats.longestSentence + ' 字 · 套话密度 ' + d.stats.density + '‰</p>';
+        var hits = (d.hits || []).length ? (d.hits || []).map(function (hit) {
+          return '<div class="entry"><div class="entry-head"><h3>' + esc(hit.name) + ' · ' + hit.count + ' 处</h3>' +
+            '<span class="tag">' + esc(hit.dimension) + '</span></div>' +
+            '<p>' + hit.samples.map(esc).join('<br>') + '</p>' +
+            '<p class="sub">改法：' + esc(hit.fix) + '</p></div>';
+        }).join('') : '<p>没撞上常见的 AI 腔痕迹。数字、专名、引用仍按原文。</p>';
+        var review = '<div class="taste-review"><h3>发布前人工复核</h3><ul>' +
+          (d.review || []).map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul>' +
+          '<p class="sub">' + esc(d.whitelist) + '</p></div>';
+        tasteEl.innerHTML = head + dims + stats + hits + review;
+      }
       function scheduleRelated() {
         clearTimeout(relatedTimer);
         relatedTimer = setTimeout(loadRelated, 400);
@@ -785,7 +843,7 @@
         '<h2>全稿口径核对</h2>',
         '<p class="sub">把各章正文一起贴进来，或直接点「带上成稿」。会挑出同一指标数值不一致、方案数量对不上、同一对象两种写法。</p>',
         '<textarea data-consistency-source placeholder="把整份稿子的正文按章节贴在这里"></textarea>',
-        '<div class="extract-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">',
+        '<div class="extract-actions">',
         '<button class="btn primary" type="button" data-consistency-run>核对全稿</button>',
         '<button class="btn" type="button" data-consistency-fill>带上成稿</button>',
         '</div>',
@@ -795,8 +853,8 @@
         '<section class="panel" data-material-panel>',
         '<h2>材料读进来 / 稿子导出</h2>',
         '<p class="sub">支持 Word、PPT、Excel、PDF、Markdown、txt。上传后自动抽正文放进「贴稿」。成稿可导出 Word 或 PPT 继续改。</p>',
-        '<div class="extract-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">',
-        '<input type="file" data-upload accept=".docx,.pptx,.xlsx,.pdf,.md,.txt" style="display:none">',
+        '<div class="extract-actions">',
+        '<input type="file" data-upload accept=".docx,.pptx,.xlsx,.pdf,.md,.txt" hidden>',
         '<button class="btn" type="button" data-upload-btn>上传 Word/PPT/Excel/PDF</button>',
         '<button class="btn" type="button" data-export="docx">导出 Word</button>',
         '<button class="btn" type="button" data-export="pptx">导出 PPT</button>',
@@ -1297,7 +1355,7 @@
           var articles = item.articles || [];
           var status = item.status === 'accepted' ? '已收下' : (item.status === 'candidate' ? '候选 · 出现 ' + (item.articleCount || 0) + ' 篇' : '待建档');
           detail.hidden = false;
-          detail.innerHTML = '<h2>' + esc(item.name) + '</h2><p>' + esc(status + (typeNames(item.commercialTypes) ? ' · ' + typeNames(item.commercialTypes) : '')) + '</p><p>相关用词：' + esc((item.terms || []).join('、') || '还没记下') + '</p><div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin:10px 0"><label class="extract-label">所在城市 / 区位<input data-case-location value="' + esc(item.location || '') + '"></label><label class="extract-label">体量<input data-case-area value="' + esc(item.area || '') + '" placeholder="例如：12 万平方米"></label><label class="extract-label">开业时间<input data-case-opened value="' + esc(item.openedAt || '') + '" placeholder="例如：2024 年 9 月"></label><label class="extract-label">主力品牌（用、分开）<input data-case-brands value="' + esc((item.anchorBrands || []).join('、')) + '"></label></div><label class="extract-label">亮点（用、分开）</label><textarea data-case-highlights rows="2">' + esc((item.highlights || []).join('、')) + '</textarea><label class="extract-label">特征摘要</label><textarea data-case-features rows="3">' + esc(item.features || '') + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">' + (item.status !== 'accepted' ? '<button class="btn primary" type="button" data-accept-project="' + esc(item.id) + '">收下</button>' : '') + '<button class="btn" type="button" data-save-features>记下这份案例</button></div><h3>出现在这些资讯里</h3>' + (articles.length ? articles.map(function (article) {
+          detail.innerHTML = '<h2>' + esc(item.name) + '</h2><p>' + esc(status + (typeNames(item.commercialTypes) ? ' · ' + typeNames(item.commercialTypes) : '')) + '</p><p>相关用词：' + esc((item.terms || []).join('、') || '还没记下') + '</p><div class="case-fields"><label class="extract-label">所在城市 / 区位<input data-case-location value="' + esc(item.location || '') + '"></label><label class="extract-label">体量<input data-case-area value="' + esc(item.area || '') + '" placeholder="例如：12 万平方米"></label><label class="extract-label">开业时间<input data-case-opened value="' + esc(item.openedAt || '') + '" placeholder="例如：2024 年 9 月"></label><label class="extract-label">主力品牌（用、分开）<input data-case-brands value="' + esc((item.anchorBrands || []).join('、')) + '"></label></div><label class="extract-label">亮点（用、分开）</label><textarea data-case-highlights rows="2">' + esc((item.highlights || []).join('、')) + '</textarea><label class="extract-label">特征摘要</label><textarea data-case-features rows="3">' + esc(item.features || '') + '</textarea><div>' + (item.status !== 'accepted' ? '<button class="btn primary" type="button" data-accept-project="' + esc(item.id) + '">收下</button>' : '') + '<button class="btn" type="button" data-save-features>记下这份案例</button></div><h3>出现在这些资讯里</h3>' + (articles.length ? articles.map(function (article) {
             return '<div class="entry"><h2>' + esc(article.title || '资讯') + '</h2><p>' + esc(String(article.body || '').slice(0, 160)) + '</p></div>';
           }).join('') : '<p>还没有记下来源资讯。</p>');
           var acceptBtn = detail.querySelector('[data-accept-project]');
@@ -1671,8 +1729,11 @@
       var runBtn = document.querySelector('[data-drill-run]');
       var confirmBtn = document.querySelector('[data-drill-confirm]');
       var acceptBtn = document.querySelector('[data-drill-accept]');
-      var current = { kind: 'tone', prompt: '', diff: { replacements: [], habits: [] } };
+      var current = { kind: '', prompt: '', diff: { replacements: [], habits: [] } };
+      var seq = 0;
       function renderKinds(list) {
+        var valid = (list || []).filter(function (item) { return item.id === current.kind; }).length;
+        if (!valid) current.kind = (list && list[0] && list[0].id) || 'stance';
         kindsEl.innerHTML = (list || []).map(function (item) {
           return '<button type="button" class="chip' + (item.id === current.kind ? ' active' : '') + '" data-drill-kind="' + esc(item.id) + '">' + esc(item.name) + '</button>';
         }).join('');
@@ -1706,7 +1767,7 @@
       fetch('/api/industry/drills').then(function (r) { return r.json(); }).then(renderKinds).catch(function () { renderKinds([{ id: 'tone', name: '语气', hint: '对内用「我方」陈述。' }]); });
       runBtn.onclick = function () {
         statusEl.textContent = '正在出题';
-        fetch('/api/industry/drills', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: current.kind }) }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '没出成题'); return d; }); }).then(function (d) {
+        fetch('/api/industry/drills', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: current.kind, variant: seq++ }) }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || '没出成题'); return d; }); }).then(function (d) {
           current.prompt = d.prompt;
           promptEl.textContent = d.prompt;
           hintEl.textContent = d.hint || hintEl.textContent;

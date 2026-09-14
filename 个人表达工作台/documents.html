@@ -5,26 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>项目材料</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    main { min-width: 0; }
-    .chapter-panel { margin-top: 16px; }
-    .chapter-layout { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(0, 3fr); gap: 20px; }
-    .chapter-list { display: grid; gap: 8px; padding-left: 24px; }
-    .chapter-list button { width: 100%; text-align: left; overflow-wrap: anywhere; }
-    .chapter-fields { display: grid; gap: 10px; }
-    .chapter-fields input, .chapter-fields textarea, .chapter-panel select { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px; font: inherit; color: var(--ink); background: var(--panel); }
-    .chapter-fields textarea { min-height: 300px; resize: vertical; line-height: 1.7; }
-    .chapter-panel button:disabled { opacity: .5; cursor: default; }
-    .metadata-fields { display: grid; gap: 10px; margin-top: 16px; }
-    .metadata-fields input, .metadata-fields select { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px; font: inherit; color: var(--ink); background: var(--panel); }
-    .diagnosis-summary { display: flex; gap: 18px; flex-wrap: wrap; margin: 12px 0; }
-    .diagnosis-summary b { font-size: 1.35rem; display: block; }
-    .diagnosis-results { display: grid; gap: 8px; }
-    .diagnosis-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 90px 90px; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 9px; }
-    .diagnosis-row p { margin: 0; overflow-wrap: anywhere; }
-    .diagnosis-row small { color: var(--muted); }
-    @media (max-width: 800px) { .chapter-layout { grid-template-columns: 1fr; } main { padding: 20px; } .toolbar { flex-wrap: wrap; } .search { max-width: 100%; } }
-  </style>
 </head>
 <body>
 <div class="app"><aside class="side"><div class="logo"><span class="mark">文</span><b>商业运营工作台</b></div><nav></nav></aside><main><div class="top">项目材料</div><div class="hero"><div><h1>项目材料</h1><p class="sub">把招商、客群、运营材料收进来。支持 Word、PPT、Excel、PDF、Markdown、txt，上传后直接读出正文。</p></div></div><div class="toolbar"><input class="search" placeholder="搜材料名称"><div class="tabs"><button class="active" data-filter="all">全部</button><button data-filter="样本">我认的方案</button><button data-filter="行业">行业材料</button></div></div>
@@ -41,7 +21,7 @@
     </div>
      <p id="chapter-status" role="status" aria-live="polite"></p>
      </section>
-     <section class="panel"><div class="toolbar"><h2>把这份材料的正文读出来</h2><button type="button" class="btn primary" id="parse-document">读这份材料</button></div><p id="parse-status-message">先选一份已经贴进来的材料，再读正文。</p><pre id="parse-result" style="white-space:pre-wrap;overflow:auto"></pre></section>
+     <section class="panel"><div class="toolbar"><h2>把这份材料的正文读出来</h2><button type="button" class="btn primary" id="parse-document">读这份材料</button></div><p id="parse-status-message">先选一份已经贴进来的材料，再读正文。</p><pre id="parse-result"></pre></section>
    <section class="panel metadata-panel" aria-labelledby="metadata-heading">
      <div class="toolbar"><h2 id="metadata-heading">资料信息</h2><button type="button" class="btn primary" id="save-metadata">保存资料信息</button></div>
      <div class="metadata-fields">

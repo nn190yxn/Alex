@@ -5,15 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>方案目录</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .framework-node label, [data-framework-form] label { display: grid; gap: 8px; margin-bottom: 14px; }
-    .framework-node input, .framework-node textarea, [data-framework-form] input, [data-framework-form] textarea { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--panel); font: inherit; }
-    .framework-node textarea, [data-framework-form] textarea { resize: vertical; }
-    .framework-node .btn { float: none; }
-    .framework-node .btn:disabled { opacity: .4; cursor: default; }
-    [data-framework-form] { margin-top: 16px; }
-    @media (max-width: 800px) { main { min-width: 0; } .hero { flex-wrap: wrap; gap: 12px; } }
-  </style>
 </head>
 <body>
   <div class="app">
@@ -28,7 +19,7 @@
       <section class="panel">
         <h2>套用骨架</h2>
         <p class="sub">先点一份骨架，把这份方案要先写哪几块铺好，再逐块改。点单个章节，只加这一块。</p>
-        <div data-framework-presets style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <div class="range" data-framework-presets></div>
       </section>
       <section class="panel" data-framework-nodes aria-label="框架节点"></section>
       <form class="panel inline-form" data-framework-form>
