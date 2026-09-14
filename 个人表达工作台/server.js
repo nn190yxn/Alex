@@ -885,6 +885,41 @@ function detectAITaste(text, options) {
   };
 }
 
+// 口号检测：纯口号、无数字依据时，给出三项补齐提示。只提醒，不拦出稿。
+const SLOGAN_WORDS = /(打造|赋能|抓手|闭环|打法|矩阵|生态|标杆|引领|领航|新地标|地标|中心|品质生活|潮流|年轻力|引爆|全面|极致|匠造|启幕|绽放|迭新|焕新|定义|重塑|革新|聚势|共赢|共创|擘画|绘就|书写|璀璨|闪耀|澎湃|活力|势能|抢占|争夺战|心智|护城河|焕新|升级|蝶变|飞跃|新征程|新篇章)/g;
+const BRIEF_ENTITY_RE = /(\d+\s*号?[\u4e00-\u9fff]{1,4}|[\u4e00-\u9fff]{2,8}(?:购物中心|广场|天地|中心|街区|商场|项目|城|里|业态|品牌))/g;
+const BRIEF_TIME_RE = /(\d{4}\s*年|\d{1,2}\s*月|第[一二三四1-4]季度|[一二三四五六七八九十]+月|今年|去年|明年|年初|年中|年底|近期|三季度|四季度|开业|封顶|竣工)/g;
+const BRIEF_ACTION_RE = /(完成|推进|签订|引进|调整|改造|招募|洽谈|落地|收回|开业|封顶|测算|复核|上报|审批)/g;
+
+function analyzeBrief(source) {
+  const body = String(source || '').trim();
+  const chars = body.length;
+  const slogans = [...new Set(body.match(SLOGAN_WORDS) || [])];
+  const numbers = [...new Set(body.match(/\d[\d,]*(?:\.\d+)?\s*(?:亿元|万元|平方米|平米|㎡|亿|万|元|%|％|个|家|人|方|次|天|层|栋|座)/g) || [])];
+  const timeAnchors = [...new Set(body.match(BRIEF_TIME_RE) || [])];
+  const actions = [...new Set(body.match(BRIEF_ACTION_RE) || [])];
+  const entities = [...new Set(body.match(BRIEF_ENTITY_RE) || [])].map(name => name.replace(/\s+/g, '')).filter(name => name.length >= 2 && !/^(这个|那个|该项|本项|我们的)/.test(name));
+  // 口号词按千字归一，避免长文因总量大被误判。
+  const density = chars ? Math.round((slogans.length / (chars / 1000)) * 10) / 10 : 0;
+  const isSlogan = chars >= 20 && numbers.length === 0 && (density >= 15 || slogans.length >= 4);
+  const checks = [
+    { key: 'numbers', name: '数字依据', ok: numbers.length > 0, advice: '补上可核对的数据：客流、出租率、租金、面积、家数，并写清统计口径和时间。' },
+    { key: 'entities', name: '具体对象', ok: entities.length > 0, advice: '写清是哪个项目、哪层哪个业态、哪些品牌，别只用「区域」「客群」这类泛指。' },
+    { key: 'action', name: '时间与动作', ok: timeAnchors.length > 0 && actions.length > 0, advice: '写清什么时间、谁在做、做到哪一步。' }
+  ];
+  const missing = checks.filter(item => !item.ok);
+  return {
+    isSlogan,
+    density,
+    slogans: slogans.slice(0, 12),
+    counts: { numbers: numbers.length, entities: entities.length, timeAnchors: timeAnchors.length, actions: actions.length },
+    samples: { numbers: numbers.slice(0, 5), entities: entities.slice(0, 5), timeAnchors: timeAnchors.slice(0, 5), actions: actions.slice(0, 5) },
+    checks,
+    missing,
+    summary: isSlogan ? '这篇像口号，没看到可核对的数据：' + missing.map(item => item.name).join('、') + ' 都缺。' : (missing.length ? '缺 ' + missing.map(item => item.name).join('、') + '，补齐后更好落。' : '数字、对象、时间动作都有。')
+  };
+}
+
 function persistLock(user, source, lockedContent) {
   const current = state(user);
   current.diagnosis = { factsLocked: true, source, lockedContent, lockedAt: now() };
@@ -1219,7 +1254,7 @@ async function api(req, res, url) { if (req.method === 'GET' && url.pathname ===
     const input = await parseBody(req);
     const source = validateText(input.source || input.text || input.candidate, 'source', 200000);
     const report = detectAITaste(source, { intent: resolveIntent(input, false) });
-    return json(res, 200, { source, ...report, checkedAt: now() });
+    return json(res, 200, { source, ...report, brief: analyzeBrief(source), checkedAt: now() });
   }
   if (req.method === 'POST' && url.pathname === '/api/rewrite/analyze') { const input = await parseBody(req); const source = validateText(input.source || input.fragment || input.text, 'source'); const analysis = classify(source); const lockedContent = { numbers: analysis.numbers, facts: analysis.facts }; const shouldLock = input.lock === true || input.lockFacts === true; if (shouldLock) { requirePermission(req, 'write'); persistLock(user, source, lockedContent); } const diagnosis = state(user).diagnosis || {}; return json(res, 200, { source, ready: true, lockedContent, issues: [], analyzedAt: now(), factCount: analysis.facts.length, numberCount: analysis.numbers.length, factsCount: analysis.facts.length, numbersCount: analysis.numbers.length, factsLocked: shouldLock || diagnosis.factsLocked === true, contentAnalysis: analysis }); }
     if (req.method === 'POST' && url.pathname === '/api/rewrite/generate') { requirePermission(req, 'write'); const input = await parseBody(req); validateText(input.source, 'source'); resolveIntent(input, true); const skillIds = mapRetiredSkillIds(normalizeSkillIds(input)); skillIds.forEach(skillId => selectedSkill(user, { skillIds: [skillId] })); const enqueue = (payload) => { const source = payload.source; const snapshot = { ...references(user, payload), semanticLayers: semanticLayers(payload), contentAnalysis: classify(source) }; const storedInput = sanitizeTaskInput(payload); const task = resource(user, 'task', { source, input: storedInput, ...snapshot, status: 'queued', demoMode: payload.demoMode === true }, id()); db.prepare('INSERT INTO tasks(id,owner,data,status,attempts,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').run(task.id, user, JSON.stringify(task), 'queued', 0, now(), now()); runTask(task.id, user, payload); return { taskId: task.id, status: 'queued', ...snapshot }; }; if (skillIds.length > 1) { const tasks = skillIds.map(skillId => enqueue({ ...input, skillIds: [skillId] })); return json(res, 202, { taskId: tasks[0].taskId, taskIds: tasks.map(item => item.taskId), status: 'queued', ...tasks[0] }); } return json(res, 202, enqueue({ ...input, skillIds })); }

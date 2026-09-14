@@ -627,6 +627,26 @@ input.search,
 
 .taste-review li { margin: 0 0 6px; color: var(--muted); font-size: 12.5px; line-height: 1.7; }
 
+.brief-box { margin: var(--sp-4) 0 0; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--line); border-radius: var(--r-2); }
+
+.brief-box.is-slogan { border-color: var(--warn-line); background: var(--warn-soft); }
+
+.brief-box h3 { margin: 0 0 6px; font-size: 13px; }
+
+.brief-box > p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+
+.brief-box ul { margin: 0; padding: 0; list-style: none; }
+
+.brief-box li { margin: 0 0 6px; padding-left: 18px; position: relative; color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+
+.brief-box li::before { position: absolute; left: 0; font-weight: 700; }
+
+.brief-box li.ok::before { content: "\2713"; color: var(--accent); }
+
+.brief-box li.miss::before { content: "\2715"; color: var(--danger); }
+
+.brief-box li b { color: var(--ink-2); }
+
 /* 9. 词典 ---------------------------------------------------------------- */
 .lexicon-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-3); }
 

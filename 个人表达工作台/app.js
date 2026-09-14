@@ -448,6 +448,7 @@
       var relatedTimer;
       var tasteEl = document.querySelector('[data-taste-result]');
       var tasteTimer;
+      var briefCache = null;
       var TASTE_LEVEL = { high: '偏重', medium: '中等', low: '轻' };
       function tastePlaceholder(text) {
         if (tasteEl) tasteEl.innerHTML = '<p>' + (text || '贴稿后，这里会列出命中的 AI 腔痕迹。') + '</p>';
@@ -470,6 +471,7 @@
       }
       function renderTaste(d) {
         if (!tasteEl) return;
+        briefCache = d.brief || null;
         var head = '<div class="taste-head"><b class="taste-score lv-' + esc(d.level) + '">' + d.score + '</b>' +
           '<span>AI 味' + (TASTE_LEVEL[d.level] || '') + ' · ' + esc(d.summary) + '</span></div>';
         var dims = '<div class="taste-dims">' + (d.dimensions || []).map(function (item) {
@@ -487,7 +489,17 @@
         var review = '<div class="taste-review"><h3>发布前人工复核</h3><ul>' +
           (d.review || []).map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul>' +
           '<p class="sub">' + esc(d.whitelist) + '</p></div>';
-        tasteEl.innerHTML = head + dims + stats + hits + review;
+        tasteEl.innerHTML = head + dims + stats + hits + review + renderBrief(d.brief);
+      }
+      function renderBrief(brief) {
+        if (!brief) return '';
+        var items = (brief.checks || []).map(function (item) {
+          return '<li class="' + (item.ok ? 'ok' : 'miss') + '"><b>' + esc(item.name) + '</b>' +
+            (item.ok ? '：有。' : '：缺。' + esc(item.advice)) + '</li>';
+        }).join('');
+        return '<div class="brief-box' + (brief.isSlogan ? ' is-slogan' : '') + '">' +
+          '<h3>这篇的落点检查</h3><p>' + esc(brief.summary) + '</p><ul>' + items + '</ul>' +
+          (brief.slogans.length ? '<p class="sub">口号词：' + brief.slogans.map(esc).join('、') + '</p>' : '') + '</div>';
       }
       function scheduleRelated() {
         clearTimeout(relatedTimer);
@@ -638,6 +650,9 @@
         if (!state.rewrite.intents.length) { syncGenerate(); return; }
         var text = (source && source.value || '').trim();
         if (!text) { statusEl.textContent = '先把原文贴进来'; return; }
+        if (briefCache && briefCache.isSlogan) {
+          statusEl.textContent = '这篇像口号，缺 ' + briefCache.missing.map(function (item) { return item.name; }).join('、') + '。先按原文出稿，数字和事实不会自动补；补齐后更落得住。';
+        }
         state.rewrite.source = text;
         var skillIds = mapRetiredSkillIds(state.rewrite.selectedSkillIds || []);
         state.rewrite.selectedSkillIds = skillIds;
