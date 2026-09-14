@@ -380,6 +380,15 @@ async function waitForServer() {
   const patchedSkill = await request('PATCH', `/api/skills/${deai.id}`, { enabled: true, rulesMarkdown: 'should-not-overwrite' });
   assert.strictEqual(patchedSkill.status, 200);
   assert.strictEqual(patchedSkill.body.rulesMarkdown, keepRules);
+  // 内置写法包是全局一份，归首个创建它的用户。别的用户也要能切换，不能 404。
+  await request('POST', '/api/team/members', { userId: 'skill-editor', role: 'editor' });
+  const crossPatch = await request('PATCH', `/api/skills/${deai.id}`, { enabled: true }, 'skill-editor');
+  assert.strictEqual(crossPatch.status, 200);
+  // 按名字提交且命中已有包时应启用它，不新建同名重复项。
+  const byName = await request('POST', '/api/skills', { name: '去 AI 腔', enabled: true }, 'skill-editor');
+  assert.strictEqual(byName.status, 200);
+  const afterNames = await request('GET', '/api/skills', undefined, 'skill-editor');
+  assert.strictEqual(afterNames.body.filter(item => item.name === '去 AI 腔').length, 1);
   const missingSkill = await request('POST', '/api/rewrite/generate', { source: '原始内容', intent: '给领导的工作汇报', skillIds: ['skill-not-exist'], demoMode: true });
   assert.strictEqual(missingSkill.status, 400);
   assert.ok(String(missingSkill.body.error).includes('这个改法还不能用'));
