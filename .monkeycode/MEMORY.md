@@ -239,3 +239,4 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - Word / PPT / Excel 解析优先用已安装的 python-docx、python-pptx、openpyxl，或项目自研 OOXML 解析；不要为解析引入重量级依赖。
   - Playwright / Chromium 首次下载约 186MB 且极慢，系统图形库（libnss3 等）缺失需 --with-deps；不要把浏览器截图作为验证前置条件，改用 curl 调接口加 Node 脚本校验页面与渲染。
   - 预览统一起在 3000 端口（PORT=3000 node server.js），预览地址形如 https://3000-xxxx.monkeycode-ai.online。
+  - 长驻预览服务用 background_terminal_create 启动时必须设 timeout: 0；默认 30 分钟会被回收，进程消失后预览地址立刻返回 530。
