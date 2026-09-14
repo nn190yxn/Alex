@@ -809,6 +809,9 @@ const AI_TASTE_RULES = [
   { id: 'we', dim: '立场', name: '对内用「我们」', level: 'medium', re: /我们(?=[^，。]{0,10}(认为|建议|判断|决定|将|会|要|需要))/g, fix: '对内汇报统一用「我方」。', intent: '给内部看' }
 ];
 const AI_TASTE_LEVEL_WEIGHT = { high: 3, medium: 2, low: 1 };
+// 浓度按千字归一，短稿会被放大：一句话里出现一个包装词就能顶到满分。
+// 给分母设下限，短稿按 500 字算，长文不受影响。
+const TASTE_DENSITY_FLOOR = 500;
 
 function excerptAround(text, index, length) {
   const start = Math.max(0, index - 12);
@@ -864,7 +867,7 @@ function detectAITaste(text, options) {
 
   // 浓度：命中权重按千字归一，再叠加节奏项。
   const weighted = hits.reduce((sum, hit) => sum + AI_TASTE_LEVEL_WEIGHT[hit.level] * hit.count, 0);
-  const density = totalChars ? weighted / (totalChars / 1000) : 0;
+  const density = weighted / (Math.max(totalChars, TASTE_DENSITY_FLOOR) / 1000);
   let score = Math.round(Math.min(100, 100 * (1 - Math.exp(-density / 30)) + (rhythmUniform ? 10 : 0)));
   if (!weighted && !rhythmUniform) score = 0;
   const level = score >= 55 ? 'high' : score >= 25 ? 'medium' : 'low';
@@ -915,8 +918,8 @@ function analyzeBrief(source) {
   const timeAnchors = [...new Set(body.match(BRIEF_TIME_RE) || [])];
   const actions = [...new Set(body.match(BRIEF_ACTION_RE) || [])];
   const entities = [...new Set(body.match(BRIEF_ENTITY_RE) || [])].map(name => name.replace(/\s+/g, '')).filter(name => name.length >= 2 && !/^(这个|那个|该项|本项|我们的)/.test(name));
-  // 口号词按千字归一，避免长文因总量大被误判。
-  const density = chars ? Math.round((slogans.length / (chars / 1000)) * 10) / 10 : 0;
+  // 口号词按千字归一，避免长文因总量大被误判；短稿同样用下限，避免被放大。
+  const density = Math.round((slogans.length / (Math.max(chars, TASTE_DENSITY_FLOOR) / 1000)) * 10) / 10;
   const isSlogan = chars >= 20 && numbers.length === 0 && (density >= 15 || slogans.length >= 4);
   const checks = [
     { key: 'numbers', name: '数字依据', ok: numbers.length > 0, advice: '补上可核对的数据：客流、出租率、租金、面积、家数，并写清统计口径和时间。' },

@@ -473,7 +473,7 @@
         if (!tasteEl) return;
         briefCache = d.brief || null;
         var head = '<div class="taste-head"><b class="taste-score lv-' + esc(d.level) + '">' + d.score + '</b>' +
-          '<span>AI 味' + (TASTE_LEVEL[d.level] || '') + ' · ' + esc(d.summary) + '</span></div>';
+          '<span>AI 味' + (TASTE_LEVEL[d.level] || '') + ' · ' + esc(d.summary) + ' · 分越高越重</span></div>';
         var dims = '<div class="taste-dims">' + (d.dimensions || []).map(function (item) {
           return '<span class="taste-dim' + (item.flagged ? ' on' : '') + '" title="' + esc(item.note) + '">' +
             esc(item.name) + (item.count ? ' ' + item.count : '') + '</span>';
