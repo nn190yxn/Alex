@@ -31,9 +31,11 @@ cargo run -p thought-forge-core --example forge_verify -- $DbPath
 # V4 / V15：确认密钥没有落库，把真实密钥传进去扫描
 cargo run -p thought-forge-core --example forge_verify -- $DbPath --secret $env:THOUGHT_FORGE_API_KEY
 
-# V8 / V11 / V17 / V18：要求已存在采集记录、成功的检索、迁移前备份与可疑来源标记
+# 覆盖全部可判定项：平台、采集、检索、MCP、蒸馏、迁移前备份、可疑来源
 cargo run -p thought-forge-core --example forge_verify -- $DbPath `
-  --expect-capture clipboard_text,window,file --expect-search --expect-pre-migration --expect-flagged
+  --secret $env:THOUGHT_FORGE_API_KEY --expect-platform deepseek `
+  --expect-capture clipboard_text,window,file --expect-search --expect-mcp `
+  --expect-distill --expect-pre-migration --expect-flagged
 ```
 
 退出码 `0` 表示无未过项（跳过不计为失败），`1` 表示存在未过项，`2` 表示用法或库路径错误。输出里每一项都会列出看到的实际值，未过项直接写明原因，跳过项写明缺什么前置数据。把整段输出粘进下面的记录表。
@@ -43,10 +45,22 @@ cargo run -p thought-forge-core --example forge_verify -- $DbPath `
 | 参数 | 作用 |
 |---|---|
 | `--secret <值>` | 扫描 `data::DATA_TABLES` 覆盖的全部文本列，命中即未过；只报表名与列名，不回显密钥 |
+| `--expect-platform <code>` | 要求该平台处于 `ready`，且库中存在该平台 |
 | `--expect-search` | 要求至少一次 `status='ok'` 且 `result_count>0` 的检索调用 |
 | `--expect-capture <类型,...>` | 要求这些采集类型已有事件；类型取 `clipboard_text`、`clipboard_image`、`window`、`file` |
+| `--expect-mcp` | 要求至少一次 `kind='mcp'` 且 `status='ok'` 的工具调用 |
+| `--expect-distill` | 要求至少一个 `state='done'` 的蒸馏任务，且至少一位大师已升到版本 2 |
 | `--expect-flagged` | 要求至少一条 `council_sources.flagged=1` |
 | `--expect-pre-migration` | 要求至少一份 `kind='pre_migration'` 备份 |
+
+不带开关时，检查器仍会核对下列一致性；这些是必然成立的不变量，破坏即缺陷：
+
+| 项目 | 不变量 |
+|---|---|
+| V2 | 平台存储状态必须等于「启用 + 端点与模型名是否完整」派生出的状态 |
+| V6 | 成功的席位发言必须锁定大师与版本；失败发言必须带错误码；发言引用的阵容必须存在 |
+| V7 | 版本记录的 `unit_count` 必须等于该版本实际单元数；当前版本必须有版本记录 |
+| V12 | 席位来源归属的大师必须在该场阵容里，且其阵容记录存在 |
 
 ## 三、逐项步骤
 
@@ -71,6 +85,11 @@ cargo run -p thought-forge-core --example forge_verify -- $DbPath --secret $env:
 
 判据：V3 探针返回 `ok` 为真并带耗时与 `call_id`；V4 输出项为「通过」；V5 最新一行的用途、平台、模型、耗时、状态齐全；V15 重启后模型调用仍成功且 V4 仍然通过。
 
+```powershell
+# V2 判定平台配置确实落库并处于 ready
+cargo run -p thought-forge-core --example forge_verify -- $DbPath --expect-platform <平台 code>
+```
+
 ### P16.4 会诊全链路（V6、V12）
 
 装好大师包，开启联网与共享背景，跑一次会诊。截图逐轮发言与结论，然后确认审计：
@@ -80,10 +99,17 @@ cargo run -p thought-forge-core --example forge_verify -- $DbPath --expect-searc
 ```
 
 判据：V6 各轮发言与逐次模型调用都有记录；V12 共享背景对全部席位一致，席位补充检索只出现在该席位自己的提示词里。
+检查器的 V6 项会核对逐角色发言数、各用途模型调用次数、版本锁定与阵容归属；V12 项会核对席位来源是否归属于该场阵容里的大师。提示词内容本身仍需人眼确认。
 
 ### P16.5 蒸馏全链路（V7）
 
 用一份可解析语料建入库任务，跑完六阶段，产出技能单元并安装为新版本。中途中断一次，确认能从检查点续跑。
+
+```powershell
+cargo run -p thought-forge-core --example forge_verify -- $DbPath --expect-distill
+```
+
+判据：V7 有已完成任务且大师版本升到 2 及以上，版本记录的单元数与实际单元数一致。检查点续跑属行为验证，需人工操作。
 
 ### P16.6 连接器（V11、V13、V14、V18）
 
@@ -91,10 +117,10 @@ cargo run -p thought-forge-core --example forge_verify -- $DbPath --expect-searc
 
 ```powershell
 cargo run -p thought-forge-core --example forge_verify -- $DbPath `
-  --expect-search --expect-flagged
+  --expect-search --expect-mcp --expect-flagged
 ```
 
-判据：V11 结果含标题、网址、摘要、时间且留有审计；V13 MCP 工具清单可读且调用入快照；V14 脱敏项通过（发送串与原始问句不同，且在原文有手机号时确实被替换）；V18 可疑来源在提示词中被边界标记包裹，结论标注依据来源。
+判据：V11 结果含标题、网址、摘要、时间且留有审计；V13 MCP 工具清单可读且调用入快照，三类连接器的配置与调用都留有审计；V14 脱敏项通过（发送串与原始问句不同，且在原文有手机号时确实被替换）；V18 可疑来源在提示词中被边界标记包裹，结论标注依据来源。工具清单的可读性与提示词的边界包裹仍需人眼确认。
 
 ### P16.7 凭据库（V15）
 
@@ -165,6 +191,6 @@ pnpm tauri build
 
 ## 六、检查器覆盖范围
 
-检查器判定的是「数据库里能不能看到应有的痕迹」，它覆盖 V4、V5、V8、V11、V14、V15（配合 `--secret`）、V16、V17、V18 的可判定部分，以及 V1 之外的环境自检（迁移版本 S1、联网开关与平台配置 S2）。
+检查器判定的是「数据库里能不能看到应有的痕迹」，它覆盖 V2、V4、V5、V6、V7、V8、V11、V12、V13、V14、V15（配合 `--secret`）、V16、V17、V18 的可判定部分，以及迁移版本（S1）与联网开关、平台配置（S2）。
 
 它替代不了需要人眼确认的项目：V1 的构建产物、V2 的界面回填、V6 的逐轮发言质量、V7 的检查点续跑、V9 与 V10 的安装升级、V12 的提示词隔离、V13 的工具清单可读性、V3 的探针实际耗时。这些仍按第三节的步骤人工判定。
