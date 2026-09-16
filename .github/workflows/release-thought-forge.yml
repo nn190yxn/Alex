@@ -30,6 +30,12 @@ jobs:
         with:
           components: clippy
 
+      # 占位 pubkey 不会让构建失败，却会让装出来的包无法验证更新签名，
+      # 因此在安装依赖与编译之前先判定，避免带着占位配置产出安装包。
+      - name: Check release config
+        working-directory: thought-forge
+        run: node scripts/check-release-config.mjs
+
       - name: Install frontend dependencies
         working-directory: thought-forge
         run: pnpm install --frozen-lockfile

@@ -143,7 +143,28 @@ V17 需要一次真实迁移：把应用退回到较低版本库，让新版本�
 pnpm tauri build
 ```
 
-分别安装两个产物并确认应用能启动。V10 需要先把 `tauri.conf.json` 的 `pubkey` 换成真实签名公钥、`updater.endpoints` 换成真实托管地址，然后发布一个更高版本，在旧版本内触发更新，确认升级完成后数据仍在。
+分别安装两个产物并确认应用能启动。
+
+V10 需要先配置真实的签名密钥与托管地址，两步都不能省：
+
+```powershell
+# 1. 生成一对更新签名密钥（私钥与口令留在本机，不要提交进仓库）
+pnpm tauri signer generate -w $env:USERPROFILE\.tauri\thought-forge.key
+
+# 2. 把产出的公钥填进 tauri.conf.json 的 plugins.updater.pubkey，
+#    把 plugins.updater.endpoints 换成真实托管地址
+```
+
+私钥内容填进仓库的 `TAURI_SIGNING_PRIVATE_KEY` secret，口令填进 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。仓库里有一道发布前检查会把占位配置挡在构建之前：
+
+```powershell
+# 本地预检，占位配置会以退出码 1 失败
+pnpm check:release-config
+```
+
+发布工作流 `release-thought-forge.yml` 在安装依赖与编译之前也会跑同一道检查，因此带占位 `pubkey` 的提交不会产出安装包。换好配置后发布一个更高版本，在旧版本内触发更新，确认升级完成后数据仍在。
+
+检查只判静态配置值；`endpoints` 指向的域名能否真正返回更新清单，仍要在这一步用真机确认。
 
 ### P16.10 结论
 
