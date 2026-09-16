@@ -282,7 +282,7 @@ P1 至 P8 已完成，X.1 文档同步与 X.2 复盘记录已补齐。以下为�
 - 联网与系统感知能力无法在内核直接落地：会诊联网、主动搜集、OS 级采集都需外壳注入。应对：内核以 trait 与占位实现保持纯逻辑可测（`GatedClient` 返 `E_NETWORK_OFF`、`BlockedDiscovery` 返 `disabled`、`NoopCaptureSource`），真实实现留给外壳。该约定已按计划兑现：联网经 `model.rs`/`connector.rs`，主动搜集经 `discovery.rs`，系统感知经 `capture.rs`。
 - 自我蒸馏的材料来源在设计时偏外部语料，实现时收敛为本机 `thought_records`：自我大师应当反映用户自身判断。应对：`self/` 只读本机记录，`<20` 条不调用模型，产出逐条确认后才安装。
 - `self` 是 Rust 关键字，模块无法直接命名。应对：模块注册为 `self_distill`，命令层用 `self_service`/`data_service` 别名。
-- 发布链路的部分参数只能占位：`tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 需真实签名密钥与托管域名。应对：先完成配置与工作流骨架，留下显式占位符。
+- 发布链路的部分参数只能占位：`tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 需真实签名密钥与托管域名。应对：先完成配置与工作流骨架，留下显式占位符；后续补了发布前检查（`thought-forge/scripts/check-release-config.mjs`，可用 `pnpm check:release-config` 本地预跑），发布工作流在编译之前执行，占位配置不再静默产出无法验证更新的安装包。该检查只判静态配置值，域名是否真的提供更新清单仍需真机确认。
 - core crate 未采用 rustfmt 约定，`cargo fmt -- --check` 会报大量既有漂移。应对：发布工作流有意不含 fmt 门禁，避免引入全量空格级改动。
 - 本环境 CPU（2 核）与内存紧张，jsdom 冷启动会让单个用例偶发逼近 10s，命中 vitest 默认 5000ms 上限。应对：`vitest.config.ts` 将 `testTimeout` 提到 15000ms，消除负载抖动导致的误报。
 - 需求 2「Skill 与 AI 资产统计」未进入任何阶段实施清单，P2 的 2.10 只完成了大师架子与覆盖矩阵，资产图谱部分缺失：设计中的 `AssetService`（`scan_assets`/`list_skills`/`get_skill_detail`/`get_asset_summary`）、`skills` 表、Skill 目录扫描与 `manifest.json`/`SKILL.md` 解析均未落地，`ai_platforms` 只覆盖平台识别。应对：登记为独立阶段 P9 并已补齐；`SKILL.md` 的 YAML 头改用内联扁平子集解析，未引入 `serde_yaml`。

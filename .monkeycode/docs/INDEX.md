@@ -111,6 +111,7 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `requirements.md`：调参与自适应、席位追问、外部检索与来源隔离、分歧判定、调用与费用治理、凭据与备份、回音与原则撤销、中断恢复、真机验证等需求
 - `design.md`：调参表、追问锚点、连接器三层抽象、分歧判定三模式、成本整数微元记账、凭据引用、备份与迁移前快照、回音阈值与运行控制、外壳自检命令接口、迁移 `0010` 至 `0014`
 - `tasklist.md`：P10 至 P16 分阶段实施任务清单；P10 至 P15 与 P16.1、P16.2 已完成，P16.3 至 P16.10 为 Windows 真机执行项
+- `windows-verification.md`：Windows 真机验证执行手册，含准备步骤、只读检查器 `crates/core/examples/forge_verify.rs` 的参数与判定口径、P16.3 至 P16.10 的逐项命令与 V1 至 V18 记录表；仓库另有发布前检查 `thought-forge/scripts/check-release-config.mjs`（`pnpm check:release-config`）拦截占位更新配置
 
 ## 现有历史文档
 

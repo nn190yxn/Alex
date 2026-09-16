@@ -178,7 +178,7 @@
 
 ## 遗留说明
 
-- 真机验证附有一个只读检查器 `crates/core/examples/forge_verify.rs`：它读 `data::DATA_TABLES` 覆盖的文本列做密钥残留扫描，并按需核对模型审计、采集与关注目录、检索审计与脱敏、备份留痕与文件在位、外部来源标记。它以 `SQLITE_OPEN_READ_ONLY` 打开数据库，可与应用并行运行，用法与逐项步骤见 `windows-verification.md`。
+- 真机验证附有一个只读检查器 `crates/core/examples/forge_verify.rs`：它读 `data::DATA_TABLES` 覆盖的文本列做密钥残留扫描，并按需核对模型审计、采集与关注目录、检索审计与脱敏、备份留痕与文件在位、外部来源标记。它以 `SQLITE_OPEN_READ_ONLY` 打开数据库，可与应用并行运行，用法与逐项步骤见 `windows-verification.md`。检查器自带 `cargo test -p thought-forge-core --examples` 覆盖：空库上所有项必须可解析且不误报未过、健康数据全部通过、逐项植入缺陷必被对应项抓住、密钥扫描命中且不回显；取证查询失败一律计入当前检查项，避免库结构漂移被读成 0 而假通过。
 - 安装 `libwebkit2gtk-4.1-dev`、`libgtk-3-dev`、`libayatana-appindicator3-dev`、`librsvg2-dev`、`libxdo-dev` 与 `pkg-config` 后，桌面壳已可在本机 `cargo check`/`cargo build`；P16 中依赖 Windows 专有产物的项目（NSIS 与 MSI 安装包、自动升级、系统凭据库）仍需完整 Windows 工具链执行。
 - `tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 仍为占位符，V10 在替换为真实签名密钥与托管域名前无法执行。发布工作流已加一道发布前检查（`thought-forge/scripts/check-release-config.mjs`，可用 `pnpm check:release-config` 本地预跑）：它在安装依赖与编译之前判定 `plugins.updater` 是否存在、`pubkey` 是否为空或占位、是否像 base64 公钥、`endpoints` 是否为 https 且不指向保留主机名，任一项不满足即以非零退出码中止；这样占位配置不会再静默产出无法验证更新的安装包。该检查只判静态配置值，域名是否真的在提供更新清单仍需 V10 真机确认。
 - `bundle.targets` 使用 `["nsis", "msi"]`：Tauri v2 的 Windows WiX 产物对应 `msi` 目标，`wix` 不是合法取值。
