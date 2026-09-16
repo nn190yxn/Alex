@@ -137,6 +137,14 @@ graph LR
 
 剪贴板采用 800 毫秒轮询并计算内容哈希去重。前台窗口采用 2 秒采样，记录应用名、窗口标题与持续时长，同一窗口连续采样合并为一段。文件活动监听用户指定的受关注目录，使用 `notify` 递归监听并记录事件类型与路径。文件正文不被读取。
 
+外壳落地（`src-tauri/src/capture.rs` 与 `src-tauri/src/capture_win.rs`）：
+
+- 剪贴板与前台窗口经 `windows-sys` 取原始数据：剪贴板读 `CF_UNICODETEXT`，图片只记 `CF_DIB` 的格式与字节数作为引用；前台窗口取 `GetForegroundWindow` 的窗口标题与 `QueryFullProcessImageNameW` 的可执行文件名。两者都可能在占用或权限不足时失败，失败即跳过本轮并计入错误计数，不升级成错误码。
+- 采样节奏由外壳掌握：`capture_collect` 每次触发时，剪贴板按 800 毫秒、前台窗口按 2 秒判定是否到达最小间隔，未到达则本轮不取值。
+- 文件活动用 `notify` 在常驻监听线程上递归监听，事件入队后由每轮采集排空；队列上限沿用内核的 `FILE_QUEUE_CAPACITY`，超出时丢弃最旧一条，避免长期不采集导致内存无界增长。
+- 关注目录取自设置键 `capture.watch_roots`（JSON 字符串数组），在应用启动时解析，非目录项直接剔除；启动后修改该设置需要重启应用生效。
+- 能力可用性由 `ShellCapture::unavailable` 上报：非 Windows 平台剪贴板与前台窗口不可用，未配置关注目录时文件活动不可用。界面据此禁用对应开关，避免用户打开一个永远采不到数据的开关。
+
 ### 资产服务 AssetService
 
 - `scan_assets(root_ids)` 扫描配置的 Skill 根目录与 AI 接入配置，建立索引。
