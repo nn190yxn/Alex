@@ -419,6 +419,7 @@ MCP 连接器只接受能返回工具能力声明的服务器。配置时调用 
 - 网页阅读用 HTTP GET 加通用 HTML 正文提取：丢弃 `script`/`style`/`noscript` 与注释，块级标签处换行，解码常见实体与数字引用，`<title>` 作为标题。
 - MCP 用 JSON-RPC 2.0 over Streamable HTTP：`initialize`（声明协议版本与客户端信息，记录响应头里的 `Mcp-Session-Id`）→ `notifications/initialized` → `tools/list`、`tools/call`。响应既可是单个 JSON，也可是 SSE 分帧，取首个可解析的 `data:` 负载。
 - 密钥按 `thought-forge/connector/{id}` 取系统凭据库，环境变量 `THOUGHT_FORGE_CONNECTOR_KEY` 为回退；密钥不入库。对端返回失败记 `E_NETWORK_OFF`，结构不符记 `E_MALFORMED_RESPONSE`，两者都由编排降级为「本次未获得外部背景」。
+- 外壳侧测试不依赖外网：在回环地址起一次性 HTTP 服务，覆盖真实往返解析、非 2xx 到 `E_NETWORK_OFF` 的映射、HTTP 正文提取，以及 MCP 握手并复用 `Mcp-Session-Id` 四件事；纯解析与正文提取另有离线单测。
 
 检索编排：
 
