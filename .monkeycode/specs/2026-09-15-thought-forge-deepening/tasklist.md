@@ -140,7 +140,7 @@
 
 目标：给出一份可在 Windows 真机逐项判定模型链路与连接器是否可用的方案与清单。
 
-- [x] 16.1 交付 Windows 真机端到端验证方案与验证清单（随本文档，见 `design.md` 的「外壳自检命令」与下表）
+- [x] 16.1 交付 Windows 真机端到端验证方案与验证清单（随本文档，见 `design.md` 的「外壳自检命令」、下表与可照做的执行手册 `windows-verification.md`）
 - [x] 16.2 实现外壳自检命令 `model_probe` 与退出码约定（0 成功、1 模型不可用、2 联网关闭、3 平台未配置）
 - [ ] 16.3 真机验证模型平台连通与密钥不落库
 - [ ] 16.4 真机验证会诊全链路与调用审计
@@ -178,6 +178,7 @@
 
 ## 遗留说明
 
+- 真机验证附有一个只读检查器 `crates/core/examples/forge_verify.rs`：它读 `data::DATA_TABLES` 覆盖的文本列做密钥残留扫描，并按需核对模型审计、采集与关注目录、检索审计与脱敏、备份留痕与文件在位、外部来源标记。它以 `SQLITE_OPEN_READ_ONLY` 打开数据库，可与应用并行运行，用法与逐项步骤见 `windows-verification.md`。
 - 安装 `libwebkit2gtk-4.1-dev`、`libgtk-3-dev`、`libayatana-appindicator3-dev`、`librsvg2-dev`、`libxdo-dev` 与 `pkg-config` 后，桌面壳已可在本机 `cargo check`/`cargo build`；P16 中依赖 Windows 专有产物的项目（NSIS 与 MSI 安装包、自动升级、系统凭据库）仍需完整 Windows 工具链执行。
 - `tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 仍为占位符，V10 在替换为真实签名密钥与托管域名前无法执行。
 - `bundle.targets` 使用 `["nsis", "msi"]`：Tauri v2 的 Windows WiX 产物对应 `msi` 目标，`wix` 不是合法取值。

@@ -699,6 +699,8 @@ pub struct ProbeOutcome {
 
 `model_probe` 用固定提示词「只回复两个字：可用」执行一次最小调用，写入 `llm_calls` 审计行并返回该行标识与耗时；探针逻辑位于 `<crate>/src/llm/probe.rs`，`ProbeOutcome` 与退出码常量（`EXIT_OK`/`EXIT_MODEL_UNAVAILABLE`/`EXIT_NETWORK_OFF`/`EXIT_PLATFORM_MISSING`）同处一模块，调用方按 `exit_code` 判定。`key_present` 只报告是否解析到可用密钥（系统凭据库或 `THOUGHT_FORGE_API_KEY`），不返回其值。联网关闭与平台缺失时探针不发起任何外部请求，因此也不写审计行。
 
+真机验证另有一个只读检查器 `crates/core/examples/forge_verify.rs`，把「看数据库就能判定」的项目一次查完：迁移版本、联网开关与平台配置、密钥残留（扫 `data::DATA_TABLES` 覆盖的全部文本列，只报位置不回显值）、模型审计字段、采集事件与开关一致性及关注目录可解析性、检索审计与脱敏、备份留痕与文件在位、外部来源标记。它以 `SQLITE_OPEN_READ_ONLY` 打开数据库，可与应用并行运行，打开前后文件字节一致；退出码 `0` 无未过项、`1` 有未过项、`2` 用法或库路径错误。逐项步骤与记录表见 `windows-verification.md`。
+
 ## 数据模型
 
 新增迁移 `0010_tuning.sql`：
