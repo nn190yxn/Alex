@@ -61,7 +61,7 @@
 - [x] 12.7 会诊编排接入共享背景与席位补充检索，提示词标注获取时刻与来源编号并要求区分事实与判断
 - [x] 12.8 快照在会诊启动时冻结，后续轮次复用，回看历史会诊不发起新检索
 - [x] 12.9 新增 7 条命令（`connector_list`/`connector_upsert`/`connector_enable`/`connector_test`/`connector_calls`/`council_sources`/`council_search`）并注册到桌面壳
-- [x] 12.10 外壳接入位就绪：`ShellConnector` 提供 `Retrieval` 注入点，本机仅有 `PlaceholderSearch`/`PlaceholderPage`（未接外部服务，按「本次未获得外部背景」处理）
+- [x] 12.10 外壳接入位就绪：`ShellConnector` 提供 `Retrieval` 注入点；当时仅装配占位实现，后由 P16.6 替换为真实连接器（见遗留说明）
 - [x] 12.11 前端补类型、demo 状态与命令 stub
 - [x] 12.12 会诊境界呈现共享背景、逐席来源标注与「本次未获得外部背景」提示
 - [x] 12.13 我境界连接器面板：分类开关、地址配置、连通测试与调用审计
@@ -182,7 +182,7 @@
 - `tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 仍为占位符，V10 在替换为真实签名密钥与托管域名前无法执行。
 - `bundle.targets` 使用 `["nsis", "msi"]`：Tauri v2 的 Windows WiX 产物对应 `msi` 目标，`wix` 不是合法取值。
 - 聚类在固化时计算，图规模上限沿用 `MAX_GRAPH_LIMIT`；超过该上限的图只对可见子图划分社区。
-- 连接器在内核只保留抽象与占位实现，真实搜索、网页抓取与 MCP 客户端必须由桌面外壳注入；本机门禁只验证编排、快照、审计与降级逻辑。
+- 连接器在内核只保留抽象，真实调用由桌面外壳注入（`src/connector.rs`）：搜索按 SearXNG 兼容的 JSON 接口（`GET {endpoint}/search?q=&format=json`，端点未带 `/search` 时自动补齐），网页阅读按 HTTP GET 加通用 HTML 正文提取，MCP 按 JSON-RPC 2.0 over Streamable HTTP（`initialize` → `notifications/initialized` → `tools/list`、`tools/call`，自动记录 `Mcp-Session-Id`）。解析、正文提取与 JSON-RPC 负载抽取都是纯函数，离线单测覆盖；网络层失败统一转成 `E_NETWORK_OFF`（对端返回失败）或 `E_MALFORMED_RESPONSE`（结构不符），由编排降级为「本次未获得外部背景」。`HttpToolProvider` 仍受内核 `validate_tools` 约束：未声明任何工具的服务器在写入配置阶段即被拒绝。连接器密钥按 `thought-forge/connector/{id}` 取系统凭据库，环境变量 `THOUGHT_FORGE_CONNECTOR_KEY` 为回退，密钥不入库。
 - `cargo clippy -p thought-forge-core --all-targets -- -D warnings` 与 `cargo clippy -p thought-forge-desktop --all-targets -- -D warnings` 已归零，并作为发布工作流的静态检查门禁；两个 crate 的 `rust-version` 统一声明为 `1.85`（依赖树含 edition 2024 crate，且 core 用到 1.82 才稳定的 `Option::is_none_or`），原先的 `1.77.2` 为虚假下限。
 
 ## 参考资料

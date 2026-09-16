@@ -413,6 +413,13 @@ pub struct ToolSpec {
 
 MCP 连接器只接受能返回工具能力声明的服务器。配置时调用 `list_tools` 校验，返回空列表或协议不匹配时拒绝写入并返回 `E_INVALID_INPUT`，因此不会把第三方 Agent 运行器当作工具服务器接入。
 
+外壳的具体协议选型（`src-tauri/src/connector.rs`）：
+
+- 搜索取 SearXNG 兼容的 JSON 接口 `GET {endpoint}/search?q=<编码后关键词>&format=json`，端点未带 `/search` 时自动补齐；响应用 `results[]` 的 `title`/`url`/`content`/`publishedDate`，无网址的条目跳过。自托管实例不需要第三方密钥，与该连接器「地址可配置」的定位一致。
+- 网页阅读用 HTTP GET 加通用 HTML 正文提取：丢弃 `script`/`style`/`noscript` 与注释，块级标签处换行，解码常见实体与数字引用，`<title>` 作为标题。
+- MCP 用 JSON-RPC 2.0 over Streamable HTTP：`initialize`（声明协议版本与客户端信息，记录响应头里的 `Mcp-Session-Id`）→ `notifications/initialized` → `tools/list`、`tools/call`。响应既可是单个 JSON，也可是 SSE 分帧，取首个可解析的 `data:` 负载。
+- 密钥按 `thought-forge/connector/{id}` 取系统凭据库，环境变量 `THOUGHT_FORGE_CONNECTOR_KEY` 为回退；密钥不入库。对端返回失败记 `E_NETWORK_OFF`，结构不符记 `E_MALFORMED_RESPONSE`，两者都由编排降级为「本次未获得外部背景」。
+
 检索编排：
 
 ```rust
