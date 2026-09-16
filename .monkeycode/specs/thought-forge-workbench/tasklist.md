@@ -195,7 +195,9 @@ Updated: 2026-09-14
 - 界面：藏境界新增「大师架子 / 知识地形」视图切换，知识地形展示来源登记与扫描、主题分布（面积映射文档量、颜色映射领域）、年轮（圈层映射累计量、内含月新增）、主题检索；我境界新增采集台（全局暂停、四类能力逐项开关与系统不可用态、脱敏开关、去重窗口、采集一轮、原始记录按类型筛选与删除、开启审计）。
 - 前端：`pnpm typecheck` 无错误，`pnpm test` 79 项全绿（13 个文件），`pnpm build` 通过；预览 stub 补齐 17 条 P7 命令与可变 demo 状态（采集设置/事件/来源/文档）。
 
-补充记录（2026-09-16）：OS 级抓取已在外壳落地。`capture.rs` 实现 `CaptureSource`，剪贴板 800 毫秒、前台窗口 2 秒判定最小采样间隔，受关注目录由 `notify` 常驻递归监听并在每轮采集排空有界队列；`capture_win.rs` 用 `windows-sys` 读 `CF_UNICODETEXT`、`CF_DIB` 引用与 `GetForegroundWindow` 的窗口标题和进程名。关注目录取自设置键 `capture.watch_roots`，启动时解析并剔除无效路径，启动后修改需重启生效。能力可用性经 `ShellCapture::unavailable` 上报，非 Windows 平台剪贴板与前台窗口标记为不可用，界面禁用对应开关。Windows 目标 `cargo check` 已通过，真机效果待 Windows 环境验收。
+补充记录（2026-09-16）：OS 级抓取已在外壳落地。`capture.rs` 实现 `CaptureSource`，剪贴板 800 毫秒、前台窗口 2 秒判定最小采样间隔，受关注目录由 `notify` 常驻递归监听并在每轮采集排空有界队列；`capture_win.rs` 用 `windows-sys` 读 `CF_UNICODETEXT`、`CF_DIB` 引用与 `GetForegroundWindow` 的窗口标题和进程名。能力可用性经 `ShellCapture::unavailable` 上报，非 Windows 平台剪贴板与前台窗口标记为不可用，界面禁用对应开关。Windows 目标 `cargo check` 已通过，真机效果待 Windows 环境验收。
+
+补充记录（2026-09-16）：关注目录此前只有读取方没有写入方（外壳启动时读设置键 `capture.watch_roots`，但没有任何界面能写入），文件活动是个走不通的开关。现已补上：命令 `capture_set_watch_roots` 校验后重建监听并落盘，采集台新增「关注目录」区块负责增删，立即生效无需重启；内核的校验规则只接受已存在的绝对路径、上限 16 个、嵌套目录只留外层，启动时改用宽松版本丢弃坏项而不阻断启动。
 
 补充记录（2026-09-16）：主动搜集已在外壳落地（`discovery.rs`）。`ShellDiscovery` 复用检索连接器，把搜索结果经脱敏与注入特征安检后转成待确认材料，并写入用途为 `distill_discovery` 的调用审计与当日成本；联网关闭或检索连接器未启用时返回 `E_NETWORK_OFF` 并说明原因。内核侧的 `BlockedDiscovery` 保留为接口占位，供纯逻辑测试与后续接入方参考。6 条外壳单测覆盖映射、无地址过滤、条数上限、成功与失败两条审计路径、离线报错。
 
