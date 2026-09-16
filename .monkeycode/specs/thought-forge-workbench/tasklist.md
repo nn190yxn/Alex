@@ -183,19 +183,21 @@ Updated: 2026-09-14
 - [x] 7.9 实现知识地形与年轮趋势可视化
 - [x] 7.10 实现采集幂等、暂停、脱敏、离线保留属性测试
 
-门禁 P7：已通过（内核与界面）。四类采集逐项可开关、可全局暂停；脱敏生效；四条属性测试通过；来源离线时既有索引保持可读。OS 级抓取待完整工具链下由外壳验证。
+门禁 P7：已通过（内核、界面与外壳）。四类采集逐项可开关、可全局暂停；脱敏生效；四条属性测试通过；来源离线时既有索引保持可读。OS 级抓取已由外壳接入（见下方补充记录），真机剪贴板与前台窗口效果仍需 Windows 环境验收。
 
 验证记录（2026-09-14）：
 
 - 迁移：`0007_capture.sql` 建 `capture_events`（kind/occurred_at/source_app/payload_json/content_hash/redacted）、`capture_summaries`（随事件级联删除）、`capture_settings`（四类默认关闭、记录显式同意时间）、`capture_audit`、`kb_sources`/`kb_topics`/`kb_documents`/`kb_search`（FTS5）；`db/migrations.rs` 注册 version 7，`latest_version()`=7。
 - 内核·采集：`capture/mod.rs`（四类能力常量、原始样本与 `CaptureSource` trait、`NoopCaptureSource`、`parse_epoch`/`normalize_text` 与轮询/去重/队列常量）、`capture/redact.rs`（内置数字串/长令牌/邮箱 + 自定义词条，JSON 递归脱敏）、`capture/repo.rs`（能力开关、暂停、去重窗口、脱敏规则、审计、事件/摘要读写）、`capture/pipeline.rs`（`collect_once` 先取全部样本再单事务写入；窗口连续采样按时长合并、文件活动按 trailing window 合并、有界队列计数丢弃、哈希去重、脱敏后落库）。
 - 内核·知识库：`kb/mod.rs`（文档/主题/来源 DTO、`display_stem`/`version_label`/`topic_key` 归组）、`kb/repo.rs`（来源增删与可用性、主题重算、文档 upsert 与全文索引同步、缺失清理、FTS5 优先 + LIKE 回退检索、领域分布与年轮聚合）、`kb/service.rs`（递归只读元数据扫描、离线保留并标记不可用、扫描全部、地形总览）。
-- 命令层：新增 17 条命令（采集设置/能力开关/暂停/脱敏/去重/采集一轮/事件列表/摘要/删除/审计，来源列表/登记/移除/扫描/文档/检索/概览）；`capture_collect` 注入 `NoopCaptureSource`，真实系统抓取由外壳经 `CaptureSource` 接入。
+- 命令层：新增 17 条命令（采集设置/能力开关/暂停/脱敏/去重/采集一轮/事件列表/摘要/删除/审计，来源列表/登记/移除/扫描/文档/检索/概览）；`capture_collect` 由外壳注入的采集源驱动，内核侧保留 `NoopCaptureSource` 供纯逻辑测试。
 - 测试：`cargo test -p thought-forge-core` 全绿（含库内 3 项脱敏单测）；`tests/capture.rs` 16 项、`tests/kb.rs` 13 项，含四条 `proptest` 属性：采集幂等（`property_repeated_ingest_is_idempotent`）、暂停不写入（`property_paused_never_writes`）、脱敏命中不落库（`property_redaction_removes_digits`）、来源离线保留可读（`property_offline_source_retains_documents`）。
 - 界面：藏境界新增「大师架子 / 知识地形」视图切换，知识地形展示来源登记与扫描、主题分布（面积映射文档量、颜色映射领域）、年轮（圈层映射累计量、内含月新增）、主题检索；我境界新增采集台（全局暂停、四类能力逐项开关与系统不可用态、脱敏开关、去重窗口、采集一轮、原始记录按类型筛选与删除、开启审计）。
 - 前端：`pnpm typecheck` 无错误，`pnpm test` 79 项全绿（13 个文件），`pnpm build` 通过；预览 stub 补齐 17 条 P7 命令与可变 demo 状态（采集设置/事件/来源/文档）。
 
-遗留说明：安装 WebView/GLib 系统库后桌面壳已可编译；剪贴板序列号检测、前台窗口事件钩子、文件 notify 递归监听等 OS 级抓取尚未接入外壳，内核只提供归一化、合并、脱敏、去重与落库，真实系统采集需在 Windows 桌面壳内验证。
+补充记录（2026-09-16）：OS 级抓取已在外壳落地。`capture.rs` 实现 `CaptureSource`，剪贴板 800 毫秒、前台窗口 2 秒判定最小采样间隔，受关注目录由 `notify` 常驻递归监听并在每轮采集排空有界队列；`capture_win.rs` 用 `windows-sys` 读 `CF_UNICODETEXT`、`CF_DIB` 引用与 `GetForegroundWindow` 的窗口标题和进程名。关注目录取自设置键 `capture.watch_roots`，启动时解析并剔除无效路径，启动后修改需重启生效。能力可用性经 `ShellCapture::unavailable` 上报，非 Windows 平台剪贴板与前台窗口标记为不可用，界面禁用对应开关。Windows 目标 `cargo check` 已通过，真机效果待 Windows 环境验收。
+
+补充记录（2026-09-16）：主动搜集已在外壳落地（`discovery.rs`）。`ShellDiscovery` 复用检索连接器，把搜索结果经脱敏与注入特征安检后转成待确认材料，并写入用途为 `distill_discovery` 的调用审计与当日成本；联网关闭或检索连接器未启用时返回 `E_NETWORK_OFF` 并说明原因。内核侧的 `BlockedDiscovery` 保留为接口占位，供纯逻辑测试与后续接入方参考。6 条外壳单测覆盖映射、无地址过滤、条数上限、成功与失败两条审计路径、离线报错。
 
 ## P8 自我蒸馏与发布
 
@@ -275,7 +277,7 @@ P1 至 P8 已完成，X.1 文档同步与 X.2 复盘记录已补齐。以下为�
 偏差点：
 
 - 桌面外壳依赖 WebView/GLib 系统库，Linux 开发环境默认缺失。应对：把纯逻辑拆为 `thought-forge-core` 独立 crate，各阶段门禁跑 `cargo test -p thought-forge-core`；补装 `libwebkit2gtk-4.1-dev` 等系统库后，外壳用 `cargo check`/`cargo build -p thought-forge-desktop` 验证。
-- 联网与系统感知能力无法在内核直接落地：会诊联网、主动搜集、OS 级采集都需外壳注入。应对：内核以 trait 与占位实现保持纯逻辑可测（`GatedClient` 返 `E_NETWORK_OFF`、`BlockedDiscovery` 返 `disabled`、`NoopCaptureSource`），真实实现留给外壳。
+- 联网与系统感知能力无法在内核直接落地：会诊联网、主动搜集、OS 级采集都需外壳注入。应对：内核以 trait 与占位实现保持纯逻辑可测（`GatedClient` 返 `E_NETWORK_OFF`、`BlockedDiscovery` 返 `disabled`、`NoopCaptureSource`），真实实现留给外壳。该约定已按计划兑现：联网经 `model.rs`/`connector.rs`，主动搜集经 `discovery.rs`，系统感知经 `capture.rs`。
 - 自我蒸馏的材料来源在设计时偏外部语料，实现时收敛为本机 `thought_records`：自我大师应当反映用户自身判断。应对：`self/` 只读本机记录，`<20` 条不调用模型，产出逐条确认后才安装。
 - `self` 是 Rust 关键字，模块无法直接命名。应对：模块注册为 `self_distill`，命令层用 `self_service`/`data_service` 别名。
 - 发布链路的部分参数只能占位：`tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 需真实签名密钥与托管域名。应对：先完成配置与工作流骨架，留下显式占位符。
@@ -287,7 +289,7 @@ P1 至 P8 已完成，X.1 文档同步与 X.2 复盘记录已补齐。以下为�
 
 - 在完整 Windows 桌面工具链下安装真实安装包，验证 NSIS 与 WiX 产物可安装，并跑通自动更新升级链路。
 - 替换 `tauri.conf.json` 的 `pubkey` 占位符与 `updater.endpoints`，配置真实签名密钥与发布来源。
-- 在外壳内接入真实 OS 采集（剪贴板序列号、前台窗口钩子、文件 notify 监听）、主动搜集检索与真实模型平台，补齐端到端联调。模型平台已接入（`model.rs` 的 `ReqwestTransport` + `model_probe` 自检命令）；连接器也已接入真实实现（`connector.rs`：SearXNG 兼容检索、HTML 正文提取、MCP 工具客户端），仍未落地的是 OS 级采集。
+- 在外壳内补齐端到端联调。模型平台已接入（`model.rs` 的 `ReqwestTransport` + `model_probe` 自检命令）；连接器已接入真实实现（`connector.rs`：SearXNG 兼容检索、HTML 正文提取、MCP 工具客户端）；OS 采集已接入（`capture.rs` 的剪贴板与前台窗口轮询、`notify` 递归文件监听，`capture_win.rs` 的 Windows 原生探针）。剩余工作是在 Windows 真机上验证采集与检索的实际效果。
 - 引入第一位真实大师时更新覆盖矩阵与候选池统计（X.3）；模型能力或平台变更时同步联网能力清单与调用审计口径（X.4）。
 
 ## 参考资料
