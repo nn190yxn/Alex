@@ -99,6 +99,19 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `design.md`：Sprint 聚合层、阶段状态、指标摘要、数据边界和共享类型设计
 - `tasklist.md`：Sprint 契约、仓储、API、问题雷达、标准答案、对照分析、内容资产、复测和前端工作台实施任务
 
+自我提升的思想熔炉（Thought Forge Workbench）规格位于 `当前工作区/.monkeycode/specs/thought-forge-workbench/`。工程位于仓库根目录 `当前工作区/thought-forge/`，是本地优先的 Windows 桌面应用，与 `arrive-focus`、`geo-platform` 平级。
+
+- `requirements.md`：大师库、圆桌会诊、思维网络、主动助理、蒸馏流水线、采集与知识地形、成长轨迹与自我蒸馏、隐私与数据主权、离线可用性等需求
+- `design.md`：双 crate（纯逻辑 `thought-forge-core` 与 Tauri 桌面外壳）、五境界导航、SQLite 迁移、命令边界、六层大师模型与各阶段门禁
+- `ui-design.md`：窑变与素瓷双主题、六层色彩与几何标记、五境界场景、离线态与权限态、无障碍与等效视图、命令面板
+- `tasklist.md`：P1 至 P9 分阶段实施任务清单；P1 至 P9 已全部完成
+
+思想熔炉的深化规格位于 `当前工作区/.monkeycode/specs/2026-09-15-thought-forge-deepening/`，在基线之上补齐调参、追问、检索、分歧判定、成本、凭据、备份、自我约束与运行可恢复等能力。
+
+- `requirements.md`：调参与自适应、席位追问、外部检索与来源隔离、分歧判定、调用与费用治理、凭据与备份、回音与原则撤销、中断恢复、真机验证等需求
+- `design.md`：调参表、追问锚点、连接器三层抽象、分歧判定三模式、成本整数微元记账、凭据引用、备份与迁移前快照、回音阈值与运行控制、外壳自检命令接口、迁移 `0010` 至 `0014`
+- `tasklist.md`：P10 至 P16 分阶段实施任务清单；P10 至 P15 与 P16.1、P16.2 已完成，P16.3 至 P16.10 为 Windows 真机执行项
+
 ## 现有历史文档
 
 - `当前工作区/.monkeycode/docs/商业地产报告案例语言结构与去AI化总结.md`
