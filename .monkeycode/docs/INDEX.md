@@ -113,6 +113,12 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `tasklist.md`：P10 至 P16 分阶段实施任务清单；P10 至 P15 与 P16.1、P16.2 已完成，P16.3 至 P16.10 为 Windows 真机执行项
 - `windows-verification.md`：Windows 真机验证执行手册，含准备步骤、只读检查器 `crates/core/examples/forge_verify.rs` 的参数与判定口径、P16.3 至 P16.10 的逐项命令与 V1 至 V18 记录表；仓库另有发布前检查 `thought-forge/scripts/check-release-config.mjs`（`pnpm check:release-config`）拦截占位更新配置
 
+思想熔炉的六题会诊规格位于 `当前工作区/.monkeycode/specs/2026-09-17-thought-forge-six-questions/`，把层次从大师的身份标签改为所有大师共同面对的六个问题。
+
+- `requirements.md`：六题档案、大师层次声明、席位锚定到题、同题对立、按题换批补人与记录累积需求
+- `design.md`：轴的定义变化、`master` 与 `council` 模块改动、迁移 `0015` 的 `seats_json`、数据流与后续两步接口预留
+- `tasklist.md`：P17 六题档案与席位锚定到题、P18 同题对立与按题换批、P19 记录按题累积任务清单
+
 ## 现有历史文档
 
 - `当前工作区/.monkeycode/docs/商业地产报告案例语言结构与去AI化总结.md`
