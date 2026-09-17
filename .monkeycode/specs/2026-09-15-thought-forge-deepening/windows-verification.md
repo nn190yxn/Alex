@@ -210,6 +210,14 @@ pnpm check:release-config
 
 `tauri.conf.json` 的 `pubkey` 与 `updater.endpoints` 仍是占位符，V10 在替换成真实签名公钥与托管域名前无法执行。V9 的签名步骤同样依赖真实签名密钥。
 
+## 五之二、云端可判定的部分
+
+`.github/workflows/verify-thought-forge-windows.yml` 把不需要密钥的项搬到 GitHub 的 `windows-latest` 真机上跑，手动触发，不需要本地 Windows。它覆盖 V1（桌面壳在 Windows 上编译并跑通全部用例，Linux 上 `#[cfg(windows)]` 代码不参与编译）、V9（NSIS 与 MSI 静默安装、启动、卸载，且卸载后用户数据仍在），以及 V16/V17（由内核用例覆盖）。
+
+判定依据是「启动后出现 `%APPDATA%\com.thoughtforge.desktop\forge.db`」：应用在 setup 阶段建库并执行迁移，因此这条断言同时证明 WebView2 初始化成功与迁移在 Windows 上跑通。安装包以 `--no-sign` 生成，因此发布前检查不作为该工作流的门禁。
+
+云端仍然替代不了的项：V8 剪贴板与活动窗口采集（runner 没有交互桌面）、V2 界面回填、V3 探针耗时观感、V6 逐轮发言质量、V7 检查点续跑手感、V12 提示词隔离、V13 工具清单可读性、V10 自动升级。
+
 ## 六、检查器覆盖范围
 
 检查器判定的是「数据库里能不能看到应有的痕迹」，它覆盖 V2、V4、V5、V6、V7、V8、V11、V12、V13、V14、V15（配合 `--secret`）、V16、V17、V18 的可判定部分，以及迁移版本（S1）与联网开关、平台配置（S2）。
