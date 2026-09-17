@@ -98,6 +98,8 @@ graph LR
 
 分歧从纯文本升级为 `DivergenceView { layer, text }`：同题内差异最大的一对必出一条，与全场其余席位差异最大的一位按其所在题再出一条；旧库里的纯文本历史分歧读回时回填到「法」。
 
+缺口题不再只留在内核与类型里：会诊界面在圆桌上给对应席位加虚线边框与「这一题还缺人」标记，并单独列出「还缺人的题」分区，逐个写出题名、核心问题，以及换批会优先给这几道题补人。标记同时靠边框与文字表达，不依赖颜色单通道。
+
 ## 6. P19 记录按题累积
 
 迁移 `0017_seat_stances.sql` 新增 `council_stances(session_id, panel_rotation, master_id, master_name, layer, summary, created_at)`，主键 (session_id, panel_rotation, master_id)。
