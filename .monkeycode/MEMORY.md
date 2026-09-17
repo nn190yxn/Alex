@@ -31,32 +31,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 
 ## 条目
 
-[商业策划 · 语言与表达治理]
+[商业策划 · 语言治理、团队结构与交付形态]
 - Date: 2026-07-01（2026-09-14 合并同日多条要求）
-- Context: 用户多次强调商业策划 skill 的语言质量是核心治理对象
+- Context: 用户多次强调商业策划 skill 的语言质量、结构化协作与交付形态判断
 - Instructions:
-  - 正式汇报文稿采用正式汇报口径，少用口语化、提示式和模型痕迹明显的表达，避免“底盘”“一句话判断”“这几个字”等说法，优先使用“项目判断”“市场基础”“竞争关系”“定位落位”等策划汇报常用表达。
-  - 语言治理形成独立标准库，覆盖标题写法、判断句结构、专业概念口径、禁用表达和审核清单，核心目标是解决 AI 化、宣传化和讨论稿化问题。
-  - 正式商业材料中，语言准确性和行业口径优先级高于修辞丰富度；去 AI 化不等于缩短文本，正文需要保留行业经验、推演过程、解释性段落和自然表达。
-
-[商业策划 · skill 结构与角色协作]
-- Date: 2026-07-01（2026-09-14 合并同日多条要求）
-- Context: 用户要求把商业策划专家 skill 升级为总控师加多子代理的结构化协作模式
-- Instructions:
-  - skill 采用结构化设计：主文件负责流程和规则，案例内容单独放在配套文件中维护；处理项目时先判断商业模型和提案结构，再调用对应案例库，不把不同类型项目混在同一套写法里。
-  - 复杂任务采用总控师加子代理团队处理，子代理分工覆盖城市研究、区域研究、竞品与业态研究、客群研究、定位策略、招商策略、运营资产校验和提案撰写。
-  - 角色协作采用强制链路和强制约束，不采用推荐顺序表述；方案撰写是研究链路后的独立环节，由总控统一口径后输出正式汇报文案。
-  - 每个角色除职责说明外还必须拥有独立 prompt，明确角色目标、核心问题、工作约束、输出格式和交接要求，总控分派任务时调用对应提示词。
-  - 团队必须包含独立的文字审核角色，负责行业通用语言、专业概念表达和去 AI 化审核，最终正式商业文案必须经过该环节。
-
-[商业策划 · 交付形态与操盘方案识别]
-- Date: 2026-07-01（2026-09-14 合并同日多条要求）
-- Context: 用户以最终修整版 F3 方案纠正交付形态与任务类型判断偏差
-- Instructions:
-  - 概念方案正文稿（Markdown 或 Word）保持完整展开，保留概念阐释、经营逻辑、空间解释和阅读连续性；只有用户明确要求页纲或 PPT 稿时才输出高度压缩版本。
-  - 优先识别用户是否需要“项目操盘方案”，不把操盘需求只当作报告审查或语言治理处理。
-  - 写字楼、公寓、底商、酒店、物业私域等复合项目按混合业态资产激活组织方案，讲清各资产单元定位、客流联动、权益互通、运营机制和收益假设。
-  - 操盘型方案允许保留有经营含义的强判断、命名和适度生活化表达，但必须落到客群、空间、业态、运营、收益和分阶段目标。
+  - 正式汇报文稿采用正式汇报口径，少用口语化、提示式和模型痕迹明显的表达，避免“底盘”“一句话判断”“这几个字”等说法，优先使用“项目判断”“市场基础”“竞争关系”“定位落位”等策划汇报常用表达。语言治理形成独立标准库，覆盖标题写法、判断句结构、专业概念口径、禁用表达和审核清单，核心目标是解决 AI 化、宣传化和讨论稿化问题。正式商业材料中，语言准确性和行业口径优先级高于修辞丰富度；去 AI 化不等于缩短文本，正文需要保留行业经验、推演过程、解释性段落和自然表达。
+  - skill 采用结构化设计：主文件负责流程和规则，案例内容单独放在配套文件中维护；处理项目时先判断商业模型和提案结构，再调用对应案例库，不把不同类型项目混在同一套写法里。复杂任务采用总控师加子代理团队处理，子代理分工覆盖城市研究、区域研究、竞品与业态研究、客群研究、定位策略、招商策略、运营资产校验和提案撰写。角色协作采用强制链路和强制约束，不采用推荐顺序表述；方案撰写是研究链路后的独立环节，由总控统一口径后输出正式汇报文案。每个角色除职责说明外还必须拥有独立 prompt，明确角色目标、核心问题、工作约束、输出格式和交接要求，总控分派任务时调用对应提示词。团队必须包含独立的文字审核角色，负责行业通用语言、专业概念表达和去 AI 化审核，最终正式商业文案必须经过该环节。
+  - 概念方案正文稿（Markdown 或 Word）保持完整展开，保留概念阐释、经营逻辑、空间解释和阅读连续性；只有用户明确要求页纲或 PPT 稿时才输出高度压缩版本。优先识别用户是否需要“项目操盘方案”，不把操盘需求只当作报告审查或语言治理处理。写字楼、公寓、底商、酒店、物业私域等复合项目按混合业态资产激活组织方案，讲清各资产单元定位、客流联动、权益互通、运营机制和收益假设。操盘型方案允许保留有经营含义的强判断、命名和适度生活化表达，但必须落到客群、空间、业态、运营、收益和分阶段目标。
 
 [GEO 管理平台验证流程]
 - Date: 2026-07-09
@@ -151,9 +132,7 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - command 边界的错误码契约由 `src-tauri/src/protocol.rs` 的用例锁定：它用 `include_str!("../../src/ipc/protocol.ts")` 读取前端错误码清单并逐项比对，`E_UNKNOWN` 是前端独有的兜底码。新增内核错误变体必须同步 `every_error`、`EXPECTED_CODES` 与前端 `protocol.ts`，否则该用例失败。
   - 桌面外壳 crate `thought-forge-desktop` 依赖 WebView/GLib 系统库；本机需先装 `libwebkit2gtk-4.1-dev`、`libgtk-3-dev`、`libayatana-appindicator3-dev`、`librsvg2-dev`、`libxdo-dev`、`pkg-config`（Debian 12 用 `apt-get install -y --no-install-recommends`）才能编译，装好后用 `cargo check -p thought-forge-desktop` 与 `cargo build -p thought-forge-desktop` 验证外壳。Windows 安装包（NSIS 与 MSI）与自动更新链路仍只能在完整 Windows 工具链下验收。
   - `tauri.conf.json` 的 `bundle.targets` 只接受 `deb`/`rpm`/`appimage`/`msi`/`nsis`/`app`/`dmg`；Windows 上的 WiX 产物对应 `msi`，写成 `wix` 会让构建脚本以 `data did not match any variant of untagged enum BundleTargetInner` 失败。tauri 与 tauri-build 依赖统一用主版本约束 `2`；写成 `2.8` 之类的小版本约束会在解析 `tauri-build` 2.6.x 时失败。
-  - 发布前必跑 `pnpm check:release-config`（脚本 `thought-forge/scripts/check-release-config.mjs`）：它判定 `tauri.conf.json` 的 `plugins.updater` 是否存在、`pubkey` 是否为空或占位、是否像 base64 公钥、`endpoints` 是否为 https 且不指向保留主机名（`example.com`/`localhost` 等）。发布工作流在装依赖与编译之前跑同一道检查。`pubkey` 与 `endpoints` 目前仍是占位值，检查会以退出码 1 失败，属预期；换好真实签名密钥与托管域名后才应通过。
-  - core crate 未采用 rustfmt 约定，`cargo fmt -- --check` 会报大量既有漂移；发布工作流有意不启用该检查，也不要为通过检查而做全量空格级改动。
-  - 静态检查用 clippy：`rustup component add clippy` 安装后，在 `thought-forge/src-tauri` 下跑 `cargo clippy -p thought-forge-core --all-targets` 与 `cargo clippy -p thought-forge-desktop --all-targets`，两者已归零告警，发布工作流以 `-- -D warnings` 作为门禁。命令层 `#[tauri::command]` 因参数与前端 IPC 字段一一对应而保留多参数，用 `#[allow(clippy::too_many_arguments)]` 标注，不要为消警把参数合并成结构体。
+  - 发布门禁三道：`pnpm check:release-config`（判定 `plugins.updater` 是否存在、`pubkey` 是否为空/占位/不像 base64 公钥、`endpoints` 是否 https 且非保留主机名；占位配置下以退出码 1 失败属预期）、clippy（`cargo clippy -p <crate> --all-targets -- -D warnings`，两个 crate 已归零）、以及不使用 rustfmt（core 未采用 rustfmt 约定，`cargo fmt -- --check` 会报大量既有漂移，不要为通过检查做全量空格级改动）。命令层 `#[tauri::command]` 因参数与前端 IPC 字段一一对应而保留多参数，用 `#[allow(clippy::too_many_arguments)]` 标注，不要为消警把参数合并成结构体。
   - 前端开发服务器端口固定 1430（`thought-forge/vite.config.ts` 中 `strictPort`），预览地址通过 `request_preview 1430` 获取。
   - `package.json` 的 `packageManager` 字段必须填 npm 上真实存在的 pnpm 版本（如 `pnpm@10.34.5`），否则 corepack 会拉不到 tgz 而让所有 pnpm 命令失败；pnpm 通过 `corepack prepare pnpm@<version> --activate` 激活，不要用 `npm i -g pnpm` 覆盖 corepack 垫片。GitHub Actions 中 `pnpm/action-setup` 的 `version` 必须与 `packageManager` 一致，否则会因重复指定版本报错。
   - Rust 不要钉旧版本：传递依赖已要求 Cargo 支持 edition 2024，需使用 stable 通道；两个 crate 的 `rust-version` 均已声明为 `1.85`（原先的 `1.77.2` 是虚假承诺，且 core 代码已使用 1.82 才稳定的 `Option::is_none_or`），仅 1.77.2 会在下载依赖阶段报 `feature edition2024 is required`。
