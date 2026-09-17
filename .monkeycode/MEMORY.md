@@ -240,3 +240,14 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - Playwright / Chromium 首次下载约 186MB 且极慢，系统图形库（libnss3 等）缺失需 --with-deps；不要把浏览器截图作为验证前置条件，改用 curl 调接口加 Node 脚本校验页面与渲染。
   - 预览统一起在 3000 端口（PORT=3000 node server.js），预览地址形如 https://3000-xxxx.monkeycode-ai.online。
   - 长驻预览服务用 background_terminal_create 启动时必须设 timeout: 0；默认 30 分钟会被回收，进程消失后预览地址立刻返回 530。
+
+[商业运营工作台已迁至独立仓库]
+- Date: 2026-09-17
+- Context: Agent 在把工作台从 nn190yxn/Alex 拆到独立仓库时确认
+- Category: 运维部署
+- Instructions:
+  - 商业运营工作台（原 `个人表达工作台/` 目录）已迁到独立仓库 https://github.com/nn190yxn/shangye，主分支 main。
+  - 新仓库只含工作台代码与工作台文档（specs/personal-expression-workbench、commercial-ops-workbench、multi-skill-deai-compare、one-skill-one-writing-pack、docs/语料积累机制.md）。
+  - GEO 管理平台、追光小牛、小程序、企业微信等其他项目的内容与记忆均未纳入新仓库；追光小牛条目含服务器 IP 与密钥路径，特别注意不要外带。
+  - 按子目录导出历史用 `git filter-branch --subdirectory-filter`；`git subtree split` 对中文目录名有编码 bug（assertion failed），含中文路径的拆库不能用它。
+  - 主仓库 nn190yxn/Alex 保留全部原有内容，未做删除。
