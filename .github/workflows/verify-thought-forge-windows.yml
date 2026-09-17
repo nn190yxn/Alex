@@ -84,6 +84,9 @@ jobs:
         run: cargo clippy -p thought-forge-desktop --all-targets -- -D warnings
 
       # 未签名，避免依赖更新签名密钥；这一步产出 V9 的判定对象。
+      # `--no-sign` 足以跳过 updater 签名：tauri-cli 的 sign_updaters 在
+      # 读取 pubkey 与私钥之前就先判断 no_sign 并返回，因此占位的 pubkey 不会
+      # 让构建失败（见 crates/tauri-cli/src/bundle.rs）。
       - name: 生成 NSIS 与 MSI（V9）
         working-directory: thought-forge
         run: pnpm tauri build --ci --no-sign --target x86_64-pc-windows-msvc --bundles nsis,msi
@@ -94,26 +97,39 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $bundle = 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle'
+          $db = "$env:APPDATA\com.thoughtforge.desktop\forge.db"
 
-          $setup = Get-ChildItem "$bundle/nsis/*.exe" | Select-Object -First 1
+          $setup = Get-ChildItem "$bundle/nsis/*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $setup) { throw '没有找到 NSIS 安装包' }
           Write-Host "NSIS 包：$($setup.Name)（$([math]::Round($setup.Length / 1MB, 1)) MB）"
+          # 产物格式：安装包必须是 PE 可执行文件，避免把损坏或空文件当成功。
+          $head = [System.IO.File]::ReadAllBytes($setup.FullName)[0..1]
+          if ($head[0] -ne 0x4D -or $head[1] -ne 0x5A) {
+            throw "NSIS 产物不是 PE 文件（前两字节 $($head[0]),$($head[1])）"
+          }
 
           Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
           Write-Host 'NSIS 静默安装：完成'
 
-          $app = Get-ChildItem "$env:LOCALAPPDATA/ThoughtForge/ThoughtForge.exe", `
-                               "$env:LOCALAPPDATA/Programs/ThoughtForge/ThoughtForge.exe" `
-                               -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $app) { throw '安装后没有找到 ThoughtForge.exe' }
-          Write-Host "安装位置：$($app.FullName)"
+          # currentUser 模式的缺省安装目录是 $LOCALAPPDATA\ThoughtForge（见 NSIS 模板 .onInit）。
+          $app = $null
+          foreach ($root in @("$env:LOCALAPPDATA\ThoughtForge", "$env:LOCALAPPDATA\Programs\ThoughtForge")) {
+            $candidate = Join-Path $root 'ThoughtForge.exe'
+            if (Test-Path $candidate) { $app = $candidate; break }
+          }
+          if (-not $app) {
+            Write-Host '未在预期位置找到可执行文件，实际内容如下：'
+            Get-ChildItem $env:LOCALAPPDATA -Filter 'ThoughtForge.exe' -Recurse -Depth 3 -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Host "  $($_.FullName)" }
+            throw '安装后没有找到 ThoughtForge.exe'
+          }
+          Write-Host "安装位置：$app"
 
           # 应用在 setup 阶段建库并执行迁移，因此「启动后出现 forge.db」
           # 同时证明 WebView2 初始化成功、迁移在 Windows 上跑通。
-          $db = Join-Path $env:APPDATA 'com.thoughtforge.desktop/forge.db'
           if (Test-Path $db) { throw '启动前就已存在数据库，无法证明是本次启动创建的' }
 
-          $proc = Start-Process -FilePath $app.FullName -PassThru
+          $proc = Start-Process -FilePath $app -PassThru
           $created = $false
           for ($i = 0; $i -lt 30; $i++) {
             Start-Sleep -Seconds 2
@@ -124,14 +140,28 @@ jobs:
           if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
           if (-not $created) { throw '启动后没有创建数据库：应用可能在 WebView2 初始化阶段退出' }
 
-          $uninstaller = Join-Path $app.DirectoryName 'uninstall.exe'
+          $uninstaller = Join-Path (Split-Path $app) 'uninstall.exe'
           if (Test-Path $uninstaller) {
             Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait
-            Write-Host "卸载后应用目录仍在：$(Test-Path $app.DirectoryName)"
+            Write-Host "卸载后应用目录仍在：$(Test-Path (Split-Path $app))"
           } else {
             Write-Host "没有找到卸载程序：$uninstaller"
           }
           Write-Host "卸载后数据仍在：$(Test-Path $db)"
+          if (-not (Test-Path $db)) { throw '卸载把用户数据一起删掉了' }
+
+      # 判定对象是应用在 Windows 上真实建出的库：S1 迁移版本、S2/V2 联网开关与
+      # 平台配置一致性、V8 采集默认全关且关闭后不再产生事件。全新库上共 14 项，
+      # 应为通过 4、跳过 10、未过 0，退出码 0。
+      - name: 用只读检查器校验应用建出的库
+        shell: pwsh
+        working-directory: thought-forge/src-tauri
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $db = "$env:APPDATA\com.thoughtforge.desktop\forge.db"
+          if (-not (Test-Path $db)) { throw "找不到应用建出的数据库：$db" }
+          cargo run -q -p thought-forge-core --example forge_verify -- $db
+          if ($LASTEXITCODE -ne 0) { throw "只读检查器报告未过项（退出码 $LASTEXITCODE）" }
 
       - name: 安装、启动、卸载 MSI
         shell: pwsh
@@ -139,29 +169,41 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $bundle = 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle'
+          $db = "$env:APPDATA\com.thoughtforge.desktop\forge.db"
 
-          $msi = Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1
+          $msi = Get-ChildItem "$bundle/msi/*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $msi) { throw '没有找到 MSI 安装包' }
           Write-Host "MSI 包：$($msi.Name)（$([math]::Round($msi.Length / 1MB, 1)) MB）"
+          # MSI 是 OLE 复合文档，前四字节固定为 D0 CF 11 E0。
+          $magic = [System.IO.File]::ReadAllBytes($msi.FullName)[0..3]
+          if ($magic[0] -ne 0xD0 -or $magic[1] -ne 0xCF -or $magic[2] -ne 0x11 -or $magic[3] -ne 0xE0) {
+            throw "MSI 产物不是 OLE 复合文档：$($magic -join ',')"
+          }
 
           Start-Process msiexec -ArgumentList "/i `"$($msi.FullName)`" /qn /norestart" -Wait
           Write-Host 'MSI 静默安装：完成'
 
-          $app = Get-ChildItem "$env:ProgramFiles/ThoughtForge/ThoughtForge.exe", `
-                               "${env:ProgramFiles(x86)}/ThoughtForge/ThoughtForge.exe" `
-                               -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $app) { throw '安装后没有找到 ThoughtForge.exe' }
-          Write-Host "安装位置：$($app.FullName)"
-
-          # 数据目录此时已被上一个安装包建好，因此只判「能起来」。
-          $db = Join-Path $env:APPDATA 'com.thoughtforge.desktop/forge.db'
-          $proc = Start-Process -FilePath $app.FullName -PassThru
-          Start-Sleep -Seconds 20
-          Write-Host "进程存活：$(-not $proc.HasExited)；数据库仍在：$(Test-Path $db)"
-          if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
-          if ($proc.HasExited -and -not (Test-Path $db)) {
-            throw 'MSI 装出的应用启动后退出，且没有可用数据库'
+          $app = $null
+          foreach ($root in @("$env:ProgramFiles\ThoughtForge", "${env:ProgramFiles(x86)}\ThoughtForge")) {
+            $candidate = Join-Path $root 'ThoughtForge.exe'
+            if (Test-Path $candidate) { $app = $candidate; break }
           }
+          if (-not $app) {
+            Write-Host '未在预期位置找到可执行文件，列出候选根目录：'
+            foreach ($root in @("$env:ProgramFiles\ThoughtForge", "${env:ProgramFiles(x86)}\ThoughtForge")) {
+              Write-Host "  $root -> $(Test-Path $root)"
+            }
+            throw '安装后没有找到 ThoughtForge.exe'
+          }
+          Write-Host "安装位置：$app"
+
+          # 数据目录此时已被上一个安装包建好，因此判据是「进程能起来」。
+          $proc = Start-Process -FilePath $app -PassThru
+          Start-Sleep -Seconds 25
+          $alive = -not $proc.HasExited
+          Write-Host "进程存活：$alive；数据库仍在：$(Test-Path $db)"
+          if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          if (-not $alive) { throw "MSI 装出的应用启动后退出（退出码 $($proc.ExitCode)）" }
 
           Start-Process msiexec -ArgumentList "/x `"$($msi.FullName)`" /qn /norestart" -Wait
           Write-Host "卸载后数据仍在：$(Test-Path $db)"
