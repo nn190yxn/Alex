@@ -99,25 +99,13 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `design.md`：Sprint 聚合层、阶段状态、指标摘要、数据边界和共享类型设计
 - `tasklist.md`：Sprint 契约、仓储、API、问题雷达、标准答案、对照分析、内容资产、复测和前端工作台实施任务
 
-自我提升的思想熔炉（Thought Forge Workbench）规格位于 `当前工作区/.monkeycode/specs/thought-forge-workbench/`。工程位于仓库根目录 `当前工作区/thought-forge/`，是本地优先的 Windows 桌面应用，与 `arrive-focus`、`geo-platform` 平级。
+自我提升的思想熔炉（Thought Forge，本地优先的 Windows 桌面应用）已迁出本仓库，独立维护在 `https://github.com/nn190yxn/think`。该仓库根目录即原 `thought-forge/` 工程，规格随工程一起迁入其 `.monkeycode/specs/`：
 
-- `requirements.md`：大师库、圆桌会诊、思维网络、主动助理、蒸馏流水线、采集与知识地形、成长轨迹与自我蒸馏、隐私与数据主权、离线可用性等需求
-- `design.md`：双 crate（纯逻辑 `thought-forge-core` 与 Tauri 桌面外壳）、五境界导航、SQLite 迁移、命令边界、六层大师模型与各阶段门禁
-- `ui-design.md`：窑变与素瓷双主题、六层色彩与几何标记、五境界场景、离线态与权限态、无障碍与等效视图、命令面板
-- `tasklist.md`：P1 至 P9 分阶段实施任务清单；P1 至 P9 已全部完成
+- `thought-forge-workbench/`：基线规格，含需求、设计（双 crate 与六层大师模型）、界面设计与 P1 至 P9 任务清单
+- `2026-09-15-thought-forge-deepening/`：深化规格，含调参、追问、检索、分歧判定、成本、凭据、备份、自我约束与运行可恢复，以及 `windows-verification.md` 真机验证手册
+- `2026-09-17-thought-forge-six-questions/`：六题会诊规格，把层次从大师身份标签改为所有大师共同面对的六个问题
 
-思想熔炉的深化规格位于 `当前工作区/.monkeycode/specs/2026-09-15-thought-forge-deepening/`，在基线之上补齐调参、追问、检索、分歧判定、成本、凭据、备份、自我约束与运行可恢复等能力。
-
-- `requirements.md`：调参与自适应、席位追问、外部检索与来源隔离、分歧判定、调用与费用治理、凭据与备份、回音与原则撤销、中断恢复、真机验证等需求
-- `design.md`：调参表、追问锚点、连接器三层抽象、分歧判定三模式、成本整数微元记账、凭据引用、备份与迁移前快照、回音阈值与运行控制、外壳自检命令接口、迁移 `0010` 至 `0014`
-- `tasklist.md`：P10 至 P16 分阶段实施任务清单；P10 至 P15 与 P16.1、P16.2 已完成，P16.3 至 P16.10 为 Windows 真机执行项
-- `windows-verification.md`：Windows 真机验证执行手册，含准备步骤、只读检查器 `crates/core/examples/forge_verify.rs` 的参数与判定口径、P16.3 至 P16.10 的逐项命令与 V1 至 V18 记录表；仓库另有发布前检查 `thought-forge/scripts/check-release-config.mjs`（`pnpm check:release-config`）拦截占位更新配置
-
-思想熔炉的六题会诊规格位于 `当前工作区/.monkeycode/specs/2026-09-17-thought-forge-six-questions/`，把层次从大师的身份标签改为所有大师共同面对的六个问题。
-
-- `requirements.md`：六题档案、大师层次声明、席位锚定到题、同题对立、按题换批补人与记录累积需求
-- `design.md`：轴的定义变化、`master` 与 `council` 模块改动、迁移 `0015` 的 `seats_json`、数据流与后续两步接口预留
-- `tasklist.md`：P17 六题档案与席位锚定到题、P18 同题对立与按题换批、P19 记录按题累积任务清单
+云端 Windows 验收与发布工作流位于该仓库的 `.github/workflows/`。
 
 ## 现有历史文档
 

@@ -123,21 +123,22 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 数据库改造只允许采用兼容性增量方案，优先新增字段、新增表和新增索引。
   - 上线前必须先验证现有网站与 H5 的核心链路不受影响，再继续企业微信联调。
 
-[思想熔炉 · 构建、验证与工具链]
+[思想熔炉 · 仓库位置、构建、验证与工具链]
 - Date: 2026-09-15
 - Context: Agent 在建立 thought-forge 工程、跑各阶段门禁、新增桌面依赖与发布配置时发现
 - Category: 构建方法 / 环境配置
 - Instructions:
-  - 工程位于 `thought-forge/`。前端验证：在 `thought-forge/` 下运行 `pnpm typecheck && pnpm test && pnpm build`。Rust 验证：`export PATH=/root/.cargo/bin:$PATH` 与 `CARGO_HOME=/root/.cargo RUSTUP_HOME=/root/.rustup` 后，在 `thought-forge/src-tauri` 下运行 `cargo test -p thought-forge-core` 与 `cargo test -p thought-forge-desktop --lib`。
+  - 工程已迁出 `Alex` 仓库，独立维护在 `https://github.com/nn190yxn/think`，仓库根目录即原 `thought-forge/` 工程（不含 `thought-forge/` 这一层前缀），三套规格在其 `.monkeycode/specs/`，两个工作流在其 `.github/workflows/`。`Alex` 里只剩 `arrive-focus`、`geo-platform`、`document-index`（submodule）、`商业策划助理`、`企业工具箱.skills`。新仓库需要重新配置 `TAURI_SIGNING_PRIVATE_KEY` 与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 两个 Actions 密钥。历史上 `Alex` 的 `18b4a5a` 仍保留整个 thought-forge 目录。
+  - 前端验证：在仓库根目录运行 `pnpm typecheck && pnpm test && pnpm build`。Rust 验证：`export PATH=/root/.cargo/bin:$PATH` 与 `CARGO_HOME=/root/.cargo RUSTUP_HOME=/root/.rustup` 后，在 `src-tauri` 下运行 `cargo test -p thought-forge-core` 与 `cargo test -p thought-forge-desktop --lib`。
   - command 边界的错误码契约由 `src-tauri/src/protocol.rs` 的用例锁定：它用 `include_str!("../../src/ipc/protocol.ts")` 读取前端错误码清单并逐项比对，`E_UNKNOWN` 是前端独有的兜底码。新增内核错误变体必须同步 `every_error`、`EXPECTED_CODES` 与前端 `protocol.ts`，否则该用例失败。
   - 桌面外壳 crate `thought-forge-desktop` 依赖 WebView/GLib 系统库；本机需先装 `libwebkit2gtk-4.1-dev`、`libgtk-3-dev`、`libayatana-appindicator3-dev`、`librsvg2-dev`、`libxdo-dev`、`pkg-config`（Debian 12 用 `apt-get install -y --no-install-recommends`）才能编译，装好后用 `cargo check -p thought-forge-desktop` 与 `cargo build -p thought-forge-desktop` 验证外壳。Windows 安装包（NSIS 与 MSI）与自动更新链路仍只能在完整 Windows 工具链下验收。
   - `tauri.conf.json` 的 `bundle.targets` 只接受 `deb`/`rpm`/`appimage`/`msi`/`nsis`/`app`/`dmg`；Windows 上的 WiX 产物对应 `msi`，写成 `wix` 会让构建脚本以 `data did not match any variant of untagged enum BundleTargetInner` 失败。tauri 与 tauri-build 依赖统一用主版本约束 `2`；写成 `2.8` 之类的小版本约束会在解析 `tauri-build` 2.6.x 时失败。
   - 发布门禁三道：`pnpm check:release-config`（判定 `plugins.updater` 是否存在、`pubkey` 是否为空/占位/不像 base64 公钥、`endpoints` 是否 https 且非保留主机名；占位配置下以退出码 1 失败属预期）、clippy（`cargo clippy -p <crate> --all-targets -- -D warnings`，两个 crate 已归零）、以及不使用 rustfmt（core 未采用 rustfmt 约定，`cargo fmt -- --check` 会报大量既有漂移，不要为通过检查做全量空格级改动）。命令层 `#[tauri::command]` 因参数与前端 IPC 字段一一对应而保留多参数，用 `#[allow(clippy::too_many_arguments)]` 标注，不要为消警把参数合并成结构体。
-  - 前端开发服务器端口固定 1430（`thought-forge/vite.config.ts` 中 `strictPort`），预览地址通过 `request_preview 1430` 获取。
+  - 前端开发服务器端口固定 1430（`vite.config.ts` 中 `strictPort`），预览地址通过 `request_preview 1430` 获取。
   - `package.json` 的 `packageManager` 字段必须填 npm 上真实存在的 pnpm 版本（如 `pnpm@10.34.5`），否则 corepack 会拉不到 tgz 而让所有 pnpm 命令失败；pnpm 通过 `corepack prepare pnpm@<version> --activate` 激活，不要用 `npm i -g pnpm` 覆盖 corepack 垫片。GitHub Actions 中 `pnpm/action-setup` 的 `version` 必须与 `packageManager` 一致，否则会因重复指定版本报错。
   - Rust 不要钉旧版本：传递依赖已要求 Cargo 支持 edition 2024，需使用 stable 通道；两个 crate 的 `rust-version` 均已声明为 `1.85`（原先的 `1.77.2` 是虚假承诺，且 core 代码已使用 1.82 才稳定的 `Option::is_none_or`），仅 1.77.2 会在下载依赖阶段报 `feature edition2024 is required`。
   - Windows 专有代码在本机只能做类型检查：`#[cfg(windows)]` 模块（如 `src-tauri/src/capture_win.rs`）不参与 Linux 编译。局部文件可另建临时 crate，用 `#[path = ...]` 直接包含源文件并声明同名 `windows-sys` features，再 `cargo check --target x86_64-pc-windows-msvc`。
-  - 本机不能自建 Windows 虚拟机：容器内无 `/dev/kvm`、CPU 未暴露 `vmx`/`svm`（QEMU 只能 TCG 纯软件模拟），且内存与磁盘不足；Wine 下 Tauri 依赖 WebView2 与 Windows 凭据库，会给出假通过，不可用于验收。Windows 真机项改在云端 GitHub `windows-latest` 上跑：`.github/workflows/verify-thought-forge-windows.yml`（手动触发）。它覆盖 V1（`#[cfg(windows)]` 代码在真机编译并跑通内核、桌面壳、检查器用例）、V9（NSIS 与 MSI 静默安装、启动、卸载）、V16/V17（内核用例）。云端仍判不了 V8 剪贴板与活动窗口（runner 无交互桌面）、V2 界面回填、V3 耗时观感、V6 发言质量、V7 检查点续跑、V12 提示词隔离、V13 工具清单可读性、V10 自动升级。
+  - 本机不能自建 Windows 虚拟机：容器内无 `/dev/kvm`、CPU 未暴露 `vmx`/`svm`（QEMU 只能 TCG 纯软件模拟），且内存与磁盘不足；Wine 下 Tauri 依赖 WebView2 与 Windows 凭据库，会给出假通过，不可用于验收。Windows 真机项改在云端 GitHub `windows-latest` 上跑：`think` 仓库的 `.github/workflows/verify-thought-forge-windows.yml`（手动触发）。它覆盖 V1（`#[cfg(windows)]` 代码在真机编译并跑通内核、桌面壳、检查器用例）、V9（NSIS 与 MSI 静默安装、启动、卸载）、V16/V17（内核用例）。云端仍判不了 V8 剪贴板与活动窗口（runner 无交互桌面）、V2 界面回填、V3 耗时观感、V6 发言质量、V7 检查点续跑、V12 提示词隔离、V13 工具清单可读性、V10 自动升级。
   - `pnpm tauri build --no-sign` 足以跳过 updater 签名：tauri-cli 的 `sign_updaters` 在读取 `plugins.updater.pubkey` 与 `TAURI_SIGNING_PRIVATE_KEY` 之前就先判断 no_sign 并返回，因此占位 `pubkey` 不会让构建失败（见 `crates/tauri-cli/src/bundle.rs`）。验收构建用 `--ci --no-sign --target x86_64-pc-windows-msvc --bundles nsis,msi`，无需任何密钥。
   - 判定 Windows 上应用能否启动，用「启动后是否出现 `%APPDATA%\com.thoughtforge.desktop\forge.db`」：应用在 setup 阶段（`state::initialize_state` → `db::initialize`，`db::open` 会 `create_dir_all`）建库并迁移，因此这条断言同时证明 WebView2 初始化成功与迁移跑通。全新库上 `cargo run -p thought-forge-core --example forge_verify -- <库>` 的期望结果是 14 项中通过 4（S1/S2/V2/V8）、跳过 10、未过 0，退出码 0。
   - NSIS 与 MSI 的落位可按 tauri-bundler 模板判定：`installMode: currentUser` 时装到 `$LOCALAPPDATA\ThoughtForge`，可执行文件为 `ThoughtForge.exe`，卸载程序为同目录 `uninstall.exe`，且静默卸载默认不删用户数据（删除数据需勾选复选框，`/S` 下不生效）；MSI 装到 `%ProgramFiles%\ThoughtForge`。静默安装不会自动启动应用，需自行 `Start-Process`。

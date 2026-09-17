@@ -11,3 +11,8 @@ dist/
 *.tsbuildinfo
 uploads/
 geo-platform/packages/shared-types/src/*.js
+
+# thought-forge 已迁至 https://github.com/nn190yxn/think。
+# 本地残留的构建产物（target、node_modules、dist、gen）待手工删除，
+# 删除完成后这一行即可移除。
+thought-forge/
