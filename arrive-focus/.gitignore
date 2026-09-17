@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/tauri.windows-signing.conf.json
+*.log
+*.db
+*.db-shm
+*.db-wal

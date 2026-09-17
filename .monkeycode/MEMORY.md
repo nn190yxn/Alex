@@ -31,77 +31,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 
 ## 条目
 
-[商业策划汇报语言口径]
-- Date: 2026-07-01
-- Context: 用户在修改商业地产策划方案表达时明确要求
+[商业策划 · 语言治理、团队结构与交付形态]
+- Date: 2026-07-01（2026-09-14 合并同日多条要求）
+- Context: 用户多次强调商业策划 skill 的语言质量、结构化协作与交付形态判断
 - Instructions:
-  - 商业地产策划汇报文稿采用正式汇报口径，少用口语化、提示式和模型痕迹明显的表达。
-  - 避免使用“底盘”“一句话判断”“这几个字”等不常见于正式商业汇报的说法。
-  - 优先使用“项目判断”“市场基础”“竞争关系”“定位落位”等策划汇报常用表达。
-
-[商业策划skill结构化要求]
-- Date: 2026-07-01
-- Context: 用户要求优化商业策划专家 skill 的组织方式
-- Instructions:
-  - 商业策划相关 skill 采用结构化设计，主文件负责流程和规则，案例内容单独放在配套文件中维护。
-  - 处理商业地产项目时，先判断商业模型和提案结构，再调用对应案例库，而不是把不同类型项目混在同一套写法里。
-  - 案例库需要明确不同商业类型的逻辑差异、结构参照、亮点组织方式和表达口径。
-
-[商业策划skill团队协作模式]
-- Date: 2026-07-01
-- Context: 用户要求将商业策划专家 skill 升级为总控师加多子代理协作模式
-- Instructions:
-  - 商业策划类复杂任务采用总控师加子代理团队的协作方式处理。
-  - 子代理分工应覆盖城市研究、区域研究、竞品与业态研究、客群研究、定位策略、招商策略、运营资产校验和提案撰写等链路。
-  - 方案撰写应作为研究链路后的独立环节，由总控统一口径后输出正式汇报文案。
-
-[商业策划文字审核要求]
-- Date: 2026-07-01
-- Context: 用户进一步强调商业策划 skill 的硬性约束
-- Instructions:
-  - 商业策划 skill 中的角色协作采用强制链路和强制约束，不采用推荐顺序表述。
-  - 团队中必须包含独立的文字审核角色，专门负责行业通用语言、专业概念表达和去 AI 化审核。
-  - 最终正式商业文案必须经过文字审核环节，表达方式要贴近行业案例中的常见结构和术语口径。
-
-[商业策划语言治理优先级]
-- Date: 2026-07-01
-- Context: 用户要求将语言表达问题作为商业策划 skill 的核心治理对象
-- Instructions:
-  - 商业策划 skill 需要重点管理语言表达质量，核心目标是解决 AI 化、宣传化和讨论稿化问题。
-  - 语言治理需要形成独立标准库，覆盖标题写法、判断句结构、专业概念口径、禁用表达和审核清单。
-  - 处理正式商业材料时，语言准确性和行业口径优先级高于修辞丰富度。
-
-[商业策划角色独立提示词要求]
-- Date: 2026-07-01
-- Context: 用户要求商业策划团队中的每个角色都拥有独立提示词
-- Instructions:
-  - 商业策划 skill 中的各角色不能只有职责说明，还需要各自独立的 prompt。
-  - 团队模式下，总控师分派任务时需要为每个启用角色调用对应的独立提示词。
-  - 角色提示词应明确角色目标、核心问题、工作约束、输出格式和交接要求。
-
-[商业策划概念方案正文稿要求]
-- Date: 2026-07-01
-- Context: 用户纠正 F3 文稿交付形式时明确要求
-- Instructions:
-  - 商业策划中的 Markdown 或 Word 版概念方案正文稿需要保持完整展开，不能自动压缩成 PPT 页纲式短句。
-  - 概念方案正文稿应保留概念阐释、经营逻辑、空间解释和阅读连续性。
-  - 只有在用户明确要求页纲或 PPT 稿时，才应输出高度压缩版本。
-
-[商业策划行业专家表达要求]
-- Date: 2026-07-01
-- Context: 用户反馈 F3 去 AI 版文字过短、过精炼、像机器人表达
-- Instructions:
-  - 商业策划专家的提示词应体现多年商业地产招商运营经验，输出像真实行业专家在写方案。
-  - 商业策划正文稿需要讲清商业运营规律、招商取舍、经营逻辑和现场落地判断，避免过度精炼。
-  - 去 AI 化不等于缩短文本，正文需要保留行业经验、推演过程、解释性段落和自然表达。
-
-[商业策划操盘方案要求]
-- Date: 2026-07-01
-- Context: 用户用最终修整版 F3 方案纠正商业策划 skill 偏差时明确要求
-- Instructions:
-  - 处理商业策划概念方案时，要优先识别用户是否需要“项目操盘方案”，不能只按商业报告审查或语言治理处理。
-  - 写字楼、公寓、底商、酒店、物业私域等复合项目，应按混合业态资产激活来组织方案，讲清各资产单元定位、客流联动、权益互通、运营机制和收益假设。
-  - 操盘型方案允许保留有经营含义的强判断、命名和适度生活化表达，但必须落到客群、空间、业态、运营、收益和分阶段目标。
+  - 正式汇报文稿采用正式汇报口径，少用口语化、提示式和模型痕迹明显的表达，避免“底盘”“一句话判断”“这几个字”等说法，优先使用“项目判断”“市场基础”“竞争关系”“定位落位”等策划汇报常用表达。语言治理形成独立标准库，覆盖标题写法、判断句结构、专业概念口径、禁用表达和审核清单，核心目标是解决 AI 化、宣传化和讨论稿化问题。正式商业材料中，语言准确性和行业口径优先级高于修辞丰富度；去 AI 化不等于缩短文本，正文需要保留行业经验、推演过程、解释性段落和自然表达。
+  - skill 采用结构化设计：主文件负责流程和规则，案例内容单独放在配套文件中维护；处理项目时先判断商业模型和提案结构，再调用对应案例库，不把不同类型项目混在同一套写法里。复杂任务采用总控师加子代理团队处理，子代理分工覆盖城市研究、区域研究、竞品与业态研究、客群研究、定位策略、招商策略、运营资产校验和提案撰写。角色协作采用强制链路和强制约束，不采用推荐顺序表述；方案撰写是研究链路后的独立环节，由总控统一口径后输出正式汇报文案。每个角色除职责说明外还必须拥有独立 prompt，明确角色目标、核心问题、工作约束、输出格式和交接要求，总控分派任务时调用对应提示词。团队必须包含独立的文字审核角色，负责行业通用语言、专业概念表达和去 AI 化审核，最终正式商业文案必须经过该环节。
+  - 概念方案正文稿（Markdown 或 Word）保持完整展开，保留概念阐释、经营逻辑、空间解释和阅读连续性；只有用户明确要求页纲或 PPT 稿时才输出高度压缩版本。优先识别用户是否需要“项目操盘方案”，不把操盘需求只当作报告审查或语言治理处理。写字楼、公寓、底商、酒店、物业私域等复合项目按混合业态资产激活组织方案，讲清各资产单元定位、客流联动、权益互通、运营机制和收益假设。操盘型方案允许保留有经营含义的强判断、命名和适度生活化表达，但必须落到客群、空间、业态、运营、收益和分阶段目标。
 
 [GEO 管理平台验证流程]
 - Date: 2026-07-09
@@ -186,3 +122,27 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 企业微信相关数据库变更必须以现有网站和 H5 正常使用为前提执行。
   - 数据库改造只允许采用兼容性增量方案，优先新增字段、新增表和新增索引。
   - 上线前必须先验证现有网站与 H5 的核心链路不受影响，再继续企业微信联调。
+
+[思想熔炉 · 仓库位置、构建、验证与工具链]
+- Date: 2026-09-15
+- Context: Agent 在建立 thought-forge 工程、跑各阶段门禁、新增桌面依赖与发布配置时发现
+- Category: 构建方法 / 环境配置
+- Instructions:
+  - 工程已迁出 `Alex` 仓库，独立维护在 `https://github.com/nn190yxn/think`，仓库根目录即原 `thought-forge/` 工程（不含 `thought-forge/` 这一层前缀），三套规格在其 `.monkeycode/specs/`，两个工作流在其 `.github/workflows/`。`Alex` 里只剩 `arrive-focus`、`geo-platform`、`document-index`（submodule）、`商业策划助理`、`企业工具箱.skills`。新仓库需要重新配置 `TAURI_SIGNING_PRIVATE_KEY` 与 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 两个 Actions 密钥。历史上 `Alex` 的 `18b4a5a` 仍保留整个 thought-forge 目录。
+  - 前端验证：在仓库根目录运行 `pnpm typecheck && pnpm test && pnpm build`。Rust 验证：`export PATH=/root/.cargo/bin:$PATH` 与 `CARGO_HOME=/root/.cargo RUSTUP_HOME=/root/.rustup` 后，在 `src-tauri` 下运行 `cargo test -p thought-forge-core` 与 `cargo test -p thought-forge-desktop --lib`。
+  - command 边界的错误码契约由 `src-tauri/src/protocol.rs` 的用例锁定：它用 `include_str!("../../src/ipc/protocol.ts")` 读取前端错误码清单并逐项比对，`E_UNKNOWN` 是前端独有的兜底码。新增内核错误变体必须同步 `every_error`、`EXPECTED_CODES` 与前端 `protocol.ts`，否则该用例失败。
+  - 桌面外壳 crate `thought-forge-desktop` 依赖 WebView/GLib 系统库；本机需先装 `libwebkit2gtk-4.1-dev`、`libgtk-3-dev`、`libayatana-appindicator3-dev`、`librsvg2-dev`、`libxdo-dev`、`pkg-config`（Debian 12 用 `apt-get install -y --no-install-recommends`）才能编译，装好后用 `cargo check -p thought-forge-desktop` 与 `cargo build -p thought-forge-desktop` 验证外壳。Windows 安装包（NSIS 与 MSI）与自动更新链路仍只能在完整 Windows 工具链下验收。
+  - `tauri.conf.json` 的 `bundle.targets` 只接受 `deb`/`rpm`/`appimage`/`msi`/`nsis`/`app`/`dmg`；Windows 上的 WiX 产物对应 `msi`，写成 `wix` 会让构建脚本以 `data did not match any variant of untagged enum BundleTargetInner` 失败。tauri 与 tauri-build 依赖统一用主版本约束 `2`；写成 `2.8` 之类的小版本约束会在解析 `tauri-build` 2.6.x 时失败。
+  - 发布门禁三道：`pnpm check:release-config`（判定 `plugins.updater` 是否存在、`pubkey` 是否为空/占位/不像 base64 公钥、`endpoints` 是否 https 且非保留主机名；占位配置下以退出码 1 失败属预期）、clippy（`cargo clippy -p <crate> --all-targets -- -D warnings`，两个 crate 已归零）、以及不使用 rustfmt（core 未采用 rustfmt 约定，`cargo fmt -- --check` 会报大量既有漂移，不要为通过检查做全量空格级改动）。命令层 `#[tauri::command]` 因参数与前端 IPC 字段一一对应而保留多参数，用 `#[allow(clippy::too_many_arguments)]` 标注，不要为消警把参数合并成结构体。
+  - 前端开发服务器端口固定 1430（`vite.config.ts` 中 `strictPort`），预览地址通过 `request_preview 1430` 获取。
+  - `package.json` 的 `packageManager` 字段必须填 npm 上真实存在的 pnpm 版本（如 `pnpm@10.34.5`），否则 corepack 会拉不到 tgz 而让所有 pnpm 命令失败；pnpm 通过 `corepack prepare pnpm@<version> --activate` 激活，不要用 `npm i -g pnpm` 覆盖 corepack 垫片。GitHub Actions 中 `pnpm/action-setup` 的 `version` 必须与 `packageManager` 一致，否则会因重复指定版本报错。
+  - Rust 不要钉旧版本：传递依赖已要求 Cargo 支持 edition 2024，需使用 stable 通道；两个 crate 的 `rust-version` 均已声明为 `1.85`（原先的 `1.77.2` 是虚假承诺，且 core 代码已使用 1.82 才稳定的 `Option::is_none_or`），仅 1.77.2 会在下载依赖阶段报 `feature edition2024 is required`。
+  - Windows 专有代码在本机只能做类型检查：`#[cfg(windows)]` 模块（如 `src-tauri/src/capture_win.rs`）不参与 Linux 编译。局部文件可另建临时 crate，用 `#[path = ...]` 直接包含源文件并声明同名 `windows-sys` features，再 `cargo check --target x86_64-pc-windows-msvc`。
+  - 本机不能自建 Windows 虚拟机：容器内无 `/dev/kvm`、CPU 未暴露 `vmx`/`svm`（QEMU 只能 TCG 纯软件模拟），且内存与磁盘不足；Wine 下 Tauri 依赖 WebView2 与 Windows 凭据库，会给出假通过，不可用于验收。Windows 真机项改在云端 GitHub `windows-latest` 上跑：`think` 仓库的 `.github/workflows/verify-thought-forge-windows.yml`（手动触发）。它覆盖 V1（`#[cfg(windows)]` 代码在真机编译并跑通内核、桌面壳、检查器用例）、V9（NSIS 与 MSI 静默安装、启动、卸载）、V16/V17（内核用例）。云端仍判不了 V8 剪贴板与活动窗口（runner 无交互桌面）、V2 界面回填、V3 耗时观感、V6 发言质量、V7 检查点续跑、V12 提示词隔离、V13 工具清单可读性、V10 自动升级。
+  - `pnpm tauri build --no-sign` 足以跳过 updater 签名：tauri-cli 的 `sign_updaters` 在读取 `plugins.updater.pubkey` 与 `TAURI_SIGNING_PRIVATE_KEY` 之前就先判断 no_sign 并返回，因此占位 `pubkey` 不会让构建失败（见 `crates/tauri-cli/src/bundle.rs`）。验收构建用 `--ci --no-sign --target x86_64-pc-windows-msvc --bundles nsis,msi`，无需任何密钥。
+  - 判定 Windows 上应用能否启动，用「启动后是否出现 `%APPDATA%\com.thoughtforge.desktop\forge.db`」：应用在 setup 阶段（`state::initialize_state` → `db::initialize`，`db::open` 会 `create_dir_all`）建库并迁移，因此这条断言同时证明 WebView2 初始化成功与迁移跑通。全新库上 `cargo run -p thought-forge-core --example forge_verify -- <库>` 的期望结果是 14 项中通过 4（S1/S2/V2/V8）、跳过 10、未过 0，退出码 0。
+  - NSIS 与 MSI 的落位可按 tauri-bundler 模板判定：`installMode: currentUser` 时装到 `$LOCALAPPDATA\ThoughtForge`，可执行文件为 `ThoughtForge.exe`，卸载程序为同目录 `uninstall.exe`，且静默卸载默认不删用户数据（删除数据需勾选复选框，`/S` 下不生效）；MSI 装到 `%ProgramFiles%\ThoughtForge`。静默安装不会自动启动应用，需自行 `Start-Process`。
+  - 属性测试用 `proptest`（在 `crates/core` 的 dev-dependencies）。`cargo test -p thought-forge-core` 会连十万节点建库的性能用例（`tests/network_perf.rs`）一起跑；只跑单项用 `--test <模块>`（core/council/masters/companion/distill/capture/kb/self/data/assets），过滤属性用例用 `cargo test -p thought-forge-core property_`。验证依赖数据库的逻辑不必先跑桌面应用：用 Python 的 `sqlite3` 按文件名顺序重放 `crates/core/src/migrations/*.sql` 并写入 `schema_migrations` 版本行，即可得到形状正确的临时库（本机 Python 的 sqlite3 已含 FTS5），再对它跑 `cargo run -p thought-forge-core --example <名称>` 这类只读示例；判定只读性用 `sha256sum` 比对示例运行前后的库文件，应完全一致且不留下 `-wal`/`-shm` 文件。示例里的 `#[cfg(test)]` 用例只由 `cargo test -p thought-forge-core --examples` 运行，普通 `cargo test` 与 `cargo clippy --all-targets` 都按非测试目标编译示例，所以只给测试用的 helper 要标 `#[cfg(test)]`，否则 `-D warnings` 会以 dead_code 失败。
+  - 前端预览传输层（`src/ipc/client.ts`）为主动助学、蒸馏、采集、知识地形与自我蒸馏保留了模块级可变状态（`demoCompanion`/`demoInsights`/`demoDistill`/`demoIntake`/`demoSignals`/`demoDiscovery`/`demoCapture`/`demoCaptureEvents`/`demoKbSources`/`demoKbDocuments`/`demoSelfReadiness`/`demoSelfDetail`/`demoDataEvents`）；同一测试文件内的多个用例共享该状态，跨用例断言要按卡片标题定位而非依赖索引与总数。
+  - `crates/core` 存在跨测试文件重名的模块（`capture`/`kb`/`self_distill`/`data`/`asset` 各有 `pipeline`/`repo`/`service`），命令层与测试引用这些子模块时用 `capture_pipeline`/`capture_repo`/`kb_service`/`self_service`/`data_service`/`asset_service` 之类的别名；`self` 是 Rust 关键字，自我蒸馏模块注册为 `self_distill`。
+  - 资产统计（`asset/`）只读 Skill 清单，不读正文：优先 `manifest.json`，其次 `SKILL.md` 的 YAML 头；YAML 头用内联扁平子集解析（`parse_yaml_subset`/`scalar`/`inline_list`），不要为此引入 `serde_yaml`。新增受 `data` 模块管辖的表后，必须把表名补进 `crates/core/src/data/mod.rs` 的 `DATA_TABLES`，否则导出与清除会漏表。

@@ -2,12 +2,12 @@
 
 ## 项目概览
 
-当前仓库包含历史文档、宣传物料 HTML，以及新建的多品牌 GEO 管理平台工程骨架。GEO 平台代码位于 `当前工作区/geo-platform/`，采用 monorepo 组织前端、后端和共享类型。
+当前仓库包含历史文档、宣传物料 HTML、多品牌 GEO 管理平台、Windows 本地优先专注应用“抵达 Focus”，以及 Windows 本地资料索引桌面工程。资料索引工程以 Git submodule 形式位于 `当前工作区/document-index/`，独立源码仓库为 `https://github.com/nn190yxn/zhuaomiansousuo`。该工程当前已完成 React、TypeScript、Vite、Tauri 2 工程骨架、类型化 command 边界、SQLite 元数据 schema、仓储、FTS5 搜索基础、索引源管理、名称规范化、可取消恢复的后台扫描、智能归组、双时间稳定排序、人工主题整理、分页人工主题目录、主题检索、完整版本详情服务、受控文件 Shell 操作、按需预览、Windows 回收站服务、桌面应用外壳、羊皮卷与极简黑白双主题、完整资料工作区、空来源首次使用引导、首次扫描启动兜底、基于 `notify` 的来源变化监听和局部索引更新、启动来源可访问性校验、离线索引保留、未完成扫描恢复、包含主题偏好的版本化索引配置备份与事务恢复、普通持久写串行与恢复互斥、人工归组文档移动与重命名后的身份保持、增量更新和恢复的跨模块集成测试、Windows NSIS 与 WiX 安装配置、GitHub Actions 自动构建与标签发布、核心流程端到端自动化验收，以及十万条元数据 release 性能门禁。
 
 ## 核心文档
 
 - `当前工作区/.monkeycode/docs/ARCHITECTURE.md`：系统架构、目录结构和模块边界
-- `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 API 契约、共享类型和品牌上下文约定
+- `当前工作区/.monkeycode/docs/INTERFACES.md`：当前 HTTP/Tauri command 契约、共享类型、项目类型和品牌上下文约定
 - `当前工作区/.monkeycode/docs/DEVELOPER_GUIDE.md`：本地开发、验证和后续任务入口
 - `当前工作区/.monkeycode/docs/DELIVERY_CHECKLIST.md`：交付检查清单、验证命令和当前预览状态
 - `当前工作区/.monkeycode/docs/INNER_TEST_USER_GUIDE.md`：内测用户使用说明，按页面流程说明品牌初始化、AI 回复监测、优化计划、写内容、再次监测和报告导出
@@ -17,6 +17,24 @@
 - `当前工作区/.monkeycode/docs/CONTINUOUS_ITERATION_PLAYBOOK.md`：阶段复盘、反馈转需求、行业规则变化和验证门禁机制
 
 ## 规格文档
+
+Windows 本地资料索引规格位于 `当前工作区/.monkeycode/specs/local-document-index/`。
+
+- `requirements.md`：索引源、元数据扫描、智能归组、双时间标记、搜索、预览和安全回收需求
+- `design.md`：Tauri、React、Rust、SQLite、领域边界、安全与测试设计
+- `tasklist.md`：分阶段实施任务清单；任务 1 至任务 12 和最终交付检查点已全部完成
+
+资料索引外观主题切换规格位于 `当前工作区/.monkeycode/specs/ui-theme-switching/`。
+
+- `requirements.md`：双主题、即时切换、持久化、备份兼容和无障碍需求
+- `design.md`：根元素主题状态、语义化 CSS 令牌、备份契约和正确性属性
+- `tasklist.md`：主题偏好、设置页视觉、备份恢复和完整质量门禁任务，当前已全部完成
+
+抵达 Focus Windows 桌面版规格位于 `当前工作区/.monkeycode/specs/arrive-focus-desktop/`。
+
+- `requirements.md`：桌面应用需求与验收标准
+- `design.md`：Tauri 双窗口、领域服务、SQLite 和桌面集成设计
+- `tasklist.md`：分阶段开发任务清单；全部 15 组任务和最终测试检查点均已完成
 
 多品牌 GEO 管理平台规格位于 `当前工作区/.monkeycode/specs/multi-brand-geo-platform/`。
 
@@ -80,6 +98,14 @@ AI 可见性运营 Sprint 重构规格位于 `当前工作区/.monkeycode/specs/
 - `requirements.md`：问题雷达、真实 AI 回复监测、品牌标准答案对照、内容缺口、内容资产、发布准备、复测和趋势需求
 - `design.md`：Sprint 聚合层、阶段状态、指标摘要、数据边界和共享类型设计
 - `tasklist.md`：Sprint 契约、仓储、API、问题雷达、标准答案、对照分析、内容资产、复测和前端工作台实施任务
+
+自我提升的思想熔炉（Thought Forge，本地优先的 Windows 桌面应用）已迁出本仓库，独立维护在 `https://github.com/nn190yxn/think`。该仓库根目录即原 `thought-forge/` 工程，规格随工程一起迁入其 `.monkeycode/specs/`：
+
+- `thought-forge-workbench/`：基线规格，含需求、设计（双 crate 与六层大师模型）、界面设计与 P1 至 P9 任务清单
+- `2026-09-15-thought-forge-deepening/`：深化规格，含调参、追问、检索、分歧判定、成本、凭据、备份、自我约束与运行可恢复，以及 `windows-verification.md` 真机验证手册
+- `2026-09-17-thought-forge-six-questions/`：六题会诊规格，把层次从大师身份标签改为所有大师共同面对的六个问题
+
+云端 Windows 验收与发布工作流位于该仓库的 `.github/workflows/`。
 
 ## 现有历史文档
 
