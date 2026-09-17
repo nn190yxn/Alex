@@ -83,12 +83,32 @@ graph LR
     E --> G["seat_speech.layer"]
 ```
 
-## 4. 后续两步的接口预留
+## 4. 后续两步的接口预留（已在第 5、6 节落地）
 
 - 同题对立：`scoring` 增加按题分组的对立度函数，输入为「题 + 两位大师在该题下的单元文本」，仍然离线预计算存 `master_pairings` 的扩展表。
 - 按题换批：`Selection` 的 `gaps` 语义从「无大师的层」扩展为「有争议或缺席的题」，`select` 的补位目标改为缺口题集合。两者都在本步的 `seats` 之上做，不再改列。
 
-## 5. 验收
+## 5. P18 同题对立与按题换批
+
+迁移 `0016_layer_pairings.sql` 新增 `master_layer_pairings(master_a_id, master_b_id, layer, opposition_score, computed_at)`，按 (大师对, 题) 存对立度；`pairings::recompute` 一次写两张表，安装大师包即重算。
+
+`scoring` 抽出 `layer_gap`，新增 `layer_opposition`：0.7 × 词面差异 + 0.3 × 层次框架差异，只用该题下的单元文本；任一方在该题没有积累时退回整体对立度，避免把「没积累」误判为「最对立」。`pool` 把单元按题分组成 `MasterText.layer_tokens`。
+
+`SelectionRequest` 增加 `previous: &[SeatRef]` 与 `diverged: &[Layer]`。碰撞策略补某一题时，优先选与该题上一任对立度最高的人；没有上一任时退回与已入席者的整体对立度。缺口题口径为三条：该题无人站上、全池该题候选不足两位、上一轮在该题没谈拢（命令层从会话的分歧清单读出）。
+
+分歧从纯文本升级为 `DivergenceView { layer, text }`：同题内差异最大的一对必出一条，与全场其余席位差异最大的一位按其所在题再出一条；旧库里的纯文本历史分歧读回时回填到「法」。
+
+## 6. P19 记录按题累积
+
+迁移 `0017_seat_stances.sql` 新增 `council_stances(session_id, panel_rotation, master_id, master_name, layer, summary, created_at)`，主键 (session_id, panel_rotation, master_id)。
+
+`repo::record_stances` 在 `finish_session` 与 `mark_cancelled` 末尾执行：取每个席位在最后一轮的成功发言（不含收敛裁决），截第一句、上限 80 字作为立场摘要，纯本地推导，不额外调用模型。断点续跑后重跑收尾按主键更新。
+
+`conclusion_view` 新增 `stance_changes`：按写入顺序往前找第一场题面归一化一致的会诊，逐题比较两轮摘要的用词重合度。重合度不低于 0.6 记「延续」，低于 0.25 记「转向」，其间记「调整」；本轮才有该题记「新谈」，仅上一轮有记「停谈」。找不到可比记录（升级前会话、首次会诊）时返回空表，界面隐藏该段。
+
+前端在结论第「六 · 前后几次结论」段内按题列出变化与上一轮原文，变化一律带文字标签，不靠颜色单通道表达。
+
+## 7. 验收
 
 - Rust：`tests/masters.rs` 断言 `layerProfile` 的题序、计数与空缺；`tests/council.rs` 断言 `seats` 落库后逐席发言的题与圆桌一致、历史面板回退可用；提示词用例断言第一轮正文包含被指派的题。
 - 前端：`VaultRealm.test.tsx` 断言「六题档案」分区、六行齐全与空缺提示；`CouncilRealm.test.tsx` 断言席位显示所属题。
